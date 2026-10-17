@@ -72,3 +72,11 @@ TypeScript, ESLint, production build đạt. 5/5 kiểm thử liên quan đạt 
 - Build, TypeScript và ESLint đạt. Toàn bộ 15 bài kiểm thử đã đạt qua các lượt chạy: các bài cũ về route/404, homepage, form, dữ liệu và admin; ba bài mới về URL/form chi tiết, responsive/axe và ngân sách/nội dung bài viết.
 - Đã sửa lỗi tương phản nhãn demo. Kiểm tra kích thước 360/768/1440px dùng polling để chờ trình duyệt cập nhật layout sau resize. Ảnh kiểm tra chờ client editor tải xong.
 - Giới hạn giữ nguyên: localStorage, không xác thực/backend, không xuất bản từ admin lên website; ảnh bằng URL, chưa upload tệp; nội dung văn bản thuần, chưa tự động hẹn giờ xuất bản.
+
+## Trang doanh nghiệp — 17/10/2026
+
+- Bố cục riêng cho giới thiệu và các trang con, danh mục dự án, lĩnh vực hoạt động, tin tức/chuyên mục, đối tác, liên hệ/hợp tác/tuyển dụng. Chỉnh diện mạo trang chi tiết dịch vụ, dự án và bài viết.
+- Ảnh nhiều lớp với CSS perspective/Motion spring, nghiêng nhẹ theo chuột và trở về khi rời; con trỏ cảm ứng không kích hoạt. Reduced-motion tắt transform. Reveal khi cuộn giữ nội dung render trên server.
+- Build, lint và TypeScript đạt. 11 kiểm thử hồi quy/hiệu ứng đạt lượt đầu; sau sửa tương phản số thứ tự, hai kiểm thử trang doanh nghiệp đạt lại (12 bài liên quan đều đã đạt).
+- Axe kiểm tra 10 route đại diện; kiểm tra tràn ngang 360/768/1440px. Các form vẫn validate/lưu, route và 404, gallery, menu mobile, banner, admin CRUD và chuyển trang đều đạt.
+- Đã xem ảnh chụp desktop của giới thiệu, tin tức và dịch vụ; kiểm tra ảnh liên hệ mobile. Ảnh/dữ liệu vẫn minh họa, không thêm cam kết kinh doanh hoặc đối tác thực tế.

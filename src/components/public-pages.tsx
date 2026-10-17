@@ -1,3 +1,8 @@
+import {
+  CompanyListing,
+  CompanyEditorial,
+  CompanyHero,
+} from "./company-layouts";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import {
@@ -61,6 +66,13 @@ export function ListingPage({
   kind: "projects" | "rentals" | "blog" | "services";
   filters: Filters;
 }) {
+  if (["projects", "blog", "services"].includes(kind))
+    return (
+      <CompanyListing
+        kind={kind as "projects" | "blog" | "services"}
+        filters={filters}
+      />
+    );
   const result = filterProperties(properties, filters);
   const visible = Math.max(9, Number(filters.limit) || 9);
   const nextUrl = (changes: Record<string, string>) => {
@@ -288,7 +300,10 @@ export function DetailPage({
       ? (item as Project)
       : projects.find((p) => p.id === rental?.projectId)!;
   return (
-    <main id="main" className="page-main detail-page">
+    <main
+      id="main"
+      className={`page-main detail-page ${rental ? "" : "company-project-detail"}`}
+    >
       <div className="container">
         <Breadcrumb
           title={item.name}
@@ -438,6 +453,8 @@ export function DetailPage({
   );
 }
 export function EditorialPage({ slug }: { slug: string }) {
+  if (!slug.includes("chinh-sach") && !slug.includes("dieu-khoan"))
+    return <CompanyEditorial slug={slug} />;
   const page = staticPages[slug];
   const hasForm = ["lien-he", "hop-tac-chu-so-huu", "tuyen-dung"].includes(
     slug,
@@ -515,24 +532,14 @@ export function EditorialPage({ slug }: { slug: string }) {
 }
 export function ServiceDetail({ service }: { service: Service }) {
   return (
-    <main id="main" className="page-main">
-      <div className="container">
-        <Breadcrumb title={service.name} parent={["Dịch vụ", "/dich-vu"]} />
-        <PageIntro
-          title={service.name}
-          eyebrow="GIẢI PHÁP TỪ SỰ THẤU HIỂU"
-          description={service.description}
-        />
-        <div className="editorial-banner image-wrap">
-          <Image
-            src={service.image}
-            alt={service.name}
-            fill
-            sizes="100vw"
-            loading="eager"
-            fetchPriority="high"
-          />
-        </div>
+    <main id="main" className="company-page company-service-detail">
+      <CompanyHero
+        title={service.name}
+        eyebrow="LĨNH VỰC HOẠT ĐỘNG"
+        description={service.description}
+        image={service.image}
+      />
+      <div className="container" id="noi-dung">
         <div className="editorial-body with-form">
           <article>
             <h2>Phương án phù hợp với nhu cầu thực tế.</h2>
@@ -567,7 +574,7 @@ export function ServiceDetail({ service }: { service: Service }) {
 }
 export function ArticlePage({ post }: { post: Post }) {
   return (
-    <main id="main" className="page-main">
+    <main id="main" className="page-main company-article">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

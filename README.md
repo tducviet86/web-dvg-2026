@@ -110,3 +110,7 @@ Header trang chủ nằm trên ảnh banner với nền trong suốt; khi cuộn
 - Ảnh nhập bằng URL HTTP(S) hoặc chọn bộ ảnh mẫu; thư viện ảnh lưu mỗi URL trên một dòng. Chưa có dịch vụ tải tệp lên máy chủ. Nội dung bài viết lưu văn bản thuần; ngày xuất bản là thông tin biên tập, không có tác vụ tự động hẹn giờ.
 - Kiểm tra đường dẫn trùng, định dạng slug, khoảng ngân sách, thứ tự ngày dự án, số điện thoại và dự án liên kết. Nút hủy hiển thị xác nhận ngay trong trang khi đã thay đổi dữ liệu.
 # web-dvg-2026
+
+### Bố cục trang doanh nghiệp (17/10/2026)
+
+Các trang giới thiệu, dự án, dịch vụ, tin tức, đối tác và liên hệ dùng bố cục riêng trong `company-layouts.tsx` và stylesheet `company-pages.css`. Hiệu ứng chiều sâu dùng CSS perspective và Motion spring (`DepthScene`), không dùng thư viện 3D/WebGL. Chỉ phản hồi với chuột; tôn trọng reduced-motion. Nội dung chính vẫn render phía server, các form và bộ lọc giữ luồng cũ.
