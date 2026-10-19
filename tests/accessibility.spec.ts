@@ -6,7 +6,7 @@ test("WCAG AA checks on representative pages", async ({ page }) => {
     await page.goto(route);
     if (route === "/admin")
       await expect(
-        page.getByRole("heading", { name: "Chào ngày mới, An." }),
+        page.getByRole("heading", { name: "Tổng quan quản trị" }),
       ).toBeVisible();
     const result = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
@@ -36,7 +36,7 @@ test("mobile pages and keyboard dialog focus", async ({ page }) => {
     await page.goto(route);
     if (route === "/admin")
       await expect(
-        page.getByRole("heading", { name: "Chào ngày mới, An." }),
+        page.getByRole("heading", { name: "Tổng quan quản trị" }),
       ).toBeVisible();
     expect(
       await page.evaluate(

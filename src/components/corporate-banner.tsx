@@ -66,6 +66,13 @@ export function CorporateBanner() {
         fetchPriority={active === 0 ? "high" : "auto"}
       />
       <div className="corporate-banner-shade" />
+      <div className="signature-hero-content container">
+        <div className="signature-hero-eyebrow">
+          <span>ĐÀ NẴNG, VIỆT NAM</span>
+          <span>BẤT ĐỘNG SẢN / KẾT NỐI / PHÁT TRIỂN</span>
+        </div>
+       
+      </div>
       <div className="corporate-banner-bottom container">
         <div className="banner-caption" aria-live={paused ? "polite" : "off"}>
           <span>{slide.label}</span>

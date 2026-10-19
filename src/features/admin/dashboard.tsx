@@ -100,7 +100,39 @@ export default function Dashboard() {
     }
   }
   function save(kind: Kind, row: Row) {
-    const rows = store[kind] as Row[];
+    const rows = readStore<Row[]>(kind, initial[kind]);
+    const original = (store[kind] as Row[]).find((item) => item.id === row.id);
+    const current = rows.find((item) => item.id === row.id);
+    if (original && JSON.stringify(original) !== JSON.stringify(current)) {
+      toast.error(
+        "Bản ghi đã thay đổi ở nơi khác. Hãy tải lại trang trước khi lưu.",
+      );
+      return;
+    }
+    if (
+      "slug" in row &&
+      rows.some(
+        (item) =>
+          "slug" in item && item.slug === row.slug && item.id !== row.id,
+      )
+    ) {
+      toast.error(
+        "Đường dẫn này đã được sử dụng. Vui lòng chọn đường dẫn khác.",
+      );
+      return;
+    }
+    if (
+      kind === "properties" &&
+      "projectId" in row &&
+      !readStore("projects", projects).some(
+        (project) => project.id === row.projectId,
+      )
+    ) {
+      toast.error(
+        "Dự án liên kết không còn tồn tại. Hãy tải lại danh sách dự án.",
+      );
+      return;
+    }
     const updated = rows.some((r) => r.id === row.id)
       ? rows.map((r) => (r.id === row.id ? row : r))
       : [row, ...rows];
@@ -112,9 +144,22 @@ export default function Dashboard() {
   }
   function remove() {
     if (!deleting) return;
+    const latestRows = readStore<Row[]>(deleting.kind, initial[deleting.kind]);
+    const original = (store[deleting.kind] as Row[]).find(
+      (item) => item.id === deleting.id,
+    );
+    const current = latestRows.find((item) => item.id === deleting.id);
+    if (JSON.stringify(original) !== JSON.stringify(current)) {
+      toast.error(
+        "Bản ghi đã thay đổi ở nơi khác. Hãy tải lại trang trước khi xóa.",
+      );
+      return;
+    }
     if (
       deleting.kind === "projects" &&
-      store.properties.some((p) => p.projectId === deleting.id)
+      readStore("properties", properties).some(
+        (p) => p.projectId === deleting.id,
+      )
     ) {
       toast.warning(
         "Dự án đang có căn hộ liên kết. Hãy chuyển hoặc xóa các căn hộ trước.",
@@ -122,7 +167,7 @@ export default function Dashboard() {
       closePage();
       return;
     }
-    const updated = store[deleting.kind].filter((r) => r.id !== deleting.id);
+    const updated = latestRows.filter((r) => r.id !== deleting.id);
     if (writeStore(deleting.kind, updated)) {
       setStore({ ...store, [deleting.kind]: updated });
       toast.success("Đã xóa dữ liệu demo.");
@@ -132,7 +177,7 @@ export default function Dashboard() {
   const rows = kind
     ? (store[kind] as Row[]).filter(
         (r) =>
-          `${r.name} ${"email" in r ? r.email : ""}`
+          `${r.name} ${"email" in r ? `${r.email} ${r.phone} ${r.company || ""}` : "slug" in r ? r.slug : ""}`
             .toLowerCase()
             .includes(query.toLowerCase()) &&
           (!status || r.status === status),
@@ -213,7 +258,7 @@ export default function Dashboard() {
                 {editor
                   ? `${editor.row ? "Chỉnh sửa" : "Thêm mới"} ${names[editor.kind]}`
                   : tab === "dashboard"
-                    ? "Chào ngày mới, An."
+                    ? "Tổng quan quản trị"
                     : tabs.find((t) => t.id === tab)?.label}
               </h1>
             </div>
@@ -277,16 +322,15 @@ export default function Dashboard() {
                     icon: Building2,
                   },
                   {
-                    label: "Căn hộ quản lý",
-                    value: store.properties.length,
-                    icon: House,
+                    label: "Bài viết",
+                    value: store.posts.length,
+                    icon: FileText,
                   },
                   {
-                    label: "Căn hộ còn trống",
-                    value: store.properties.filter(
-                      (p) => p.status === "Còn trống",
-                    ).length,
-                    icon: LayoutDashboard,
+                    label: "Đang tư vấn",
+                    value: store.leads.filter((l) => l.status === "Đang tư vấn")
+                      .length,
+                    icon: Users,
                   },
                   {
                     label: "Yêu cầu mới",
@@ -308,44 +352,27 @@ export default function Dashboard() {
                 <section className="admin-panel">
                   <div className="panel-heading">
                     <h2>Yêu cầu tư vấn theo tháng</h2>
-                    <span>2026 · Demo</span>
+                    <span>6 tháng gần nhất · Demo</span>
                   </div>
                   <LeadChart leads={store.leads} />
                 </section>
                 <section className="admin-panel">
-                  <h2>Tình trạng căn hộ</h2>
-                  <div className="occupancy">
+                  <h2>Nội dung cần xử lý</h2>
+                  <div className="admin-content-summary">
                     <strong>
-                      {Math.round(
-                        (store.properties.filter(
-                          (p) => p.status === "Đã cho thuê",
-                        ).length /
-                          Math.max(1, store.properties.length)) *
-                          100,
-                      )}
-                      <small>%</small>
+                      {
+                        store.posts.filter((p) => p.status === "Bản nháp")
+                          .length
+                      }
                     </strong>
-                    <span>Đã cho thuê · Dữ liệu mẫu</span>
-                  </div>
-                  <div className="occupancy-bar">
-                    <span
-                      style={{
-                        width: `${(store.properties.filter((p) => p.status === "Đã cho thuê").length / Math.max(1, store.properties.length)) * 100}%`,
-                      }}
-                    />
+                    <span>bài viết đang ở trạng thái bản nháp</span>
                   </div>
                   <p>
-                    {
-                      store.properties.filter((p) => p.status === "Còn trống")
-                        .length
-                    }{" "}
-                    căn hộ sẵn sàng trong dữ liệu demo
+                    Trạng thái biên tập hiện lưu cục bộ, chưa xuất bản lên
+                    website.
                   </p>
-                  <button
-                    className="text-link"
-                    onClick={() => setTab("properties")}
-                  >
-                    Quản lý căn hộ
+                  <button className="text-link" onClick={() => setTab("posts")}>
+                    Quản lý bài viết
                     <ArrowUpRight size={16} />
                   </button>
                 </section>
@@ -397,7 +424,7 @@ export default function Dashboard() {
                     <Search size={18} />
                     <input
                       aria-label="Tìm trong bảng"
-                      placeholder="Tìm kiếm tên, email…"
+                      placeholder="Tìm tên, đường dẫn, email, điện thoại…"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                     />

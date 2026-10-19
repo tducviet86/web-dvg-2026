@@ -63,11 +63,6 @@ export function SiteFooter() {
             <Link href="/dieu-khoan-su-dung">Điều khoản sử dụng</Link>
           </div>
         </div>
-        <p className="demo-note">
-          Dự án, hình ảnh, giá thuê, số liệu và lời chia sẻ trên website dùng để
-          minh họa; không phải thông tin giao dịch hoặc xác nhận hợp tác thực
-          tế.
-        </p>
       </div>
     </footer>
   );

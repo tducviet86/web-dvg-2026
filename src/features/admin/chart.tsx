@@ -10,11 +10,20 @@ import {
 } from "recharts";
 import type { Lead } from "@/types";
 export default function LeadChart({ leads }: { leads: Lead[] }) {
-  const data = Array.from({ length: 6 }, (_, i) => ({
-    month: `T${i + 5}`,
-    count: leads.filter((l) => Number(l.createdAt.slice(5, 7)) === i + 5)
-      .length,
-  }));
+  const now = new Date();
+  const data = Array.from({ length: 6 }, (_, i) => {
+    const month = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+    return {
+      month: `T${month.getMonth() + 1}/${month.getFullYear()}`,
+      count: leads.filter((lead) => {
+        const date = new Date(lead.createdAt);
+        return (
+          date.getMonth() === month.getMonth() &&
+          date.getFullYear() === month.getFullYear()
+        );
+      }).length,
+    };
+  });
   return (
     <div
       className="chart-wrap"

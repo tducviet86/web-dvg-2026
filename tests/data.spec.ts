@@ -94,6 +94,10 @@ test("apartment and blog CRUD persists", async ({ page }) => {
       .getByRole("button", { name: `Sửa ${item.name}`, exact: true })
       .click();
     await form.locator("[name=status]").selectOption(item.status);
+    if (item.key === "posts")
+      await form
+        .locator("[name=content]")
+        .fill("Nội dung chi tiết đủ để kiểm tra trạng thái xuất bản.");
     await form.getByRole("button", { name: "Lưu thay đổi" }).click();
     await expect(
       page.locator("tr").filter({ hasText: item.name }),

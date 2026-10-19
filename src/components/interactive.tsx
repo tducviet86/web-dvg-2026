@@ -209,7 +209,7 @@ export function ContactForm({
             ? "Kinh nghiệm và vị trí mong muốn"
             : "Nhu cầu của bạn"}{" "}
           *
-          <textarea
+          {/* <textarea
             {...register("message")}
             rows={4}
             maxLength={1500}
@@ -218,7 +218,13 @@ export function ContactForm({
               errors.message ? `${formId}-message-error` : undefined
             }
             placeholder="Chia sẻ một chút về không gian bạn đang tìm kiếm…"
-          />
+          /> */}
+          <select > 
+            <option value="1">Tư Vấn Mua Bất Động Sản</option>
+            <option value="2">Tư Vấn Cho Thuê</option>
+            <option value="3">Thuê Bất Động Sản</option>
+            <option value="4">Ký gửi Cho Thuê/Bán Bất Động Sản</option>
+          </select>
           {errors.message && (
             <span id={`${formId}-message-error`} className="field-error">
               {errors.message.message}

@@ -420,7 +420,11 @@ export function Editor({
         );
     }
     for (const key of ["phone", "contactPhone"])
-      if (raw[key] && !/^\+?[\d\s().-]{8,20}$/.test(raw[key]))
+      if (
+        raw[key] &&
+        (!/^\+?[\d\s().-]{8,20}$/.test(raw[key]) ||
+          raw[key].replace(/\D/g, "").length < 8)
+      )
         issues.push(
           "Số điện thoại cần có 8–20 ký tự gồm số và dấu phân cách hợp lệ.",
         );
@@ -436,6 +440,14 @@ export function Editor({
       issues.push("Ngày bàn giao không được trước ngày khởi công.");
     if (kind === "properties" && !projects.some((p) => p.id === raw.projectId))
       issues.push("Vui lòng chọn một dự án còn tồn tại.");
+    if (
+      kind === "posts" &&
+      raw.status === "Đã xuất bản" &&
+      (raw.content || "").length < 10
+    )
+      issues.push(
+        "Bài viết cần nội dung chi tiết trước khi chuyển sang trạng thái đã xuất bản (demo).",
+      );
     if (issues.length) {
       setErrors(issues);
       requestAnimationFrame(() =>

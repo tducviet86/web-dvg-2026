@@ -11,7 +11,7 @@ export const staticPages: Record<
     title: "Kiến tạo giá trị. Gắn kết tương lai.",
     eyebrow: "CÂU CHUYỆN ĐẤT VÀNG",
     intro:
-      "Đất Vàng Group được giới thiệu trong brief là doanh nghiệp bất động sản thành lập năm 2018. Website này thể hiện định hướng thương hiệu và hành trình trải nghiệm bằng dữ liệu minh họa.",
+      "Đất Vàng Group hoạt động trong lĩnh vực quản lý, vận hành và khai thác bất động sản tại Đà Nẵng. Chúng tôi chú trọng sự rõ ràng trong công việc và mối quan hệ lâu dài với chủ sở hữu, khách hàng và đối tác.",
     sections: [
       [
         "Bắt đầu từ một không gian phù hợp",
@@ -111,7 +111,7 @@ export const staticPages: Record<
     title: "Mọi kết nối tốt đẹp bắt đầu từ lắng nghe.",
     eyebrow: "LIÊN HỆ",
     intro:
-      "Bạn đang tìm một căn hộ, cần hỗ trợ chăm sóc bất động sản hay muốn trao đổi về hợp tác? Hãy chia sẻ nhu cầu trong biểu mẫu demo.",
+      "Bạn cần hỗ trợ quản lý bất động sản hoặc muốn trao đổi về hợp tác? Hãy để lại nội dung để bắt đầu cuộc trò chuyện. Biểu mẫu hiện chỉ lưu thông tin trên trình duyệt.",
     sections: [
       [
         "Kết nối tại Đà Nẵng",
@@ -119,7 +119,7 @@ export const staticPages: Record<
       ],
       [
         "Bạn muốn trao đổi điều gì?",
-        "Hãy mô tả khu vực mong muốn, ngân sách, số người ở và thời gian dự kiến. Với chủ sở hữu, có thể chia sẻ loại tài sản và nhu cầu hỗ trợ.",
+        "Hãy chia sẻ mục tiêu hợp tác, loại tài sản, khu vực và phạm vi hỗ trợ bạn cần. Thông tin này giúp định hướng cuộc trao đổi cụ thể hơn.",
       ],
     ],
   },

@@ -1,12 +1,6 @@
 import Image from "next/image";
 import Link from "@/components/page-navigation";
-import {
-  ArrowUpRight,
-  ArrowDown,
-  Compass,
-  Layers,
-  Handshake,
-} from "lucide-react";
+import { ArrowUpRight, Compass, Layers, Handshake } from "lucide-react";
 import { photos, projects, posts, services } from "@/data";
 import { staticPages } from "@/lib/pages";
 import type { Filters } from "@/lib/filter";
@@ -34,17 +28,11 @@ export function CompanyHero({
           <span aria-current="page">{eyebrow}</span>
         </nav>
         <Reveal>
-          <span className="eyebrow">ĐẤT VÀNG GROUP / {eyebrow}</span>
           <h1>{title}</h1>
           <p>{description}</p>
-          <a className="company-scroll" href="#noi-dung">
-            <span>Khám phá câu chuyện</span>
-            <ArrowDown size={18} />
-          </a>
         </Reveal>
       </div>
       <DepthScene className="company-hero-art">
-        <div className="company-art-outline" aria-hidden="true" />
         <div className="company-hero-photo image-wrap">
           <Image
             src={image}
@@ -54,14 +42,7 @@ export function CompanyHero({
             loading="eager"
           />
         </div>
-        <div className="company-art-label">
-          <span>KHÔNG GIAN & CON NGƯỜI</span>
-          <strong>Giá trị từ sự tận tâm.</strong>
-          <small>Hình ảnh minh họa</small>
-        </div>
-        <span className="company-art-index" aria-hidden="true">
-          DVG
-        </span>
+        <small className="company-photo-caption">Hình ảnh minh họa</small>
       </DepthScene>
     </header>
   );
@@ -395,7 +376,7 @@ export function CompanyEditorial({ slug }: { slug: string }) {
                         <h2>{heading}</h2>
                         <p>{text}</p>
                         <Link href="/hop-tac-chu-so-huu" className="text-link">
-                          Trao đổi hợp tác
+                          Trao đổi hợp táca
                           <ArrowUpRight size={17} />
                         </Link>
                       </article>

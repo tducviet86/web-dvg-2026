@@ -780,3 +780,31 @@
     padding-top: 18px;
   }
 }
+
+.admin-content-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 28px 0;
+  color: #53675a;
+  font-size: 13px;
+}
+.admin-content-summary strong {
+  font-size: 42px;
+  line-height: 1;
+  color: #244e3a;
+}
+.admin-panel {
+  box-shadow: none;
+  border-radius: 8px;
+}
+.admin-panel.editor-section {
+  padding: 22px;
+}
+.editor-section > header {
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+}
+.admin-editor .form-grid {
+  gap: 18px;
+}

@@ -80,3 +80,16 @@ TypeScript, ESLint, production build đạt. 5/5 kiểm thử liên quan đạt 
 - Build, lint và TypeScript đạt. 11 kiểm thử hồi quy/hiệu ứng đạt lượt đầu; sau sửa tương phản số thứ tự, hai kiểm thử trang doanh nghiệp đạt lại (12 bài liên quan đều đã đạt).
 - Axe kiểm tra 10 route đại diện; kiểm tra tràn ngang 360/768/1440px. Các form vẫn validate/lưu, route và 404, gallery, menu mobile, banner, admin CRUD và chuyển trang đều đạt.
 - Đã xem ảnh chụp desktop của giới thiệu, tin tức và dịch vụ; kiểm tra ảnh liên hệ mobile. Ảnh/dữ liệu vẫn minh họa, không thêm cam kết kinh doanh hoặc đối tác thực tế.
+
+## Rà soát tổng thể — 18/10/2026
+
+Xem `REVIEW-2026-10-18.md` để biết kết luận sẵn sàng vận hành và danh sách nghiệp vụ còn thiếu. Đã tinh giản trang chủ/trang con, chỉnh nội dung liên hệ, gỡ nút ngôn ngữ không hoạt động; bổ sung tìm khách theo điện thoại, kiểm tra stale edit/delete, slug và tham chiếu dự án mới nhất, yêu cầu nội dung trước trạng thái xuất bản demo, biểu đồ sáu tháng có phân biệt năm. Build/typecheck/lint đạt; 19 bài đã đạt qua các lượt chạy sau sửa hai lỗi tương phản. Chưa xác nhận sẵn sàng production.
+
+## 2026-10-19 — Trang chủ kiến trúc / editorial
+
+- Thay cấu trúc trang chủ: banner thương hiệu lớn, thanh mục lục, câu chuyện doanh nghiệp, tab lĩnh vực với ảnh thay đổi, dự án lệch bố cục, bài viết dạng hàng và khối liên hệ.
+- Giữ nguyên điều khiển/autoplay banner, logo trong suốt, chuyển trang và khả năng giảm chuyển động. Hiệu ứng chiều sâu dùng lại DepthScene ở ảnh giới thiệu.
+- CSS riêng `signature-home.css`; không thay đổi nghiệp vụ admin/backend.
+- Đã xem ảnh desktop 1440px và mobile 390px; sửa màu chữ hero bị kế thừa và độ tương phản chú thích.
+- `npm run build`, `npm run lint`, TypeScript đạt. 7 kiểm tra Playwright đạt: WCAG AA các trang đại diện, menu điện thoại, banner/autoplay/header, tab lĩnh vực bằng bàn phím, chuyển trang, ảnh và độ rộng 360–1920px.
+- Dữ liệu dự án/ảnh vẫn là minh họa; chưa xác nhận dữ liệu doanh nghiệp để xuất bản chính thức.

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X, ArrowUpRight, ChevronDown } from "lucide-react";
-import { toast } from "sonner";
 import { Progress } from "../interactive";
 const nav = [
   { label: "Trang chủ", href: "/" },
@@ -16,7 +15,6 @@ const nav = [
       ["Tổng quan công ty", "/gioi-thieu"],
       ["Tầm nhìn & sứ mệnh", "/gioi-thieu/tam-nhin-su-menh"],
       ["Đội ngũ", "/gioi-thieu/doi-ngu"],
-      ["Đối tác", "/gioi-thieu/doi-tac"],
     ],
   },
   {
@@ -107,17 +105,6 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="header-actions">
-            <button
-              className="language"
-              onClick={() =>
-                toast.info(
-                  "Bản demo hiện hỗ trợ tiếng Việt. Nội dung tiếng Anh đang được chuẩn bị.",
-                )
-              }
-              aria-label="VI — Tiếng Việt. Tiếng Anh đang được chuẩn bị"
-            >
-              VI <ChevronDown size={11} />
-            </button>
             <Link className="header-cta" href="/lien-he">
               Kết nối hợp tác
               <ArrowUpRight size={15} />

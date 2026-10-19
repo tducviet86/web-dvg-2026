@@ -82,3 +82,34 @@ test("autoplay continues under pointer and header changes on scroll", async ({
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await expect(page.locator("header")).toHaveClass(/header-overlay/);
 });
+
+test("homepage fields support keyboard exploration and relevant destination links", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const tabs = page.getByRole("tablist", { name: "Lĩnh vực hoạt động" });
+  await tabs.getByRole("tab", { name: /Quản lý bất động sản/ }).click();
+  await page.keyboard.press("ArrowDown");
+  await expect(
+    tabs.getByRole("tab", { name: /Khai thác & vận hành/ }),
+  ).toBeFocused();
+  await expect(page.getByRole("tabpanel")).toContainText(
+    "đặc điểm từng bất động sản",
+  );
+  await expect(page.getByRole("tabpanel").getByRole("link")).toHaveAttribute(
+    "href",
+    "/dich-vu/khai-thac-cho-thue",
+  );
+  await page.keyboard.press("End");
+  await expect(
+    tabs.getByRole("tab", { name: /Tư vấn & hợp tác/ }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel").getByRole("link")).toHaveAttribute(
+    "href",
+    "/hop-tac-chu-so-huu",
+  );
+  await page.keyboard.press("Home");
+  await expect(
+    tabs.getByRole("tab", { name: /Quản lý bất động sản/ }),
+  ).toBeFocused();
+});
