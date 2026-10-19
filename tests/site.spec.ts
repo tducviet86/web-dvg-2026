@@ -136,6 +136,10 @@ test("all lead forms validate and persist; newsletter", async ({ page }) => {
     await form.locator("[name=name]").fill("Khách kiểm thử");
     await form.locator("[name=phone]").fill("0901234567");
     await form.locator("[name=email]").fill("qa@example.com");
+    if (await form.locator("select[name=intent]").count())
+      await form
+        .locator("select[name=intent]")
+        .selectOption({ label: "Ký gửi bán hoặc cho thuê" });
     await form
       .locator("[name=message]")
       .fill(`Yêu cầu kiểm thử trên trang ${route}`);

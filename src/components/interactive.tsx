@@ -1,5 +1,5 @@
 "use client";
-import { useSyncExternalStore, useState, useId } from "react";
+import { useSyncExternalStore, useState, useId, useEffect } from "react";
 import { motion, useReducedMotion, useScroll } from "motion/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import useEmblaCarousel from "embla-carousel-react";
@@ -93,6 +93,7 @@ export function Favorite({ id }: { id: string }) {
   );
 }
 const schema = z.object({
+  intent: z.string(),
   name: z
     .string()
     .min(2, "Vui lòng nhập họ tên (ít nhất 2 ký tự).")
@@ -121,16 +122,41 @@ export function ContactForm({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { consent: false },
+    resolver: zodResolver(
+      schema.extend({
+        intent: source.startsWith("Ứng tuyển")
+          ? z.string()
+          : z.string().min(1, "Vui lòng chọn nhu cầu tư vấn."),
+      }),
+    ),
+    defaultValues: { consent: false, intent: "" },
   });
+  useEffect(() => {
+    if (source !== "Liên hệ") return;
+    const query = new URLSearchParams(window.location.search);
+    const intent = query.get("intent");
+    const options: Record<string, string> = {
+      "mua-ban": "Tư vấn mua bán bất động sản",
+      thue: "Tìm thuê bất động sản",
+      "ky-gui": "Ký gửi bán hoặc cho thuê",
+    };
+    if (intent && options[intent]) setValue("intent", options[intent]);
+    const project = query.get("project");
+    if (project)
+      setValue(
+        "message",
+        `Tôi muốn được tư vấn về dự án ${project.slice(0, 120)}.`,
+      );
+  }, [source, setValue]);
   async function submit(values: FormValues) {
-    const { consent: _consent, ...data } = values;
+    const { consent: _consent, intent, ...data } = values;
     void _consent;
     const lead = {
       ...data,
+      message: intent ? `[${intent}] ${data.message}` : data.message,
       id: crypto.randomUUID(),
       source,
       status: "Mới",
@@ -204,12 +230,39 @@ export function ContactForm({
             )}
           </label>
         ))}
+        {!source.startsWith("Ứng tuyển") && (
+          <label className="full">
+            Nhu cầu tư vấn <span aria-hidden="true">*</span>
+            <select
+              {...register("intent")}
+              defaultValue=""
+              aria-invalid={!!errors.intent}
+              aria-describedby={
+                errors.intent ? `${formId}-intent-error` : undefined
+              }
+            >
+              <option value="" disabled>
+                Chọn nhu cầu của bạn
+              </option>
+              <option>Tư vấn mua bán bất động sản</option>
+              <option>Tìm thuê bất động sản</option>
+              <option>Cho thuê bất động sản</option>
+              <option>Ký gửi bán hoặc cho thuê</option>
+              <option>Hợp tác và nhu cầu khác</option>
+            </select>
+            {errors.intent && (
+              <span id={`${formId}-intent-error`} className="field-error">
+                {errors.intent.message}
+              </span>
+            )}
+          </label>
+        )}
         <label className="full">
           {source.startsWith("Ứng tuyển")
             ? "Kinh nghiệm và vị trí mong muốn"
-            : "Nhu cầu của bạn"}{" "}
-          *
-          {/* <textarea
+            : "Thông tin chi tiết"}{" "}
+          <span aria-hidden="true">*</span>
+          <textarea
             {...register("message")}
             rows={4}
             maxLength={1500}
@@ -217,14 +270,12 @@ export function ContactForm({
             aria-describedby={
               errors.message ? `${formId}-message-error` : undefined
             }
-            placeholder="Chia sẻ một chút về không gian bạn đang tìm kiếm…"
-          /> */}
-          <select > 
-            <option value="1">Tư Vấn Mua Bất Động Sản</option>
-            <option value="2">Tư Vấn Cho Thuê</option>
-            <option value="3">Thuê Bất Động Sản</option>
-            <option value="4">Ký gửi Cho Thuê/Bán Bất Động Sản</option>
-          </select>
+            placeholder={
+              source.startsWith("Ứng tuyển")
+                ? "Chia sẻ kinh nghiệm và vị trí bạn muốn ứng tuyển…"
+                : "Tên dự án, ngân sách, loại căn hộ hoặc thông tin tài sản cần ký gửi…"
+            }
+          />
           {errors.message && (
             <span id={`${formId}-message-error`} className="field-error">
               {errors.message.message}

@@ -16,8 +16,8 @@ test("navigation provides pending feedback, preserves document and supports back
     document.documentElement.dataset.navigationProbe = "retained";
   });
   await page
-    .locator(".corporate-about")
-    .getByRole("link", { name: "Tìm hiểu về Đất Vàng Group", exact: true })
+    .locator(".site-footer")
+    .getByRole("link", { name: "Về Đất Vàng", exact: true })
     .click();
   await expect(
     page.getByRole("status").filter({ hasText: "Đang chuyển trang" }),

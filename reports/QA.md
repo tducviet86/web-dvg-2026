@@ -93,3 +93,13 @@ Xem `REVIEW-2026-10-18.md` để biết kết luận sẵn sàng vận hành và
 - Đã xem ảnh desktop 1440px và mobile 390px; sửa màu chữ hero bị kế thừa và độ tương phản chú thích.
 - `npm run build`, `npm run lint`, TypeScript đạt. 7 kiểm tra Playwright đạt: WCAG AA các trang đại diện, menu điện thoại, banner/autoplay/header, tab lĩnh vực bằng bàn phím, chuyển trang, ảnh và độ rộng 360–1920px.
 - Dữ liệu dự án/ảnh vẫn là minh họa; chưa xác nhận dữ liệu doanh nghiệp để xuất bản chính thức.
+
+## 2026-10-19 — Danh mục triển khai / vận hành và form nhu cầu
+
+- Trang chủ: Banner → Dự án triển khai (Capital Square, Sun Symphony Residence, Cora Tower) → Dự án vận hành (Monarchy, Sun Ponte Residence, Sun Panoma, Sam Tower, Hiyori Garden Tower) → Lĩnh vực → Góc nhìn → Kết nối.
+- Nhóm triển khai/vận hành theo danh sách khách hàng cung cấp; không suy ra vai trò chủ đầu tư hoặc quản lý toàn bộ tòa nhà.
+- Ảnh lưu trong public/images/projects; URL tải gốc tại reports/project-image-sources.json. SAM và Hiyori là ảnh chụp; sáu ảnh còn lại là phối cảnh, có nhãn và liên kết nguồn trên từng thẻ. Chưa thay hoàn toàn bằng ảnh chụp thực địa.
+- Nút tư vấn mang tên dự án sang form. Tab mua bán/cho thuê/ký gửi chọn sẵn nhu cầu qua query đã kiểm tra giá trị.
+- Sửa select chưa register và khôi phục textarea; nhu cầu bắt buộc cho form kinh doanh, form ứng tuyển vẫn dùng kinh nghiệm/vị trí. Nhu cầu được ghép vào message để admin hiện đủ nội dung. Vẫn chỉ lưu localStorage, chưa gửi máy chủ.
+- Build, TypeScript, lint đạt. 9 Playwright checks đạt: thứ tự và số dự án; form/prefill/validation/persistence; banner/autoplay; keyboard tabs; navigation; WCAG AA; mobile drawer; ảnh và responsive 360–1920px; 6 luồng form và newsletter.
+- Đã xem trực quan dự án desktop 1440px và form mobile 390px.

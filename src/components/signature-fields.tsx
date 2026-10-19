@@ -3,29 +3,34 @@ import Image from "next/image";
 import Link from "@/components/page-navigation";
 import { useRef, useState } from "react";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
-import { photos } from "@/data";
 
 const fields = [
   {
-    title: "Quản lý bất động sản",
-    caption: "CHĂM CHÚT TỪNG CHI TIẾT",
-    image: photos.interior,
-    text: "Chăm sóc tài sản bằng quy trình rõ ràng. Chú trọng chất lượng vận hành và trải nghiệm của người sử dụng.",
-    href: "/dich-vu/quan-ly-bat-dong-san",
+    title: "Mua bán bất động sản",
+    caption: "TÌM ĐÚNG SẢN PHẨM, ĐÚNG NHU CẦU",
+    image: "/images/projects/capital.jpg",
+    text: "Tư vấn lựa chọn dự án và sản phẩm theo nhu cầu an cư, ngân sách và kế hoạch của khách hàng. Đồng hành trong quá trình tìm hiểu thông tin và kết nối giao dịch.",
+    href: "/lien-he?intent=mua-ban",
+    action: "Tư vấn mua bán",
+    forWho: "Dành cho người mua & người bán",
   },
   {
-    title: "Khai thác & vận hành",
-    caption: "HIỂU KHÔNG GIAN, HIỂU NHU CẦU",
-    image: photos.pool,
-    text: "Tìm phương án khai thác phù hợp với đặc điểm từng bất động sản và mục tiêu của chủ sở hữu.",
-    href: "/dich-vu/khai-thac-cho-thue",
+    title: "Cho thuê bất động sản",
+    caption: "KẾT NỐI KHÔNG GIAN SỐNG PHÙ HỢP",
+    image: "/images/projects/hiyori.jpg",
+    text: "Hỗ trợ khách thuê tìm không gian phù hợp, hẹn xem thực tế và trao đổi điều kiện thuê. Đồng hành cùng chủ sở hữu trong việc khai thác căn hộ.",
+    href: "/lien-he?intent=thue",
+    action: "Tìm hiểu nhu cầu thuê",
+    forWho: "Dành cho khách thuê & chủ sở hữu",
   },
   {
-    title: "Tư vấn & hợp tác",
-    caption: "KẾT NỐI ĐỂ CÙNG PHÁT TRIỂN",
-    image: photos.architecture,
-    text: "Lắng nghe nhu cầu, kết nối chuyên môn và cùng đối tác xác định hướng đi cho những kế hoạch dài hạn.",
-    href: "/hop-tac-chu-so-huu",
+    title: "Ký gửi bất động sản",
+    caption: "MỘT ĐẦU MỐI, XUYÊN SUỐT HÀNH TRÌNH",
+    image: "/images/projects/sam.jpg",
+    text: "Tiếp nhận ký gửi bán hoặc cho thuê. Trao đổi thông tin tài sản, phương án giới thiệu và lịch xem; cập nhật phản hồi để chủ sở hữu chủ động quyết định.",
+    href: "/lien-he?intent=ky-gui",
+    action: "Đăng ký ký gửi",
+    forWho: "Dành cho chủ nhà & nhà đầu tư",
   },
 ];
 export function SignatureFields() {
@@ -35,7 +40,7 @@ export function SignatureFields() {
   return (
     <section className="signature-fields" id="linh-vuc">
       <div className="container signature-section-top">
-        <span className="signature-kicker">02 / LĨNH VỰC HOẠT ĐỘNG</span>
+        <span className="signature-kicker">03 / LĨNH VỰC HOẠT ĐỘNG</span>
         <p>
           Mỗi tài sản một đặc điểm.
           <br />
@@ -47,7 +52,7 @@ export function SignatureFields() {
           <Image
             key={field.image}
             src={field.image}
-            alt={`Không gian minh họa ${field.title.toLowerCase()}`}
+            alt={`Hình ảnh dự án phục vụ ${field.title.toLowerCase()}`}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
           />
@@ -56,11 +61,24 @@ export function SignatureFields() {
           </span>
           <div className="signature-field-caption">
             <span>{field.caption}</span>
-            <small>Hình ảnh minh họa</small>
+            <small>
+              {active === 0
+                ? "Phối cảnh Capital Square"
+                : active === 1
+                  ? "Hiyori Garden Tower"
+                  : "SAM Towers"}
+            </small>
           </div>
         </div>
         <div className="signature-field-copy">
-          <h2>Thấu hiểu để đồng hành.</h2>
+          <span className="signature-field-audience">
+            MUA BÁN · CHO THUÊ · KÝ GỬI
+          </span>
+          <h2>
+            Bất động sản.
+            <br />
+            Giải pháp cho bạn.
+          </h2>
           <div
             role="tablist"
             aria-label="Lĩnh vực hoạt động"
@@ -110,9 +128,12 @@ export function SignatureFields() {
               hidden={active !== index}
               tabIndex={0}
             >
+              <strong className="signature-field-audience">
+                {item.forWho}
+              </strong>
               <p>{item.text}</p>
               <Link href={item.href} className="signature-link">
-                Tìm hiểu giải pháp
+                {item.action}
                 <ArrowUpRight size={19} />
               </Link>
             </div>

@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import type { Metadata } from "next";
-import { ArrowUpRight, ArrowDown, ArrowRight } from "lucide-react";
-import { photos, projects, posts } from "@/data";
+import { ArrowUpRight, ArrowRight } from "lucide-react";
+import { posts } from "@/data";
 import { Reveal } from "@/components/interactive";
 import { CorporateBanner } from "@/components/corporate-banner";
 import { SignatureFields } from "@/components/signature-fields";
-import { DepthScene } from "@/components/depth-scene";
+import { HomeProjects } from "@/components/home-projects";
 import { siteUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -34,149 +34,12 @@ export default function Home() {
         }}
       />
       <CorporateBanner />
-      <nav className="signature-chapters" aria-label="Khám phá trang chủ">
-        <div className="container">
-          <a href="#ve-chung-toi">
-            <span>01</span>Về Đất Vàng
-            <ArrowDown size={16} />
-          </a>
-          <a href="#linh-vuc">
-            <span>02</span>Lĩnh vực hoạt động
-            <ArrowDown size={16} />
-          </a>
-          <a href="#khong-gian">
-            <span>03</span>Không gian & dự án
-            <ArrowDown size={16} />
-          </a>
-        </div>
-      </nav>
-      <section id="ve-chung-toi" className="signature-about corporate-about">
-        <div className="container">
-          <div className="signature-section-top">
-            <span className="signature-kicker">
-              01 / CÂU CHUYỆN DOANH NGHIỆP
-            </span>
-            <span className="signature-location">TỪ ĐÀ NẴNG, TỪ NĂM 2018</span>
-          </div>
-          <div className="signature-about-layout">
-            <Reveal className="signature-statement">
-              <h1>
-                <span>Đất Vàng Group.</span>Không chỉ là
-                <br />
-                một không gian.
-                <br />
-                <em>
-                  Là những giá trị
-                  <br />
-                  được tiếp nối.
-                </em>
-              </h1>
-              <Link
-                href="/gioi-thieu"
-                className="signature-round-link"
-                aria-label="Tìm hiểu về Đất Vàng Group"
-              >
-                <ArrowUpRight size={30} />
-                <span>
-                  Câu chuyện
-                  <br />
-                  Đất Vàng
-                </span>
-              </Link>
-            </Reveal>
-            <div className="signature-about-aside">
-              <DepthScene>
-                <div className="signature-about-photo image-wrap">
-                  <Image
-                    src={photos.architecture}
-                    alt="Không gian mở kết nối ánh sáng và con người — hình ảnh minh họa"
-                    fill
-                    sizes="(max-width:768px) 100vw, 35vw"
-                  />
-                  <span aria-hidden="true">DVG / 2018</span>
-                </div>
-              </DepthScene>
-              <p>
-                Đất Vàng Group hoạt động trong lĩnh vực quản lý, vận hành và
-                khai thác bất động sản tại Đà Nẵng.
-              </p>
-              <p>
-                Chúng tôi bắt đầu từ việc lắng nghe, chăm chút từng chi tiết và
-                đồng hành cùng chủ sở hữu, khách hàng, đối tác trong những kế
-                hoạch dài lâu.
-              </p>
-              <div className="signature-principles">
-                <span>Minh bạch</span>
-                <span>Tận tâm</span>
-                <span>Đồng hành</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <h1 className="sr-only">
+        Đất Vàng Group — Mua bán, cho thuê và ký gửi bất động sản
+      </h1>
+      <HomeProjects group="development" />
+      <HomeProjects group="operation" />
       <SignatureFields />
-      <section id="khong-gian" className="signature-projects">
-        <div className="container">
-          <div className="signature-section-top">
-            <span className="signature-kicker">03 / KHÔNG GIAN & DỰ ÁN</span>
-            <Link className="signature-link" href="/du-an">
-              Xem danh mục
-              <ArrowUpRight size={18} />
-            </Link>
-          </div>
-          <Reveal>
-            <h2 className="signature-display">
-              Một góc nhìn mới.
-              <br />
-              <em>Một giá trị khác.</em>
-            </h2>
-          </Reveal>
-          <p className="signature-demo-note">
-            Danh mục và hình ảnh minh họa định hướng hoạt động, chưa xác nhận
-            vai trò triển khai thực tế của doanh nghiệp.
-          </p>
-          <div className="signature-project-grid">
-            {projects.slice(0, 2).map((project, index) => (
-              <Reveal
-                key={project.id}
-                className={`signature-project signature-project-${index + 1}`}
-              >
-                <article>
-                  <Link
-                    href={`/du-an/${project.slug}`}
-                    className="signature-project-image image-wrap"
-                  >
-                    <Image
-                      src={project.image}
-                      alt={`Kiến trúc minh họa ${project.name}`}
-                      fill
-                      sizes="(max-width:768px) 100vw, 55vw"
-                    />
-                    <span className="signature-project-index">
-                      0{index + 1}
-                    </span>
-                    <span className="signature-project-action">
-                      Khám phá
-                      <ArrowUpRight size={22} />
-                    </span>
-                  </Link>
-                  <div className="signature-project-caption">
-                    <div>
-                      <span>{project.location} · Dự án minh họa</span>
-                      <h3>
-                        <Link href={`/du-an/${project.slug}`}>
-                          {project.name}
-                        </Link>
-                      </h3>
-                    </div>
-                    <ArrowUpRight size={24} />
-                  </div>
-                </article>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
       <section className="signature-journal">
         <div className="container">
           <div className="signature-section-top">

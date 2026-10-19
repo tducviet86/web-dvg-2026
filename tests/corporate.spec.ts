@@ -16,7 +16,7 @@ test("corporate homepage uses company logo and image banner without sales UI", a
       .getByRole("link", { name: "Cho thuê", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Thấu hiểu để đồng hành." }),
+    page.getByRole("heading", { name: /Bất động sản.*Giải pháp cho bạn/ }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Liên hệ hợp tác", exact: true }),
@@ -88,28 +88,26 @@ test("homepage fields support keyboard exploration and relevant destination link
 }) => {
   await page.goto("/");
   const tabs = page.getByRole("tablist", { name: "Lĩnh vực hoạt động" });
-  await tabs.getByRole("tab", { name: /Quản lý bất động sản/ }).click();
+  await tabs.getByRole("tab", { name: /Mua bán bất động sản/ }).click();
   await page.keyboard.press("ArrowDown");
   await expect(
-    tabs.getByRole("tab", { name: /Khai thác & vận hành/ }),
+    tabs.getByRole("tab", { name: /Cho thuê bất động sản/ }),
   ).toBeFocused();
-  await expect(page.getByRole("tabpanel")).toContainText(
-    "đặc điểm từng bất động sản",
-  );
+  await expect(page.getByRole("tabpanel")).toContainText("Hỗ trợ khách thuê");
   await expect(page.getByRole("tabpanel").getByRole("link")).toHaveAttribute(
     "href",
-    "/dich-vu/khai-thac-cho-thue",
+    "/lien-he?intent=thue",
   );
   await page.keyboard.press("End");
   await expect(
-    tabs.getByRole("tab", { name: /Tư vấn & hợp tác/ }),
+    tabs.getByRole("tab", { name: /Ký gửi bất động sản/ }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tabpanel").getByRole("link")).toHaveAttribute(
     "href",
-    "/hop-tac-chu-so-huu",
+    "/lien-he?intent=ky-gui",
   );
   await page.keyboard.press("Home");
   await expect(
-    tabs.getByRole("tab", { name: /Quản lý bất động sản/ }),
+    tabs.getByRole("tab", { name: /Mua bán bất động sản/ }),
   ).toBeFocused();
 });

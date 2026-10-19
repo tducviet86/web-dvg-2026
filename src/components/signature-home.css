@@ -784,3 +784,165 @@
 .signature-home .signature-connect-bottom p {
   color: #435247;
 }
+/* Project collections: the two business portfolios use the same clear card structure. */
+.home-projects {
+  padding: 75px 0 80px;
+}
+.home-projects-operation {
+  background: #e9e7df;
+  border-top: 1px solid #123d3220;
+}
+.home-project-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 60px;
+  margin-bottom: 38px;
+}
+.home-project-heading h2 {
+  font-size: clamp(35px, 4vw, 58px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  margin: 18px 0 0;
+}
+.home-project-heading h2 em {
+  color: #76613c;
+}
+.home-project-heading > p {
+  max-width: 350px;
+  font-size: 13px;
+  line-height: 1.9;
+  margin: 0;
+  color: #526356;
+}
+.home-project-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 38px 26px;
+}
+.home-project-photo {
+  aspect-ratio: 1.2;
+  display: block;
+  isolation: isolate;
+  background: #d8ddd4;
+}
+.home-project-photo img {
+  object-fit: cover;
+  transition: transform 0.65s;
+}
+.home-project-photo:hover img {
+  transform: scale(1.04);
+}
+.home-project-number {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  border: 1px solid #ffffff80;
+  background: #10382ecc;
+  color: #fff;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.home-project-open {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  background: #f4f2ec;
+  color: #123d32;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+.home-project-photo:hover .home-project-open {
+  transform: rotate(45deg);
+}
+.home-project-info {
+  padding: 20px 0 0;
+}
+.home-project-info > span {
+  font-size: 11px;
+  color: #526356;
+}
+.home-project-info h3 {
+  font-size: 25px;
+  font-weight: 400;
+  margin: 10px 0 18px;
+  line-height: 1.3;
+}
+.home-project-info > div {
+  border-top: 1px solid #123d3226;
+  padding-top: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.home-project-info > div a {
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.home-project-info > div a:first-child {
+  color: #526356;
+}
+.home-project-info a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.signature-field-audience {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  color: #e4ca8e;
+  font-weight: 400;
+  margin-bottom: 15px;
+}
+.signature-field-panel strong {
+  letter-spacing: 0;
+  font-size: 12px;
+}
+.signature-field-panel {
+  min-height: 200px;
+}
+@media (max-width: 1000px) {
+  .home-project-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-project-heading {
+    gap: 30px;
+  }
+  .home-project-heading > p {
+    max-width: 280px;
+  }
+}
+@media (max-width: 600px) {
+  .home-projects {
+    padding: 45px 0 50px;
+  }
+  .home-project-heading {
+    display: block;
+    margin-bottom: 28px;
+  }
+  .home-project-heading > p {
+    margin-top: 20px;
+    max-width: none;
+  }
+  .home-project-cards {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .home-project-photo {
+    aspect-ratio: 1.25;
+  }
+  .home-project-info h3 {
+    font-size: 24px;
+  }
+  .home-project-info > div a {
+    font-size: 11px;
+  }
+}
