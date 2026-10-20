@@ -1,6 +1,7 @@
 import Link from "@/components/page-navigation";
 import { ArrowUpRight } from "lucide-react";
 import { Logo } from "./header";
+import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { Newsletter } from "../interactive";
 export function SiteFooter() {
   return (
@@ -17,7 +18,9 @@ export function SiteFooter() {
             <small>
               Đà Nẵng, Việt Nam
               <br />
-              Địa chỉ và kênh liên hệ chính thức đang cập nhật.
+              <a href={telephoneHref() || undefined}>
+                Hotline: {companyHotline}
+              </a>
             </small>
           </div>
           <div>

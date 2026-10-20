@@ -1,57 +1,48 @@
+import { homeProjects, projectStories } from "./home-projects";
 import type { Project, Property, Post, Service, Lead } from "@/types";
 export const photos = {
   hero: "/images/heroooo.png",
-  building:
-    "/images/img1.png",
+  building: "/images/img1.png",
   living:
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=85",
-  interior:
-    "/images/nnna.png",
+  interior: "/images/nnna.png",
   pool: "/images/img2.png",
   bedroom:
     "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=85",
-  architecture:
-    "/images/dvg-phacthao.png",
+  architecture: "/images/dvg-phacthao.png",
 };
-const names = [
-  "Sun Ponte Residence",
-  "Sun Panoma",
-  "Monarchy Apartments",
-  "Riverside Residence",
-  "Coastal Living Residence",
-  "Urban Garden Apartments",
+export const projects: Project[] = [...homeProjects]
+  .sort(
+    (a, b) =>
+      Number(a.projectId.split("-")[1]) - Number(b.projectId.split("-")[1]),
+  )
+  .map((p) => ({
+    id: p.projectId,
+    slug: p.slug,
+    name: p.name,
+    location: p.location,
+    type: "Căn hộ & bất động sản",
+    status: p.group === "development" ? "Dự án triển khai" : "Đang khai thác",
+    image: `/images/projects/${p.id}.jpg`,
+    description: projectStories[p.id].intro,
+    createdAt: "2026-10-19",
+  }));
+const operationProjects = projects.filter((p) =>
+  homeProjects.some((h) => h.projectId === p.id && h.group === "operation"),
+);
+const names = operationProjects.map((p) => p.name);
+const slugs = operationProjects.map((p) => p.slug);
+const roomPhotos = [
+  photos.living,
+  "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1400&q=85",
+  photos.bedroom,
 ];
-const slugs = [
-  "sun-ponte-residence",
-  "sun-panoma",
-  "monarchy-apartments",
-  "riverside-residence",
-  "coastal-living-residence",
-  "urban-garden-apartments",
-];
-export const projects: Project[] = names.map((name, i) => ({
-  id: `project-${i + 1}`,
-  slug: slugs[i],
-  name,
-  location: ["Hải Châu, Đà Nẵng", "Sơn Trà, Đà Nẵng", "Ngũ Hành Sơn, Đà Nẵng"][
-    i % 3
-  ],
-  type: i % 2 ? "Căn hộ cao cấp" : "Khu căn hộ ven sông",
-  status: i % 3 === 0 ? "Sắp ra mắt" : "Đang khai thác",
-  image: [photos.building, photos.pool, photos.architecture][i % 3],
-  description: [
-    `Một góc nhìn mới về cuộc sống bên sông. ${name} kết nối không gian mở, ánh sáng tự nhiên và nhịp sống đô thị trong một tổng thể kiến trúc tinh tế.`,
-    `Tận hưởng sự cân bằng giữa nhịp sống thành phố và những khoảng lặng riêng tư tại ${name}. Không gian được giới thiệu theo định hướng sống xanh, tiện nghi và linh hoạt.`,
-    `Cảm hứng miền duyên hải hiện diện trong từng đường nét của ${name}. Các căn hộ mẫu hướng đến trải nghiệm nghỉ ngơi thư thái và kết nối thuận tiện.`,
-  ][i % 3],
-  createdAt: "2026-09-01",
-}));
 export const properties: Property[] = Array.from({ length: 24 }, (_, i) => ({
   id: `property-${i + 1}`,
-  slug: `can-ho-${slugs[i % 6]}-demo-${String(i + 1).padStart(2, "0")}`,
+  slug: `can-ho-${slugs[i % operationProjects.length]}-demo-${String(i + 1).padStart(2, "0")}`,
   name: `${["Studio đón nắng", "Căn hộ 1 phòng ngủ thanh lịch", "Căn hộ 2 phòng ngủ view sông", "Căn hộ dịch vụ panorama"][i % 4]} · ${String(i + 1).padStart(2, "0")}`,
-  projectId: projects[i % 6].id,
-  location: projects[i % 6].location,
+  projectId: operationProjects[i % operationProjects.length].id,
+  location: operationProjects[i % operationProjects.length].location,
   type: ["Studio", "1 phòng ngủ", "2 phòng ngủ", "Căn hộ dịch vụ"][i % 4],
   price: 7.5 + (i % 9) * 2,
   area: 35 + (i % 7) * 12,
@@ -60,8 +51,8 @@ export const properties: Property[] = Array.from({ length: 24 }, (_, i) => ({
   floor: 5 + i,
   furniture: i % 5 === 0 ? "Nội thất cơ bản" : "Đầy đủ nội thất",
   status: i % 5 === 0 ? "Đã cho thuê" : "Còn trống",
-  image: [photos.living, photos.interior, photos.bedroom, photos.hero][i % 4],
-  description: `Không gian ${35 + (i % 7) * 12} m² được bố trí thoáng đãng, với khu sinh hoạt chung ngập ánh sáng và khu bếp tiện dụng. Căn hộ mẫu tại ${names[i % 6]} phù hợp cho người tìm kiếm một nơi ở chỉn chu, dễ dàng kết nối với nhịp sống Đà Nẵng. Giá minh họa chưa bao gồm phí quản lý và tiện ích.`,
+  image: roomPhotos[i % roomPhotos.length],
+  description: `Không gian ${35 + (i % 7) * 12} m² được bố trí thoáng đãng, với khu sinh hoạt chung ngập ánh sáng và khu bếp tiện dụng. Căn hộ mẫu tại ${names[i % operationProjects.length]} phù hợp cho người tìm kiếm một nơi ở chỉn chu, dễ dàng kết nối với nhịp sống Đà Nẵng. Giá minh họa chưa bao gồm phí quản lý và tiện ích.`,
   updatedAt: "2026-10-10",
 }));
 const titles = [

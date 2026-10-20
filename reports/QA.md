@@ -103,3 +103,15 @@ Xem `REVIEW-2026-10-18.md` để biết kết luận sẵn sàng vận hành và
 - Sửa select chưa register và khôi phục textarea; nhu cầu bắt buộc cho form kinh doanh, form ứng tuyển vẫn dùng kinh nghiệm/vị trí. Nhu cầu được ghép vào message để admin hiện đủ nội dung. Vẫn chỉ lưu localStorage, chưa gửi máy chủ.
 - Build, TypeScript, lint đạt. 9 Playwright checks đạt: thứ tự và số dự án; form/prefill/validation/persistence; banner/autoplay; keyboard tabs; navigation; WCAG AA; mobile drawer; ảnh và responsive 360–1920px; 6 luồng form và newsletter.
 - Đã xem trực quan dự án desktop 1440px và form mobile 390px.
+
+## 2026-10-20 — Luồng triển khai / vận hành và chi tiết phòng
+
+- Đồng bộ danh mục công khai 8 dự án; menu Dự án có Triển khai và Vận hành. Thẻ homepage mở đúng trang dự án.
+- Trang triển khai có giới thiệu riêng, điểm nổi bật, loại hình sản phẩm, vị trí, liên kết nguồn và gọi tư vấn.
+- Trang vận hành có 3 mục theo URL: mua bán, cho thuê, ký gửi. Danh sách thuê liên kết đúng dự án. Chưa có dữ liệu căn bán nên hiển thị trạng thái chưa công bố và hướng dẫn trao đổi, không tạo giá hoặc tin bán giả.
+- Trang phòng thay form bằng gọi trực tiếp, bổ sung gallery, thông số, nội thất, chi phí/điều kiện cần trao đổi, dự án liên quan và căn cùng dự án; có thanh gọi cố định trên mobile. Giá, trạng thái và ảnh phòng vẫn là dữ liệu mẫu có nhãn.
+- Hotline được người dùng xác nhận: 0911 29 69 79; href tel:0911296979. Kiểm tra href, không thực hiện cuộc gọi.
+- 24 căn hộ mẫu được phân vào 5 dự án vận hành; bộ lọc lấy danh mục từ các căn đã có dữ liệu.
+- Build, lint và TypeScript đạt. Vòng kiểm tra đầu: 15/16 đạt, một assertion dùng địa danh seed cũ. Đã cập nhật theo danh mục mới và sửa gallery mobile bị cố định chiều cao; chạy lại các kiểm tra liên quan.
+- Đã xem ảnh desktop của Capital Square, Monarchy, phòng Sun Panoma và mobile 390px. Các liên kết sitemap trả 200, đường dẫn không tồn tại 404. Form liên hệ chung/ứng tuyển/dịch vụ và admin CRUD vẫn hoạt động.
+- Kết quả kiểm tra cuối: 5/5 kiểm tra liên quan đạt (liên kết dữ liệu/bộ lọc, luồng dự án–phòng–ký gửi, hotline, responsive 360/768/1440 và WCAG AA). Gallery mobile không còn đè chú thích, nút gọi cố định hiển thị đúng.

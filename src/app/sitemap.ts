@@ -6,6 +6,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     "",
     "du-an",
+    "du-an/trien-khai",
+    "du-an/van-hanh",
     "cho-thue",
     "blog",
     "dich-vu",

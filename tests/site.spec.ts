@@ -125,8 +125,6 @@ test("all lead forms validate and persist; newsletter", async ({ page }) => {
     "/lien-he",
     "/hop-tac-chu-so-huu",
     "/tuyen-dung",
-    "/du-an/sun-ponte-residence",
-    "/cho-thue/can-ho-sun-panoma-demo-02",
     "/dich-vu/quan-ly-bat-dong-san",
   ]) {
     await page.goto(route);
@@ -150,7 +148,7 @@ test("all lead forms validate and persist; newsletter", async ({ page }) => {
   const count = await page.evaluate(
     () => JSON.parse(localStorage.getItem("dvg:leads") || "[]").length,
   );
-  expect(count).toBe(26);
+  expect(count).toBe(24);
   await page.locator("#newsletter").fill("newsletter@example.com");
   await page.getByRole("button", { name: "Đăng ký bản tin" }).click();
   expect(

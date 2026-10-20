@@ -4,11 +4,16 @@ import { projects, properties, posts, services } from "@/data";
 import { staticPages } from "@/lib/pages";
 import {
   ListingPage,
-  DetailPage,
   EditorialPage,
   ServiceDetail,
   ArticlePage,
 } from "@/components/public-pages";
+import { homeProjects, projectStories } from "@/data/home-projects";
+import {
+  ProjectDirectory,
+  PortfolioDetail,
+} from "@/components/portfolio-pages";
+import { RoomDetail } from "@/components/room-detail";
 import { siteUrl } from "@/lib/utils";
 type Props = {
   params: Promise<{ slug: string[] }>;
@@ -16,6 +21,23 @@ type Props = {
 };
 function resolve(slug: string[]) {
   const path = slug.join("/");
+  if (path === "du-an/trien-khai" || path === "du-an/van-hanh")
+    return {
+      title: path.endsWith("trien-khai")
+        ? "Dự án triển khai"
+        : "Dự án vận hành",
+      description: "Danh mục dự án và dịch vụ bất động sản của Đất Vàng Group.",
+    };
+  const portfolio =
+    slug.length === 2 && slug[0] === "du-an"
+      ? homeProjects.find((p) => p.slug === slug[1])
+      : undefined;
+  if (portfolio)
+    return {
+      title: portfolio.name,
+      description: projectStories[portfolio.id].intro,
+      image: `/images/projects/${portfolio.id}.jpg`,
+    };
   if (staticPages[path])
     return {
       title: staticPages[path].title,
@@ -88,9 +110,14 @@ export default async function Page({ params, searchParams }: Props) {
   if (!info) notFound();
   const path = slug.join("/");
   let content: React.ReactNode;
-  if (staticPages[path]) content = <EditorialPage slug={path} />;
-  else if (path === "du-an")
-    content = <ListingPage kind="projects" filters={filters} />;
+  if (path === "du-an/trien-khai" || path === "du-an/van-hanh")
+    content = (
+      <ProjectDirectory
+        group={path.endsWith("trien-khai") ? "development" : "operation"}
+      />
+    );
+  else if (staticPages[path]) content = <EditorialPage slug={path} />;
+  else if (path === "du-an") content = <ProjectDirectory />;
   else if (path === "cho-thue")
     content = <ListingPage kind="rentals" filters={filters} />;
   else if (path === "blog")
@@ -101,18 +128,13 @@ export default async function Page({ params, searchParams }: Props) {
     content = <ListingPage kind="blog" filters={{ category: slug[2] }} />;
   else if (slug[0] === "du-an")
     content = (
-      <DetailPage
-        kind="project"
-        item={projects.find((p) => p.slug === slug[1])!}
+      <PortfolioDetail
+        project={homeProjects.find((p) => p.slug === slug[1])!}
+        mode={filters["nhu-cau"]}
       />
     );
   else if (slug[0] === "cho-thue")
-    content = (
-      <DetailPage
-        kind="property"
-        item={properties.find((p) => p.slug === slug[1])!}
-      />
-    );
+    content = <RoomDetail room={properties.find((p) => p.slug === slug[1])!} />;
   else if (slug[0] === "dich-vu")
     content = (
       <ServiceDetail service={services.find((p) => p.slug === slug[1])!} />
@@ -152,6 +174,8 @@ export const dynamicParams = false;
 export function generateStaticParams() {
   return [
     "du-an",
+    "du-an/trien-khai",
+    "du-an/van-hanh",
     "cho-thue",
     "blog",
     "dich-vu",

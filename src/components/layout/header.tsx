@@ -22,8 +22,8 @@ const nav = [
     href: "/du-an",
     sub: [
       ["Tất cả dự án", "/du-an"],
-      ["Dự án nổi bật", "/du-an?status=noi-bat"],
-      ["Đang khai thác", "/du-an?status=dang-khai-thac"],
+      ["Dự án triển khai", "/du-an/trien-khai"],
+      ["Dự án vận hành", "/du-an/van-hanh"],
     ],
   },
   {

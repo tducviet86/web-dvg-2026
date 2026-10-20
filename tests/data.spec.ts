@@ -18,7 +18,7 @@ test("deterministic data relationships and individual filters", () => {
     testimonials.length,
     leads.length,
     adminUsers.length,
-  ]).toEqual([6, 24, 12, 6, 8, 20, 5]);
+  ]).toEqual([8, 24, 12, 6, 8, 20, 5]);
   for (const property of properties)
     expect(projects.some((p) => p.id === property.projectId)).toBeTruthy();
   for (const list of [projects, properties, posts])
@@ -28,8 +28,8 @@ test("deterministic data relationships and individual filters", () => {
     (p: (typeof properties)[number]) => boolean,
   ][] = [
     [
-      { location: "Sơn Trà, Đà Nẵng" },
-      (p) => p.location === "Sơn Trà, Đà Nẵng",
+      { location: "Trần Hưng Đạo · Đà Nẵng" },
+      (p) => p.location === "Trần Hưng Đạo · Đà Nẵng",
     ],
     [{ project: "project-1" }, (p) => p.projectId === "project-1"],
     [{ type: "Studio" }, (p) => p.type === "Studio"],

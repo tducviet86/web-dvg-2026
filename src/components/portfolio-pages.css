@@ -1,0 +1,886 @@
+.portfolio-page {
+  padding-top: 135px;
+  background: #f7f6f1;
+  color: #153d32;
+  padding-bottom: 75px;
+}
+.portfolio-page em {
+  font-weight: 400;
+  color: #80683d;
+}
+.portfolio-intro {
+  padding: 30px 0 0;
+}
+.portfolio-intro h1 {
+  font-size: clamp(42px, 5vw, 72px);
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  margin: 22px 0;
+}
+.portfolio-intro > p {
+  max-width: 590px;
+  line-height: 1.9;
+  font-size: 14px;
+}
+.portfolio-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px solid #153d3226;
+  margin-top: 35px;
+  padding-bottom: 24px;
+}
+.portfolio-tabs a {
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  border: 1px solid #c5cfc3;
+  padding: 14px 22px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.portfolio-tabs a[aria-current="page"] {
+  background: #153d32;
+  color: #fff;
+  border-color: #153d32;
+}
+.portfolio-directory .home-projects {
+  padding-top: 55px;
+}
+.home-operation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+.home-operation-actions a {
+  flex: 1;
+  text-align: center;
+  border: 1px solid #c5cbbf;
+  padding: 11px 6px;
+  font-size: 12px;
+  background: #f4f2ec;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.home-operation-actions a:hover {
+  background: #153d32;
+  color: white;
+  text-decoration: none;
+}
+.portfolio-detail-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 50px;
+  padding: 28px 0 35px;
+}
+.portfolio-detail-heading h1 {
+  font-size: clamp(38px, 4.6vw, 66px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin: 20px 0;
+}
+.portfolio-detail-heading > p {
+  max-width: 330px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.portfolio-cover {
+  position: relative;
+  height: clamp(350px, 42vw, 590px);
+  margin: 0;
+  overflow: hidden;
+  background: #d9e0d6;
+}
+.portfolio-cover > img {
+  object-fit: cover;
+}
+.portfolio-cover figcaption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  background: linear-gradient(transparent, #08251def);
+  padding: 60px 24px 22px;
+  color: white;
+  font-size: 11px;
+}
+.portfolio-cover figcaption a {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.portfolio-anchor-nav {
+  display: flex;
+  border-bottom: 1px solid #153d3230;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 0;
+  font-size: 12px;
+}
+.portfolio-page section[id] {
+  scroll-margin-top: 125px;
+}
+.portfolio-overview,
+.portfolio-products {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 10%;
+  padding: 70px 0 45px;
+}
+.portfolio-page h2 {
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  margin: 18px 0 22px;
+}
+.portfolio-overview p {
+  font-size: 14px;
+  line-height: 2;
+  margin: 0 0 20px;
+}
+.portfolio-highlights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid #153d3226;
+  border-bottom: 1px solid #153d3226;
+  margin-bottom: 10px;
+}
+.portfolio-highlights article {
+  padding: 28px 28px 28px 0;
+}
+.portfolio-highlights article + article {
+  border-left: 1px solid #153d3226;
+  padding-left: 28px;
+}
+.portfolio-highlights article > span {
+  font-size: 12px;
+  color: #80683d;
+}
+.portfolio-highlights h3 {
+  font-size: 25px;
+  font-weight: 400;
+  margin: 20px 0 12px;
+}
+.portfolio-highlights p {
+  font-size: 13px;
+  line-height: 1.9;
+  margin: 0;
+}
+.portfolio-products ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.portfolio-products li {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #153d3230;
+  padding: 25px 0;
+  font-size: 18px;
+}
+.portfolio-products li > span {
+  font-size: 11px;
+  color: #80683d;
+}
+.portfolio-products li > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.portfolio-location {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  background: #e9ecdf;
+  padding: 35px;
+  margin: 25px 0 60px;
+}
+.portfolio-location > svg {
+  flex-shrink: 0;
+}
+.portfolio-location > div {
+  flex: 1;
+}
+.portfolio-location h2 {
+  font-size: 28px;
+}
+.portfolio-location p {
+  max-width: 580px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.portfolio-location > a {
+  flex-shrink: 0;
+}
+.portfolio-direct {
+  background: #153d32;
+  color: #fff;
+  padding: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 45px;
+}
+.portfolio-direct p {
+  color: #c5d2c9;
+  font-size: 14px;
+}
+.portfolio-direct .button {
+  background: #e1c784;
+  color: #153d32;
+  border-color: #e1c784;
+}
+.portfolio-direct .call-unconfigured {
+  color: white;
+}
+.portfolio-related {
+  padding-top: 65px;
+}
+.portfolio-related > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.portfolio-related > div:last-child > a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid #153d3230;
+  padding-top: 20px;
+  font-size: 14px;
+}
+.portfolio-related img {
+  width: 85px;
+  height: 75px;
+  object-fit: cover;
+}
+.portfolio-related svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.operation-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10%;
+  align-items: center;
+  padding: 55px 0 30px;
+}
+.operation-overview > p {
+  font-size: 14px;
+  line-height: 2;
+}
+.operation-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin: 15px 0 40px;
+}
+.operation-modes a {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 22px;
+  border: 1px solid #b7c5b7;
+  background: #fff;
+  font-size: 16px;
+}
+.operation-modes a > svg:last-child {
+  margin-left: auto;
+}
+.operation-modes a[aria-current="page"] {
+  background: #153d32;
+  color: white;
+  border-color: #153d32;
+}
+.operation-content {
+  padding: 0 0 30px;
+}
+.operation-content-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+.operation-content-heading h2 {
+  margin: 12px 0 0;
+  font-size: 30px;
+}
+.operation-content-heading > span {
+  font-size: 12px;
+  color: #536251;
+  white-space: nowrap;
+}
+.portfolio-data-note {
+  background: #edece4;
+  border-left: 3px solid #aa925c;
+  padding: 14px 18px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 30px;
+  color: #536251;
+}
+.operation-service {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 8%;
+  padding: 35px 0 15px;
+}
+.operation-service p {
+  font-size: 14px;
+  line-height: 1.9;
+}
+.operation-service h2 {
+  font-size: 42px;
+}
+.inventory-empty {
+  display: flex;
+  gap: 15px;
+  background: #eeeee5;
+  padding: 22px;
+  margin: 28px 0;
+}
+.inventory-empty > svg {
+  flex-shrink: 0;
+}
+.inventory-empty strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.inventory-empty p {
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+.service-steps {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.service-steps li {
+  display: flex;
+  gap: 25px;
+  border-top: 1px solid #153d3226;
+  padding: 25px 0;
+}
+.service-steps li > span {
+  font-size: 11px;
+  color: #80683d;
+  margin-top: 5px;
+}
+.service-steps h3 {
+  font-size: 24px;
+  font-weight: 400;
+  margin: 0 0 12px;
+}
+.service-steps p {
+  font-size: 13px;
+  margin: 0;
+}
+.consign-checklist {
+  padding: 20px 0;
+  margin: 10px 0 20px;
+}
+.consign-checklist strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.consign-checklist ul {
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 2.1;
+}
+.call-button {
+  min-height: 58px;
+  gap: 14px;
+  justify-content: center;
+  text-align: left;
+  line-height: 1.4;
+}
+.call-button small {
+  display: block;
+  font-size: 12px;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+}
+.call-unconfigured {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 18px 0;
+  font-size: 13px;
+}
+.call-unconfigured .text-link {
+  color: inherit;
+}
+.room-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  padding: 25px 0 30px;
+}
+.room-heading h1 {
+  font-size: clamp(30px, 3.5vw, 48px);
+  line-height: 1.2;
+  font-weight: 400;
+  margin: 18px 0;
+}
+.room-save {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.room-save .favorite {
+  position: static;
+  flex-shrink: 0;
+  border: 1px solid #c5cfc3;
+}
+.room-page .gallery {
+  height: auto;
+  grid-template-rows: 240px 240px;
+  margin-bottom: 0;
+}
+.room-image-note {
+  font-size: 11px;
+  color: #586650;
+  margin: 15px 0 30px;
+}
+.room-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 65px;
+  align-items: start;
+}
+.room-facts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid #153d3226;
+  border-bottom: 1px solid #153d3226;
+}
+.room-facts > div {
+  padding: 25px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.room-facts strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.room-facts span {
+  font-size: 11px;
+  color: #536251;
+}
+.room-facts svg {
+  margin-bottom: 5px;
+  color: #80683d;
+}
+.room-anchor-nav {
+  display: flex;
+  gap: 25px;
+  border-bottom: 1px solid #153d3226;
+  padding: 20px 0;
+  font-size: 12px;
+}
+.room-description > section {
+  padding: 40px 0 20px;
+}
+.room-description > section > p {
+  font-size: 14px;
+  line-height: 2;
+}
+.room-space-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-top: 28px;
+}
+.room-space-grid > div {
+  padding: 25px;
+  border: 1px solid #d5dccc;
+  background: #fff;
+}
+.room-space-grid h3 {
+  font-weight: 400;
+  font-size: 23px;
+  margin: 18px 0 12px;
+}
+.room-space-grid p {
+  font-size: 13px;
+  line-height: 1.9;
+  margin: 0;
+}
+.room-spec-table {
+  margin: 25px 0 0;
+}
+.room-spec-table > div {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  border-bottom: 1px solid #153d321a;
+  gap: 30px;
+  padding: 16px 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.room-spec-table dt {
+  color: #5c6957;
+}
+.room-spec-table dd {
+  margin: 0;
+  font-weight: 500;
+  text-align: right;
+}
+.room-check-note {
+  display: flex;
+  gap: 15px;
+  background: #e9ecdf;
+  padding: 18px;
+  margin-top: 25px;
+}
+.room-check-note svg {
+  flex-shrink: 0;
+}
+.room-check-note p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.room-contact-panel {
+  position: sticky;
+  top: 125px;
+  background: #fff;
+  border: 1px solid #ced8ca;
+  padding: 28px;
+}
+.room-price-label {
+  font-size: 11px !important;
+  margin: 25px 0 8px;
+}
+.room-price {
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+.room-price span {
+  font-size: 14px;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.room-availability {
+  display: inline-block;
+  font-size: 10px;
+  padding: 7px 10px;
+  background: #e4eee3;
+  color: #255f3c;
+  margin: 15px 0 20px;
+}
+.room-availability.unavailable {
+  background: #f2e9d7;
+  color: #79521d;
+}
+.room-contact-panel h2 {
+  font-size: 27px;
+  margin: 0 0 15px;
+}
+.room-contact-panel > p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.room-contact-panel .call-button {
+  width: 100%;
+  margin-top: 10px;
+}
+.room-call-context {
+  border-top: 1px solid #dce1d8;
+  border-bottom: 1px solid #dce1d8;
+  padding: 18px 0;
+  margin: 25px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+}
+.room-call-context strong {
+  font-weight: 500;
+  line-height: 1.8;
+}
+.room-contact-panel > .text-link {
+  font-size: 12px;
+}
+.room-project-block {
+  border-top: 1px solid #ced8ca;
+  margin-top: 25px;
+}
+.room-related {
+  padding-top: 65px;
+}
+.room-mobile-call {
+  display: none;
+}
+.portfolio-page a:focus-visible {
+  outline: 2px solid #9b7c38;
+  outline-offset: 4px;
+}
+@media (max-width: 1100px) {
+  .room-layout {
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 35px;
+  }
+  .portfolio-detail-heading > p {
+    max-width: 290px;
+  }
+  .portfolio-related > div:last-child {
+    grid-template-columns: 1fr 1fr;
+  }
+  .room-anchor-nav {
+    gap: 15px;
+  }
+  .room-contact-panel {
+    padding: 22px;
+  }
+}
+@media (max-width: 800px) {
+  .portfolio-page {
+    padding-top: 105px;
+  }
+  .portfolio-detail-heading {
+    display: block;
+    padding: 20px 0 25px;
+  }
+  .portfolio-detail-heading > p {
+    max-width: none;
+  }
+  .portfolio-cover {
+    height: 400px;
+  }
+  .portfolio-overview,
+  .portfolio-products,
+  .operation-overview,
+  .operation-service {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .portfolio-overview,
+  .portfolio-products {
+    padding-top: 40px;
+  }
+  .portfolio-highlights {
+    grid-template-columns: 1fr;
+  }
+  .portfolio-highlights article + article {
+    border-left: 0;
+    border-top: 1px solid #153d3226;
+    padding-left: 0;
+  }
+  .portfolio-location,
+  .portfolio-direct {
+    flex-wrap: wrap;
+    padding: 25px;
+  }
+  .portfolio-location {
+    margin: 20px 0 35px;
+  }
+  .portfolio-location > div {
+    min-width: 200px;
+  }
+  .portfolio-related > div:last-child {
+    grid-template-columns: 1fr;
+  }
+  .operation-modes {
+    gap: 8px;
+  }
+  .operation-modes a {
+    padding: 17px 12px;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .operation-modes a > svg:first-child {
+    display: none;
+  }
+  .operation-service h2 {
+    font-size: 35px;
+  }
+  .room-layout {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+  .room-contact-panel {
+    position: static;
+  }
+  .room-page .gallery {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 300px 140px;
+  }
+  .room-page .gallery-0 {
+    grid-row: auto;
+    grid-column: 1 / -1;
+  }
+  .room-page {
+    padding-bottom: 150px;
+  }
+  .room-mobile-call {
+    display: flex;
+    position: fixed;
+    z-index: 35;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #d1d9cb;
+    padding: 12px 20px max(12px, env(safe-area-inset-bottom));
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    box-shadow: 0 -5px 20px #153d3208;
+  }
+  .room-mobile-call > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 15px;
+  }
+  .room-mobile-call > div:first-child span {
+    font-size: 10px;
+  }
+  .room-mobile-call .call-button {
+    min-height: 48px;
+    font-size: 12px;
+    padding: 10px 15px;
+  }
+  .room-mobile-call .call-button small {
+    font-size: 10px;
+  }
+  .room-mobile-call .call-button > svg:last-child {
+    display: none;
+  }
+  .room-mobile-call .call-unconfigured {
+    font-size: 10px;
+    padding: 0;
+    gap: 8px;
+  }
+  .room-mobile-call .call-unconfigured .text-link {
+    font-size: 11px;
+  }
+  .room-heading {
+    align-items: start;
+  }
+  .room-save {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .portfolio-anchor-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    padding: 20px 0;
+  }
+  .operation-content-heading {
+    align-items: start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .operation-content-heading h2 {
+    font-size: 28px;
+  }
+  .portfolio-intro h1 {
+    font-size: 44px;
+  }
+  .portfolio-tabs a {
+    padding: 12px 15px;
+    gap: 18px;
+  }
+}
+@media (max-width: 480px) {
+  .portfolio-tabs {
+    gap: 8px;
+  }
+  .portfolio-tabs a {
+    padding: 12px;
+    font-size: 12px;
+    gap: 10px;
+  }
+  .portfolio-tabs a svg {
+    display: none;
+  }
+  .portfolio-cover {
+    height: 310px;
+  }
+  .portfolio-cover figcaption {
+    font-size: 9px;
+    padding: 45px 15px 15px;
+    gap: 10px;
+  }
+  .portfolio-detail-heading h1 {
+    font-size: 38px;
+  }
+  .portfolio-direct h2 {
+    font-size: 32px;
+  }
+  .portfolio-overview h2,
+  .portfolio-products h2 {
+    font-size: 33px;
+  }
+  .portfolio-products li {
+    font-size: 16px;
+    gap: 15px;
+  }
+  .portfolio-location h2 {
+    font-size: 25px;
+  }
+  .operation-modes a {
+    font-size: 12px;
+    padding: 16px 10px;
+  }
+  .operation-modes a > svg {
+    width: 16px;
+  }
+  .room-heading {
+    gap: 15px;
+  }
+  .room-heading h1 {
+    font-size: 30px;
+  }
+  .room-heading .signature-kicker {
+    font-size: 9px;
+  }
+  .room-page .gallery {
+    grid-template-rows: 240px 115px;
+  }
+  .room-facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .room-facts > div {
+    padding: 20px 12px;
+  }
+  .room-anchor-nav {
+    gap: 12px;
+    font-size: 10px;
+  }
+  .room-space-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  .room-spec-table > div {
+    font-size: 12px;
+    gap: 20px;
+  }
+  .room-related .operation-content-heading {
+    display: block;
+  }
+  .room-related .operation-content-heading > a {
+    margin-top: 18px;
+  }
+  .portfolio-page section[id] {
+    scroll-margin-top: 100px;
+  }
+}

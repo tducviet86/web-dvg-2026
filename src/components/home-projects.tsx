@@ -40,8 +40,8 @@ export function HomeProjects({
                 <article>
                   <Link
                     className="home-project-photo image-wrap"
-                    href={`/lien-he?project=${encodeURIComponent(p.name)}`}
-                    aria-label={`Tư vấn dự án ${p.name}`}
+                    href={`/du-an/${p.slug}`}
+                    aria-label={`Xem chi tiết ${p.name}`}
                   >
                     <Image
                       src={`/images/projects/${p.id}.jpg`}
@@ -57,22 +57,33 @@ export function HomeProjects({
                   <div className="home-project-info">
                     <span>{p.location}</span>
                     <h3>
-                      <Link
-                        href={`/lien-he?project=${encodeURIComponent(p.name)}`}
-                      >
-                        {p.name}
-                      </Link>
+                      <Link href={`/du-an/${p.slug}`}>{p.name}</Link>
                     </h3>
                     <div>
                       <a href={p.source} target="_blank" rel="noreferrer">
                         {p.imageType} · Nguồn ảnh <ArrowUpRight size={12} />
                       </a>
-                      <Link
-                        href={`/lien-he?project=${encodeURIComponent(p.name)}`}
-                      >
-                        Tư vấn <ArrowUpRight size={15} />
+                      <Link href={`/du-an/${p.slug}`}>
+                        {development ? "Xem chi tiết" : "Khám phá căn hộ"}{" "}
+                        <ArrowUpRight size={15} />
                       </Link>
                     </div>
+                    {!development && (
+                      <nav
+                        className="home-operation-actions"
+                        aria-label={`Dịch vụ tại ${p.name}`}
+                      >
+                        <Link href={`/du-an/${p.slug}?nhu-cau=mua-ban#nhu-cau`}>
+                          Mua bán
+                        </Link>
+                        <Link href={`/du-an/${p.slug}?nhu-cau=thue#nhu-cau`}>
+                          Cho thuê
+                        </Link>
+                        <Link href={`/du-an/${p.slug}?nhu-cau=ky-gui#nhu-cau`}>
+                          Ký gửi
+                        </Link>
+                      </nav>
+                    )}
                   </div>
                 </article>
               </Reveal>

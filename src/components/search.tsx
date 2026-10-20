@@ -1,5 +1,5 @@
 import { Search, RotateCcw } from "lucide-react";
-import { projects } from "@/data";
+import { projects, properties } from "@/data";
 import type { Filters } from "@/lib/filter";
 import Link from "@/components/page-navigation";
 export function PropertySearch({
@@ -42,12 +42,14 @@ export function PropertySearch({
         {select(
           "location",
           "Khu vực",
-          [...new Set(projects.map((p) => p.location))].map((x) => [x, x]),
+          [...new Set(properties.map((p) => p.location))].map((x) => [x, x]),
         )}
         {select(
           "project",
           "Dự án",
-          projects.map((p) => [p.id, p.name]),
+          projects
+            .filter((p) => properties.some((r) => r.projectId === p.id))
+            .map((p) => [p.id, p.name]),
         )}
         {select(
           "type",
