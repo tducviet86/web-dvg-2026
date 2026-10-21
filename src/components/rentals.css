@@ -34,6 +34,45 @@
 .banner-controls > button {
   pointer-events: auto;
 }
+/* Project banners: the whole slide is one real link. */
+.banner-slide-link {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: pointer;
+  -webkit-user-drag: none;
+}
+.banner-swipe-viewport:active .banner-slide-link {
+  cursor: grabbing;
+}
+.banner-slide-link:focus-visible {
+  outline: 3px solid #dfc889;
+  outline-offset: -5px;
+}
+.banner-slide-link .hero-photo {
+  transition:
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.6s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .banner-slide-link:hover .hero-photo {
+    transform: scale(1.025);
+    filter: brightness(1.05);
+  }
+}
+.banner-caption-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #eee2c580;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #eee2c5;
+}
 .banner-swipe-hint {
   display: flex;
   align-items: center;
@@ -1067,6 +1106,13 @@
   }
   .banner-controls .banner-count {
     margin-right: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .banner-slide-link .hero-photo,
+  .banner-slide-link:hover .hero-photo {
+    transition: none;
+    transform: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

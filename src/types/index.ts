@@ -98,3 +98,26 @@ export type Service = {
   description: string;
   image: string;
 };
+export type BannerType = "NORMAL" | "PROJECT";
+/**
+ * Homepage banner. PROJECT banners are linked by `projectId` only; the
+ * detail URL, fallback title and image are resolved from the project at
+ * render time so renames and slug changes stay in sync.
+ */
+export type Banner = {
+  id: string;
+  type: BannerType;
+  label?: string;
+  title?: string;
+  description?: string;
+  imageUrl: string;
+  mobileImageUrl?: string;
+  imageAlt?: string;
+  projectId?: string | null;
+  /** PROJECT only: use the project's cover image instead of `imageUrl`. */
+  useProjectImage?: boolean;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};

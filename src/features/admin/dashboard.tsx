@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link, { usePageNavigation } from "@/components/page-navigation";
 import { usePathname, useRouter } from "next/navigation";
 import { Editor } from "./editor";
+import { BannerAdmin } from "./banners";
 import { statuses, names, type Kind, type Row } from "./model";
 import Image from "next/image";
 
@@ -20,27 +21,37 @@ import {
   Pencil,
   Trash2,
   RotateCcw,
+  GalleryHorizontalEnd,
 } from "lucide-react";
 import { toast } from "sonner";
-import { projects, properties, posts, leads } from "@/data";
-import type { Project, Property, Post, Lead } from "@/types";
+import { projects, properties, posts, leads, banners } from "@/data";
+import type { Project, Property, Post, Lead, Banner } from "@/types";
+import {
+  BANNER_STORE,
+  normalizeOrder,
+  projectBannerOf,
+  syncProjectBanner,
+  type ProjectBannerDraft,
+} from "@/lib/banners";
 import { readStore, writeStore } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 const LeadChart = dynamic(() => import("./chart"), {
   ssr: false,
   loading: () => <div className="skeleton" style={{ height: 260 }} />,
 });
-type Tab = "dashboard" | Kind | "settings";
+type Tab = "dashboard" | Kind | "banners" | "settings";
 type Store = {
   projects: Project[];
   properties: Property[];
   posts: Post[];
   leads: Lead[];
+  banners: Banner[];
 };
-const initial: Store = { projects, properties, posts, leads };
+const initial: Store = { projects, properties, posts, leads, banners };
 const tabs: { id: Tab; label: string; icon: typeof House }[] = [
   { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
   { id: "projects", label: "Dự án", icon: Building2 },
+  { id: "banners", label: "Banner", icon: GalleryHorizontalEnd },
   { id: "properties", label: "Căn hộ", icon: House },
   { id: "leads", label: "Khách hàng", icon: Users },
   { id: "posts", label: "Bài viết", icon: FileText },
@@ -65,11 +76,13 @@ export default function Dashboard() {
     properties: readStore("properties", properties),
     posts: readStore("posts", posts),
     leads: readStore("leads", leads),
+    banners: readStore(BANNER_STORE, banners),
   }));
   const ready = true;
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
-  const kind = tab === "dashboard" || tab === "settings" ? null : tab;
+  const kind =
+    tab === "dashboard" || tab === "settings" || tab === "banners" ? null : tab;
   const selectedRow = kind
     ? (store[kind] as Row[]).find((row) => row.id === recordId)
     : undefined;
@@ -99,7 +112,7 @@ export default function Dashboard() {
       toast.error("Không thể xóa dữ liệu trình duyệt.");
     }
   }
-  function save(kind: Kind, row: Row) {
+  function save(kind: Kind, row: Row, bannerDraft?: ProjectBannerDraft) {
     const rows = readStore<Row[]>(kind, initial[kind]);
     const original = (store[kind] as Row[]).find((item) => item.id === row.id);
     const current = rows.find((item) => item.id === row.id);
@@ -136,11 +149,50 @@ export default function Dashboard() {
     const updated = rows.some((r) => r.id === row.id)
       ? rows.map((r) => (r.id === row.id ? row : r))
       : [row, ...rows];
+    // The project's banner lives in the shared banner store (one per project).
+    let nextBanners: Banner[] | null = null;
+    if (kind === "projects" && bannerDraft) {
+      const latestBanners = readStore<Banner[]>(BANNER_STORE, initial.banners);
+      if (
+        JSON.stringify(projectBannerOf(store.banners, row.id)) !==
+        JSON.stringify(projectBannerOf(latestBanners, row.id))
+      ) {
+        toast.error(
+          "Banner của dự án đã thay đổi ở mục Banner. Hãy tải lại trang trước khi lưu.",
+        );
+        return;
+      }
+      const result = syncProjectBanner(
+        latestBanners,
+        row as Project,
+        bannerDraft,
+        updated as Project[],
+      );
+      if (result.issues.length) {
+        toast.error(result.issues[0]);
+        return;
+      }
+      if (result.banners !== latestBanners) nextBanners = result.banners;
+    }
     if (writeStore(kind, updated)) {
-      setStore({ ...store, [kind]: updated });
+      if (nextBanners && !writeStore(BANNER_STORE, nextBanners)) {
+        // Keep both stores consistent: roll the project back.
+        writeStore(kind, rows);
+        return;
+      }
+      setStore({
+        ...store,
+        [kind]: updated,
+        ...(nextBanners ? { banners: nextBanners } : {}),
+      });
       closePage();
       toast.success("Đã lưu thay đổi demo.");
     }
+  }
+  function commitBanners(next: Banner[]) {
+    if (!writeStore(BANNER_STORE, next)) return false;
+    setStore((current) => ({ ...current, banners: next }));
+    return true;
   }
   function remove() {
     if (!deleting) return;
@@ -168,8 +220,25 @@ export default function Dashboard() {
       return;
     }
     const updated = latestRows.filter((r) => r.id !== deleting.id);
+    // Deleting a project also removes its banner so no orphan link remains.
+    const latestBanners = readStore<Banner[]>(BANNER_STORE, initial.banners);
+    const linked =
+      deleting.kind === "projects"
+        ? projectBannerOf(latestBanners, deleting.id)
+        : undefined;
+    const nextBanners = linked
+      ? normalizeOrder(latestBanners.filter((b) => b.id !== linked.id))
+      : null;
     if (writeStore(deleting.kind, updated)) {
-      setStore({ ...store, [deleting.kind]: updated });
+      if (nextBanners && !writeStore(BANNER_STORE, nextBanners)) {
+        writeStore(deleting.kind, latestRows);
+        return;
+      }
+      setStore({
+        ...store,
+        [deleting.kind]: updated,
+        ...(nextBanners ? { banners: nextBanners } : {}),
+      });
       toast.success("Đã xóa dữ liệu demo.");
       closePage();
     }
@@ -257,15 +326,19 @@ export default function Dashboard() {
               <h1>
                 {editor
                   ? `${editor.row ? "Chỉnh sửa" : "Thêm mới"} ${names[editor.kind]}`
-                  : tab === "dashboard"
-                    ? "Tổng quan quản trị"
-                    : tabs.find((t) => t.id === tab)?.label}
+                  : tab === "banners" && recordId === "new"
+                    ? "Thêm mới banner"
+                    : tab === "banners" && action === "edit"
+                      ? "Chỉnh sửa banner"
+                      : tab === "dashboard"
+                        ? "Tổng quan quản trị"
+                        : tabs.find((t) => t.id === tab)?.label}
               </h1>
             </div>
-            {kind && !recordId && (
+            {(kind || tab === "banners") && !recordId && (
               <Button
                 disabled={!ready}
-                onClick={() => goTo(`/admin/${kind}/new`)}
+                onClick={() => goTo(`/admin/${kind || tab}/new`)}
               >
                 <Plus size={18} />
                 Thêm mới
@@ -289,7 +362,10 @@ export default function Dashboard() {
               <p>
                 {resetOpen
                   ? "Các chỉnh sửa quản trị, yêu cầu đã gửi, bản tin và mục yêu thích trên trình duyệt này sẽ bị xóa."
-                  : "Thao tác này không thể hoàn tác riêng lẻ. Dự án có căn hộ liên kết sẽ được bảo vệ khỏi việc xóa."}
+                  : deleting?.kind === "projects" &&
+                      projectBannerOf(store.banners, deleting.id)
+                    ? "Thao tác này không thể hoàn tác riêng lẻ. Banner trang chủ liên kết với dự án cũng sẽ bị gỡ. Dự án có căn hộ liên kết sẽ được bảo vệ khỏi việc xóa."
+                    : "Thao tác này không thể hoàn tác riêng lẻ. Dự án có căn hộ liên kết sẽ được bảo vệ khỏi việc xóa."}
               </p>
               <div className="dialog-actions">
                 <Button variant="outline" onClick={closePage}>
@@ -307,7 +383,8 @@ export default function Dashboard() {
               row={editor.row}
               projects={store.projects}
               existing={store[editor.kind]}
-              onSave={(row) => save(editor.kind, row)}
+              banners={store.banners}
+              onSave={(row, banner) => save(editor.kind, row, banner)}
               onCancel={closePage}
             />
           ) : !ready ? (
@@ -414,6 +491,15 @@ export default function Dashboard() {
                 </div>
               </section>
             </>
+          ) : tab === "banners" ? (
+            <BannerAdmin
+              recordId={recordId}
+              action={action}
+              banners={store.banners}
+              projects={store.projects}
+              onCommit={commitBanners}
+              goTo={goTo}
+            />
           ) : tab === "settings" ? (
             <SettingsPanel onReset={() => goTo("/admin/settings/reset")} />
           ) : (
@@ -488,7 +574,13 @@ export default function Dashboard() {
                                 <small>{row.assignment}</small>
                               </>
                             ) : "location" in row ? (
-                              row.location
+                              <>
+                                {row.location}
+                                {projectBannerOf(store.banners, row.id)
+                                  ?.isActive && (
+                                  <small>● Banner trang chủ</small>
+                                )}
+                              </>
                             ) : (
                               row.category
                             )}

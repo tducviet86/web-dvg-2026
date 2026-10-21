@@ -4,7 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, ImagePlus, Info, Save } from "lucide-react";
 import { photos, adminUsers } from "@/data";
 import { videoSource } from "@/lib/property-media";
-import type { Project } from "@/types";
+import type { Banner, Project } from "@/types";
+import {
+  isImageSource,
+  projectBannerDraft,
+  projectBannerOf,
+  syncProjectBanner,
+  type ProjectBannerDraft,
+} from "@/lib/banners";
+import { ProjectBannerSection } from "./banners";
 import { Button } from "@/components/ui/button";
 import { names, statuses, type Kind, type Row } from "./model";
 
@@ -343,20 +351,14 @@ const slugify = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-const validUrl = (value: string) => {
-  if (value.startsWith("/images/") && !value.includes("..")) return true;
-  try {
-    return ["https:", "http:"].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
-};
+const validUrl = (value: string) => isImageSource(value);
 
 export function Editor({
   kind,
   row,
   projects,
   existing,
+  banners,
   onSave,
   onCancel,
 }: {
@@ -364,7 +366,8 @@ export function Editor({
   row: Row | null;
   projects: Project[];
   existing: Row[];
-  onSave: (row: Row) => void;
+  banners: Banner[];
+  onSave: (row: Row, banner?: ProjectBannerDraft) => void;
   onCancel: () => void;
 }) {
   const data = (row || {}) as unknown as Record<string, string | number>;
@@ -375,6 +378,32 @@ export function Editor({
   const [preview, setPreview] = useState(String(data.image || photos.living));
   const [imageFailed, setImageFailed] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const projectBanner =
+    kind === "projects" && row ? projectBannerOf(banners, row.id) : undefined;
+  const [bannerDraft, setBannerDraft] = useState(() =>
+    projectBannerDraft(projectBanner, banners.length),
+  );
+  // Live project values for the banner preview (the form is uncontrolled).
+  const [snapshot, setSnapshot] = useState(() => ({
+    name: String(data.name || ""),
+    slug: String(data.slug || ""),
+    description: String(data.description || ""),
+    status: String(data.status || statuses.projects[0]),
+  }));
+  function readSnapshot() {
+    const form = formRef.current;
+    if (kind !== "projects" || !form) return;
+    const value = (key: string) =>
+      String(
+        (form.elements.namedItem(key) as HTMLInputElement | null)?.value || "",
+      );
+    setSnapshot({
+      name: value("name"),
+      slug: value("slug"),
+      description: value("description"),
+      status: value("status"),
+    });
+  }
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => {
@@ -456,6 +485,16 @@ export function Editor({
       issues.push(
         "Bài viết cần nội dung chi tiết trước khi chuyển sang trạng thái đã xuất bản (demo).",
       );
+    const id = row?.id || crypto.randomUUID();
+    if (kind === "projects")
+      issues.push(
+        ...syncProjectBanner(
+          banners,
+          { ...(row as Project), ...raw, id } as Project,
+          bannerDraft,
+          projects,
+        ).issues.map((issue) => `Banner trang chủ: ${issue}`),
+      );
     if (issues.length) {
       setErrors(issues);
       requestAnimationFrame(() =>
@@ -467,7 +506,7 @@ export function Editor({
     const next: Record<string, unknown> = {
       ...row,
       ...raw,
-      id: row?.id || crypto.randomUUID(),
+      id,
       updatedAt: now,
     };
     if (kind !== "properties") next.createdAt = data.createdAt || now;
@@ -479,7 +518,7 @@ export function Editor({
       next.categorySlug = slugify(raw.category);
     }
     setErrors([]);
-    onSave(next as Row);
+    onSave(next as Row, kind === "projects" ? bannerDraft : undefined);
   }
   function renderField(item: Field) {
     const id = `field-${item.key}`;
@@ -544,6 +583,7 @@ export function Editor({
               const slug = form.elements.namedItem("slug") as HTMLInputElement;
               slug.value = slugify(name.value);
               setDirty(true);
+              readSnapshot();
             }}
           >
             Tạo đường dẫn từ tên
@@ -556,7 +596,10 @@ export function Editor({
     <form
       ref={formRef}
       onSubmit={submit}
-      onChange={() => setDirty(true)}
+      onChange={() => {
+        setDirty(true);
+        readSnapshot();
+      }}
       className="admin-editor admin-editor-page"
     >
       <div className="editor-topline">
@@ -628,6 +671,22 @@ export function Editor({
               <div className="form-grid">{group.fields.map(renderField)}</div>
             </section>
           ))}
+          {kind === "projects" && (
+            <ProjectBannerSection
+              number={sections.length + 1}
+              project={{
+                ...(row as Project),
+                ...snapshot,
+                id: row?.id || "new-project",
+                image: preview,
+                imageAlt: String(data.imageAlt || ""),
+              }}
+              existing={projectBanner}
+              maxPosition={banners.length + (projectBanner ? 0 : 1)}
+              draft={bannerDraft}
+              onChange={setBannerDraft}
+            />
+          )}
         </div>
         <aside className="editor-aside">
           {kind !== "leads" && (
@@ -749,6 +808,12 @@ export function Editor({
                   {String(index + 1).padStart(2, "0")} · {group.title}
                 </a>
               ))}
+              {kind === "projects" && (
+                <a href={`#editor-section-${sections.length}`}>
+                  {String(sections.length + 1).padStart(2, "0")} · Banner trang
+                  chủ
+                </a>
+              )}
             </nav>
           </section>
         </aside>

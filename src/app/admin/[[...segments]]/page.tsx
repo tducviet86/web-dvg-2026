@@ -12,7 +12,7 @@ export default async function Admin({
 }) {
   const { segments = [] } = await params;
   const [section, id, action] = segments;
-  const kinds = ["projects", "properties", "posts", "leads"];
+  const kinds = ["projects", "banners", "properties", "posts", "leads"];
   const valid =
     segments.length === 0 ||
     (section === "settings" &&

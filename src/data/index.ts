@@ -1,5 +1,5 @@
 import { homeProjects, projectStories } from "./home-projects";
-import type { Project, Property, Post, Service, Lead } from "@/types";
+import type { Project, Property, Post, Service, Lead, Banner } from "@/types";
 export const photos = {
   hero: "/images/heroooo.png",
   building: "/images/img1.png",
@@ -27,6 +27,34 @@ export const projects: Project[] = [...homeProjects]
     description: projectStories[p.id].intro,
     createdAt: "2026-10-19",
   }));
+export const banners: Banner[] = [
+  {
+    imageUrl: photos.building,
+    title: "Kiến trúc hòa cùng thiên nhiên",
+    label: "KHÔNG GIAN & KIẾN TRÚC",
+  },
+  {
+    imageUrl: photos.pool,
+    title: "Góc nhìn về những không gian sống",
+    label: "CẢM HỨNG PHÁT TRIỂN",
+  },
+  {
+    imageUrl: photos.hero,
+    title: "Chăm chút giá trị từ mỗi không gian",
+    label: "TRẢI NGHIỆM & VẬN HÀNH",
+  },
+].map((slide, i) => ({
+  ...slide,
+  id: `banner-${i + 1}`,
+  type: "NORMAL",
+  description: "Hình ảnh minh họa",
+  imageAlt: `${slide.title} — hình ảnh minh họa`,
+  projectId: null,
+  isActive: true,
+  sortOrder: i + 1,
+  createdAt: "2026-10-19",
+  updatedAt: "2026-10-19",
+}));
 const operationProjects = projects.filter((p) =>
   homeProjects.some((h) => h.projectId === p.id && h.group === "operation"),
 );
