@@ -21,28 +21,18 @@ test("corporate homepage uses company logo and image banner without sales UI", a
   await expect(
     page.getByRole("link", { name: "Liên hệ hợp tác", exact: true }),
   ).toHaveAttribute("href", "/lien-he");
-  await page.getByRole("button", { name: "Hiển thị ảnh 2" }).click();
-  await expect(page.locator(".banner-count")).toHaveText("0203");
-  await expect(page.locator(".corporate-banner-photo")).toHaveAttribute(
-    "alt",
-    /Góc nhìn về những không gian sống/,
-  );
-  await page.getByRole("button", { name: "Ảnh banner tiếp theo" }).click();
-  await expect(page.locator(".banner-count")).toHaveText("0303");
-  await page.getByRole("button", { name: "Ảnh banner trước" }).click();
+  await page.getByRole("button", { name: "Tạm dừng trình chiếu" }).click();
   await expect(
-    page.getByRole("button", { name: "Hiển thị ảnh 2" }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Hiển thị ảnh 1" }).click();
-  await page
-    .locator(".corporate-banner-photo")
-    .evaluate(async (image: HTMLImageElement) => {
-      if (!image.complete)
-        await new Promise((resolve) => {
-          image.onload = resolve;
-          image.onerror = resolve;
-        });
-    });
+    page.getByRole("button", { name: /Hiển thị ảnh|Ảnh banner/ }),
+  ).toHaveCount(0);
+  const swipe = page.locator(".banner-swipe-viewport");
+  await swipe.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".banner-count")).toHaveText("0203");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".banner-count")).toHaveText("0303");
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator(".banner-count")).toHaveText("0203");
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await page.screenshot({ path: "tests/corporate-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -67,7 +57,7 @@ test("autoplay continues under pointer and header changes on scroll", async ({
     .hover({ position: { x: 200, y: 200 } });
   await page.clock.fastForward(5100);
   await expect(page.locator(".banner-count")).toHaveText("0203");
-  await page.getByRole("button", { name: "Ảnh banner tiếp theo" }).click();
+  await page.clock.fastForward(5100);
   await expect(page.locator(".banner-count")).toHaveText("0303");
   await page.clock.fastForward(5100);
   await expect(page.locator(".banner-count")).toHaveText("0103");
@@ -96,7 +86,7 @@ test("homepage fields support keyboard exploration and relevant destination link
   await expect(page.getByRole("tabpanel")).toContainText("Hỗ trợ khách thuê");
   await expect(page.getByRole("tabpanel").getByRole("link")).toHaveAttribute(
     "href",
-    "/lien-he?intent=thue",
+    "/cho-thue",
   );
   await page.keyboard.press("End");
   await expect(

@@ -38,6 +38,7 @@ const roomPhotos = [
   photos.bedroom,
 ];
 export const properties: Property[] = Array.from({ length: 24 }, (_, i) => ({
+  isDemo: true,
   id: `property-${i + 1}`,
   slug: `can-ho-${slugs[i % operationProjects.length]}-demo-${String(i + 1).padStart(2, "0")}`,
   name: `${["Studio đón nắng", "Căn hộ 1 phòng ngủ thanh lịch", "Căn hộ 2 phòng ngủ view sông", "Căn hộ dịch vụ panorama"][i % 4]} · ${String(i + 1).padStart(2, "0")}`,
@@ -52,6 +53,8 @@ export const properties: Property[] = Array.from({ length: 24 }, (_, i) => ({
   furniture: i % 5 === 0 ? "Nội thất cơ bản" : "Đầy đủ nội thất",
   status: i % 5 === 0 ? "Đã cho thuê" : "Còn trống",
   image: roomPhotos[i % roomPhotos.length],
+  gallery: roomPhotos.join("\n"),
+  videoUrl: i === 0 ? "/images/video.mp4" : undefined,
   description: `Không gian ${35 + (i % 7) * 12} m² được bố trí thoáng đãng, với khu sinh hoạt chung ngập ánh sáng và khu bếp tiện dụng. Căn hộ mẫu tại ${names[i % operationProjects.length]} phù hợp cho người tìm kiếm một nơi ở chỉn chu, dễ dàng kết nối với nhịp sống Đà Nẵng. Giá minh họa chưa bao gồm phí quản lý và tiện ích.`,
   updatedAt: "2026-10-10",
 }));

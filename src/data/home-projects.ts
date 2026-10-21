@@ -34,7 +34,7 @@ export const homeProjects = [
     id: "monarchy",
     slug: "monarchy-apartments",
     projectId: "project-3",
-    name: "Monarchy",
+    name: "The Monarchy",
     group: "operation",
     location: "Trần Hưng Đạo · Đà Nẵng",
     imageType: "Phối cảnh dự án",

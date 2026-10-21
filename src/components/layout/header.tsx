@@ -22,8 +22,8 @@ const nav = [
     href: "/du-an",
     sub: [
       ["Tất cả dự án", "/du-an"],
-      ["Dự án triển khai", "/du-an/trien-khai"],
-      ["Dự án vận hành", "/du-an/van-hanh"],
+      ["Dự án đang triển khai", "/du-an/trien-khai"],
+      ["Dự án đang vận hành", "/du-an/van-hanh"],
     ],
   },
   {
@@ -105,8 +105,8 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="header-actions">
-            <Link className="header-cta" href="/lien-he">
-              Kết nối hợp tác
+            <Link className="header-cta" href="/cho-thue">
+              Tìm căn hộ thuê
               <ArrowUpRight size={15} />
             </Link>
             <Dialog.Root open={open} onOpenChange={setOpen}>

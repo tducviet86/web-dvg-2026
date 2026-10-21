@@ -8,7 +8,8 @@ test("all sitemap routes return meaningful server HTML and SEO metadata", async 
   const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(
     (m) => new URL(m[1]).pathname,
   );
-  expect(urls.length).toBeGreaterThan(60);
+  expect(urls).toContain("/cho-thue/du-an/monarchy-apartments");
+  expect(urls.some((url) => url.includes("demo-"))).toBe(false);
   for (const url of urls) {
     const response = await request.get(url);
     expect(response.status(), url).toBe(200);
@@ -36,16 +37,20 @@ test("home images, responsive widths, reduced motion and mobile drawer", async (
     "Đất Vàng Group",
   );
   await page.getByRole("button", { name: "Tạm dừng trình chiếu" }).click();
-  await page.locator(".hero-photo").evaluate(async (img: HTMLImageElement) => {
-    if (!img.complete)
-      await new Promise((resolve) => {
-        img.onload = resolve;
-        img.onerror = resolve;
-      });
-  });
+  await page
+    .locator(".hero-photo")
+    .first()
+    .evaluate(async (img: HTMLImageElement) => {
+      if (!img.complete)
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+    });
   expect(
     await page
       .locator(".hero-photo")
+      .first()
       .evaluate((img: HTMLImageElement) => img.naturalWidth),
   ).toBeGreaterThan(0);
   for (const img of await page.locator("main img").all()) {
@@ -115,7 +120,7 @@ test("filters sort, empty state, load more, favorite persistence, gallery", asyn
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Ảnh sau" }).click();
   await expect(page.locator(".lightbox .carousel-actions")).toContainText(
-    "2 / 3",
+    "2 / 4",
   );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();

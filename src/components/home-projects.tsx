@@ -23,7 +23,7 @@ export function HomeProjects({
                 : "02 / DANH MỤC VẬN HÀNH"}
             </span>
             <h2>
-              Dự án <em>{development ? "triển khai." : "vận hành."}</em>
+              Dự án đang <em>{development ? "triển khai." : "vận hành."}</em>
             </h2>
           </div>
           <p>

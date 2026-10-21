@@ -11,9 +11,14 @@ import {
   KeyRound,
 } from "lucide-react";
 import type { Property } from "@/types";
-import { projects, properties, photos } from "@/data";
+import { projects, properties } from "@/data";
 import { homeProjects } from "@/data/home-projects";
-import { Gallery, Favorite } from "./interactive";
+import { Favorite } from "./interactive";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { RentalGallery } from "./rental-gallery";
+import { propertyMedia } from "@/lib/property-media";
+import { ProjectMap } from "./project-map";
 import { PropertyCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { money } from "@/lib/utils";
@@ -21,14 +26,12 @@ import { money } from "@/lib/utils";
 export function RoomDetail({ room: r }: { room: Property }) {
   const project = projects.find((p) => p.id === r.projectId)!;
   const portfolio = homeProjects.find((p) => p.projectId === r.projectId);
-  const images = [
-    ...new Set([
-      r.image,
-      photos.living,
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1400&q=85",
-      photos.bedroom,
-    ]),
-  ].slice(0, 3);
+  const media = propertyMedia(r).filter(
+    (m) =>
+      m.type !== "video" ||
+      !m.src.startsWith("/") ||
+      existsSync(join(process.cwd(), "public", m.src)),
+  );
   const available = r.status === "Còn trống";
   const facts = [
     { icon: Expand, value: `${r.area} m²`, label: "Diện tích" },
@@ -44,18 +47,16 @@ export function RoomDetail({ room: r }: { room: Property }) {
     <main id="main" className="room-page portfolio-page">
       <div className="container">
         <nav className="breadcrumb" aria-label="Đường dẫn">
-          <Link href="/du-an/van-hanh">Dự án vận hành</Link>
+          <Link href="/cho-thue">Cho thuê căn hộ</Link>
           <span>/</span>
-          <Link href={`/du-an/${project.slug}?nhu-cau=thue`}>
-            {project.name}
-          </Link>
+          <Link href={`/cho-thue/du-an/${project.slug}`}>{project.name}</Link>
           <span>/</span>
           <span aria-current="page">Chi tiết căn hộ</span>
         </nav>
         <header className="room-heading">
           <div>
             <span className="signature-kicker">
-              {project.name} / CĂN HỘ MẪU
+              {project.name} / {r.isDemo ? "CĂN HỘ MẪU" : "CHO THUÊ"}
             </span>
             <h1>{r.name}</h1>
             <p className="location">
@@ -68,10 +69,14 @@ export function RoomDetail({ room: r }: { room: Property }) {
             <span>Lưu căn hộ</span>
           </div>
         </header>
-        <Gallery images={images} title={r.name} />
+        <RentalGallery media={media} title={r.name} demo={r.isDemo} />
         <p className="room-image-note">
-          Ảnh nội thất minh họa · Thông số và giá là dữ liệu mẫu, chưa phải căn
-          hộ đang chào thuê thực tế.
+          {r.isDemo
+            ? "Thông số, giá và ảnh nội thất là dữ liệu mẫu, chưa phải tin chào thuê thực tế."
+            : "Liên hệ để xác nhận hiện trạng, giá thuê và lịch xem căn hộ."}
+          {r.isDemo &&
+            r.videoUrl &&
+            " Video do doanh nghiệp cung cấp để xem thử giao diện."}
         </p>
         <div className="room-layout">
           <article className="room-description">
@@ -88,15 +93,11 @@ export function RoomDetail({ room: r }: { room: Property }) {
               <a href="#khong-gian">Không gian</a>
               <a href="#thong-tin">Thông số</a>
               <a href="#dieu-kien">Chi phí & điều kiện</a>
-              <a href="#khu-vuc">Dự án</a>
+              <a href="#khu-vuc">Vị trí & bản đồ</a>
             </nav>
             <section id="khong-gian">
               <span className="signature-kicker">01 / KHÔNG GIAN SỐNG</span>
-              <h2>
-                Một căn hộ,
-                <br />
-                <em>nhiều điều để khám phá.</em>
-              </h2>
+              <h2>Tổng quan căn hộ</h2>
               <p>{r.description}</p>
               <div className="room-space-grid">
                 <div>
@@ -119,7 +120,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
             </section>
             <section id="thong-tin">
               <span className="signature-kicker">02 / THÔNG SỐ CĂN HỘ</span>
-              <h2>Thông tin rõ ràng.</h2>
+              <h2>Thông số & nội thất</h2>
               <dl className="room-spec-table">
                 {[
                   ["Mã tham chiếu", r.unitCode || r.id.toUpperCase()],
@@ -130,7 +131,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
                   ["Phòng tắm", String(r.bathrooms)],
                   ["Tầng", String(r.floor)],
                   ["Nội thất", r.furniture],
-                  ["Tình trạng mẫu", r.status],
+                  [r.isDemo ? "Tình trạng mẫu" : "Tình trạng", r.status],
                   [
                     "Ngày cập nhật",
                     new Date(r.updatedAt).toLocaleDateString("vi-VN"),
@@ -145,10 +146,13 @@ export function RoomDetail({ room: r }: { room: Property }) {
             </section>
             <section id="dieu-kien">
               <span className="signature-kicker">03 / CHI PHÍ & ĐIỀU KIỆN</span>
-              <h2>Trao đổi trước khi thuê.</h2>
+              <h2>Chi phí & điều kiện thuê</h2>
               <dl className="room-spec-table">
                 {[
-                  ["Giá thuê minh họa", `${money(r.price)} triệu / tháng`],
+                  [
+                    r.isDemo ? "Giá thuê minh họa" : "Giá thuê",
+                    `${money(r.price)} triệu / tháng`,
+                  ],
                   ["Tiền đặt cọc", r.deposit || "Trao đổi theo từng căn"],
                   [
                     "Phí quản lý",
@@ -180,6 +184,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
               </span>
               <h2>{project.name}</h2>
               <p>{project.description}</p>
+              <ProjectMap projectId={r.projectId} />
               <Link
                 href={`/du-an/${portfolio?.slug || project.slug}`}
                 className="text-link"
@@ -190,16 +195,19 @@ export function RoomDetail({ room: r }: { room: Property }) {
           </article>
           <aside className="room-contact-panel">
             <span className="signature-kicker">ĐẤT VÀNG GROUP</span>
-            <p className="room-price-label">Giá thuê tham khảo · Dữ liệu mẫu</p>
+            <p className="room-price-label">
+              {r.isDemo
+                ? "Giá thuê tham khảo · Dữ liệu mẫu"
+                : "Giá thuê / tháng"}
+            </p>
             <div className="room-price">
               {money(r.price)} <span>triệu / tháng</span>
             </div>
             <span
               className={`room-availability ${available ? "" : "unavailable"}`}
             >
-              {available
-                ? "Tình trạng mẫu: Còn trống"
-                : "Tình trạng mẫu: Đã cho thuê"}
+              {r.isDemo ? "Tình trạng mẫu: " : ""}
+              {r.status}
             </span>
             <h2>
               {available
@@ -209,7 +217,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
             <p>
               {available
                 ? "Gọi trực tiếp để xác nhận giá, hiện trạng và lịch xem căn hộ."
-                : "Căn hộ mẫu này được đánh dấu đã cho thuê. Liên hệ để tìm lựa chọn khác trong cùng dự án."}
+                : "Liên hệ để kiểm tra tình trạng mới nhất hoặc tìm lựa chọn khác trong cùng dự án."}
             </p>
             <CallContact
               label={available ? "Gọi hẹn xem phòng" : "Gọi tìm căn tương tự"}
@@ -236,7 +244,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
               <h2>Căn hộ cùng dự án.</h2>
             </div>
             <Link
-              href={`/du-an/${project.slug}?nhu-cau=thue#nhu-cau`}
+              href={`/cho-thue/du-an/${project.slug}#can-ho`}
               className="text-link"
             >
               Xem tất cả <ArrowUpRight size={18} />
@@ -255,7 +263,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
       <div className="room-mobile-call">
         <div>
           <strong>{money(r.price)} triệu</strong>
-          <span>/ tháng · Giá mẫu</span>
+          <span>/ tháng{r.isDemo ? " · Giá mẫu" : ""}</span>
         </div>
         <CallContact
           label={available ? "Gọi xem phòng" : "Gọi tư vấn"}

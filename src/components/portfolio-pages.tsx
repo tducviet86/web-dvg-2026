@@ -17,6 +17,7 @@ import { properties } from "@/data";
 import { HomeProjects } from "./home-projects";
 import { PropertyCard } from "./cards";
 import { CallContact } from "./call-contact";
+import { ProjectMap } from "./project-map";
 
 export function ProjectDirectory({
   group,
@@ -36,7 +37,7 @@ export function ProjectDirectory({
         </h1>
         <p>
           Tìm hiểu dự án triển khai. Khám phá căn hộ và các dịch vụ mua bán, cho
-          thuê, ký gửi tại dự án vận hành.
+          thuê, ký gửi tại dự án đang vận hành.
         </p>
         <nav className="portfolio-tabs" aria-label="Nhóm dự án">
           {[
@@ -88,7 +89,7 @@ export function PortfolioDetail({
           <Link href="/">Trang chủ</Link>
           <span>/</span>
           <Link href={`/du-an/${development ? "trien-khai" : "van-hanh"}`}>
-            {development ? "Dự án triển khai" : "Dự án vận hành"}
+            {development ? "Dự án đang triển khai" : "Dự án đang vận hành"}
           </Link>
           <span>/</span>
           <span aria-current="page">{p.name}</span>
@@ -97,7 +98,7 @@ export function PortfolioDetail({
           <div>
             <span className="signature-kicker">
               ĐẤT VÀNG GROUP /{" "}
-              {development ? "DỰ ÁN TRIỂN KHAI" : "DỰ ÁN VẬN HÀNH"}
+              {development ? "DỰ ÁN ĐANG TRIỂN KHAI" : "DỰ ÁN ĐANG VẬN HÀNH"}
             </span>
             <h1>{p.name}</h1>
             <p className="location">
@@ -250,7 +251,12 @@ export function PortfolioDetail({
                       </span>
                       <h2>Căn hộ cho thuê tại {p.name}</h2>
                     </div>
-                    <span>{rooms.length} căn hộ mẫu</span>
+                    <Link
+                      href={`/cho-thue/du-an/${p.slug}`}
+                      className="text-link"
+                    >
+                      Tìm & lọc căn hộ <ArrowUpRight size={18} />
+                    </Link>
                   </div>
                   <p className="portfolio-data-note">
                     Danh sách căn hộ, giá và ảnh nội thất là dữ liệu minh họa.
@@ -370,6 +376,7 @@ export function PortfolioDetail({
                 </div>
               )}
             </section>
+            <ProjectMap projectId={p.projectId} />
           </>
         )}
         <section className="portfolio-related">

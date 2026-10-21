@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, ImagePlus, Info, Save } from "lucide-react";
 import { photos, adminUsers } from "@/data";
+import { videoSource } from "@/lib/property-media";
 import type { Project } from "@/types";
 import { Button } from "@/components/ui/button";
 import { names, statuses, type Kind, type Row } from "./model";
@@ -343,6 +344,7 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 const validUrl = (value: string) => {
+  if (value.startsWith("/images/") && !value.includes("..")) return true;
   try {
     return ["https:", "http:"].includes(new URL(value).protocol);
   } catch {
@@ -409,16 +411,22 @@ export function Editor({
           "Đường dẫn này đã được sử dụng. Vui lòng chọn đường dẫn khác.",
         );
       if (!validUrl(raw.image))
-        issues.push("Ảnh đại diện cần là đường dẫn HTTP hoặc HTTPS hợp lệ.");
+        issues.push(
+          "Ảnh đại diện cần là đường dẫn HTTP/HTTPS hoặc /images/ten-anh.jpg.",
+        );
       if (
         raw.gallery
           ?.split("\n")
           .some((url) => url.trim() && !validUrl(url.trim()))
       )
         issues.push(
-          "Mỗi ảnh trong thư viện cần là một đường dẫn HTTP hoặc HTTPS hợp lệ.",
+          "Mỗi ảnh trong thư viện cần là đường dẫn HTTP/HTTPS hoặc /images/ten-anh.jpg.",
         );
     }
+    if (raw.videoUrl && !videoSource(raw.videoUrl))
+      issues.push(
+        "Video cần là liên kết YouTube, MP4/WebM HTTPS hoặc đường dẫn /images/ten-video.mp4.",
+      );
     for (const key of ["phone", "contactPhone"])
       if (
         raw[key] &&
@@ -666,7 +674,7 @@ export function Editor({
                 URL ảnh đại diện <span className="required-mark">*</span>
                 <input
                   name="image"
-                  type="url"
+                  type="text"
                   required
                   value={preview}
                   onChange={(event) => {
@@ -692,10 +700,24 @@ export function Editor({
                   placeholder="https://.../anh-1.jpg&#10;https://.../anh-2.jpg"
                 />
                 <small>
-                  Mỗi URL ảnh trên một dòng. Lưu liên kết, không tải tệp lên máy
-                  chủ.
+                  Mỗi ảnh một dòng: URL hoặc /images/ten-anh.jpg. Không giới hạn
+                  ở ba ảnh; tệp nội bộ cần đặt trong public/images.
                 </small>
               </label>
+              {kind === "properties" && (
+                <label>
+                  Video giới thiệu căn hộ
+                  <input
+                    name="videoUrl"
+                    defaultValue={data.videoUrl}
+                    placeholder="/images/video.mp4 hoặc https://…"
+                  />
+                  <small>
+                    Hỗ trợ MP4/WebM trong public/images, đường dẫn HTTPS hoặc
+                    YouTube. Mỗi căn có video riêng.
+                  </small>
+                </label>
+              )}
             </section>
           )}
           <section className="admin-panel editor-guide">

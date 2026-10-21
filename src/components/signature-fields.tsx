@@ -19,8 +19,8 @@ const fields = [
     caption: "KẾT NỐI KHÔNG GIAN SỐNG PHÙ HỢP",
     image: "/images/projects/hiyori.jpg",
     text: "Hỗ trợ khách thuê tìm không gian phù hợp, hẹn xem thực tế và trao đổi điều kiện thuê. Đồng hành cùng chủ sở hữu trong việc khai thác căn hộ.",
-    href: "/lien-he?intent=thue",
-    action: "Tìm hiểu nhu cầu thuê",
+    href: "/cho-thue",
+    action: "Khám phá căn hộ cho thuê",
     forWho: "Dành cho khách thuê & chủ sở hữu",
   },
   {

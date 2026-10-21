@@ -20,7 +20,7 @@ test("project entry points separate introductions from operations", async ({
   await page.goto("/du-an/van-hanh");
   await expect(page.locator(".home-project-cards article")).toHaveCount(5);
   const monarchy = page.getByRole("navigation", {
-    name: "Dịch vụ tại Monarchy",
+    name: /Dịch vụ tại .*Monarchy/,
   });
   await monarchy.getByRole("link", { name: "Cho thuê", exact: true }).click();
   await expect(page.locator(".property-card")).not.toHaveCount(0);
@@ -31,7 +31,7 @@ test("project entry points separate introductions from operations", async ({
   await room.click();
   await expect(page.locator("main .contact-form")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Thông tin rõ ràng." }),
+    page.getByRole("heading", { name: "Thông số & nội thất" }),
   ).toBeVisible();
   await expect(page.locator(".room-contact-panel")).toBeVisible();
   await page.getByRole("link", { name: /Bạn có căn hộ cần ký gửi/ }).click();
@@ -66,7 +66,7 @@ test("all portfolio details resolve and room calls use a configured number only"
   await expect(phone).toHaveAttribute("href", "tel:0911296979");
   await expect(phone).toContainText("0911 29 69 79");
   await page.setViewportSize({ width: 390, height: 844 });
-  const gallery = await page.locator(".gallery").boundingBox();
+  const gallery = await page.locator(".rental-gallery").boundingBox();
   const note = await page.locator(".room-image-note").boundingBox();
   expect(note!.y).toBeGreaterThanOrEqual(gallery!.y + gallery!.height);
   await expect(

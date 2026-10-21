@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useReducedMotion } from "motion/react";
-import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
+import { MoveHorizontal, Pause, Play } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
 import { photos } from "@/data";
 
 const slides = [
@@ -29,18 +30,28 @@ export function CorporateBanner() {
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const reduced = useReducedMotion();
+  const [viewport, api] = useEmblaCarousel({
+    loop: true,
+    duration: reduced ? 0 : 35,
+  });
   const playing = !paused && !reduced;
   useEffect(() => {
-    if (!playing || interacting) return;
+    if (!api) return;
+    const select = () => setActive(api.selectedScrollSnap());
+    const down = () => setInteracting(true);
+    const up = () => setInteracting(false);
+    api.on("select", select).on("pointerDown", down).on("pointerUp", up);
+    return () => {
+      api.off("select", select).off("pointerDown", down).off("pointerUp", up);
+    };
+  }, [api]);
+  useEffect(() => {
+    if (!playing || interacting || !api) return;
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible")
-        setActive((value) => (value + 1) % slides.length);
+      if (document.visibilityState === "visible") api.scrollNext();
     }, 5000);
     return () => window.clearInterval(timer);
-  }, [playing, interacting, active]);
-  function show(index: number) {
-    setActive((index + slides.length) % slides.length);
-  }
+  }, [playing, interacting, active, api]);
   const slide = slides[active];
   return (
     <section
@@ -55,23 +66,46 @@ export function CorporateBanner() {
           setInteracting(false);
       }}
     >
-      <Image
-        key={slide.image}
-        className="hero-photo corporate-banner-photo"
-        src={slide.image}
-        alt={`${slide.title} — hình ảnh minh họa`}
-        fill
-        sizes="100vw"
-        loading="eager"
-        fetchPriority={active === 0 ? "high" : "auto"}
-      />
+      <div
+        ref={viewport}
+        className="banner-swipe-viewport"
+        tabIndex={0}
+        aria-label="Kéo hoặc vuốt để chuyển ảnh. Dùng phím mũi tên trái và phải khi sử dụng bàn phím."
+        onKeyDown={(event) => {
+          if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+            event.preventDefault();
+            if (event.key === "ArrowRight") api?.scrollNext();
+            else api?.scrollPrev();
+          }
+        }}
+      >
+        <div className="banner-swipe-track">
+          {slides.map((item, index) => (
+            <div
+              className="banner-swipe-slide"
+              key={item.image}
+              aria-hidden={index !== active}
+            >
+              <Image
+                className="hero-photo corporate-banner-photo"
+                src={item.image}
+                alt={`${item.title} — hình ảnh minh họa`}
+                fill
+                sizes="100vw"
+                draggable={false}
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : "auto"}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="corporate-banner-shade" />
       <div className="signature-hero-content container">
         <div className="signature-hero-eyebrow">
           <span>ĐÀ NẴNG, VIỆT NAM</span>
           <span>BẤT ĐỘNG SẢN / KẾT NỐI / PHÁT TRIỂN</span>
         </div>
-       
       </div>
       <div className="corporate-banner-bottom container">
         <div className="banner-caption" aria-live={paused ? "polite" : "off"}>
@@ -84,30 +118,9 @@ export function CorporateBanner() {
             0{active + 1}
             <i />0{slides.length}
           </span>
-          <div className="banner-dots" aria-label="Chọn hình ảnh">
-            {slides.map((item, index) => (
-              <button
-                key={item.image}
-                aria-label={`Hiển thị ảnh ${index + 1}`}
-                aria-pressed={index === active}
-                onClick={() => show(index)}
-              >
-                <span />
-              </button>
-            ))}
-          </div>
-          <button
-            aria-label="Ảnh banner trước"
-            onClick={() => show(active - 1)}
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <button
-            aria-label="Ảnh banner tiếp theo"
-            onClick={() => show(active + 1)}
-          >
-            <ArrowRight size={18} />
-          </button>
+          <span className="banner-swipe-hint">
+            <MoveHorizontal size={21} /> Kéo để khám phá
+          </span>
           {!reduced && (
             <button
               aria-label={playing ? "Tạm dừng trình chiếu" : "Phát trình chiếu"}

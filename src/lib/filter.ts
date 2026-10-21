@@ -1,13 +1,21 @@
 import type { Property } from "../types/index";
+import { homeProjects } from "../data/home-projects";
 export type Filters = Record<string, string | undefined>;
+const searchable = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .toLowerCase()
+    .trim();
 export function filterProperties(items: Property[], f: Filters) {
   return items
     .filter(
       (p) =>
         (!f.q ||
-          `${p.name} ${p.location}`
-            .toLocaleLowerCase("vi")
-            .includes(f.q.toLocaleLowerCase("vi"))) &&
+          searchable(
+            `${p.name} ${p.location} ${p.unitCode || p.id} ${homeProjects.find((x) => x.projectId === p.projectId)?.name || ""}`,
+          ).includes(searchable(f.q))) &&
         (!f.location || p.location === f.location) &&
         (!f.project || p.projectId === f.project) &&
         (!f.type || p.type === f.type) &&

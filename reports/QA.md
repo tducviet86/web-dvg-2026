@@ -96,7 +96,7 @@ Xem `REVIEW-2026-10-18.md` để biết kết luận sẵn sàng vận hành và
 
 ## 2026-10-19 — Danh mục triển khai / vận hành và form nhu cầu
 
-- Trang chủ: Banner → Dự án triển khai (Capital Square, Sun Symphony Residence, Cora Tower) → Dự án vận hành (Monarchy, Sun Ponte Residence, Sun Panoma, Sam Tower, Hiyori Garden Tower) → Lĩnh vực → Góc nhìn → Kết nối.
+- Trang chủ: Banner → Dự án triển khai (Capital Square, Sun Symphony Residence, Cora Tower) → Dự án đang vận hành (Monarchy, Sun Ponte Residence, Sun Panoma, Sam Tower, Hiyori Garden Tower) → Lĩnh vực → Góc nhìn → Kết nối.
 - Nhóm triển khai/vận hành theo danh sách khách hàng cung cấp; không suy ra vai trò chủ đầu tư hoặc quản lý toàn bộ tòa nhà.
 - Ảnh lưu trong public/images/projects; URL tải gốc tại reports/project-image-sources.json. SAM và Hiyori là ảnh chụp; sáu ảnh còn lại là phối cảnh, có nhãn và liên kết nguồn trên từng thẻ. Chưa thay hoàn toàn bằng ảnh chụp thực địa.
 - Nút tư vấn mang tên dự án sang form. Tab mua bán/cho thuê/ký gửi chọn sẵn nhu cầu qua query đã kiểm tra giá trị.
@@ -111,7 +111,20 @@ Xem `REVIEW-2026-10-18.md` để biết kết luận sẵn sàng vận hành và
 - Trang vận hành có 3 mục theo URL: mua bán, cho thuê, ký gửi. Danh sách thuê liên kết đúng dự án. Chưa có dữ liệu căn bán nên hiển thị trạng thái chưa công bố và hướng dẫn trao đổi, không tạo giá hoặc tin bán giả.
 - Trang phòng thay form bằng gọi trực tiếp, bổ sung gallery, thông số, nội thất, chi phí/điều kiện cần trao đổi, dự án liên quan và căn cùng dự án; có thanh gọi cố định trên mobile. Giá, trạng thái và ảnh phòng vẫn là dữ liệu mẫu có nhãn.
 - Hotline được người dùng xác nhận: 0911 29 69 79; href tel:0911296979. Kiểm tra href, không thực hiện cuộc gọi.
-- 24 căn hộ mẫu được phân vào 5 dự án vận hành; bộ lọc lấy danh mục từ các căn đã có dữ liệu.
+- 24 căn hộ mẫu được phân vào 5 dự án đang vận hành; bộ lọc lấy danh mục từ các căn đã có dữ liệu.
 - Build, lint và TypeScript đạt. Vòng kiểm tra đầu: 15/16 đạt, một assertion dùng địa danh seed cũ. Đã cập nhật theo danh mục mới và sửa gallery mobile bị cố định chiều cao; chạy lại các kiểm tra liên quan.
 - Đã xem ảnh desktop của Capital Square, Monarchy, phòng Sun Panoma và mobile 390px. Các liên kết sitemap trả 200, đường dẫn không tồn tại 404. Form liên hệ chung/ứng tuyển/dịch vụ và admin CRUD vẫn hoạt động.
 - Kết quả kiểm tra cuối: 5/5 kiểm tra liên quan đạt (liên kết dữ liệu/bộ lọc, luồng dự án–phòng–ký gửi, hotline, responsive 360/768/1440 và WCAG AA). Gallery mobile không còn đè chú thích, nút gọi cố định hiển thị đúng.
+
+## 21/10/2026 — Trải nghiệm cho thuê, banner kéo/vuốt và video
+
+- Banner dùng Embla với kéo chuột/vuốt, bàn phím trái/phải, bỏ nút trước/sau và chấm chọn ảnh. Giữ dừng/phát, tự chuyển; phản hồi ngay khi thiết bị đổi chế độ giảm chuyển động.
+- Làm lại `/cho-thue`: khu giới thiệu, bộ lọc chính gọn, bộ lọc mở rộng, thẻ căn ba cột, tab dự án, checklist, FAQ và ký gửi. Điều hướng bộ lọc giữ tài liệu/layout và hiện trạng thái tải.
+- Thêm 5 landing page cho thuê theo dự án, metadata/canonical/OG, breadcrumb và CollectionPage. Loại căn mẫu khỏi sitemap, noindex căn mẫu và URL bộ lọc.
+- Thư viện phòng nhận nhiều ảnh, kéo/xem lớn, thumbnail, video MP4/WebM/YouTube. Đã phát thật file `/images/video.mp4` do người dùng cung cấp tại căn mẫu đầu tiên; video dọc giữ đúng tỷ lệ. Video không tiếp tục chạy khi chuyển về ảnh.
+- Gắn tọa độ và đúng URL Maps người dùng gửi cho Monarchy/Panoma/Ponte trên trang thuê dự án, phòng và dự án vận hành.
+- Admin lưu được bộ ảnh nội bộ và video, có kiểm tra đường dẫn. Admin vẫn là bản lưu cục bộ, chưa có backend đồng bộ public. Ảnh, giá, hiện trạng căn vẫn là dữ liệu mẫu; không đưa Offer schema giả vào SEO.
+- Build và lint đạt. 17 kiểm thử liên quan đạt: banner, chuyển trang, danh mục/chi tiết dự án, phòng, bộ lọc/sắp xếp/yêu thích, metadata/sitemap/404, gallery/video, admin media.
+- Axe không phát hiện vi phạm WCAG A/AA trong các trang được kiểm tra. Không tràn ngang ở 360/390/768/1024/1440 px. Đã kiểm tra video sau khi đổi 1440→390→1440 px.
+- Kiểm tra ảnh chụp phát hiện CSS cũ làm nền nút phóng to kéo dài che ảnh. Đã tách selector và đặt lại bottom; thêm kiểm thử chiều cao nút để ngăn lỗi lặp lại.
+- Hướng dẫn cấu hình dữ liệu và bản đồ: `reports/RENTAL-UPDATE.md`.

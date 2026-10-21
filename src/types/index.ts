@@ -35,6 +35,7 @@ export type AdminDetails = {
   seoDescription?: string;
   imageAlt?: string;
   gallery?: string;
+  videoUrl?: string;
 };
 export type Project = AdminDetails & {
   id: string;
@@ -48,6 +49,7 @@ export type Project = AdminDetails & {
   createdAt: string;
 };
 export type Property = AdminDetails & {
+  isDemo?: boolean;
   id: string;
   slug: string;
   name: string;

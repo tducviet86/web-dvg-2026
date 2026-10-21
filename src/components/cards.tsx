@@ -1,6 +1,14 @@
 import Image from "next/image";
 import Link from "@/components/page-navigation";
-import { ArrowUpRight, MapPin, BedDouble, Expand, Bath } from "lucide-react";
+import {
+  ArrowUpRight,
+  MapPin,
+  BedDouble,
+  Expand,
+  Bath,
+  Sofa,
+  Layers,
+} from "lucide-react";
 import type { Project, Property, Post } from "@/types";
 import { projects } from "@/data";
 import { money } from "@/lib/utils";
@@ -86,7 +94,10 @@ export function PropertyCard({
             src={property.image}
             loading={priority ? "eager" : "lazy"}
             fetchPriority={priority ? "high" : "auto"}
-            alt={`Nội thất minh họa ${property.name}`}
+            alt={
+              property.imageAlt ||
+              `${property.isDemo ? "Nội thất minh họa" : "Nội thất căn hộ"} ${property.name}`
+            }
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
@@ -101,7 +112,9 @@ export function PropertyCard({
       <div className="property-body">
         <div className="card-meta">
           <span>{projects.find((p) => p.id === property.projectId)?.name}</span>
-          <span>DEMO</span>
+          <span>
+            {property.isDemo ? "CĂN MẪU" : property.unitCode || property.id}
+          </span>
         </div>
         <h3>
           <Link href={`/cho-thue/${property.slug}`}>{property.name}</Link>
@@ -134,8 +147,19 @@ export function PropertyCard({
             href={`/cho-thue/${property.slug}`}
             aria-label={`Xem ${property.name}`}
           >
+            <span className="property-detail-label">Xem căn</span>
             <ArrowUpRight size={20} />
           </Link>
+        </div>
+        <div className="property-extra">
+          <span>
+            <Sofa size={14} />
+            {property.furniture}
+          </span>
+          <span>
+            <Layers size={14} />
+            Tầng {property.floor}
+          </span>
         </div>
       </div>
     </article>
