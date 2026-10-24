@@ -31,7 +31,7 @@ export default function Image() {
         Giá trị bền vững.
       </div>
       <div style={{ fontSize: 22, marginTop: 50, color: "#cbd6ca" }}>
-        ĐÀ NẴNG, VIỆT NAM 
+        ĐÀ NẴNG, VIỆT NAM
       </div>
     </div>,
     size,

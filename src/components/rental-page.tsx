@@ -1,3 +1,6 @@
+/** @jsxImportSource @/i18n/jsx */
+import { BackButton } from "@/components/layout/back-button";
+import { href } from "@/i18n/server";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import {
@@ -8,35 +11,62 @@ import {
   MapPin,
   Check,
   Phone,
+  MessageCircle,
+  KeyRound,
+  Facebook,
 } from "lucide-react";
-import { properties } from "@/data";
-import { homeProjects, type PortfolioProject } from "@/data/home-projects";
-import { rentalGuides, rentalFaqs } from "@/data/rental-content";
+import type { PortfolioProject } from "@/types";
+import type { SiteContent } from "@/lib/api/content";
+import { rentalFaqs } from "@/data/rental-content";
 import { filterProperties, type Filters } from "@/lib/filter";
 import { RentalSearch } from "./rental-search";
 import { PropertyCard } from "./cards";
 import { ProjectMap } from "./project-map";
 import { CallContact } from "./call-contact";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
-import { siteUrl } from "@/lib/utils";
+import { money, siteUrl } from "@/lib/utils";
+import { InquiryDialog } from "./rental-inquiry";
+import { Counter } from "./counter";
 
-const locations = homeProjects.filter((p) => p.group === "operation");
+const quickFilters: { label: string; set: Record<string, string> }[] = [
+  { label: "Studio", set: { bedrooms: "0" } },
+  { label: "1 phòng ngủ", set: { bedrooms: "1" } },
+  { label: "2 phòng ngủ", set: { bedrooms: "2" } },
+  { label: "Dưới 15 triệu", set: { price: "15" } },
+  { label: "Còn trống", set: { status: "Còn trống" } },
+];
+
 export function RentalPage({
   filters,
   project,
+  content,
 }: {
   filters: Filters;
   project?: PortfolioProject;
+  content: SiteContent;
 }) {
+  const locations = content.portfolio.filter((p) =>
+    p.categories.includes("rent"),
+  );
   const base = project ? `/cho-thue/du-an/${project.slug}` : "/cho-thue";
   const effective: Filters = {
     ...filters,
-    ...(project ? { project: project.projectId } : {}),
+    ...(project ? { project: project.slug } : {}),
   };
-  const result = filterProperties(properties, effective);
+  const result = filterProperties(content.properties, effective);
   const visible = Math.min(100, Math.max(9, Number(filters.limit) || 9));
-  const guide = project ? rentalGuides[project.slug] : null;
-  const cover = project || locations.find((p) => p.id === "monarchy")!;
+  const guide = project ? content.rentalGuides[project.slug] : null;
+  const scope = filterProperties(
+    content.properties,
+    project ? { project: project.slug } : {},
+  );
+  const stats = {
+    available: scope.filter((p) => p.status === "Còn trống").length,
+    projects: project ? 1 : new Set(scope.map((p) => p.projectId)).size,
+    from: scope.length ? Math.min(...scope.map((p) => p.price)) : 0,
+  };
+  const showsDemo = result.some((p) => p.isDemo);
+  const cover = project || locations[0] || content.portfolio[0];
   const nextUrl = (changes: Record<string, string | undefined>) => {
     const q = new URLSearchParams(
       Object.entries({ ...filters, ...changes }).filter(
@@ -81,6 +111,7 @@ export function RentalPage({
       <section className="rental-intro container">
         <div className="rental-intro-copy">
           <nav className="breadcrumb" aria-label="Đường dẫn">
+            <BackButton />
             <Link href="/">Trang chủ</Link>
             <span>/</span>
             {project ? (
@@ -113,18 +144,70 @@ export function RentalPage({
             {guide?.intro ||
               "Tìm căn hộ cho thuê tại Đà Nẵng theo dự án, ngân sách và không gian bạn cần. Xem thông tin căn, lưu lựa chọn yêu thích và gọi trực tiếp để hẹn xem."}
           </p>
-          <a className="rental-intro-call" href={telephoneHref() || "/lien-he"}>
-            <Phone size={17} />
-            <span>
-              Tư vấn chọn căn <strong>{companyHotline}</strong>
-            </span>
-            <ArrowUpRight size={19} />
-          </a>
+          <div className="rental-intro-actions">
+            <InquiryDialog
+              mode="advice"
+              target={
+                project
+                  ? { projectSlug: project.slug, label: project.name }
+                  : {}
+              }
+              trigger={
+                <button type="button" className="button button-primary">
+                  <MessageCircle size={18} /> Nhờ tư vấn chọn căn
+                </button>
+              }
+            />
+            <a
+              className="rental-intro-call"
+              href={telephoneHref() || href("/lien-he")}
+            >
+              <Phone size={17} />
+              <span>
+                Gọi <strong>{companyHotline}</strong>
+              </span>
+              <ArrowUpRight size={19} />
+            </a>
+          </div>
+          {project?.facebook && (
+            <a
+              className="project-facebook rental-fanpage"
+              href={project.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Facebook size={15} aria-hidden="true" />
+              Fanpage {project.name}
+            </a>
+          )}
+          <dl className="rental-stats">
+            <div>
+              <dt>Căn đang trống</dt>
+              <dd>
+                <Counter value={stats.available} />
+              </dd>
+            </div>
+            <div>
+              <dt>{project ? "Dự án" : "Dự án cho thuê"}</dt>
+              <dd>
+                <Counter value={stats.projects} />
+              </dd>
+            </div>
+            {stats.from > 0 && (
+              <div>
+                <dt>Giá thuê từ</dt>
+                <dd>
+                  {money(stats.from)}
+                  <small> triệu/tháng</small>
+                </dd>
+              </div>
+            )}
+          </dl>
         </div>
         <figure className="rental-intro-visual">
           <Image
-            src={`/images/projects/${cover.id}.jpg`}
-            alt={`${cover.name} · ${cover.imageType}`}
+            src={cover.image}
+            alt={cover.imageAlt}
             fill
             sizes="(max-width: 800px) 100vw, 42vw"
             loading="eager"
@@ -146,6 +229,7 @@ export function RentalPage({
           values={effective}
           action={base}
           projectId={project?.projectId}
+          content={content}
         />
         <nav className="rental-project-nav" aria-label="Thuê theo dự án">
           <Link
@@ -183,10 +267,25 @@ export function RentalPage({
             </span>
           </div>
           <div className="rental-results-meta">
-            <p>
-              Dữ liệu mẫu · Ảnh nội thất và giá minh họa. Gọi để nhận thông tin
-              căn thực tế.
-            </p>
+            <nav className="rental-quick-filters" aria-label="Lọc nhanh">
+              {quickFilters.map((q) => {
+                const [key, value] = Object.entries(q.set)[0];
+                const active = effective[key] === value;
+                return (
+                  <Link
+                    key={q.label}
+                    href={nextUrl({
+                      [key]: active ? undefined : value,
+                      limit: undefined,
+                    })}
+                    aria-current={active ? "true" : undefined}
+                  >
+                    {active && <Check size={14} aria-hidden="true" />}
+                    {q.label}
+                  </Link>
+                );
+              })}
+            </nav>
             <div className="view-toggle">
               <Link
                 aria-label="Xem dạng lưới"
@@ -220,10 +319,10 @@ export function RentalPage({
                 <Link
                   key={k}
                   href={nextUrl({ [k]: undefined, limit: undefined })}
-                  aria-label={`Bỏ lọc ${k === "project" ? locations.find((p) => p.projectId === v)?.name : v}`}
+                  aria-label={`Bỏ lọc ${k === "project" ? locations.find((p) => p.slug === v)?.name : v}`}
                 >
                   {k === "project"
-                    ? locations.find((p) => p.projectId === v)?.name
+                    ? locations.find((p) => p.slug === v)?.name
                     : k === "price"
                       ? `Đến ${v} triệu`
                       : k === "area"
@@ -241,12 +340,12 @@ export function RentalPage({
             <div
               className={`rental-card-grid ${filters.view === "list" ? "list-view" : ""}`}
             >
-              {result.slice(0, visible).map((p) => (
-                <PropertyCard property={p} key={p.id} />
+              {result.slice(0, visible).map((p, i) => (
+                <PropertyCard property={p} key={p.id} index={i} />
               ))}
             </div>
           ) : (
-            <div className="empty-state">
+            <div className="empty-state rental-empty">
               <h2>Chưa tìm thấy không gian phù hợp.</h2>
               <p>
                 Thử nới ngân sách, chọn dự án khác hoặc gọi để trao đổi nhu cầu.
@@ -254,8 +353,26 @@ export function RentalPage({
               <Link href={`${base}#can-ho`} className="button button-primary">
                 Xóa bộ lọc
               </Link>
-              <CallContact label="Gọi tìm căn phù hợp" />
+              <InquiryDialog
+                mode="advice"
+                target={
+                  project
+                    ? { projectSlug: project.slug, label: project.name }
+                    : {}
+                }
+                trigger={
+                  <button type="button" className="button button-outline">
+                    <MessageCircle size={18} /> Gửi nhu cầu để được tìm căn
+                  </button>
+                }
+              />
             </div>
+          )}
+          {showsDemo && (
+            <p className="rental-demo-note">
+              Một số căn đang hiển thị là <strong>căn mẫu</strong> (ảnh và giá
+              minh họa). Gửi yêu cầu hoặc gọi để nhận thông tin căn thực tế.
+            </p>
           )}
           {result.length > visible && (
             <div className="load-more">
@@ -305,7 +422,7 @@ export function RentalPage({
             ))}
           </div>
         </section>
-        {project && <ProjectMap projectId={project.projectId} />}
+        {project && <ProjectMap place={content.locations[project.projectId]} />}
         <section className="rental-faq">
           <div>
             <span className="signature-kicker">GIẢI ĐÁP CÙNG ĐẤT VÀNG</span>
@@ -341,17 +458,25 @@ export function RentalPage({
               thông tin căn hộ rõ ràng.
             </p>
           </div>
-          <Link
-            className="button button-outline"
-            href={
-              project
-                ? `/du-an/${project.slug}?nhu-cau=ky-gui#nhu-cau`
-                : "/hop-tac-chu-so-huu"
-            }
-          >
-            Tìm hiểu ký gửi
-            <ArrowUpRight size={19} />
-          </Link>
+          <div className="rental-owner-actions">
+            <InquiryDialog
+              mode="consign"
+              target={
+                project
+                  ? { projectSlug: project.slug, label: project.name }
+                  : {}
+              }
+              trigger={
+                <button type="button" className="button button-primary">
+                  <KeyRound size={18} /> Gửi thông tin ký gửi
+                </button>
+              }
+            />
+            <Link className="text-link" href="/hop-tac-chu-so-huu">
+              Quy trình hợp tác
+              <ArrowUpRight size={17} />
+            </Link>
+          </div>
         </section>
       </div>
     </main>

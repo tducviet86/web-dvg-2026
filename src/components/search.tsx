@@ -1,14 +1,19 @@
+/** @jsxImportSource @/i18n/jsx */
+import { href } from "@/i18n/server";
 import { Search, RotateCcw } from "lucide-react";
-import { projects, properties } from "@/data";
+import type { SiteContent } from "@/lib/api/content";
 import type { Filters } from "@/lib/filter";
 import Link from "@/components/page-navigation";
 export function PropertySearch({
   expanded = false,
   values = {},
+  content,
 }: {
   expanded?: boolean;
   values?: Filters;
+  content: Pick<SiteContent, "projects" | "properties">;
 }) {
+  const { projects, properties } = content;
   const select = (name: string, label: string, options: [string, string][]) => (
     <label key={name}>
       {label}
@@ -25,7 +30,7 @@ export function PropertySearch({
   return (
     <form
       key={JSON.stringify(values)}
-      action="/cho-thue"
+      action={href("/cho-thue")}
       className={expanded ? "filter-form" : "search-panel"}
     >
       <div className="search-fields">
@@ -49,14 +54,12 @@ export function PropertySearch({
           "Dự án",
           projects
             .filter((p) => properties.some((r) => r.projectId === p.id))
-            .map((p) => [p.id, p.name]),
+            .map((p) => [p.slug, p.name]),
         )}
         {select(
           "type",
           "Loại căn hộ",
-          ["Studio", "1 phòng ngủ", "2 phòng ngủ", "Căn hộ dịch vụ"].map(
-            (x) => [x, x],
-          ),
+          [...new Set(properties.map((p) => p.type))].map((x) => [x, x]),
         )}
         {select("price", "Ngân sách / tháng", [
           ["10", "Dưới 10 triệu"],

@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/i18n/client";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import { useRef, useState } from "react";
@@ -34,17 +35,18 @@ const fields = [
   },
 ];
 export function SignatureFields() {
+  const t = useT();
   const [active, setActive] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const field = fields[active];
   return (
     <section className="signature-fields" id="linh-vuc">
       <div className="container signature-section-top">
-        <span className="signature-kicker">03 / LĨNH VỰC HOẠT ĐỘNG</span>
+        <span className="signature-kicker">{t("03 / LĨNH VỰC HOẠT ĐỘNG")}</span>
         <p>
-          Mỗi tài sản một đặc điểm.
+          {t("Mỗi tài sản một đặc điểm.")}
           <br />
-          Mỗi sự đồng hành một giải pháp.
+          {t("Mỗi sự đồng hành một giải pháp.")}
         </p>
       </div>
       <div className="container signature-fields-layout">
@@ -52,7 +54,9 @@ export function SignatureFields() {
           <Image
             key={field.image}
             src={field.image}
-            alt={`Hình ảnh dự án phục vụ ${field.title.toLowerCase()}`}
+            alt={t("Hình ảnh dự án phục vụ {field}", {
+              field: t(field.title).toLowerCase(),
+            })}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
           />
@@ -60,10 +64,10 @@ export function SignatureFields() {
             +
           </span>
           <div className="signature-field-caption">
-            <span>{field.caption}</span>
+            <span>{t(field.caption)}</span>
             <small>
               {active === 0
-                ? "Phối cảnh Capital Square"
+                ? t("Phối cảnh Capital Square")
                 : active === 1
                   ? "Hiyori Garden Tower"
                   : "SAM Towers"}
@@ -72,16 +76,16 @@ export function SignatureFields() {
         </div>
         <div className="signature-field-copy">
           <span className="signature-field-audience">
-            MUA BÁN · CHO THUÊ · KÝ GỬI
+            {t("MUA BÁN · CHO THUÊ · KÝ GỬI")}
           </span>
           <h2>
-            Bất động sản.
+            {t("Bất động sản.")}
             <br />
-            Giải pháp cho bạn.
+            {t("Giải pháp cho bạn.")}
           </h2>
           <div
             role="tablist"
-            aria-label="Lĩnh vực hoạt động"
+            aria-label={t("Lĩnh vực hoạt động")}
             aria-orientation="vertical"
             className="signature-field-tabs"
           >
@@ -113,7 +117,7 @@ export function SignatureFields() {
                 }}
               >
                 <span>0{index + 1}</span>
-                <strong>{item.title}</strong>
+                <strong>{t(item.title)}</strong>
                 <ArrowRight size={22} />
               </button>
             ))}
@@ -129,11 +133,11 @@ export function SignatureFields() {
               tabIndex={0}
             >
               <strong className="signature-field-audience">
-                {item.forWho}
+                {t(item.forWho)}
               </strong>
-              <p>{item.text}</p>
+              <p>{t(item.text)}</p>
               <Link href={item.href} className="signature-link">
-                {item.action}
+                {t(item.action)}
                 <ArrowUpRight size={19} />
               </Link>
             </div>

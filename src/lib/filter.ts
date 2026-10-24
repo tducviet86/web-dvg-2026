@@ -1,5 +1,4 @@
 import type { Property } from "../types/index";
-import { homeProjects } from "../data/home-projects";
 export type Filters = Record<string, string | undefined>;
 const searchable = (value: string) =>
   value
@@ -14,10 +13,10 @@ export function filterProperties(items: Property[], f: Filters) {
       (p) =>
         (!f.q ||
           searchable(
-            `${p.name} ${p.location} ${p.unitCode || p.id} ${homeProjects.find((x) => x.projectId === p.projectId)?.name || ""}`,
+            `${p.name} ${p.location} ${p.unitCode || p.id} ${p.projectName || ""}`,
           ).includes(searchable(f.q))) &&
         (!f.location || p.location === f.location) &&
-        (!f.project || p.projectId === f.project) &&
+        (!f.project || p.projectSlug === f.project || p.projectId === f.project) &&
         (!f.type || p.type === f.type) &&
         (!f.price || p.price <= Number(f.price)) &&
         (!f.bedrooms || p.bedrooms === Number(f.bedrooms)) &&
@@ -25,6 +24,7 @@ export function filterProperties(items: Property[], f: Filters) {
         (!f.furniture || p.furniture === f.furniture) &&
         (!f.status || p.status === f.status),
     )
+    // Without an explicit sort the API order (publication order) is kept.
     .sort((a, b) =>
       f.sort === "price-asc"
         ? a.price - b.price
@@ -32,6 +32,6 @@ export function filterProperties(items: Property[], f: Filters) {
           ? b.price - a.price
           : f.sort === "area"
             ? b.area - a.area
-            : a.id.localeCompare(b.id, undefined, { numeric: true }),
+            : 0,
     );
 }

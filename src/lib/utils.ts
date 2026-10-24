@@ -10,3 +10,11 @@ export function money(value: number) {
     value,
   );
 }
+
+/** Unit code shown to visitors; falls back to a short code instead of a UUID. */
+export const unitRef = (p: { unitCode?: string | null; id: string }) =>
+  p.unitCode ||
+  `DVG-${p.id
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(0, 6)
+    .toUpperCase()}`;

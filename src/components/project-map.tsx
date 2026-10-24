@@ -1,8 +1,8 @@
+/** @jsxImportSource @/i18n/jsx */
 import { MapPin, ArrowUpRight } from "lucide-react";
-import { projectLocations } from "@/data/project-locations";
+import type { ProjectLocation } from "@/types";
 
-export function ProjectMap({ projectId }: { projectId: string }) {
-  const place = projectLocations[projectId];
+export function ProjectMap({ place }: { place?: ProjectLocation }) {
   if (!place) return null;
   return (
     <div className="rental-map">

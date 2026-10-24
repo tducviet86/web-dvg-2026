@@ -54,12 +54,16 @@ export function propertyMedia(room: Property): RentalMedia[] {
     src,
     alt: `${room.name} · ${room.isDemo ? "Ảnh nội thất minh họa" : room.imageAlt || "Không gian căn hộ"} ${i + 1}`,
   }));
-  const video = videoSource(room.videoUrl);
-  if (video)
+  const videos = [
+    ...(room.videos ?? []).map((src) => ({ src, embed: false })),
+    ...[videoSource(room.videoUrl)].filter((v) => v !== null),
+  ];
+  videos.forEach((video, i) =>
     media.push({
       type: "video",
       ...video,
-      alt: `Video giới thiệu ${room.name}`,
-    });
+      alt: `Video giới thiệu ${room.name}${videos.length > 1 ? ` ${i + 1}` : ""}`,
+    }),
+  );
   return media;
 }

@@ -1,16 +1,20 @@
+/** @jsxImportSource @/i18n/jsx */
 import { Search, SlidersHorizontal } from "lucide-react";
-import { projects, properties } from "@/data";
+import type { SiteContent } from "@/lib/api/content";
 import type { Filters } from "@/lib/filter";
 import { RentalSearchForm } from "./rental-search-form";
 export function RentalSearch({
   values,
   action = "/cho-thue",
   projectId,
+  content,
 }: {
   values: Filters;
   action?: string;
   projectId?: string;
+  content: Pick<SiteContent, "projects" | "properties">;
 }) {
+  const { projects, properties } = content;
   const select = (
     name: string,
     label: string,
@@ -46,7 +50,7 @@ export function RentalSearch({
             "Dự án",
             projects
               .filter((p) => properties.some((r) => r.projectId === p.id))
-              .map((p) => [p.id, p.name]),
+              .map((p) => [p.slug, p.name]),
             "Tất cả dự án",
           )}
         {select(
@@ -122,7 +126,7 @@ export function RentalSearch({
               ["price-desc", "Giá giảm dần"],
               ["area", "Diện tích lớn nhất"],
             ],
-            "Mặc định",
+            "Mới đăng trước",
           )}
         </div>
         <button className="button button-outline" type="submit">

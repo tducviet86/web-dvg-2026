@@ -1,3 +1,4 @@
+/** @jsxImportSource @/i18n/jsx */
 import Link from "@/components/page-navigation";
 export default function NotFound() {
   return (

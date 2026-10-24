@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { homeProjects } from "../src/data/home-projects";
+import { API_URL } from "../playwright.config";
 import { telephoneHref } from "../src/lib/company-contact";
 
 test("project entry points separate introductions from operations", async ({
@@ -51,8 +51,13 @@ test("project entry points separate introductions from operations", async ({
 
 test("all portfolio details resolve and room calls use a configured number only", async ({
   page,
+  request,
 }) => {
-  for (const project of homeProjects) {
+  const { data: projects } = (await (
+    await request.get(`${API_URL}/api/v1/projects?pageSize=100`)
+  ).json()) as { data: { slug: string; name: string }[] };
+  expect(projects.length).toBeGreaterThanOrEqual(8);
+  for (const project of projects) {
     const response = await page.goto(`/du-an/${project.slug}`);
     expect(response?.status()).toBe(200);
     await expect(page.locator("main h1")).toHaveText(project.name);

@@ -1,3 +1,5 @@
+/** @jsxImportSource @/i18n/jsx */
+import { BackButton } from "@/components/layout/back-button";
 import Link from "@/components/page-navigation";
 import {
   MapPin,
@@ -9,30 +11,47 @@ import {
   ArrowUpRight,
   Sofa,
   KeyRound,
+  ShieldCheck,
 } from "lucide-react";
 import type { Property } from "@/types";
-import { projects, properties } from "@/data";
-import { homeProjects } from "@/data/home-projects";
+import type { SiteContent } from "@/lib/api/content";
 import { Favorite } from "./interactive";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { RentalGallery } from "./rental-gallery";
+import { RichText } from "./rich-text";
 import { propertyMedia } from "@/lib/property-media";
 import { ProjectMap } from "./project-map";
-import { PropertyCard } from "./cards";
+import { LuxuryBadges, PropertyCard } from "./cards";
+import { ViewBeacon } from "./view-beacon";
 import { CallContact } from "./call-contact";
-import { money } from "@/lib/utils";
+import { money, unitRef } from "@/lib/utils";
+import { groupAmenities } from "@/lib/amenities";
+import { apartmentSchema, jsonLd } from "@/lib/structured-data";
+import { href, t } from "@/i18n/server";
+import { ShareButton } from "./rental-inquiry";
+import { Reveal } from "./interactive";
 
-export function RoomDetail({ room: r }: { room: Property }) {
-  const project = projects.find((p) => p.id === r.projectId)!;
-  const portfolio = homeProjects.find((p) => p.projectId === r.projectId);
+export function RoomDetail({
+  room: r,
+  content,
+}: {
+  room: Property;
+  content: SiteContent;
+}) {
+  const project = content.projects.find((p) => p.id === r.projectId)!;
+  const portfolio = content.portfolio.find((p) => p.projectId === r.projectId);
   const media = propertyMedia(r).filter(
     (m) =>
       m.type !== "video" ||
-      !m.src.startsWith("/") ||
+      // Legacy local files must exist in public/; uploads live on the media host.
+      !m.src.startsWith("/images/") ||
       existsSync(join(process.cwd(), "public", m.src)),
   );
   const available = r.status === "Còn trống";
+  const code = unitRef(r);
+  const amenities = groupAmenities(r.amenityKeys ?? []);
+  const amenityCount = amenities.reduce((n, g) => n + g.items.length, 0);
   const facts = [
     { icon: Expand, value: `${r.area} m²`, label: "Diện tích" },
     {
@@ -45,30 +64,68 @@ export function RoomDetail({ room: r }: { room: Property }) {
   ];
   return (
     <main id="main" className="room-page portfolio-page">
+      {/* Sample units are not real listings: no structured data for them. */}
+      {!r.isDemo && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLd(
+              apartmentSchema(
+                r,
+                content.apiProjects.find((p) => p.id === r.projectId),
+                href(`/cho-thue/${r.slug}`),
+                media.filter((m) => m.type === "image").map((m) => m.src),
+                t,
+              ),
+            ),
+          }}
+        />
+      )}
       <div className="container">
         <nav className="breadcrumb" aria-label="Đường dẫn">
+          <BackButton />
           <Link href="/cho-thue">Cho thuê căn hộ</Link>
           <span>/</span>
           <Link href={`/cho-thue/du-an/${project.slug}`}>{project.name}</Link>
           <span>/</span>
           <span aria-current="page">Chi tiết căn hộ</span>
         </nav>
+        {!r.isDemo && <ViewBeacon slug={r.slug} />}
         <header className="room-heading">
           <div>
-            <span className="signature-kicker">
-              {project.name} / {r.isDemo ? "CĂN HỘ MẪU" : "CHO THUÊ"}
-            </span>
             <h1>{r.name}</h1>
             <p className="location">
               <MapPin size={16} />
               {r.location}
             </p>
           </div>
-          <div className="room-save">
-            <Favorite id={r.id} />
-            <span>Lưu căn hộ</span>
+          <div className="room-heading-tools">
+            <ShareButton title={r.name} />
+            <div className="room-save">
+              <Favorite id={r.id} />
+              <span>Lưu căn hộ</span>
+            </div>
           </div>
         </header>
+        <div className="room-quick-facts" aria-label="Thông tin nhanh">
+          <span
+            className={`room-availability ${available ? "" : "unavailable"}`}
+          >
+            {r.isDemo ? "Căn mẫu · " : ""}
+            {r.status}
+          </span>
+          <LuxuryBadges property={r} className="lux-inline" />
+          {facts.map((f) => (
+            <span key={f.label}>
+              <f.icon size={16} aria-hidden="true" />
+              {f.value}
+            </span>
+          ))}
+          <span>
+            <Sofa size={16} aria-hidden="true" />
+            {r.furniture}
+          </span>
+        </div>
         <RentalGallery media={media} title={r.name} demo={r.isDemo} />
         <p className="room-image-note">
           {r.isDemo
@@ -91,6 +148,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
             </div>
             <nav className="room-anchor-nav" aria-label="Thông tin căn hộ">
               <a href="#khong-gian">Không gian</a>
+              {amenityCount > 0 && <a href="#tien-nghi">Tiện nghi</a>}
               <a href="#thong-tin">Thông số</a>
               <a href="#dieu-kien">Chi phí & điều kiện</a>
               <a href="#khu-vuc">Vị trí & bản đồ</a>
@@ -98,7 +156,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
             <section id="khong-gian">
               <span className="signature-kicker">01 / KHÔNG GIAN SỐNG</span>
               <h2>Tổng quan căn hộ</h2>
-              <p>{r.description}</p>
+              <RichText text={r.description} className="room-overview-text" />
               <div className="room-space-grid">
                 <div>
                   <Sofa size={24} />
@@ -118,12 +176,38 @@ export function RoomDetail({ room: r }: { room: Property }) {
                 </div>
               </div>
             </section>
+            {amenityCount > 0 && (
+              <section id="tien-nghi" className="room-amenities">
+                <span className="signature-kicker">TIỆN NGHI</span>
+                <h2>Tiện ích căn hộ</h2>
+                <p className="room-amenities-count">{amenityCount} tiện nghi</p>
+                <div className="room-amenity-groups">
+                  {amenities.map((group) => (
+                    <div key={group.title} className="room-amenity-group">
+                      <h3>{group.title}</h3>
+                      <ul>
+                        {group.items.map((a) => (
+                          <li key={a.key}>
+                            <a.icon
+                              size={22}
+                              strokeWidth={1.6}
+                              aria-hidden="true"
+                            />
+                            <span>{a.label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
             <section id="thong-tin">
               <span className="signature-kicker">02 / THÔNG SỐ CĂN HỘ</span>
               <h2>Thông số & nội thất</h2>
               <dl className="room-spec-table">
                 {[
-                  ["Mã tham chiếu", r.unitCode || r.id.toUpperCase()],
+                  ["Mã căn", code],
                   ["Dự án", project.name],
                   ["Loại căn hộ", r.type],
                   ["Diện tích", `${r.area} m²`],
@@ -184,7 +268,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
               </span>
               <h2>{project.name}</h2>
               <p>{project.description}</p>
-              <ProjectMap projectId={r.projectId} />
+              <ProjectMap place={content.locations[r.projectId]} />
               <Link
                 href={`/du-an/${portfolio?.slug || project.slug}`}
                 className="text-link"
@@ -194,7 +278,9 @@ export function RoomDetail({ room: r }: { room: Property }) {
             </section>
           </article>
           <aside className="room-contact-panel">
-            <span className="signature-kicker">ĐẤT VÀNG GROUP</span>
+            <span className="signature-kicker">
+              <ShieldCheck size={14} aria-hidden="true" /> ĐẤT VÀNG GROUP
+            </span>
             <p className="room-price-label">
               {r.isDemo
                 ? "Giá thuê tham khảo · Dữ liệu mẫu"
@@ -219,14 +305,30 @@ export function RoomDetail({ room: r }: { room: Property }) {
                 ? "Gọi trực tiếp để xác nhận giá, hiện trạng và lịch xem căn hộ."
                 : "Liên hệ để kiểm tra tình trạng mới nhất hoặc tìm lựa chọn khác trong cùng dự án."}
             </p>
+            <dl className="room-price-breakdown">
+              <div>
+                <dt>Đặt cọc</dt>
+                <dd>{r.deposit || "Theo thỏa thuận"}</dd>
+              </div>
+              <div>
+                <dt>Phí quản lý</dt>
+                <dd>{r.managementFee || "Xác nhận khi xem"}</dd>
+              </div>
+              <div>
+                <dt>Thuê tối thiểu</dt>
+                <dd>{r.minimumLease || "Linh hoạt"}</dd>
+              </div>
+            </dl>
+
             <CallContact
               label={available ? "Gọi hẹn xem phòng" : "Gọi tìm căn tương tự"}
               phone={r.contactPhone || undefined}
+              className="button-outline-call"
             />
             <div className="room-call-context">
-              <span>Khi gọi, bạn có thể cung cấp</span>
+              <span>Mã căn khi trao đổi</span>
               <strong>
-                {project.name} · {r.unitCode || r.id.toUpperCase()}
+                {project.name} · {code}
               </strong>
             </div>
             <Link
@@ -237,28 +339,30 @@ export function RoomDetail({ room: r }: { room: Property }) {
             </Link>
           </aside>
         </div>
-        <section className="room-related">
-          <div className="operation-content-heading">
-            <div>
-              <span className="signature-kicker">THÊM LỰA CHỌN CHO BẠN</span>
-              <h2>Căn hộ cùng dự án.</h2>
+        <Reveal>
+          <section className="room-related">
+            <div className="operation-content-heading">
+              <div>
+                <span className="signature-kicker">THÊM LỰA CHỌN CHO BẠN</span>
+                <h2>Căn hộ cùng dự án.</h2>
+              </div>
+              <Link
+                href={`/cho-thue/du-an/${project.slug}#can-ho`}
+                className="text-link"
+              >
+                Xem tất cả <ArrowUpRight size={18} />
+              </Link>
             </div>
-            <Link
-              href={`/cho-thue/du-an/${project.slug}#can-ho`}
-              className="text-link"
-            >
-              Xem tất cả <ArrowUpRight size={18} />
-            </Link>
-          </div>
-          <div className="grid grid-3">
-            {properties
-              .filter((x) => x.projectId === r.projectId && x.id !== r.id)
-              .slice(0, 3)
-              .map((x) => (
-                <PropertyCard key={x.id} property={x} />
-              ))}
-          </div>
-        </section>
+            <div className="grid grid-3">
+              {content.properties
+                .filter((x) => x.projectId === r.projectId && x.id !== r.id)
+                .slice(0, 3)
+                .map((x, i) => (
+                  <PropertyCard key={x.id} property={x} index={i} />
+                ))}
+            </div>
+          </section>
+        </Reveal>
       </div>
       <div className="room-mobile-call">
         <div>
@@ -266,7 +370,7 @@ export function RoomDetail({ room: r }: { room: Property }) {
           <span>/ tháng{r.isDemo ? " · Giá mẫu" : ""}</span>
         </div>
         <CallContact
-          label={available ? "Gọi xem phòng" : "Gọi tư vấn"}
+          label={available ? "Gọi hẹn xem" : "Gọi tư vấn"}
           phone={r.contactPhone || undefined}
         />
       </div>

@@ -1,50 +1,13 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { getImageProps } from "next/image";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
-import { ArrowUpRight, MoveHorizontal, Pause, Play } from "lucide-react";
+import { ArrowUpRight, Pause, Play } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Link from "@/components/page-navigation";
-import { banners as seedBanners, projects as seedProjects } from "@/data";
-import {
-  BANNER_STORE,
-  canOptimizeImage,
-  publicBanners,
-  type ResolvedBanner,
-} from "@/lib/banners";
-
-const subscribe = (callback: () => void) => {
-  window.addEventListener("dvg-storage", callback);
-  window.addEventListener("storage", callback);
-  return () => {
-    window.removeEventListener("dvg-storage", callback);
-    window.removeEventListener("storage", callback);
-  };
-};
-/** Raw stored JSON (a stable string snapshot); null on the server. */
-function useStored(key: string) {
-  return useSyncExternalStore(
-    subscribe,
-    () => {
-      try {
-        return localStorage.getItem(`dvg:${key}`);
-      } catch {
-        return null;
-      }
-    },
-    () => null,
-  );
-}
-function parse<T>(raw: string | null, fallback: T): T {
-  if (!raw) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-const defaultSlides = publicBanners(seedBanners, seedProjects);
+import { canOptimizeImage, type ResolvedBanner } from "@/lib/banners";
 
 function BannerPicture({
   slide,
@@ -92,19 +55,9 @@ function BannerPicture({
   );
 }
 
-export function CorporateBanner() {
-  const storedBanners = useStored(BANNER_STORE);
-  const storedProjects = useStored("projects");
-  // Server and hydration render the seed banners; admin changes saved in this
-  // browser apply right after hydration, so there is no hydration mismatch.
-  const slides = useMemo(() => {
-    if (!storedBanners) return defaultSlides;
-    const visible = publicBanners(
-      parse(storedBanners, seedBanners),
-      parse(storedProjects, seedProjects),
-    );
-    return visible.length ? visible : defaultSlides;
-  }, [storedBanners, storedProjects]);
+/** Slides are resolved on the server from the banner API (SEO-visible links). */
+export function CorporateBanner({ slides }: { slides: ResolvedBanner[] }) {
+  const t = useT();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
@@ -143,8 +96,8 @@ export function CorporateBanner() {
   return (
     <section
       className="corporate-banner"
-      aria-roledescription="trình chiếu"
-      aria-label="Hình ảnh Đất Vàng Group"
+      aria-roledescription={t("trình chiếu")}
+      aria-label={t("Hình ảnh Đất Vàng Group")}
       onFocusCapture={(event) =>
         setInteracting(event.target.matches(":focus-visible"))
       }
@@ -157,7 +110,9 @@ export function CorporateBanner() {
         ref={viewport}
         className="banner-swipe-viewport"
         tabIndex={0}
-        aria-label="Kéo hoặc vuốt để chuyển ảnh. Dùng phím mũi tên trái và phải khi sử dụng bàn phím."
+        aria-label={t(
+          "Kéo hoặc vuốt để chuyển ảnh. Dùng phím mũi tên trái và phải khi sử dụng bàn phím.",
+        )}
         onKeyDown={(event) => {
           if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
             event.preventDefault();
@@ -184,7 +139,7 @@ export function CorporateBanner() {
                   href={item.href}
                   className="banner-slide-link"
                   draggable={false}
-                  aria-label={`Xem chi tiết dự án ${item.projectName}`}
+                  aria-label={`${t("Xem chi tiết dự án")} ${item.projectName}`}
                 >
                   <BannerPicture slide={item} first={index === 0} />
                 </Link>
@@ -198,8 +153,8 @@ export function CorporateBanner() {
       <div className="corporate-banner-shade" />
       <div className="signature-hero-content container">
         <div className="signature-hero-eyebrow">
-          <span>ĐÀ NẴNG, VIỆT NAM</span>
-          <span>BẤT ĐỘNG SẢN / KẾT NỐI / PHÁT TRIỂN</span>
+          <span>{t("ĐÀ NẴNG, VIỆT NAM")}</span>
+          <span>{t("BẤT ĐỘNG SẢN / KẾT NỐI / PHÁT TRIỂN")}</span>
         </div>
       </div>
       <div className="corporate-banner-bottom container">
@@ -209,7 +164,7 @@ export function CorporateBanner() {
           {slide.description && <small>{slide.description}</small>}
           {slide.href && (
             <em className="banner-caption-cue" aria-hidden="true">
-              Xem chi tiết dự án <ArrowUpRight size={14} />
+              {t("Xem chi tiết dự án")} <ArrowUpRight size={14} />
             </em>
           )}
         </div>
@@ -220,7 +175,9 @@ export function CorporateBanner() {
           </span>
           {!reduced && (
             <button
-              aria-label={playing ? "Tạm dừng trình chiếu" : "Phát trình chiếu"}
+              aria-label={t(
+                playing ? "Tạm dừng trình chiếu" : "Phát trình chiếu",
+              )}
               onClick={() => {
                 setPaused((value) => !value);
                 setInteracting(false);

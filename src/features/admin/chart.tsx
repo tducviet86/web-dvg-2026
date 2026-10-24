@@ -8,7 +8,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import type { Lead } from "@/types";
+type Lead = { createdAt: string };
 export default function LeadChart({ leads }: { leads: Lead[] }) {
   const now = new Date();
   const data = Array.from({ length: 6 }, (_, i) => {

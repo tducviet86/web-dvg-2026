@@ -1,6 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { usePageNavigation } from "./page-navigation";
+import { useLocalizeHref } from "@/i18n/client";
 
 export function RentalSearchForm({
   action,
@@ -10,9 +11,10 @@ export function RentalSearchForm({
   children: ReactNode;
 }) {
   const navigate = usePageNavigation();
+  const localize = useLocalizeHref();
   return (
     <form
-      action={action}
+      action={localize(action)}
       className="rental-search filter-form"
       onSubmit={(event) => {
         if (!navigate) return;

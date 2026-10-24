@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -15,149 +15,122 @@ import {
   Save,
   Smartphone,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "@/components/page-navigation";
 import { Button } from "@/components/ui/button";
-import { photos } from "@/data";
-import { readStore } from "@/lib/storage";
-import {
-  BANNER_STORE,
-  HIDDEN_PROJECT_STATUS,
-  isProjectPublic,
-  normalizeOrder,
-  placeBanner,
-  projectBannerOf,
-  publicBanners,
-  resolveBanner,
-  sortBanners,
-  validateBanner,
-  type ProjectBannerDraft,
-  type ResolvedBanner,
-} from "@/lib/banners";
-import type { Banner, BannerType, Project } from "@/types";
+import { api, errorMessage } from "./api";
+import { MediaPicker } from "./media";
+import type { MediaRef } from "./model";
 
-const MAX_UPLOAD_LENGTH = 1_600_000;
-
-/** Downscales an uploaded file into a compact data URL for browser storage. */
-async function compressImage(file: File, maxWidth: number) {
-  if (!/^image\/(png|jpeg|webp|avif)$/.test(file.type))
-    throw new Error("Chỉ hỗ trợ ảnh PNG, JPG, WebP hoặc AVIF.");
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxWidth / bitmap.width);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  let url = canvas.toDataURL("image/webp", 0.82);
-  if (!url.startsWith("data:image/webp"))
-    url = canvas.toDataURL("image/jpeg", 0.82);
-  if (url.length > MAX_UPLOAD_LENGTH)
-    throw new Error("Ảnh sau khi nén vẫn quá lớn. Hãy chọn ảnh nhỏ hơn.");
-  return url;
-}
-
-function ImageField({
-  label,
-  value,
-  onChange,
-  maxWidth,
-  required,
-  hint,
-}: {
+/** Banner settings edited inside the project form (sent as `banner`). */
+export type ProjectBannerDraft = {
+  enabled: boolean;
+  useProjectImage: boolean;
+  image: MediaRef | null;
+  mobileImage: MediaRef | null;
+  imageAlt: string;
   label: string;
-  value: string;
-  onChange: (value: string) => void;
-  maxWidth: number;
-  required?: boolean;
-  hint?: string;
-}) {
-  const id = useId();
-  const [busy, setBusy] = useState(false);
-  const uploaded = value.startsWith("data:");
-  return (
-    <div className="banner-image-field full">
-      <label htmlFor={id}>
-        <span>
-          {label}
-          {required && <span className="required-mark"> *</span>}
-        </span>
-        <input
-          id={id}
-          value={uploaded ? "" : value}
-          placeholder={
-            uploaded
-              ? "Đang dùng ảnh tải lên từ máy"
-              : "/images/ten-anh.jpg hoặc https://…"
-          }
-          onChange={(event) => onChange(event.target.value)}
-          aria-describedby={hint ? `${id}-hint` : undefined}
-        />
-      </label>
-      <div className="banner-image-actions">
-        <label className="banner-upload" aria-busy={busy}>
-          <Upload size={15} />
-          {busy ? "Đang xử lý…" : "Tải ảnh lên"}
-          <input
-            type="file"
-            className="sr-only"
-            accept="image/png,image/jpeg,image/webp,image/avif"
-            disabled={busy}
-            onChange={async (event) => {
-              const input = event.currentTarget;
-              const file = input.files?.[0];
-              if (!file) return;
-              setBusy(true);
-              try {
-                onChange(await compressImage(file, maxWidth));
-              } catch (error) {
-                toast.error(
-                  error instanceof Error && error.message
-                    ? error.message
-                    : "Không thể đọc tệp ảnh.",
-                );
-              } finally {
-                setBusy(false);
-                input.value = "";
-              }
-            }}
-          />
-        </label>
-        <select
-          aria-label={`Chọn nhanh ảnh minh họa cho ${label.toLowerCase()}`}
-          value={Object.values(photos).includes(value) ? value : ""}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          <option value="">Chọn ảnh minh họa…</option>
-          {Object.entries(photos).map(([key, url], index) => (
-            <option value={url} key={key}>
-              Không gian minh họa {index + 1}
-            </option>
-          ))}
-        </select>
-        {value && (
-          <button
-            type="button"
-            className="admin-inline-button"
-            onClick={() => onChange("")}
-          >
-            Bỏ ảnh
-          </button>
-        )}
-      </div>
-      {hint && <small id={`${id}-hint`}>{hint}</small>}
-    </div>
-  );
+  title: string;
+  description: string;
+  position: number;
+  /** Version loaded with the form, for conflict detection. */
+  expectedBannerUpdatedAt?: string;
+};
+type ApiImage = { id: string; url: string; alt: string } | null;
+export type AdminBanner = {
+  id: string;
+  type: "NORMAL" | "PROJECT";
+  label: string | null;
+  title: string | null;
+  description: string | null;
+  imageAlt: string | null;
+  image: ApiImage;
+  mobileImage: ApiImage;
+  useProjectImage: boolean;
+  projectId: string | null;
+  project: {
+    id: string;
+    slug: string;
+    name: string;
+    status: string;
+    deleted: boolean;
+  } | null;
+  isActive: boolean;
+  sortOrder: number;
+  publiclyVisible: boolean;
+  preview: {
+    label: string | null;
+    title: string;
+    description: string | null;
+    image: ApiImage;
+    mobileImage: ApiImage;
+    href: string | null;
+  };
+  updatedAt: string;
+};
+export type ProjectBannerRecord = {
+  id: string;
+  isActive: boolean;
+  useProjectImage: boolean;
+  imageId: string | null;
+  mobileImageId: string | null;
+  imageAlt: string | null;
+  label: string | null;
+  title: string | null;
+  description: string | null;
+  sortOrder: number;
+  updatedAt: string;
+} | null;
+
+export function projectBannerDraft(
+  record: ProjectBannerRecord,
+  images: { image: MediaRef | null; mobileImage: MediaRef | null },
+  total: number,
+): ProjectBannerDraft {
+  return {
+    enabled: !!record?.isActive,
+    useProjectImage: record ? record.useProjectImage : true,
+    image: images.image,
+    mobileImage: images.mobileImage,
+    imageAlt: record?.imageAlt ?? "",
+    label: record?.label ?? "",
+    title: record?.title ?? "",
+    description: record?.description ?? "",
+    position: record?.sortOrder ?? total + 1,
+    expectedBannerUpdatedAt: record?.updatedAt,
+  };
 }
+/** Request body for the project API (`banner` field). */
+export const bannerPayload = (d: ProjectBannerDraft) => ({
+  enabled: d.enabled,
+  useProjectImage: d.useProjectImage,
+  imageId: d.useProjectImage ? null : (d.image?.id ?? null),
+  mobileImageId: d.useProjectImage ? null : (d.mobileImage?.id ?? null),
+  imageAlt: d.imageAlt.trim() || null,
+  label: d.label.trim() || null,
+  title: d.title.trim() || null,
+  description: d.description.trim() || null,
+  position: d.position,
+  expectedBannerUpdatedAt: d.expectedBannerUpdatedAt,
+});
+
+type Preview = {
+  label?: string | null;
+  title: string;
+  description?: string | null;
+  image?: string;
+  mobileImage?: string;
+  alt?: string;
+  href?: string | null;
+};
 
 /** Mirrors the homepage banner layout for desktop and mobile. */
 export function BannerPreview({
   banner,
   note,
 }: {
-  banner: ResolvedBanner | null;
+  banner: Preview | null;
   note?: string;
 }) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
@@ -193,7 +166,7 @@ export function BannerPreview({
         data-linked={!!banner?.href}
       >
         {src && failed !== src ? (
-          // Preview accepts arbitrary admin URLs and uploaded data URLs.
+          // Preview accepts media from the CDN or legacy paths.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
@@ -202,9 +175,7 @@ export function BannerPreview({
           />
         ) : (
           <span className="banner-preview-empty">
-            {src
-              ? "Không tải được ảnh. Kiểm tra lại đường dẫn."
-              : "Chưa có ảnh banner"}
+            {src ? "Không tải được ảnh." : "Chưa có ảnh banner"}
           </span>
         )}
         <div className="banner-preview-shade" />
@@ -261,6 +232,88 @@ function PositionField({
   );
 }
 
+type ContentValue = {
+  title: string;
+  description: string;
+  label: string;
+  imageAlt: string;
+  position: number;
+};
+function ContentFields({
+  value,
+  onChange,
+  titlePlaceholder,
+  projectDescription,
+  maxPosition,
+}: {
+  value: ContentValue;
+  onChange: (patch: Partial<ContentValue>) => void;
+  titlePlaceholder?: string;
+  projectDescription?: string;
+  maxPosition: number;
+}) {
+  return (
+    <>
+      <label className="full">
+        <span>Tiêu đề banner</span>
+        <input
+          value={value.title}
+          maxLength={120}
+          placeholder={titlePlaceholder}
+          onChange={(event) => onChange({ title: event.target.value })}
+        />
+        {titlePlaceholder !== undefined && (
+          <small>
+            Để trống để dùng tên dự án (tự cập nhật khi đổi tên dự án).
+          </small>
+        )}
+      </label>
+      <label className="full">
+        <span>Mô tả banner (tùy chọn)</span>
+        <textarea
+          rows={3}
+          maxLength={240}
+          value={value.description}
+          onChange={(event) => onChange({ description: event.target.value })}
+        />
+        {projectDescription && (
+          <button
+            type="button"
+            className="admin-inline-button"
+            onClick={() =>
+              onChange({ description: projectDescription.slice(0, 240) })
+            }
+          >
+            Dùng mô tả ngắn của dự án
+          </button>
+        )}
+      </label>
+      <label>
+        <span>Nhãn nhỏ (tùy chọn)</span>
+        <input
+          value={value.label}
+          maxLength={40}
+          placeholder="DỰ ÁN NỔI BẬT"
+          onChange={(event) => onChange({ label: event.target.value })}
+        />
+      </label>
+      <PositionField
+        value={value.position}
+        max={maxPosition}
+        onChange={(position) => onChange({ position })}
+      />
+      <label className="full">
+        <span>Mô tả ảnh (alt text)</span>
+        <input
+          value={value.imageAlt}
+          maxLength={200}
+          onChange={(event) => onChange({ imageAlt: event.target.value })}
+        />
+      </label>
+    </>
+  );
+}
+
 /** "Hiển thị trên Banner trang chủ" section of the project editor. */
 export function ProjectBannerSection({
   number,
@@ -271,8 +324,15 @@ export function ProjectBannerSection({
   onChange,
 }: {
   number: number;
-  project: Project;
-  existing?: Banner;
+  project: {
+    name: string;
+    slug: string;
+    description: string;
+    published: boolean;
+    cover: MediaRef | null;
+    coverAlt: string;
+  };
+  existing: boolean;
   maxPosition: number;
   draft: ProjectBannerDraft;
   onChange: (draft: ProjectBannerDraft) => void;
@@ -280,31 +340,7 @@ export function ProjectBannerSection({
   const set = (patch: Partial<ProjectBannerDraft>) =>
     onChange({ ...draft, ...patch });
   const switchId = useId();
-  const preview = useMemo(
-    () =>
-      resolveBanner(
-        {
-          id: existing?.id || "preview",
-          type: "PROJECT",
-          projectId: project.id,
-          useProjectImage: draft.useProjectImage,
-          imageUrl: draft.imageUrl,
-          mobileImageUrl: draft.mobileImageUrl,
-          imageAlt: draft.imageAlt,
-          label: draft.label,
-          title: draft.title,
-          description: draft.description,
-          isActive: true,
-          sortOrder: draft.position,
-          createdAt: "",
-          updatedAt: "",
-        },
-        new Map([[project.id, project]]),
-        true,
-      ),
-    [draft, existing?.id, project],
-  );
-  const hidden = !isProjectPublic(project);
+  const image = draft.useProjectImage ? project.cover : draft.image;
   return (
     <section
       className="admin-panel editor-section"
@@ -342,10 +378,10 @@ export function ProjectBannerSection({
         </p>
       ) : (
         <>
-          {hidden && (
+          {!project.published && (
             <p className="banner-section-warning" role="status">
-              Dự án đang ở trạng thái “{HIDDEN_PROJECT_STATUS}”, banner sẽ không
-              hiển thị công khai cho tới khi dự án được mở lại.
+              Dự án chưa ở trạng thái “Đã xuất bản”, banner sẽ chỉ hiển thị công
+              khai sau khi dự án được xuất bản.
             </p>
           )}
           <div className="form-grid">
@@ -368,83 +404,49 @@ export function ProjectBannerSection({
                 Ảnh riêng cho banner (không thay đổi ảnh đại diện)
               </label>
             </fieldset>
+            {draft.useProjectImage && !project.cover && (
+              <p className="banner-section-warning full" role="status">
+                Dự án chưa có ảnh đại diện. Hãy thêm ảnh đại diện ở khung “Hình
+                ảnh” hoặc chọn ảnh riêng cho banner.
+              </p>
+            )}
             {!draft.useProjectImage && (
               <>
-                <ImageField
+                <MediaPicker
                   label="Ảnh banner (desktop)"
                   required
-                  value={draft.imageUrl}
-                  maxWidth={1920}
-                  onChange={(imageUrl) => set({ imageUrl })}
+                  value={draft.image}
+                  onChange={(img) => set({ image: img })}
                   hint="Khuyến nghị ảnh ngang ≥ 1920px, tỷ lệ khoảng 16:9."
                 />
-                <ImageField
+                <MediaPicker
                   label="Ảnh banner cho mobile (tùy chọn)"
-                  value={draft.mobileImageUrl}
-                  maxWidth={900}
-                  onChange={(mobileImageUrl) => set({ mobileImageUrl })}
+                  value={draft.mobileImage}
+                  onChange={(img) => set({ mobileImage: img })}
                   hint="Ảnh dọc cho màn hình nhỏ. Để trống sẽ dùng ảnh desktop."
                 />
               </>
             )}
-            <label className="full">
-              <span>Tiêu đề banner</span>
-              <input
-                value={draft.title}
-                maxLength={120}
-                placeholder={project.name || "Tên dự án"}
-                onChange={(event) => set({ title: event.target.value })}
-              />
-              <small>
-                Để trống để dùng tên dự án (tự cập nhật khi đổi tên dự án).
-              </small>
-            </label>
-            <label className="full">
-              <span>Mô tả banner (tùy chọn)</span>
-              <textarea
-                rows={3}
-                maxLength={240}
-                value={draft.description}
-                onChange={(event) => set({ description: event.target.value })}
-              />
-              {project.description && (
-                <button
-                  type="button"
-                  className="admin-inline-button"
-                  onClick={() =>
-                    set({ description: project.description.slice(0, 240) })
-                  }
-                >
-                  Dùng mô tả ngắn của dự án
-                </button>
-              )}
-            </label>
-            <label>
-              <span>Nhãn nhỏ (tùy chọn)</span>
-              <input
-                value={draft.label}
-                maxLength={40}
-                placeholder="DỰ ÁN NỔI BẬT"
-                onChange={(event) => set({ label: event.target.value })}
-              />
-            </label>
-            <PositionField
-              value={draft.position}
-              max={maxPosition}
-              onChange={(position) => set({ position })}
+            <ContentFields
+              value={draft}
+              onChange={set}
+              titlePlaceholder={project.name || "Tên dự án"}
+              projectDescription={project.description}
+              maxPosition={maxPosition}
             />
-            <label className="full">
-              <span>Mô tả ảnh (alt text)</span>
-              <input
-                value={draft.imageAlt}
-                maxLength={200}
-                placeholder={`Phối cảnh dự án ${project.name}`}
-                onChange={(event) => set({ imageAlt: event.target.value })}
-              />
-            </label>
           </div>
           <BannerPreview
-            banner={preview}
+            banner={{
+              label: draft.label || "DỰ ÁN NỔI BẬT",
+              title: draft.title || project.name,
+              description: draft.description,
+              image: image?.url,
+              mobileImage: draft.useProjectImage
+                ? undefined
+                : draft.mobileImage?.url,
+              alt: draft.imageAlt || project.coverAlt,
+              href: project.slug ? `/du-an/${project.slug}` : null,
+            }}
             note={
               project.slug
                 ? undefined
@@ -457,100 +459,106 @@ export function ProjectBannerSection({
   );
 }
 
-type FormState = {
-  type: BannerType;
+type ProjectOption = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  intro: string;
+  banner: { id: string } | null;
+};
+type FormState = ContentValue & {
+  type: "NORMAL" | "PROJECT";
   projectId: string;
   useProjectImage: boolean;
-  imageUrl: string;
-  mobileImageUrl: string;
-  imageAlt: string;
-  label: string;
-  title: string;
-  description: string;
+  image: MediaRef | null;
+  mobileImage: MediaRef | null;
   isActive: boolean;
-  position: number;
 };
+const ref = (img: ApiImage): MediaRef | null =>
+  img ? { id: img.id, url: img.url } : null;
 
 function BannerForm({
   banner,
-  banners,
+  total,
   projects,
-  onSave,
+  onSaved,
   onCancel,
 }: {
-  banner: Banner | null;
-  banners: Banner[];
-  projects: Project[];
-  onSave: (banner: Banner, position: number) => void;
+  banner: AdminBanner | null;
+  total: number;
+  projects: ProjectOption[];
+  onSaved: () => void;
   onCancel: () => void;
 }) {
   const [form, setForm] = useState<FormState>(() => ({
-    type: banner?.type || "NORMAL",
-    projectId: banner?.projectId || "",
+    type: banner?.type ?? "NORMAL",
+    projectId: banner?.projectId ?? "",
     useProjectImage: banner?.useProjectImage ?? true,
-    imageUrl: banner?.imageUrl || "",
-    mobileImageUrl: banner?.mobileImageUrl || "",
-    imageAlt: banner?.imageAlt || "",
-    label: banner?.label || "",
-    title: banner?.title || "",
-    description: banner?.description || "",
+    image: ref(banner?.image ?? null),
+    mobileImage: ref(banner?.mobileImage ?? null),
+    imageAlt: banner?.imageAlt ?? "",
+    label: banner?.label ?? "",
+    title: banner?.title ?? "",
+    description: banner?.description ?? "",
     isActive: banner?.isActive ?? true,
-    position: banner?.sortOrder || banners.length + 1,
+    position: banner?.sortOrder ?? total + 1,
   }));
   const [errors, setErrors] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
   const set = (patch: Partial<FormState>) => setForm({ ...form, ...patch });
   const project = projects.find((p) => p.id === form.projectId);
-  const record: Banner = {
-    id: banner?.id || "draft",
-    type: form.type,
-    projectId: form.type === "PROJECT" ? form.projectId || null : null,
-    useProjectImage: form.type === "PROJECT" ? form.useProjectImage : undefined,
-    imageUrl:
-      form.type === "PROJECT" && form.useProjectImage
-        ? ""
-        : form.imageUrl.trim(),
-    mobileImageUrl:
-      form.type === "PROJECT" && form.useProjectImage
-        ? undefined
-        : form.mobileImageUrl.trim() || undefined,
-    imageAlt: form.imageAlt.trim() || undefined,
-    label: form.label.trim() || undefined,
-    title: form.title.trim() || undefined,
-    description: form.description.trim() || undefined,
-    isActive: form.isActive,
-    sortOrder: form.position,
-    createdAt: banner?.createdAt || "",
-    updatedAt: banner?.updatedAt || "",
-  };
-  const preview = resolveBanner(
-    record,
-    new Map(projects.map((p) => [p.id, p])),
-    true,
-  );
+  const isProject = form.type === "PROJECT";
   const typeId = useId();
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
-    const issues = validateBanner(record, banners, projects);
-    if (form.type === "NORMAL" && !record.title && !record.imageAlt)
+    const issues: string[] = [];
+    if (isProject && !form.projectId) issues.push("Hãy chọn dự án liên kết.");
+    if ((!isProject || !form.useProjectImage) && !form.image)
+      issues.push("Hãy chọn ảnh banner.");
+    if (!isProject && !form.title.trim() && !form.imageAlt.trim())
       issues.push("Banner thường cần tiêu đề hoặc mô tả ảnh (alt text).");
     if (issues.length) {
       setErrors(issues);
-      requestAnimationFrame(() =>
-        document.getElementById("editor-errors")?.focus(),
-      );
       return;
     }
-    const now = new Date().toISOString();
-    onSave(
-      {
-        ...record,
-        id: banner?.id || crypto.randomUUID(),
-        createdAt: banner?.createdAt || now,
-        updatedAt: now,
-      },
-      form.position,
-    );
+    const content = {
+      label: form.label.trim() || null,
+      title: form.title.trim() || null,
+      description: form.description.trim() || null,
+      imageAlt: form.imageAlt.trim() || null,
+      imageId:
+        isProject && form.useProjectImage ? null : (form.image?.id ?? null),
+      mobileImageId:
+        isProject && form.useProjectImage
+          ? null
+          : (form.mobileImage?.id ?? null),
+      useProjectImage: isProject ? form.useProjectImage : false,
+      isActive: form.isActive,
+      position: form.position,
+    };
+    setSaving(true);
+    try {
+      if (banner)
+        await api("PATCH", `/admin/banners/${banner.id}`, {
+          ...content,
+          expectedUpdatedAt: banner.updatedAt,
+        });
+      else
+        await api("POST", "/admin/banners", {
+          ...content,
+          type: form.type,
+          projectId: isProject ? form.projectId : null,
+        });
+      toast.success("Đã lưu banner.");
+      onSaved();
+    } catch (error) {
+      setErrors([errorMessage(error)]);
+    } finally {
+      setSaving(false);
+    }
   }
+  const image = isProject && form.useProjectImage ? null : form.image;
   return (
     <form onSubmit={submit} className="admin-editor admin-editor-page">
       <div className="editor-topline">
@@ -561,12 +569,7 @@ function BannerForm({
         <span>{banner ? "Đang chỉnh sửa banner" : "Banner mới"}</span>
       </div>
       {errors.length > 0 && (
-        <div
-          className="editor-errors"
-          id="editor-errors"
-          tabIndex={-1}
-          role="alert"
-        >
+        <div className="editor-errors" tabIndex={-1} role="alert">
           <strong>Vui lòng kiểm tra lại thông tin</strong>
           <ul>
             {errors.map((error) => (
@@ -632,7 +635,7 @@ function BannerForm({
               </div>
             </header>
             <div className="form-grid">
-              {form.type === "PROJECT" && (
+              {isProject && (
                 <>
                   <label className="full">
                     <span>
@@ -641,24 +644,21 @@ function BannerForm({
                     <select
                       value={form.projectId}
                       required
+                      disabled={!!banner}
                       onChange={(event) =>
                         set({ projectId: event.target.value })
                       }
                     >
                       <option value="">Chọn dự án…</option>
                       {projects.map((p) => {
-                        const taken = projectBannerOf(banners, p.id);
+                        const taken = !!p.banner && p.banner.id !== banner?.id;
                         return (
-                          <option
-                            key={p.id}
-                            value={p.id}
-                            disabled={!!taken && taken.id !== banner?.id}
-                          >
+                          <option key={p.id} value={p.id} disabled={taken}>
                             {p.name}
-                            {taken && taken.id !== banner?.id
+                            {taken
                               ? " — đã có banner"
-                              : !isProjectPublic(p)
-                                ? ` — ${p.status}`
+                              : p.status !== "PUBLISHED"
+                                ? " — chưa xuất bản"
                                 : ""}
                           </option>
                         );
@@ -677,10 +677,9 @@ function BannerForm({
                       )}
                     </small>
                   </label>
-                  {project && !isProjectPublic(project) && (
+                  {project && project.status !== "PUBLISHED" && (
                     <p className="banner-section-warning full" role="status">
-                      Dự án đang “{project.status}”, banner sẽ không hiển thị
-                      công khai.
+                      Dự án chưa xuất bản, banner sẽ không hiển thị công khai.
                     </p>
                   )}
                   <fieldset className="banner-choice full">
@@ -704,78 +703,30 @@ function BannerForm({
                   </fieldset>
                 </>
               )}
-              {(form.type === "NORMAL" || !form.useProjectImage) && (
+              {(!isProject || !form.useProjectImage) && (
                 <>
-                  <ImageField
+                  <MediaPicker
                     label="Ảnh banner (desktop)"
                     required
-                    value={form.imageUrl}
-                    maxWidth={1920}
-                    onChange={(imageUrl) => set({ imageUrl })}
+                    value={form.image}
+                    onChange={(img) => set({ image: img })}
                     hint="Khuyến nghị ảnh ngang ≥ 1920px, tỷ lệ khoảng 16:9."
                   />
-                  <ImageField
+                  <MediaPicker
                     label="Ảnh banner cho mobile (tùy chọn)"
-                    value={form.mobileImageUrl}
-                    maxWidth={900}
-                    onChange={(mobileImageUrl) => set({ mobileImageUrl })}
+                    value={form.mobileImage}
+                    onChange={(img) => set({ mobileImage: img })}
                     hint="Ảnh dọc cho màn hình nhỏ. Để trống sẽ dùng ảnh desktop."
                   />
                 </>
               )}
-              <label className="full">
-                <span>Tiêu đề banner</span>
-                <input
-                  value={form.title}
-                  maxLength={120}
-                  placeholder={project?.name}
-                  onChange={(event) => set({ title: event.target.value })}
-                />
-                {form.type === "PROJECT" && (
-                  <small>Để trống để dùng tên dự án.</small>
-                )}
-              </label>
-              <label className="full">
-                <span>Mô tả (tùy chọn)</span>
-                <textarea
-                  rows={3}
-                  maxLength={240}
-                  value={form.description}
-                  onChange={(event) => set({ description: event.target.value })}
-                />
-                {project?.description && (
-                  <button
-                    type="button"
-                    className="admin-inline-button"
-                    onClick={() =>
-                      set({ description: project.description.slice(0, 240) })
-                    }
-                  >
-                    Dùng mô tả ngắn của dự án
-                  </button>
-                )}
-              </label>
-              <label>
-                <span>Nhãn nhỏ (tùy chọn)</span>
-                <input
-                  value={form.label}
-                  maxLength={40}
-                  placeholder={
-                    form.type === "PROJECT"
-                      ? "DỰ ÁN NỔI BẬT"
-                      : "KHÔNG GIAN SỐNG"
-                  }
-                  onChange={(event) => set({ label: event.target.value })}
-                />
-              </label>
-              <label>
-                <span>Mô tả ảnh (alt text)</span>
-                <input
-                  value={form.imageAlt}
-                  maxLength={200}
-                  onChange={(event) => set({ imageAlt: event.target.value })}
-                />
-              </label>
+              <ContentFields
+                value={form}
+                onChange={set}
+                titlePlaceholder={isProject ? project?.name : undefined}
+                projectDescription={isProject ? project?.intro : undefined}
+                maxPosition={total + (banner ? 0 : 1)}
+              />
             </div>
           </section>
           <section className="admin-panel editor-section">
@@ -783,26 +734,19 @@ function BannerForm({
               <span className="editor-section-number">03</span>
               <div>
                 <h2>Hiển thị</h2>
-                <p>Trạng thái và vị trí của banner trong trình chiếu.</p>
+                <p>Trạng thái của banner trong trình chiếu.</p>
               </div>
             </header>
-            <div className="form-grid">
-              <label className="banner-switch">
-                <input
-                  type="checkbox"
-                  role="switch"
-                  checked={form.isActive}
-                  onChange={(event) => set({ isActive: event.target.checked })}
-                />
-                <span aria-hidden="true" />
-                Bật hiển thị trên trang chủ
-              </label>
-              <PositionField
-                value={form.position}
-                max={banners.length + (banner ? 0 : 1)}
-                onChange={(position) => set({ position })}
+            <label className="banner-switch">
+              <input
+                type="checkbox"
+                role="switch"
+                checked={form.isActive}
+                onChange={(event) => set({ isActive: event.target.checked })}
               />
-            </div>
+              <span aria-hidden="true" />
+              Bật hiển thị trên trang chủ
+            </label>
           </section>
         </div>
         <aside className="editor-aside">
@@ -811,17 +755,35 @@ function BannerForm({
               <ImagePlus size={19} />
               Xem trước
             </h2>
-            <BannerPreview banner={preview} />
+            <BannerPreview
+              banner={{
+                label: form.label || (isProject ? "DỰ ÁN NỔI BẬT" : ""),
+                title: form.title || project?.name || "",
+                description: form.description,
+                image:
+                  image?.url ??
+                  (isProject && banner?.preview.image
+                    ? banner.preview.image.url
+                    : undefined),
+                mobileImage: form.mobileImage?.url,
+                alt: form.imageAlt,
+                href: isProject && project ? `/du-an/${project.slug}` : null,
+              }}
+            />
           </section>
         </aside>
       </div>
       <div className="editor-savebar">
-        <span>Kiểm tra bản xem trước trước khi lưu</span>
+        <span>
+          {saving
+            ? "Đang lưu lên máy chủ…"
+            : "Kiểm tra bản xem trước trước khi lưu"}
+        </span>
         <div>
           <Button type="button" variant="outline" onClick={onCancel}>
             Hủy
           </Button>
-          <Button type="submit">
+          <Button type="submit" disabled={saving}>
             <Save size={17} />
             Lưu banner
           </Button>
@@ -835,65 +797,64 @@ function BannerForm({
 export function BannerAdmin({
   recordId,
   action,
-  banners,
-  projects,
-  onCommit,
+  canWrite,
   goTo,
 }: {
   recordId?: string;
   action?: string;
-  banners: Banner[];
-  projects: Project[];
-  onCommit: (banners: Banner[]) => boolean;
+  canWrite: boolean;
   goTo: (href: string) => void;
 }) {
-  const sorted = sortBanners(banners);
-  const projectsById = new Map(projects.map((p) => [p.id, p]));
-  const selected = banners.find((b) => b.id === recordId);
+  const [banners, setBanners] = useState<AdminBanner[] | null>(null);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(async () => {
+    try {
+      const [list, projectList] = await Promise.all([
+        api<{ data: AdminBanner[] }>("GET", "/admin/banners"),
+        api<{ data: ProjectOption[] }>("GET", "/admin/projects?pageSize=100"),
+      ]);
+      setBanners(list.data);
+      setProjects(projectList.data);
+    } catch (error) {
+      toast.error(errorMessage(error));
+      setBanners([]);
+    }
+  }, []);
+  useEffect(() => {
+    // Loaded on mount; writes reload explicitly.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
   const back = () => goTo("/admin/banners");
-  const visibleCount = publicBanners(banners, projects).length;
+  const selected = banners?.find((b) => b.id === recordId);
 
-  /** Re-reads storage so edits made in the project form are not overwritten. */
-  function latest(id?: string) {
-    const rows = readStore<Banner[]>(BANNER_STORE, banners);
-    if (id) {
-      const before = banners.find((b) => b.id === id);
-      const now = rows.find((b) => b.id === id);
-      if (JSON.stringify(before) !== JSON.stringify(now)) {
-        toast.error(
-          "Banner đã thay đổi ở nơi khác (ví dụ form dự án). Hãy tải lại trang trước khi lưu.",
-        );
-        return null;
-      }
+  async function patch(
+    banner: AdminBanner,
+    body: Record<string, unknown>,
+    done: string,
+  ) {
+    setBusy(true);
+    try {
+      await api("PATCH", `/admin/banners/${banner.id}`, {
+        ...body,
+        expectedUpdatedAt: banner.updatedAt,
+      });
+      toast.success(done);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      await load();
+      setBusy(false);
     }
-    return rows;
-  }
-  function move(banner: Banner, offset: number) {
-    const rows = latest(banner.id);
-    if (rows && onCommit(placeBanner(rows, banner, banner.sortOrder + offset)))
-      toast.success("Đã cập nhật thứ tự banner.");
-  }
-  function toggle(banner: Banner) {
-    const rows = latest(banner.id);
-    if (!rows) return;
-    const next = { ...banner, isActive: !banner.isActive };
-    if (next.isActive) {
-      const issues = validateBanner(next, rows, projects);
-      if (issues.length) {
-        toast.error(issues[0]);
-        return;
-      }
-    }
-    next.updatedAt = new Date().toISOString();
-    if (onCommit(rows.map((b) => (b.id === next.id ? next : b))))
-      toast.success(next.isActive ? "Đã bật banner." : "Đã tắt banner.");
   }
 
+  if (banners === null) return <p role="status">Đang tải banner…</p>;
   if (recordId && recordId !== "new" && !selected)
     return (
       <section className="admin-panel">
         <h2>Không tìm thấy banner</h2>
-        <p>Banner này đã bị xóa hoặc chưa có trong trình duyệt hiện tại.</p>
+        <p>Banner này đã bị xóa.</p>
         <Button onClick={back}>Về danh sách</Button>
       </section>
     );
@@ -901,56 +862,43 @@ export function BannerAdmin({
     return (
       <BannerForm
         key={recordId}
-        banner={selected || null}
-        banners={banners}
+        banner={selected ?? null}
+        total={banners.length}
         projects={projects}
         onCancel={back}
-        onSave={(banner, position) => {
-          const rows = latest(selected?.id);
-          if (!rows) return;
-          const issues = validateBanner(banner, rows, projects);
-          if (issues.length) {
-            toast.error(issues[0]);
-            return;
-          }
-          if (onCommit(placeBanner(rows, banner, position))) {
-            toast.success("Đã lưu banner.");
-            back();
-          }
+        onSaved={() => {
+          void load();
+          back();
         }}
       />
     );
-  if (selected && action === "delete") {
-    const linked = selected.projectId
-      ? projectsById.get(selected.projectId)
-      : undefined;
+  if (selected && action === "delete")
     return (
       <section className="admin-panel admin-confirm-page">
         <span className="eyebrow">XÁC NHẬN THAO TÁC</span>
-        <h2>
-          Xóa banner “
-          {resolveBanner(selected, projectsById, true)?.title || "không tên"}”?
-        </h2>
+        <h2>Xóa banner “{selected.preview.title || "không tên"}”?</h2>
         <p>
-          {linked
-            ? `Chỉ xóa banner; dữ liệu dự án ${linked.name} được giữ nguyên và tùy chọn hiển thị trên banner của dự án sẽ chuyển về tắt.`
-            : "Banner sẽ bị gỡ khỏi trang chủ. Thao tác này không thể hoàn tác riêng lẻ."}
+          {selected.project
+            ? `Chỉ xóa banner; dữ liệu dự án ${selected.project.name} được giữ nguyên và tùy chọn hiển thị trên banner của dự án sẽ chuyển về tắt.`
+            : "Banner sẽ bị gỡ khỏi trang chủ. Thao tác này không thể hoàn tác."}
         </p>
         <div className="dialog-actions">
           <Button variant="outline" onClick={back}>
             Hủy
           </Button>
           <Button
-            onClick={() => {
-              const rows = latest(selected.id);
-              if (
-                rows &&
-                onCommit(
-                  normalizeOrder(rows.filter((b) => b.id !== selected.id)),
-                )
-              ) {
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await api("DELETE", `/admin/banners/${selected.id}`);
                 toast.success("Đã xóa banner.");
+                await load();
                 back();
+              } catch (error) {
+                toast.error(errorMessage(error));
+              } finally {
+                setBusy(false);
               }
             }}
           >
@@ -959,18 +907,18 @@ export function BannerAdmin({
         </div>
       </section>
     );
-  }
+  const visibleCount = banners.filter((b) => b.publiclyVisible).length;
   return (
     <section className="admin-panel admin-list-panel">
       <div className="admin-table-toolbar">
         <span>
-          {sorted.length} banner · {visibleCount} đang hiển thị công khai
+          {banners.length} banner · {visibleCount} đang hiển thị công khai
         </span>
       </div>
       {visibleCount === 0 && (
         <p className="banner-section-warning" role="status">
-          Chưa có banner nào hiển thị công khai — trang chủ sẽ dùng bộ banner
-          mặc định.
+          Chưa có banner nào hiển thị công khai — trang chủ sẽ dùng ảnh nền mặc
+          định.
         </p>
       )}
       <div className="table-scroll">
@@ -985,19 +933,15 @@ export function BannerAdmin({
             </tr>
           </thead>
           <tbody>
-            {sorted.map((banner, index) => {
-              const resolved = resolveBanner(banner, projectsById, true);
-              const project = banner.projectId
-                ? projectsById.get(banner.projectId)
-                : undefined;
-              const title = resolved?.title || "Banner không tên";
+            {banners.map((banner, index) => {
+              const title = banner.preview.title || "Banner không tên";
               const state = !banner.isActive
                 ? "Đã tắt"
-                : banner.type === "PROJECT" && !project
-                  ? "Lỗi: dự án không tồn tại"
-                  : project && !isProjectPublic(project)
-                    ? `Ẩn — dự án ${project.status.toLowerCase()}`
-                    : "Đang hiển thị";
+                : banner.publiclyVisible
+                  ? "Đang hiển thị"
+                  : banner.project
+                    ? "Ẩn — dự án chưa xuất bản"
+                    : "Ẩn — thiếu ảnh";
               return (
                 <tr key={banner.id}>
                   <td>
@@ -1008,16 +952,30 @@ export function BannerAdmin({
                       <button
                         type="button"
                         aria-label={`Đưa ${title} lên trên`}
-                        disabled={index === 0}
-                        onClick={() => move(banner, -1)}
+                        disabled={!canWrite || busy || index === 0}
+                        onClick={() =>
+                          patch(
+                            banner,
+                            { position: banner.sortOrder - 1 },
+                            "Đã cập nhật thứ tự banner.",
+                          )
+                        }
                       >
                         <ArrowUp size={14} />
                       </button>
                       <button
                         type="button"
                         aria-label={`Đưa ${title} xuống dưới`}
-                        disabled={index === sorted.length - 1}
-                        onClick={() => move(banner, 1)}
+                        disabled={
+                          !canWrite || busy || index === banners.length - 1
+                        }
+                        onClick={() =>
+                          patch(
+                            banner,
+                            { position: banner.sortOrder + 1 },
+                            "Đã cập nhật thứ tự banner.",
+                          )
+                        }
                       >
                         <ArrowDown size={14} />
                       </button>
@@ -1026,16 +984,19 @@ export function BannerAdmin({
                   <td>
                     <div className="banner-row-title">
                       <span className="banner-thumb">
-                        {resolved?.image && (
-                          // Thumbnails may be uploaded data URLs or external hosts.
+                        {banner.preview.image && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={resolved.image} alt="" loading="lazy" />
+                          <img
+                            src={banner.preview.image.url}
+                            alt=""
+                            loading="lazy"
+                          />
                         )}
                       </span>
                       <span>
                         <strong>{title}</strong>
                         <small>
-                          {resolved?.description || resolved?.label}
+                          {banner.preview.description || banner.preview.label}
                         </small>
                       </span>
                     </div>
@@ -1044,55 +1005,66 @@ export function BannerAdmin({
                     <span className="status-pill" data-type={banner.type}>
                       {banner.type}
                     </span>
-                    {banner.type === "PROJECT" && (
+                    {banner.type === "PROJECT" && banner.project && (
                       <small>
-                        {project ? (
-                          <Link href={`/admin/projects/${project.id}/edit`}>
-                            <Link2 size={12} /> {project.name} · /du-an/
-                            {project.slug}
-                          </Link>
-                        ) : (
-                          "Dự án đã bị xóa"
-                        )}
+                        <Link
+                          href={`/admin/projects/${banner.project.id}/edit`}
+                        >
+                          <Link2 size={12} /> {banner.project.name} · /du-an/
+                          {banner.project.slug}
+                        </Link>
                       </small>
                     )}
                   </td>
                   <td>
                     <span
                       className="status-pill"
-                      data-state={state === "Đang hiển thị" ? "on" : "off"}
+                      data-state={banner.publiclyVisible ? "on" : "off"}
                     >
                       {state}
                     </span>
                   </td>
                   <td>
-                    <div className="table-actions">
-                      <button
-                        aria-label={`Sửa ${title}`}
-                        onClick={() => goTo(`/admin/banners/${banner.id}/edit`)}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        aria-label={`${banner.isActive ? "Tắt" : "Bật"} ${title}`}
-                        aria-pressed={banner.isActive}
-                        onClick={() => toggle(banner)}
-                      >
-                        {banner.isActive ? (
-                          <Eye size={16} />
-                        ) : (
-                          <EyeOff size={16} />
-                        )}
-                      </button>
-                      <button
-                        aria-label={`Xóa ${title}`}
-                        onClick={() =>
-                          goTo(`/admin/banners/${banner.id}/delete`)
-                        }
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    {canWrite && (
+                      <div className="table-actions">
+                        <button
+                          aria-label={`Sửa ${title}`}
+                          onClick={() =>
+                            goTo(`/admin/banners/${banner.id}/edit`)
+                          }
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          aria-label={`${banner.isActive ? "Tắt" : "Bật"} ${title}`}
+                          aria-pressed={banner.isActive}
+                          disabled={busy}
+                          onClick={() =>
+                            patch(
+                              banner,
+                              { isActive: !banner.isActive },
+                              banner.isActive
+                                ? "Đã tắt banner."
+                                : "Đã bật banner.",
+                            )
+                          }
+                        >
+                          {banner.isActive ? (
+                            <Eye size={16} />
+                          ) : (
+                            <EyeOff size={16} />
+                          )}
+                        </button>
+                        <button
+                          aria-label={`Xóa ${title}`}
+                          onClick={() =>
+                            goTo(`/admin/banners/${banner.id}/delete`)
+                          }
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               );
@@ -1100,7 +1072,7 @@ export function BannerAdmin({
           </tbody>
         </table>
       </div>
-      {!sorted.length && (
+      {!banners.length && (
         <div className="empty-state">
           <h3>Chưa có banner</h3>
           <p>Thêm banner thường hoặc bật hiển thị banner trong form dự án.</p>

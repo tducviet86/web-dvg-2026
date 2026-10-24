@@ -1,7 +1,12 @@
+/** @jsxImportSource @/i18n/jsx */
 import Link from "@/components/page-navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Facebook } from "lucide-react";
 import { Logo } from "./header";
-import { companyHotline, telephoneHref } from "@/lib/company-contact";
+import {
+  companyFacebook,
+  companyHotline,
+  telephoneHref,
+} from "@/lib/company-contact";
 import { Newsletter } from "../interactive";
 export function SiteFooter() {
   return (
@@ -21,6 +26,16 @@ export function SiteFooter() {
               <a href={telephoneHref() || undefined}>
                 Hotline: {companyHotline}
               </a>
+              <br />
+              <a
+                className="footer-social"
+                href={companyFacebook}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Facebook size={15} aria-hidden="true" />
+                Đất Vàng Group
+              </a>
             </small>
           </div>
           <div>
@@ -28,8 +43,8 @@ export function SiteFooter() {
             {[
               ["Về Đất Vàng", "/gioi-thieu"],
               ["Dự án", "/du-an"],
-              ["Tầm nhìn & sứ mệnh", "/gioi-thieu/tam-nhin-su-menh"],
-              ["Tin tức & góc nhìn", "/blog"],
+              ["Căn hộ cho thuê", "/cho-thue"],
+              ["Tin tức", "/blog"],
             ].map(([t, h]) => (
               <Link key={h} href={h}>
                 {t}
@@ -40,10 +55,10 @@ export function SiteFooter() {
             <h3>Đồng hành</h3>
             {[
               ["Lĩnh vực hoạt động", "/dich-vu"],
-              ["Hợp tác chủ sở hữu", "/hop-tac-chu-so-huu"],
+              ["Ký gửi căn hộ", "/hop-tac-chu-so-huu"],
+              ["Đối tác", "/gioi-thieu/doi-tac"],
               ["Cơ hội nghề nghiệp", "/tuyen-dung"],
               ["Liên hệ", "/lien-he"],
-              ["Quản trị demo", "/admin"],
             ].map(([t, h]) => (
               <Link key={h} href={h}>
                 {t}
@@ -52,7 +67,9 @@ export function SiteFooter() {
           </div>
           <div>
             <Newsletter />
-            <p className="footer-note">Đăng ký chỉ lưu tại trình duyệt.</p>
+            <p className="footer-note">
+              Nhận góc nhìn mới về không gian sống. Hủy đăng ký bất cứ lúc nào.
+            </p>
             <Link href="/lien-he">
               Kết nối với chúng tôi
               <ArrowUpRight size={15} />
@@ -60,7 +77,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© 2026 Đất Vàng Group · Frontend demo</span>
+          <span>© 2026 Đất Vàng Group</span>
           <div>
             <Link href="/chinh-sach-bao-mat">Chính sách bảo mật</Link>
             <Link href="/dieu-khoan-su-dung">Điều khoản sử dụng</Link>

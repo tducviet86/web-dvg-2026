@@ -1,3 +1,5 @@
+/** @jsxImportSource @/i18n/jsx */
+import { BackButton } from "@/components/layout/back-button";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import {
@@ -7,22 +9,23 @@ import {
   Building2,
   KeyRound,
   Handshake,
+  Facebook,
 } from "lucide-react";
-import {
-  homeProjects,
-  projectStories,
-  type PortfolioProject,
-} from "@/data/home-projects";
-import { properties } from "@/data";
+import type { PortfolioProject } from "@/types";
+import type { SiteContent } from "@/lib/api/content";
 import { HomeProjects } from "./home-projects";
 import { PropertyCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { ProjectMap } from "./project-map";
+import { complexSchema, jsonLd } from "@/lib/structured-data";
+import { href, t } from "@/i18n/server";
 
 export function ProjectDirectory({
   group,
+  projects,
 }: {
   group?: "development" | "operation";
+  projects: PortfolioProject[];
 }) {
   return (
     <main
@@ -57,9 +60,11 @@ export function ProjectDirectory({
         </nav>
       </header>
       {(!group || group === "development") && (
-        <HomeProjects group="development" />
+        <HomeProjects group="development" projects={projects} />
       )}
-      {(!group || group === "operation") && <HomeProjects group="operation" />}
+      {(!group || group === "operation") && (
+        <HomeProjects group="operation" projects={projects} />
+      )}
     </main>
   );
 }
@@ -70,22 +75,44 @@ const modes = [
 ];
 export function PortfolioDetail({
   project: p,
+  content,
   mode = "thue",
 }: {
   project: PortfolioProject;
+  content: SiteContent;
   mode?: string;
 }) {
   const development = p.group === "development";
-  const story = projectStories[p.id];
+  const story = content.stories[p.id];
   const active = modes.some((m) => m.key === mode) ? mode : "thue";
-  const rooms = properties.filter((r) => r.projectId === p.projectId);
+  const rooms = content.properties.filter((r) => r.projectId === p.projectId);
   return (
     <main
       id="main"
       className={`portfolio-page portfolio-detail ${development ? "portfolio-development" : "portfolio-operation"}`}
     >
+      {(() => {
+        const api = content.apiProjects.find((x) => x.id === p.projectId);
+        return api ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: jsonLd(
+                complexSchema(
+                  api,
+                  href(`/du-an/${p.slug}`),
+                  rooms.filter((r) => !r.isDemo && r.status === "Còn trống")
+                    .length,
+                  t,
+                ),
+              ),
+            }}
+          />
+        ) : null;
+      })()}
       <div className="container">
         <nav className="breadcrumb" aria-label="Đường dẫn">
+          <BackButton />
           <Link href="/">Trang chủ</Link>
           <span>/</span>
           <Link href={`/du-an/${development ? "trien-khai" : "van-hanh"}`}>
@@ -96,10 +123,6 @@ export function PortfolioDetail({
         </nav>
         <header className="portfolio-detail-heading">
           <div>
-            <span className="signature-kicker">
-              ĐẤT VÀNG GROUP /{" "}
-              {development ? "DỰ ÁN ĐANG TRIỂN KHAI" : "DỰ ÁN ĐANG VẬN HÀNH"}
-            </span>
             <h1>{p.name}</h1>
             <p className="location">
               <MapPin size={16} />
@@ -110,17 +133,19 @@ export function PortfolioDetail({
         </header>
         <figure className="portfolio-cover">
           <Image
-            src={`/images/projects/${p.id}.jpg`}
-            alt={`${p.imageType} ${p.name}`}
+            src={p.image}
+            alt={p.imageAlt}
             fill
             sizes="100vw"
             loading="eager"
           />
           <figcaption>
             {p.imageType}
-            <a href={p.source} target="_blank" rel="noreferrer">
-              Nguồn thông tin & hình ảnh <ArrowUpRight size={13} />
-            </a>
+            {p.source && (
+              <a href={p.source} target="_blank" rel="noreferrer">
+                Nguồn thông tin & hình ảnh <ArrowUpRight size={13} />
+              </a>
+            )}
           </figcaption>
         </figure>
         {development ? (
@@ -226,7 +251,21 @@ export function PortfolioDetail({
                   <em>điều gì tại {p.name}?</em>
                 </h2>
               </div>
-              <p>{story.paragraphs[0]}</p>
+              <div>
+                <p>{story.paragraphs[0]}</p>
+                {p.facebook && (
+                  <a
+                    href={p.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="project-facebook project-facebook-lg"
+                  >
+                    <Facebook size={18} aria-hidden="true" />
+                    Theo dõi fanpage {p.name}
+                    <ArrowUpRight size={16} aria-hidden="true" />
+                  </a>
+                )}
+              </div>
             </section>
             <nav className="operation-modes" aria-label="Nhu cầu tại dự án">
               {modes.map((m) => (
@@ -376,7 +415,7 @@ export function PortfolioDetail({
                 </div>
               )}
             </section>
-            <ProjectMap projectId={p.projectId} />
+            <ProjectMap place={content.locations[p.projectId]} />
           </>
         )}
         <section className="portfolio-related">
@@ -390,17 +429,12 @@ export function PortfolioDetail({
             </Link>
           </div>
           <div>
-            {homeProjects
+            {content.portfolio
               .filter((x) => x.group === p.group && x.id !== p.id)
               .slice(0, 3)
               .map((x) => (
                 <Link key={x.id} href={`/du-an/${x.slug}`}>
-                  <Image
-                    src={`/images/projects/${x.id}.jpg`}
-                    alt={x.name}
-                    width={160}
-                    height={110}
-                  />
+                  <Image src={x.image} alt={x.name} width={160} height={110} />
                   <span>{x.name}</span>
                   <ArrowUpRight size={18} />
                 </Link>

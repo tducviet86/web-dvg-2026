@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { login } from "./helpers";
 test("WCAG AA checks on representative pages", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await login(page);
   for (const route of ["/", "/cho-thue", "/lien-he", "/admin"]) {
     await page.goto(route);
     if (route === "/admin")
@@ -24,6 +26,7 @@ test("WCAG AA checks on representative pages", async ({ page }) => {
   }
 });
 test("mobile pages and keyboard dialog focus", async ({ page }) => {
+  await login(page);
   await page.setViewportSize({ width: 360, height: 800 });
   for (const route of [
     "/du-an",

@@ -1,8 +1,11 @@
+/** @jsxImportSource @/i18n/jsx */
+import { BackButton } from "@/components/layout/back-button";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import { ArrowUpRight, Compass, Layers, Handshake } from "lucide-react";
-import { photos, projects, posts, services } from "@/data";
-import { staticPages } from "@/lib/pages";
+import { photos, services } from "@/data";
+import type { Post, Project } from "@/types";
+import type { EditorialContent } from "@/lib/pages";
 import type { Filters } from "@/lib/filter";
 import { Reveal, ContactForm, Process } from "./interactive";
 import { DepthScene } from "./depth-scene";
@@ -23,6 +26,7 @@ export function CompanyHero({
     <header className="company-hero container">
       <div className="company-hero-copy">
         <nav className="breadcrumb" aria-label="Đường dẫn">
+          <BackButton />
           <Link href="/">Trang chủ</Link>
           <span>/</span>
           <span aria-current="page">{eyebrow}</span>
@@ -70,9 +74,15 @@ export function CompanyClosing() {
 export function CompanyListing({
   kind,
   filters,
+  projects = [],
+  posts = [],
+  categories = [],
 }: {
   kind: "projects" | "blog" | "services";
   filters: Filters;
+  projects?: Project[];
+  posts?: Post[];
+  categories?: { slug: string; name: string }[];
 }) {
   const projectList =
     filters.status === "dang-khai-thac"
@@ -228,15 +238,15 @@ export function CompanyListing({
               >
                 Tất cả bài viết
               </Link>
-              {posts.slice(0, 3).map((p) => (
+              {categories.map((c) => (
                 <Link
-                  key={p.categorySlug}
-                  href={`/blog/danh-muc/${p.categorySlug}`}
+                  key={c.slug}
+                  href={`/blog/danh-muc/${c.slug}`}
                   aria-current={
-                    filters.category === p.categorySlug ? "page" : undefined
+                    filters.category === c.slug ? "page" : undefined
                   }
                 >
-                  {p.category}
+                  {c.name}
                 </Link>
               ))}
             </nav>
@@ -279,8 +289,13 @@ export function CompanyListing({
     </main>
   );
 }
-export function CompanyEditorial({ slug }: { slug: string }) {
-  const page = staticPages[slug];
+export function CompanyEditorial({
+  slug,
+  page,
+}: {
+  slug: string;
+  page: EditorialContent;
+}) {
   const contact = ["lien-he", "hop-tac-chu-so-huu", "tuyen-dung"].includes(
     slug,
   );
@@ -300,6 +315,7 @@ export function CompanyEditorial({ slug }: { slug: string }) {
       {contact ? (
         <header className="company-contact-heading container">
           <nav className="breadcrumb" aria-label="Đường dẫn">
+            <BackButton />
             <Link href="/">Trang chủ</Link>
             <span>/</span>
             <span>{page.eyebrow}</span>

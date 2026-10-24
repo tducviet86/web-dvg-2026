@@ -128,3 +128,12 @@ Xem `REVIEW-2026-10-18.md` để biết kết luận sẵn sàng vận hành và
 - Axe không phát hiện vi phạm WCAG A/AA trong các trang được kiểm tra. Không tràn ngang ở 360/390/768/1024/1440 px. Đã kiểm tra video sau khi đổi 1440→390→1440 px.
 - Kiểm tra ảnh chụp phát hiện CSS cũ làm nền nút phóng to kéo dài che ảnh. Đã tách selector và đặt lại bottom; thêm kiểm thử chiều cao nút để ngăn lỗi lặp lại.
 - Hướng dẫn cấu hình dữ liệu và bản đồ: `reports/RENTAL-UPDATE.md`.
+
+## 21/10/2026 — Sửa menu header bị giữ mở
+
+- Thay CSS hover/focus-within giữ menu mở bằng disclosure có trạng thái: bấm mở, bấm lại đóng, chỉ một nhóm mở tại một thời điểm.
+- Chọn liên kết (kể cả liên kết tới chính trang hiện tại) đóng menu ngay. Escape đóng và trả focus về nút; click ngoài hoặc Tab ra ngoài cũng đóng. Đổi pathname tạo lại trạng thái menu đã đóng.
+- Giữ các trang tổng quan trong submenu, thêm Tất cả lĩnh vực. Menu mobile tiếp tục đóng sau khi chọn đích.
+- Lint/build đạt. Kiểm thử menu desktop + mobile đạt 2/2; kiểm thử chuyển trang đạt. Axe header khi menu đang mở không có vi phạm A/AA, không tràn ngang ở 1100/1280/1440 px.
+- Cấu hình E2E chung hiện chạy cả backend và reset database kiểm thử. Lượt kiểm tra menu dùng cấu hình UI riêng `/tmp/dvg-header-playwright.config.cjs`, đọc website/API đang chạy, không reset database.
+- Ghi chú: phần ghi nhận trước về admin localStorage thuộc bản trước khi tích hợp API; mã nguồn hiện có `src/lib/api` và các trang công khai đọc API. Lượt sửa menu không thay đổi tích hợp đó.

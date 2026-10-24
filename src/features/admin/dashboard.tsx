@@ -1,13 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link, { usePageNavigation } from "@/components/page-navigation";
 import { usePathname, useRouter } from "next/navigation";
-import { Editor } from "./editor";
-import { BannerAdmin } from "./banners";
-import { statuses, names, type Kind, type Row } from "./model";
 import Image from "next/image";
-
 import {
   LayoutDashboard,
   Building2,
@@ -20,34 +16,62 @@ import {
   Search,
   Pencil,
   Trash2,
-  RotateCcw,
   GalleryHorizontalEnd,
+  Languages,
+  Download,
+  LogOut,
+  UserCog,
+  KeyRound,
+  BadgeDollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
-import { projects, properties, posts, leads, banners } from "@/data";
-import type { Project, Property, Post, Lead, Banner } from "@/types";
-import {
-  BANNER_STORE,
-  normalizeOrder,
-  projectBannerOf,
-  syncProjectBanner,
-  type ProjectBannerDraft,
-} from "@/lib/banners";
-import { readStore, writeStore } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
+import { Editor, formKeyOf, type Lookups } from "./editor";
+import type { FormIssue } from "./error-dialog";
+import {
+  BannerAdmin,
+  bannerPayload,
+  projectBannerDraft,
+  type ProjectBannerDraft,
+  type ProjectBannerRecord,
+} from "./banners";
+import { LoginForm } from "./login";
+import { UsersPanel } from "./users";
+import { TranslationsPanel } from "./translations";
+import {
+  api,
+  AdminApiError,
+  errorMessage,
+  constraintText,
+  fieldErrorsOf,
+  SESSION_EXPIRED,
+  type Session,
+} from "./api";
+import {
+  formValues,
+  listItem,
+  mediaState,
+  payload,
+  type AdminDto,
+  type MediaState,
+} from "./adapters";
+import {
+  endpoints,
+  names,
+  sectionPermission,
+  statuses,
+  writePermission,
+  type FormValues,
+  type Kind,
+  type ListItem,
+} from "./model";
+
 const LeadChart = dynamic(() => import("./chart"), {
   ssr: false,
   loading: () => <div className="skeleton" style={{ height: 260 }} />,
 });
-type Tab = "dashboard" | Kind | "banners" | "settings";
-type Store = {
-  projects: Project[];
-  properties: Property[];
-  posts: Post[];
-  leads: Lead[];
-  banners: Banner[];
-};
-const initial: Store = { projects, properties, posts, leads, banners };
+type Tab =
+  "dashboard" | Kind | "banners" | "settings" | "users" | "translations";
 const tabs: { id: Tab; label: string; icon: typeof House }[] = [
   { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
   { id: "projects", label: "Dự án", icon: Building2 },
@@ -55,203 +79,323 @@ const tabs: { id: Tab; label: string; icon: typeof House }[] = [
   { id: "properties", label: "Căn hộ", icon: House },
   { id: "leads", label: "Khách hàng", icon: Users },
   { id: "posts", label: "Bài viết", icon: FileText },
+  { id: "translations", label: "Bản dịch", icon: Languages },
+  { id: "users", label: "Người dùng", icon: UserCog },
   { id: "settings", label: "Cài đặt", icon: Settings },
 ];
+const KINDS: Kind[] = ["projects", "properties", "posts", "leads"];
+type EditorState = {
+  /** Route the state belongs to; stale state is ignored after navigation. */
+  path: string;
+  kind: Kind;
+  isNew: boolean;
+  dto: AdminDto | null;
+  values: FormValues;
+  media: MediaState;
+  banner?: {
+    draft: ProjectBannerDraft;
+    existing: boolean;
+    maxPosition: number;
+  };
+};
+
 export default function Dashboard() {
+  const pathname = usePathname();
+  const [, , section] = pathname.split("/");
+  if (section === "login") {
+    const next =
+      typeof window === "undefined"
+        ? "/admin"
+        : new URLSearchParams(window.location.search).get("next") || "/admin";
+    return <LoginForm next={next} />;
+  }
+  return <Workspace />;
+}
+
+function Workspace() {
   const router = useRouter();
   const navigate = usePageNavigation();
-  const goTo = (href: string) =>
-    navigate ? navigate(href) : router.push(href);
+  const goTo = useCallback(
+    (href: string) => (navigate ? navigate(href) : router.push(href)),
+    [navigate, router],
+  );
   const pathname = usePathname();
   const [, , section, recordId, action] = pathname.split("/");
   const tab = (section || "dashboard") as Tab;
+  const kind = (KINDS as string[]).includes(tab) ? (tab as Kind) : null;
+
+  const [session, setSession] = useState<Session | null>(null);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("");
+  const [rows, setRows] = useState<ListItem[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [editorState, setEditor] = useState<EditorState | null>(null);
+  const [missingPath, setMissing] = useState("");
+  const editor = editorState?.path === pathname ? editorState : null;
+  const missing = missingPath === pathname;
+  const [lookups, setLookups] = useState<Lookups>({
+    projects: [],
+    propertyTypes: [],
+    blogCategories: [],
+    users: [],
+    projectPlaces: {},
+  });
+  const can = (permission: string) =>
+    !!session?.permissions.includes(permission);
+
+  // ── session ──
+  useEffect(() => {
+    const toLogin = () =>
+      router.replace(
+        `/admin/login?next=${encodeURIComponent(window.location.pathname)}`,
+      );
+    window.addEventListener(SESSION_EXPIRED, toLogin);
+    api<{ data: Session }>("GET", "/auth/me")
+      .then((res) => setSession(res.data))
+      .catch(() =>
+        // One refresh attempt before giving up on the session.
+        api("POST", "/auth/refresh")
+          .then(() => api<{ data: Session }>("GET", "/auth/me"))
+          .then((res) => setSession(res.data))
+          .catch(toLogin),
+      );
+    return () => window.removeEventListener(SESSION_EXPIRED, toLogin);
+  }, [router]);
+
+  // ── list data (server-side search and status filter) ──
+  const loadList = useCallback(async () => {
+    if (!kind || !session) return;
+    const params = new URLSearchParams({ pageSize: "100" });
+    if (query) params.set("q", query);
+    if (status) params.set("status", status);
+    try {
+      const res = await api<{ data: AdminDto[]; meta: { total: number } }>(
+        "GET",
+        `${endpoints[kind]}?${params}`,
+      );
+      setRows(res.data.map((dto) => listItem(kind, dto)));
+      setTotal(res.meta.total);
+    } catch (error) {
+      toast.error(errorMessage(error));
+      setRows([]);
+    }
+  }, [kind, session, query, status]);
+  useEffect(() => {
+    if (!kind || recordId) return;
+    const timer = window.setTimeout(() => void loadList(), query ? 250 : 0);
+    return () => window.clearTimeout(timer);
+  }, [kind, recordId, query, loadList]);
+
+  // ── lookups for editor selects ──
+  const loadLookups = useCallback(
+    async (forKind: Kind) => {
+      const next = { ...lookups };
+      if (forKind === "properties") {
+        const [projects, types] = await Promise.all([
+          api<{
+            data: {
+              id: string;
+              name: string;
+              location: string;
+              address: string | null;
+              mapUrl: string | null;
+              latitude: number | null;
+            }[];
+          }>("GET", "/admin/projects?pageSize=100"),
+          api<{ data: { code: string; name: string }[] }>(
+            "GET",
+            "/property-types",
+          ),
+        ]);
+        next.projects = projects.data.map((p) => [p.id, p.name]);
+        next.projectPlaces = Object.fromEntries(
+          projects.data.map((p) => [
+            p.id,
+            {
+              name: p.name,
+              location: p.location,
+              address: p.address ?? "",
+              hasMap: !!(p.mapUrl || p.latitude != null),
+            },
+          ]),
+        );
+        next.propertyTypes = types.data.map((t) => [t.code, t.name]);
+      }
+      if (forKind === "posts") {
+        const categories = await api<{
+          data: { slug: string; name: string }[];
+        }>("GET", "/admin/blog/categories");
+        next.blogCategories = categories.data.map((c) => [c.slug, c.name]);
+      }
+      if (forKind === "leads") {
+        const users = await api<{ data: { id: string; name: string }[] }>(
+          "GET",
+          "/admin/users/assignable",
+        );
+        next.users = users.data.map((u) => [u.id, u.name]);
+      }
+      setLookups(next);
+    },
+    [lookups],
+  );
+
+  // ── editor data ──
+  useEffect(() => {
+    if (
+      !session ||
+      !kind ||
+      !recordId ||
+      (recordId !== "new" && action !== "edit")
+    )
+      return;
+    let alive = true;
+    (async () => {
+      try {
+        await loadLookups(kind);
+        const dto =
+          recordId === "new"
+            ? null
+            : (
+                await api<{ data: AdminDto }>(
+                  "GET",
+                  `${endpoints[kind]}/${recordId}`,
+                )
+              ).data;
+        let banner: EditorState["banner"];
+        if (kind === "projects") {
+          const all = await api<{ data: unknown[] }>("GET", "/admin/banners");
+          const record =
+            (dto?.banner as
+              | (ProjectBannerRecord & {
+                  image: { id: string; url: string } | null;
+                  mobileImage: { id: string; url: string } | null;
+                })
+              | null) ?? null;
+          banner = {
+            draft: projectBannerDraft(
+              record,
+              {
+                image: record?.image ?? null,
+                mobileImage: record?.mobileImage ?? null,
+              },
+              all.data.length,
+            ),
+            existing: !!record,
+            maxPosition: all.data.length + (record ? 0 : 1),
+          };
+        }
+        if (!alive) return;
+        setEditor({
+          path: pathname,
+          kind,
+          isNew: !dto,
+          dto,
+          values: { ...formValues(kind, dto), id: dto?.id },
+          media: mediaState(kind, dto),
+          banner,
+        });
+      } catch (error) {
+        if (!alive) return;
+        if (error instanceof AdminApiError && error.status === 404)
+          setMissing(pathname);
+        else toast.error(errorMessage(error));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // Lookups are refreshed per editor open; not a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, kind, recordId, action, pathname]);
+
   function setTab(next: Tab) {
     goTo(next === "dashboard" ? "/admin" : `/admin/${next}`);
     setQuery("");
     setStatus("");
   }
+  const closePage = () => setTab(tab);
 
-  const [store, setStore] = useState<Store>(() => ({
-    projects: readStore("projects", projects),
-    properties: readStore("properties", properties),
-    posts: readStore("posts", posts),
-    leads: readStore("leads", leads),
-    banners: readStore(BANNER_STORE, banners),
-  }));
-  const ready = true;
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("");
-  const kind =
-    tab === "dashboard" || tab === "settings" || tab === "banners" ? null : tab;
-  const selectedRow = kind
-    ? (store[kind] as Row[]).find((row) => row.id === recordId)
-    : undefined;
-  const editor =
-    kind && (recordId === "new" || (action === "edit" && selectedRow))
-      ? { kind, row: selectedRow || null }
-      : null;
-  const deleting =
-    kind && action === "delete" && selectedRow
-      ? { kind, id: selectedRow.id }
-      : null;
-  const resetOpen = tab === "settings" && recordId === "reset";
-  const missing = !!kind && !!recordId && recordId !== "new" && !selectedRow;
-  function closePage() {
-    setTab(tab);
-  }
-
-  function resetData() {
+  async function save(
+    values: FormValues,
+    media: MediaState,
+    banner?: ProjectBannerDraft,
+  ): Promise<FormIssue[] | void> {
+    if (!editor) return;
+    const { kind: k, isNew, dto } = editor;
+    const body: Record<string, unknown> = payload(k, values, media, isNew);
+    if (!isNew) body.expectedUpdatedAt = dto?.updatedAt;
+    if (k === "projects" && banner) body.banner = bannerPayload(banner);
     try {
-      Object.keys(localStorage)
-        .filter((k) => k.startsWith("dvg:"))
-        .forEach((k) => localStorage.removeItem(k));
-      setStore(initial);
-      closePage();
-      toast.success("Đã khôi phục dữ liệu mẫu.");
-    } catch {
-      toast.error("Không thể xóa dữ liệu trình duyệt.");
-    }
-  }
-  function save(kind: Kind, row: Row, bannerDraft?: ProjectBannerDraft) {
-    const rows = readStore<Row[]>(kind, initial[kind]);
-    const original = (store[kind] as Row[]).find((item) => item.id === row.id);
-    const current = rows.find((item) => item.id === row.id);
-    if (original && JSON.stringify(original) !== JSON.stringify(current)) {
-      toast.error(
-        "Bản ghi đã thay đổi ở nơi khác. Hãy tải lại trang trước khi lưu.",
-      );
-      return;
-    }
-    if (
-      "slug" in row &&
-      rows.some(
-        (item) =>
-          "slug" in item && item.slug === row.slug && item.id !== row.id,
-      )
-    ) {
-      toast.error(
-        "Đường dẫn này đã được sử dụng. Vui lòng chọn đường dẫn khác.",
-      );
-      return;
-    }
-    if (
-      kind === "properties" &&
-      "projectId" in row &&
-      !readStore("projects", projects).some(
-        (project) => project.id === row.projectId,
-      )
-    ) {
-      toast.error(
-        "Dự án liên kết không còn tồn tại. Hãy tải lại danh sách dự án.",
-      );
-      return;
-    }
-    const updated = rows.some((r) => r.id === row.id)
-      ? rows.map((r) => (r.id === row.id ? row : r))
-      : [row, ...rows];
-    // The project's banner lives in the shared banner store (one per project).
-    let nextBanners: Banner[] | null = null;
-    if (kind === "projects" && bannerDraft) {
-      const latestBanners = readStore<Banner[]>(BANNER_STORE, initial.banners);
-      if (
-        JSON.stringify(projectBannerOf(store.banners, row.id)) !==
-        JSON.stringify(projectBannerOf(latestBanners, row.id))
-      ) {
-        toast.error(
-          "Banner của dự án đã thay đổi ở mục Banner. Hãy tải lại trang trước khi lưu.",
+      if (isNew) {
+        const created = await api<{ data: AdminDto }>(
+          "POST",
+          endpoints[k],
+          body,
         );
-        return;
-      }
-      const result = syncProjectBanner(
-        latestBanners,
-        row as Project,
-        bannerDraft,
-        updated as Project[],
-      );
-      if (result.issues.length) {
-        toast.error(result.issues[0]);
-        return;
-      }
-      if (result.banners !== latestBanners) nextBanners = result.banners;
-    }
-    if (writeStore(kind, updated)) {
-      if (nextBanners && !writeStore(BANNER_STORE, nextBanners)) {
-        // Keep both stores consistent: roll the project back.
-        writeStore(kind, rows);
-        return;
-      }
-      setStore({
-        ...store,
-        [kind]: updated,
-        ...(nextBanners ? { banners: nextBanners } : {}),
-      });
+        // Manually entered leads: apply follow-up fields after creation.
+        if (k === "leads")
+          await api(
+            "PATCH",
+            `${endpoints[k]}/${created.data.id}`,
+            payload(k, values, media, false),
+          );
+      } else await api("PATCH", `${endpoints[k]}/${dto!.id}`, body);
+      const noun = {
+        projects: "dự án",
+        properties: "căn hộ",
+        posts: "bài viết",
+        leads: "khách hàng",
+      }[k];
+      toast.success(isNew ? `Đã tạo ${noun}.` : `Đã lưu ${noun}.`);
       closePage();
-      toast.success("Đã lưu thay đổi demo.");
+    } catch (error) {
+      // Field errors from the API are shown on the fields and in the popup.
+      const fields = fieldErrorsOf(error);
+      if (fields.length)
+        return fields.map((item) => ({
+          field: formKeyOf(item.field),
+          message:
+            constraintText[item.constraints[0]] ??
+            item.messages[0] ??
+            "không hợp lệ",
+        }));
+      return [{ message: errorMessage(error) }];
     }
   }
-  function commitBanners(next: Banner[]) {
-    if (!writeStore(BANNER_STORE, next)) return false;
-    setStore((current) => ({ ...current, banners: next }));
-    return true;
+  async function remove(id: string) {
+    if (!kind) return;
+    try {
+      await api("DELETE", `${endpoints[kind]}/${id}`);
+      toast.success(
+        kind === "leads" ? "Đã xóa yêu cầu." : "Đã chuyển vào lưu trữ.",
+      );
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+    closePage();
   }
-  function remove() {
-    if (!deleting) return;
-    const latestRows = readStore<Row[]>(deleting.kind, initial[deleting.kind]);
-    const original = (store[deleting.kind] as Row[]).find(
-      (item) => item.id === deleting.id,
+  async function logout() {
+    try {
+      await api("POST", "/auth/logout");
+    } finally {
+      router.replace("/admin/login");
+    }
+  }
+
+  if (!session)
+    return (
+      <main id="main" className="not-found">
+        <p role="status">Đang kiểm tra phiên đăng nhập…</p>
+      </main>
     );
-    const current = latestRows.find((item) => item.id === deleting.id);
-    if (JSON.stringify(original) !== JSON.stringify(current)) {
-      toast.error(
-        "Bản ghi đã thay đổi ở nơi khác. Hãy tải lại trang trước khi xóa.",
-      );
-      return;
-    }
-    if (
-      deleting.kind === "projects" &&
-      readStore("properties", properties).some(
-        (p) => p.projectId === deleting.id,
-      )
-    ) {
-      toast.warning(
-        "Dự án đang có căn hộ liên kết. Hãy chuyển hoặc xóa các căn hộ trước.",
-      );
-      closePage();
-      return;
-    }
-    const updated = latestRows.filter((r) => r.id !== deleting.id);
-    // Deleting a project also removes its banner so no orphan link remains.
-    const latestBanners = readStore<Banner[]>(BANNER_STORE, initial.banners);
-    const linked =
-      deleting.kind === "projects"
-        ? projectBannerOf(latestBanners, deleting.id)
-        : undefined;
-    const nextBanners = linked
-      ? normalizeOrder(latestBanners.filter((b) => b.id !== linked.id))
-      : null;
-    if (writeStore(deleting.kind, updated)) {
-      if (nextBanners && !writeStore(BANNER_STORE, nextBanners)) {
-        writeStore(deleting.kind, latestRows);
-        return;
-      }
-      setStore({
-        ...store,
-        [deleting.kind]: updated,
-        ...(nextBanners ? { banners: nextBanners } : {}),
-      });
-      toast.success("Đã xóa dữ liệu demo.");
-      closePage();
-    }
-  }
-  const rows = kind
-    ? (store[kind] as Row[]).filter(
-        (r) =>
-          `${r.name} ${"email" in r ? `${r.email} ${r.phone} ${r.company || ""}` : "slug" in r ? r.slug : ""}`
-            .toLowerCase()
-            .includes(query.toLowerCase()) &&
-          (!status || r.status === status),
-      )
-    : [];
+  const visibleTabs = tabs.filter(
+    (t) => t.id === "dashboard" || can(sectionPermission[t.id]),
+  );
+  const allowed = tab === "dashboard" || can(sectionPermission[tab]);
+  const deleting = kind && action === "delete" ? recordId : null;
+  const selectedName = deleting
+    ? rows?.find((r) => r.id === deleting)?.name
+    : undefined;
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
@@ -268,7 +412,7 @@ export default function Dashboard() {
         </Link>
         <span className="admin-nav-label">QUẢN LÝ KHÔNG GIAN</span>
         <nav aria-label="Quản trị">
-          {tabs.map((t) => (
+          {visibleTabs.map((t) => (
             <Link
               href={t.id === "dashboard" ? "/admin" : `/admin/${t.id}`}
               aria-current={tab === t.id ? "page" : undefined}
@@ -281,17 +425,12 @@ export default function Dashboard() {
             >
               <t.icon size={19} />
               {t.label}
-              {t.id === "leads" && (
-                <span>
-                  {store.leads.filter((l) => l.status === "Mới").length}
-                </span>
-              )}
             </Link>
           ))}
         </nav>
         <div className="admin-sidebar-bottom">
-          <span className="demo-mode">● Demo Mode</span>
-          <p>Thay đổi lưu trên trình duyệt. Không có máy chủ hoặc xác thực.</p>
+          <span className="demo-mode">● {session.roles.join(", ")}</span>
+          <p>{session.name}</p>
           <Link href="/">
             Xem website
             <ArrowUpRight size={17} />
@@ -299,33 +438,18 @@ export default function Dashboard() {
         </div>
       </aside>
       <div className="admin-content">
+        <div className="admin-userbar">
+          <span>{session.email}</span>
+          <button type="button" onClick={logout}>
+            <LogOut size={15} /> Đăng xuất
+          </button>
+        </div>
         <main id="main" className="admin-main" key={pathname}>
-          {recordId && (
-            <nav className="admin-breadcrumb" aria-label="Đường dẫn">
-              <Link href="/admin">Tổng quan</Link>
-              <span>/</span>
-              <Link href={tab === "dashboard" ? "/admin" : `/admin/${tab}`}>
-                {tabs.find((t) => t.id === tab)?.label}
-              </Link>
-              {recordId && (
-                <>
-                  <span>/</span>
-                  <span>
-                    {recordId === "new"
-                      ? "Thêm mới"
-                      : action === "delete" || resetOpen
-                        ? "Xác nhận"
-                        : "Chỉnh sửa"}
-                  </span>
-                </>
-              )}
-            </nav>
-          )}
           <div className="admin-title">
             <div>
               <h1>
-                {editor
-                  ? `${editor.row ? "Chỉnh sửa" : "Thêm mới"} ${names[editor.kind]}`
+                {kind && recordId && action !== "delete"
+                  ? `${recordId === "new" ? "Thêm mới" : "Chỉnh sửa"} ${names[kind]}`
                   : tab === "banners" && recordId === "new"
                     ? "Thêm mới banner"
                     : tab === "banners" && action === "edit"
@@ -335,173 +459,84 @@ export default function Dashboard() {
                         : tabs.find((t) => t.id === tab)?.label}
               </h1>
             </div>
-            {(kind || tab === "banners") && !recordId && (
-              <Button
-                disabled={!ready}
-                onClick={() => goTo(`/admin/${kind || tab}/new`)}
-              >
-                <Plus size={18} />
-                Thêm mới
-              </Button>
-            )}
+            {!recordId &&
+              (kind
+                ? can(writePermission[kind])
+                : tab === "banners" && can("banners:write")) && (
+                <Button onClick={() => goTo(`/admin/${kind || tab}/new`)}>
+                  <Plus size={18} />
+                  Thêm mới
+                </Button>
+              )}
           </div>
-          {missing ? (
+          {!allowed ? (
+            <section className="admin-panel">
+              <h2>Bạn không có quyền truy cập mục này</h2>
+              <p>Liên hệ quản trị viên nếu bạn cần quyền.</p>
+            </section>
+          ) : missing ? (
             <section className="admin-panel">
               <h2>Không tìm thấy bản ghi</h2>
-              <p>Mục này đã bị xóa hoặc chưa có trong trình duyệt hiện tại.</p>
+              <p>Mục này đã bị xóa hoặc chuyển vào lưu trữ.</p>
               <Button onClick={closePage}>Về danh sách</Button>
             </section>
-          ) : deleting || resetOpen ? (
+          ) : deleting ? (
             <section className="admin-panel admin-confirm-page">
               <span className="eyebrow">XÁC NHẬN THAO TÁC</span>
               <h2>
-                {resetOpen
-                  ? "Khôi phục dữ liệu mẫu?"
-                  : `Xóa ${selectedRow?.name}?`}
+                {kind === "leads" ? "Xóa" : "Lưu trữ"}{" "}
+                {selectedName ?? names[kind!]}?
               </h2>
               <p>
-                {resetOpen
-                  ? "Các chỉnh sửa quản trị, yêu cầu đã gửi, bản tin và mục yêu thích trên trình duyệt này sẽ bị xóa."
-                  : deleting?.kind === "projects" &&
-                      projectBannerOf(store.banners, deleting.id)
-                    ? "Thao tác này không thể hoàn tác riêng lẻ. Banner trang chủ liên kết với dự án cũng sẽ bị gỡ. Dự án có căn hộ liên kết sẽ được bảo vệ khỏi việc xóa."
-                    : "Thao tác này không thể hoàn tác riêng lẻ. Dự án có căn hộ liên kết sẽ được bảo vệ khỏi việc xóa."}
+                {kind === "projects"
+                  ? "Dự án sẽ ngừng hiển thị (đường dẫn trả về 410) và banner trang chủ liên kết sẽ được gỡ. Dự án còn căn hộ liên kết sẽ không thể lưu trữ."
+                  : kind === "leads"
+                    ? "Yêu cầu sẽ bị ẩn khỏi danh sách. Thao tác được ghi vào nhật ký."
+                    : "Nội dung sẽ ngừng hiển thị trên website và được giữ trong cơ sở dữ liệu."}
               </p>
               <div className="dialog-actions">
                 <Button variant="outline" onClick={closePage}>
                   Hủy
                 </Button>
-                <Button onClick={resetOpen ? resetData : remove}>
-                  Xác nhận
-                </Button>
+                <Button onClick={() => remove(deleting)}>Xác nhận</Button>
               </div>
             </section>
-          ) : editor ? (
-            <Editor
-              key={pathname}
-              kind={editor.kind}
-              row={editor.row}
-              projects={store.projects}
-              existing={store[editor.kind]}
-              banners={store.banners}
-              onSave={(row, banner) => save(editor.kind, row, banner)}
-              onCancel={closePage}
-            />
-          ) : !ready ? (
-            <p role="status">Đang nạp dữ liệu trên trình duyệt…</p>
-          ) : tab === "dashboard" ? (
-            <>
-              <div className="admin-stats">
-                {[
-                  {
-                    label: "Tổng dự án",
-                    value: store.projects.length,
-                    icon: Building2,
-                  },
-                  {
-                    label: "Bài viết",
-                    value: store.posts.length,
-                    icon: FileText,
-                  },
-                  {
-                    label: "Đang tư vấn",
-                    value: store.leads.filter((l) => l.status === "Đang tư vấn")
-                      .length,
-                    icon: Users,
-                  },
-                  {
-                    label: "Yêu cầu mới",
-                    value: store.leads.filter((l) => l.status === "Mới").length,
-                    icon: Users,
-                  },
-                ].map((s) => (
-                  <div key={s.label}>
-                    <span>
-                      {s.label}
-                      <s.icon size={19} />
-                    </span>
-                    <strong>{s.value.toString().padStart(2, "0")}</strong>
-                    <small>Số liệu trong bản demo</small>
-                  </div>
-                ))}
-              </div>
-              <div className="admin-dashboard-grid">
-                <section className="admin-panel">
-                  <div className="panel-heading">
-                    <h2>Yêu cầu tư vấn theo tháng</h2>
-                    <span>6 tháng gần nhất · Demo</span>
-                  </div>
-                  <LeadChart leads={store.leads} />
-                </section>
-                <section className="admin-panel">
-                  <h2>Nội dung cần xử lý</h2>
-                  <div className="admin-content-summary">
-                    <strong>
-                      {
-                        store.posts.filter((p) => p.status === "Bản nháp")
-                          .length
-                      }
-                    </strong>
-                    <span>bài viết đang ở trạng thái bản nháp</span>
-                  </div>
-                  <p>
-                    Trạng thái biên tập hiện lưu cục bộ, chưa xuất bản lên
-                    website.
-                  </p>
-                  <button className="text-link" onClick={() => setTab("posts")}>
-                    Quản lý bài viết
-                    <ArrowUpRight size={16} />
-                  </button>
-                </section>
-              </div>
-              <section className="admin-panel">
-                <div className="panel-heading">
-                  <h2>Yêu cầu gần đây</h2>
-                  <button onClick={() => setTab("leads")} className="text-link">
-                    Xem tất cả
-                    <ArrowUpRight size={17} />
-                  </button>
-                </div>
-                <div className="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Khách hàng</th>
-                        <th>Nhu cầu</th>
-                        <th>Trạng thái</th>
-                        <th>Phụ trách</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {store.leads.slice(0, 5).map((l) => (
-                        <tr key={l.id}>
-                          <td>
-                            <strong>{l.name}</strong>
-                            <small>{l.email}</small>
-                          </td>
-                          <td>{l.source}</td>
-                          <td>
-                            <span className="status-pill">{l.status}</span>
-                          </td>
-                          <td>{l.assignment}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            </>
+          ) : kind && recordId ? (
+            editor && editor.kind === kind ? (
+              <Editor
+                key={pathname}
+                kind={editor.kind}
+                values={editor.values}
+                media={editor.media}
+                isNew={editor.isNew}
+                lookups={lookups}
+                banner={editor.banner}
+                previewHref={
+                  !editor.isNew && (kind === "projects" || kind === "posts")
+                    ? `/api/preview?type=${kind === "projects" ? "project" : "post"}&slug=${encodeURIComponent(String(editor.values.slug))}`
+                    : undefined
+                }
+                onSave={save}
+                onCancel={closePage}
+              />
+            ) : (
+              <p role="status">Đang tải dữ liệu…</p>
+            )
           ) : tab === "banners" ? (
             <BannerAdmin
               recordId={recordId}
               action={action}
-              banners={store.banners}
-              projects={store.projects}
-              onCommit={commitBanners}
+              canWrite={can("banners:write")}
               goTo={goTo}
             />
+          ) : tab === "translations" ? (
+            <TranslationsPanel canWrite={can("pages:write")} />
+          ) : tab === "users" ? (
+            <UsersPanel currentUserId={session.id} />
           ) : tab === "settings" ? (
-            <SettingsPanel onReset={() => goTo("/admin/settings/reset")} />
+            <SettingsPanel />
+          ) : tab === "dashboard" ? (
+            <Overview permissions={session.permissions.join(",")} goTo={goTo} />
           ) : (
             kind && (
               <section className="admin-panel admin-list-panel">
@@ -510,7 +545,11 @@ export default function Dashboard() {
                     <Search size={18} />
                     <input
                       aria-label="Tìm trong bảng"
-                      placeholder="Tìm tên, đường dẫn, email, điện thoại…"
+                      placeholder={
+                        kind === "leads"
+                          ? "Tìm tên, email, điện thoại, công ty…"
+                          : "Tìm tên, đường dẫn…"
+                      }
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                     />
@@ -521,11 +560,25 @@ export default function Dashboard() {
                     onChange={(e) => setStatus(e.target.value)}
                   >
                     <option value="">Tất cả trạng thái</option>
-                    {statuses[kind].map((s) => (
-                      <option key={s}>{s}</option>
+                    {statuses[kind].map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
                     ))}
                   </select>
-                  <span>{rows.length} mục</span>
+                  <span>
+                    {rows
+                      ? `${rows.length}${total > rows.length ? ` / ${total}` : ""} mục`
+                      : "Đang tải…"}
+                  </span>
+                  {kind === "leads" && can("leads:export") && (
+                    <a
+                      className="text-link"
+                      href={`/api/v1/admin/leads/export${status ? `?status=${status}` : ""}`}
+                    >
+                      <Download size={16} /> Xuất CSV
+                    </a>
+                  )}
                 </div>
                 <div className="table-scroll">
                   <table>
@@ -536,57 +589,60 @@ export default function Dashboard() {
                           {kind === "properties"
                             ? "Giá / Dự án"
                             : kind === "leads"
-                              ? "Nhu cầu / Người phụ trách"
+                              ? "Nguồn / Người phụ trách"
                               : "Thông tin"}
                         </th>
+                        {kind === "properties" && <th>Hình thức</th>}
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row) => (
+                      {(rows ?? []).map((row) => (
                         <tr key={row.id}>
                           <td>
                             <strong>{row.name}</strong>
                             <small>
-                              {"email" in row
-                                ? `${row.email} ${row.phone}`
-                                : "slug" in row
-                                  ? row.slug
-                                  : ""}
+                              {row.subtitle}
+                              {row.badge && ` · ${row.badge}`}
                             </small>
                           </td>
                           <td>
-                            {"price" in row ? (
-                              <>
-                                {row.price} triệu / tháng
-                                <small>
-                                  {
-                                    store.projects.find(
-                                      (p) => p.id === row.projectId,
-                                    )?.name
-                                  }
-                                </small>
-                              </>
-                            ) : "source" in row ? (
-                              <>
-                                {row.source}
-                                <small>{row.assignment}</small>
-                              </>
-                            ) : "location" in row ? (
-                              <>
-                                {row.location}
-                                {projectBannerOf(store.banners, row.id)
-                                  ?.isActive && (
-                                  <small>● Banner trang chủ</small>
-                                )}
-                              </>
-                            ) : (
-                              row.category
-                            )}
+                            {row.info}
+                            {row.infoDetail && <small>{row.infoDetail}</small>}
                           </td>
+                          {row.listing && (
+                            <td>
+                              <span className="listing-pills">
+                                {row.listing.rent && (
+                                  <span
+                                    className="listing-pill"
+                                    data-mode="rent"
+                                  >
+                                    <span aria-hidden="true">
+                                      <KeyRound size={12} />
+                                    </span>
+                                    Cho thuê
+                                  </span>
+                                )}
+                                {row.listing.sale && (
+                                  <span
+                                    className="listing-pill"
+                                    data-mode="sale"
+                                  >
+                                    <span aria-hidden="true">
+                                      <BadgeDollarSign size={12} />
+                                    </span>
+                                    Bán
+                                  </span>
+                                )}
+                              </span>
+                            </td>
+                          )}
                           <td>
-                            <span className="status-pill">{row.status}</span>
+                            <span className="status-pill">
+                              {row.statusLabel}
+                            </span>
                           </td>
                           <td>
                             <div className="table-actions">
@@ -598,14 +654,17 @@ export default function Dashboard() {
                               >
                                 <Pencil size={16} />
                               </button>
-                              <button
-                                aria-label={`Xóa ${row.name}`}
-                                onClick={() =>
-                                  goTo(`/admin/${kind}/${row.id}/delete`)
-                                }
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {can(writePermission[kind]) &&
+                                (kind !== "leads" || can("leads:export")) && (
+                                  <button
+                                    aria-label={`Xóa ${row.name}`}
+                                    onClick={() =>
+                                      goTo(`/admin/${kind}/${row.id}/delete`)
+                                    }
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
                             </div>
                           </td>
                         </tr>
@@ -613,7 +672,7 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-                {!rows.length && (
+                {rows && !rows.length && (
                   <div className="empty-state">
                     <h3>Chưa có kết quả</h3>
                     <p>Thử đổi từ khóa, trạng thái hoặc thêm dữ liệu mới.</p>
@@ -628,76 +687,239 @@ export default function Dashboard() {
   );
 }
 
-function SettingsPanel({ onReset }: { onReset: () => void }) {
-  const saved = readStore<Record<string, string>>("settings", {});
+function Overview({
+  permissions,
+  goTo,
+}: {
+  permissions: string;
+  goTo: (href: string) => void;
+}) {
+  const can = (permission: string) =>
+    permissions.split(",").includes(permission);
+  const [stats, setStats] = useState<{
+    projects: number;
+    posts: number;
+    drafts: number;
+    leads: {
+      createdAt: string;
+      status: string;
+      name: string;
+      email: string;
+      source: string;
+      assignee: { name: string } | null;
+      id: string;
+    }[];
+    byStatus: Record<string, number>;
+  } | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [projects, posts, drafts, leads] = await Promise.all([
+          can("content:read")
+            ? api<{ meta: { total: number } }>(
+                "GET",
+                "/admin/projects?pageSize=1",
+              )
+            : null,
+          can("content:read")
+            ? api<{ meta: { total: number } }>(
+                "GET",
+                "/admin/blog/posts?pageSize=1",
+              )
+            : null,
+          can("content:read")
+            ? api<{ meta: { total: number } }>(
+                "GET",
+                "/admin/blog/posts?pageSize=1&status=DRAFT",
+              )
+            : null,
+          can("leads:read")
+            ? api<{
+                data: AdminDto[];
+                meta: { byStatus: Record<string, number> };
+              }>("GET", "/admin/leads?pageSize=100")
+            : null,
+        ]);
+        setStats({
+          projects: projects?.meta.total ?? 0,
+          posts: posts?.meta.total ?? 0,
+          drafts: drafts?.meta.total ?? 0,
+          leads: (leads?.data ?? []) as never,
+          byStatus: leads?.meta.byStatus ?? {},
+        });
+      } catch (error) {
+        toast.error(errorMessage(error));
+      }
+    })();
+    // `can` only reads `permissions`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permissions]);
+  if (!stats) return <p role="status">Đang tải số liệu…</p>;
+  return (
+    <>
+      <div className="admin-stats">
+        {[
+          { label: "Tổng dự án", value: stats.projects, icon: Building2 },
+          { label: "Bài viết", value: stats.posts, icon: FileText },
+          {
+            label: "Đang tư vấn",
+            value: stats.byStatus.CONTACTING ?? 0,
+            icon: Users,
+          },
+          { label: "Yêu cầu mới", value: stats.byStatus.NEW ?? 0, icon: Users },
+        ].map((s) => (
+          <div key={s.label}>
+            <span>
+              {s.label}
+              <s.icon size={19} />
+            </span>
+            <strong>{s.value.toString().padStart(2, "0")}</strong>
+            <small>Số liệu từ cơ sở dữ liệu</small>
+          </div>
+        ))}
+      </div>
+      <div className="admin-dashboard-grid">
+        <section className="admin-panel">
+          <div className="panel-heading">
+            <h2>Yêu cầu tư vấn theo tháng</h2>
+            <span>6 tháng gần nhất</span>
+          </div>
+          <LeadChart leads={stats.leads} />
+        </section>
+        <section className="admin-panel">
+          <h2>Nội dung cần xử lý</h2>
+          <div className="admin-content-summary">
+            <strong>{stats.drafts}</strong>
+            <span>bài viết đang ở trạng thái bản nháp</span>
+          </div>
+          <p>
+            Bài viết chỉ xuất hiện trên website sau khi chuyển sang “Đã xuất
+            bản”.
+          </p>
+          <button className="text-link" onClick={() => goTo("/admin/posts")}>
+            Quản lý bài viết
+            <ArrowUpRight size={16} />
+          </button>
+        </section>
+      </div>
+      {can("leads:read") && (
+        <section className="admin-panel">
+          <div className="panel-heading">
+            <h2>Yêu cầu gần đây</h2>
+            <button onClick={() => goTo("/admin/leads")} className="text-link">
+              Xem tất cả
+              <ArrowUpRight size={17} />
+            </button>
+          </div>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Khách hàng</th>
+                  <th>Nhu cầu</th>
+                  <th>Trạng thái</th>
+                  <th>Phụ trách</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.leads.slice(0, 5).map((l) => (
+                  <tr key={l.id}>
+                    <td>
+                      <strong>{l.name}</strong>
+                      <small>{l.email}</small>
+                    </td>
+                    <td>{l.source}</td>
+                    <td>
+                      <span className="status-pill">
+                        {statuses.leads.find(([k]) => k === l.status)?.[1] ??
+                          l.status}
+                      </span>
+                    </td>
+                    <td>{l.assignee?.name ?? "Chưa phân công"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
+const SETTINGS: [string, string, string?][] = [
+  ["company.brand", "Tên thương hiệu"],
+  ["company.legalName", "Tên pháp lý công ty"],
+  ["company.taxCode", "Mã số thuế"],
+  ["company.representative", "Người đại diện"],
+  ["company.tagline", "Thông điệp thương hiệu"],
+  ["company.email", "Email liên hệ", "email"],
+  ["company.hotline", "Điện thoại / hotline", "tel"],
+  ["company.address", "Địa chỉ văn phòng (số nhà, đường, phường)"],
+  ["company.workingHours", "Giờ làm việc (vd: T2–T7 8:00–18:00)"],
+  ["company.website", "Website chính thức", "url"],
+  ["social.facebook", "Facebook", "url"],
+  ["social.zalo", "Zalo", "url"],
+  ["social.youtube", "YouTube", "url"],
+  ["seo.defaultTitle", "Tiêu đề SEO mặc định"],
+  ["seo.defaultDescription", "Mô tả SEO mặc định"],
+  ["leads.notificationEmail", "Email tiếp nhận yêu cầu (nội bộ)", "email"],
+];
+function SettingsPanel() {
+  const [values, setValues] = useState<Record<string, string> | null>(null);
+  useEffect(() => {
+    api<{ data: { key: string; value: string | null }[] }>(
+      "GET",
+      "/admin/settings",
+    )
+      .then((res) =>
+        setValues(
+          Object.fromEntries(res.data.map((s) => [s.key, s.value ?? ""])),
+        ),
+      )
+      .catch((error) => toast.error(errorMessage(error)));
+  }, []);
+  if (!values) return <p role="status">Đang tải cài đặt…</p>;
   return (
     <section className="admin-panel settings-panel">
       <h2>Nhận diện & thông tin liên hệ</h2>
       <p>
-        Thiết lập demo được lưu cục bộ để xem lại; chưa áp dụng lên website công
-        khai.
+        Chỉ nhập thông tin đã được xác minh. Các mục công khai được trả về qua
+        API cài đặt công khai; email tiếp nhận và người đại diện chỉ dùng nội
+        bộ.
       </p>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          const data = Object.fromEntries(new FormData(e.currentTarget));
-          if (writeStore("settings", data))
-            toast.success("Đã lưu cấu hình demo.");
+          const data = Object.fromEntries(
+            [...new FormData(e.currentTarget)].map(([k, v]) => [
+              k,
+              String(v).trim(),
+            ]),
+          );
+          try {
+            await api("PUT", "/admin/settings", { values: data });
+            toast.success("Đã lưu cài đặt.");
+          } catch (error) {
+            toast.error(errorMessage(error));
+          }
         }}
       >
         <div className="form-grid">
-          {[
-            ["brand", "Tên thương hiệu", "Đất Vàng Group"],
-            ["legalName", "Tên pháp lý công ty", ""],
-            ["taxCode", "Mã số thuế", ""],
-            ["representative", "Người đại diện", ""],
-            [
-              "logo",
-              "Đường dẫn logo",
-              "/images/dat-vang-group-logo-transparent.png",
-            ],
-            ["tagline", "Thông điệp thương hiệu", "Tận tâm trong từng kết nối"],
-            ["email", "Email liên hệ", "contact@example.com"],
-            ["phone", "Điện thoại", ""],
-            ["address", "Địa chỉ", "Đang cập nhật"],
-            ["social", "Liên kết mạng xã hội", "https://example.com"],
-            ["color", "Màu thương hiệu", "#123c32"],
-            ["workingHours", "Giờ làm việc", ""],
-            ["website", "Website chính thức", ""],
-            ["facebook", "Facebook", ""],
-            ["zalo", "Zalo", ""],
-            ["seoTitle", "Tiêu đề SEO mặc định", "Đất Vàng Group"],
-            ["seoDescription", "Mô tả SEO mặc định", ""],
-            ["notificationEmail", "Email tiếp nhận yêu cầu", ""],
-          ].map(([name, label, value]) => (
+          {SETTINGS.map(([name, label, type]) => (
             <label key={name}>
               {label}
               <input
                 name={name}
-                type={
-                  name === "color"
-                    ? "color"
-                    : ["email", "notificationEmail"].includes(name)
-                      ? "email"
-                      : ["social", "website", "facebook", "zalo"].includes(name)
-                        ? "url"
-                        : "text"
-                }
-                defaultValue={saved[name] ?? value}
-                maxLength={200}
+                type={type ?? "text"}
+                defaultValue={values[name] ?? ""}
+                maxLength={300}
               />
             </label>
           ))}
         </div>
         <Button type="submit">Lưu cài đặt</Button>
       </form>
-      <hr />
-      <h2>Vùng quản lý dữ liệu</h2>
-      <p>Xóa các thay đổi demo của ứng dụng và quay về dữ liệu ban đầu.</p>
-      <Button variant="outline" onClick={onReset}>
-        <RotateCcw size={17} />
-        Khôi phục dữ liệu mẫu
-      </Button>
     </section>
   );
 }

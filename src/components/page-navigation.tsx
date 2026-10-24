@@ -9,6 +9,7 @@ import {
   type ComponentProps,
   type ReactNode,
 } from "react";
+import { useLocalizeHref, useT } from "@/i18n/client";
 
 const NavigationContext = createContext<
   ((href: string, replace?: boolean, scroll?: boolean) => void) | null
@@ -20,8 +21,11 @@ export function usePageNavigation() {
 
 export function PageNavigation({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const t = useT();
+  const localize = useLocalizeHref();
   const [pending, startTransition] = useTransition();
-  function navigate(href: string, replace = false, scroll = true) {
+  function navigate(target: string, replace = false, scroll = true) {
+    const href = localize(target);
     startTransition(() => {
       if (replace) router.replace(href, { scroll });
       else router.push(href, { scroll });
@@ -36,7 +40,7 @@ export function PageNavigation({ children }: { children: ReactNode }) {
           {pending && (
             <span>
               <i aria-hidden="true" />
-              Đang chuyển trang…
+              {t("Đang chuyển trang…")}
             </span>
           )}
         </div>
@@ -54,11 +58,16 @@ export function PageSurface({ children }: { children: ReactNode }) {
   );
 }
 
+/** Next.js Link that keeps the visitor's language ("/du-an" → "/en/du-an"). */
 export default function Link(props: ComponentProps<typeof NextLink>) {
   const navigate = useContext(NavigationContext);
+  const localize = useLocalizeHref();
+  const href =
+    typeof props.href === "string" ? localize(props.href) : props.href;
   return (
     <NextLink
       {...props}
+      href={href}
       onNavigate={(event) => {
         let prevented = false;
         props.onNavigate?.({
@@ -67,8 +76,8 @@ export default function Link(props: ComponentProps<typeof NextLink>) {
             event.preventDefault();
           },
         });
-        if (prevented || !navigate || typeof props.href !== "string") return;
-        const destination = new URL(props.href, window.location.href);
+        if (prevented || !navigate || typeof href !== "string") return;
+        const destination = new URL(href, window.location.href);
         if (
           destination.pathname === window.location.pathname &&
           destination.search === window.location.search

@@ -9,14 +9,14 @@
   color: #80683d;
 }
 .portfolio-intro {
-  padding: 30px 0 0;
+  padding: 10px 0 0;
 }
 .portfolio-intro h1 {
   font-size: clamp(42px, 5vw, 72px);
   line-height: 1.1;
   font-weight: 400;
   letter-spacing: -0.035em;
-  margin: 22px 0;
+  margin: 18px 0;
 }
 .portfolio-intro > p {
   max-width: 590px;
@@ -73,7 +73,7 @@
   align-items: end;
   justify-content: space-between;
   gap: 50px;
-  padding: 28px 0 35px;
+  padding: 0px 0 35px;
 }
 .portfolio-detail-heading h1 {
   font-size: clamp(38px, 4.6vw, 66px);
@@ -425,13 +425,13 @@
   justify-content: space-between;
   align-items: center;
   gap: 30px;
-  padding: 25px 0 30px;
+  padding:  0 30px;
 }
 .room-heading h1 {
   font-size: clamp(30px, 3.5vw, 48px);
   line-height: 1.2;
   font-weight: 400;
-  margin: 18px 0;
+  margin: 15px 0;
 }
 .room-save {
   display: flex;

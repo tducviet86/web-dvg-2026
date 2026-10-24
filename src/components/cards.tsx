@@ -1,3 +1,4 @@
+/** @jsxImportSource @/i18n/jsx */
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import {
@@ -8,10 +9,13 @@ import {
   Bath,
   Sofa,
   Layers,
+  Camera,
+  PlayCircle,
 } from "lucide-react";
 import type { Project, Property, Post } from "@/types";
-import { projects } from "@/data";
-import { money } from "@/lib/utils";
+import { money, unitRef } from "@/lib/utils";
+import { propertyMedia } from "@/lib/property-media";
+import { unitBadges } from "@/lib/highlights";
 import { Favorite } from "./interactive";
 export function SectionHeading({
   eyebrow,
@@ -79,15 +83,46 @@ export function ProjectCard({ project }: { project: Project }) {
     </article>
   );
 }
+/** Editor badge and "Đang được quan tâm", gold on deep green. */
+export function LuxuryBadges({
+  property,
+  className = "",
+}: {
+  property: Property;
+  className?: string;
+}) {
+  const badges = unitBadges(property);
+  if (!badges.length) return null;
+  return (
+    <span className={`lux-badges ${className}`}>
+      {badges.map((b) => (
+        <span key={b.key} className={`lux-badge lux-${b.key}`}>
+          <span aria-hidden="true">✦</span>
+          {b.label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function PropertyCard({
   property,
   priority = false,
+  index = 0,
 }: {
   property: Property;
   priority?: boolean;
+  /** Position in the grid, used to stagger the entrance animation. */
+  index?: number;
 }) {
+  const media = propertyMedia(property);
+  const photos = media.filter((m) => m.type === "image").length;
+  const videos = media.length - photos;
   return (
-    <article className="property-card">
+    <article
+      className="property-card"
+      style={{ "--i": index % 9 } as React.CSSProperties}
+    >
       <div className="image-wrap">
         <Link href={`/cho-thue/${property.slug}`}>
           <Image
@@ -107,14 +142,27 @@ export function PropertyCard({
         >
           {property.status}
         </span>
+        <LuxuryBadges property={property} />
         <Favorite id={property.id} />
+        <span className="card-media-count">
+          <span>
+            <Camera size={13} aria-hidden="true" />
+            {photos}
+            <span className="sr-only"> ảnh</span>
+          </span>
+          {videos > 0 && (
+            <span>
+              <PlayCircle size={13} aria-hidden="true" />
+              {videos}
+              <span className="sr-only"> video</span>
+            </span>
+          )}
+        </span>
       </div>
       <div className="property-body">
         <div className="card-meta">
-          <span>{projects.find((p) => p.id === property.projectId)?.name}</span>
-          <span>
-            {property.isDemo ? "CĂN MẪU" : property.unitCode || property.id}
-          </span>
+          <span>{property.projectName}</span>
+          <span>{property.isDemo ? "CĂN MẪU" : unitRef(property)}</span>
         </div>
         <h3>
           <Link href={`/cho-thue/${property.slug}`}>{property.name}</Link>

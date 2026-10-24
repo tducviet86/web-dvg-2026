@@ -1,0 +1,65 @@
+name: FE-DVG CI
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      API_INTERNAL_URL: http://127.0.0.1:4000
+      NEXT_PUBLIC_SITE_URL: https://datvanggroup.vn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22.22", cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      # The build does not call the API (pages render on request).
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  # Full-stack Playwright run. Requires the backend repository; set the
+  # BE_REPOSITORY variable (owner/name) to enable it.
+  e2e:
+    if: ${{ vars.BE_REPOSITORY != '' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: dvg, POSTGRES_PASSWORD: dvg, POSTGRES_DB: dvg_e2e }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U dvg" --health-interval 5s --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgresql://dvg:dvg@127.0.0.1:5432/dvg_e2e?schema=public
+      BE_DIR: ${{ github.workspace }}/BE-DVG
+      API_INTERNAL_URL: http://127.0.0.1:4000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { repository: "${{ vars.BE_REPOSITORY }}", path: BE-DVG, token: "${{ secrets.BE_REPOSITORY_TOKEN }}" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22.22" }
+      - run: npm install -g npm@11.21.1
+      - name: Backend build and env
+        working-directory: BE-DVG
+        run: |
+          npm ci && npx prisma generate && npm run build
+          cp .env.example .env
+          SECRET=$(openssl rand -hex 24)
+          sed -i "s|^JWT_ACCESS_SECRET=.*|JWT_ACCESS_SECRET=$(openssl rand -base64 48)|; s|^REVALIDATE_SECRET=.*|REVALIDATE_SECRET=$SECRET|; s|^IP_HASH_SALT=.*|IP_HASH_SALT=$(openssl rand -hex 16)|; s|^MEDIA_PUBLIC_BASE_URL=.*|MEDIA_PUBLIC_BASE_URL=/media|" .env
+          echo "REVALIDATE_SECRET=$SECRET" > ../.env.local
+      - run: npm ci && npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test
+        env: { PLAYWRIGHT_CHANNEL: chromium }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: playwright-report }

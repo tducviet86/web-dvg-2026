@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
-    "format": "prettier --write src tests *.ts *.mjs *.json"
+    "format": "prettier --write src tests *.ts *.mjs *.json",
+    "i18n:extract": "node scripts/i18n-extract.mjs",
+    "i18n:warm": "node scripts/i18n-warm.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.0",
@@ -21,7 +23,7 @@
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^0.468.0",
     "motion": "^12.23.0",
-    "next": "^16.0.0",
+    "next": "^16.4.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.65.0",
@@ -38,7 +40,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "eslint": "^9.0.0",
-    "eslint-config-next": "^16.0.0",
+    "eslint-config-next": "^16.4.2",
     "lighthouse": "^13.5.0",
     "prettier": "^3.9.10",
     "typescript": "^5.9.0"

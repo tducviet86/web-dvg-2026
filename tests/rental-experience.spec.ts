@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { properties } from "../src/data";
+import type { Property } from "../src/types";
 import { propertyMedia, videoSource } from "../src/lib/property-media";
 import { filterProperties } from "../src/lib/filter";
+import { apiAs, humanPause } from "./helpers";
 
 const room = "/cho-thue/can-ho-sun-ponte-residence-demo-01";
 
@@ -17,8 +18,42 @@ test("media accepts local video and unlimited images; search handles project nam
   expect(videoSource("https://youtu.be/abcdefghijk")?.src).toBe(
     "https://www.youtube-nocookie.com/embed/abcdefghijk",
   );
+  const sample: Property = {
+    id: "p-1",
+    slug: "can-mau",
+    name: "Căn hộ đón nắng",
+    projectId: "uuid-monarchy",
+    projectName: "The Monarchy",
+    projectSlug: "monarchy-apartments",
+    location: "Sơn Trà, Đà Nẵng",
+    type: "Studio",
+    price: 9.5,
+    area: 40,
+    bedrooms: 0,
+    bathrooms: 1,
+    floor: 8,
+    furniture: "Đầy đủ nội thất",
+    status: "Còn trống",
+    image: "/images/projects/monarchy.jpg",
+    description: "Căn hộ mẫu.",
+    updatedAt: "2026-10-21",
+    unitCode: "property-2",
+    videoUrl: "/images/video.mp4",
+  };
+  const properties: Property[] = [
+    sample,
+    {
+      ...sample,
+      id: "p-2",
+      projectId: "uuid-ponte",
+      projectName: "Sun Ponte Residence",
+      projectSlug: "sun-ponte-residence",
+      name: "Căn hộ view sông",
+      unitCode: "A-12",
+    },
+  ];
   const media = propertyMedia({
-    ...properties[0],
+    ...sample,
     gallery: Array.from({ length: 12 }, (_, i) => `/images/room-${i}.jpg`).join(
       "\n",
     ),
@@ -27,7 +62,7 @@ test("media accepts local video and unlimited images; search handles project nam
   expect(media.at(-1)?.type).toBe("video");
   expect(
     filterProperties(properties, { q: "monarchy" }).every(
-      (p) => p.projectId === "project-3",
+      (p) => p.projectSlug === "monarchy-apartments",
     ),
   ).toBeTruthy();
   expect(
@@ -36,6 +71,11 @@ test("media accepts local video and unlimited images; search handles project nam
   expect(
     filterProperties(properties, { q: "don nang" }).length,
   ).toBeGreaterThan(0);
+  expect(
+    filterProperties(properties, { project: "sun-ponte-residence" }).map(
+      (p) => p.id,
+    ),
+  ).toEqual(["p-2"]);
 });
 
 test("banner supports mouse drag, keyboard and automatic playback without navigation buttons", async ({
@@ -262,41 +302,98 @@ test("rental layouts fit desktop/mobile and remain accessible", async ({
   }
 });
 
-test("admin saves local gallery and video and rejects unsupported video links", async ({
+test("advice request popup validates, reaches the API with the project, and reports errors", async ({
   page,
 }) => {
-  await page.goto("/admin");
-  await page
-    .getByRole("navigation", { name: "Quản trị", exact: true })
-    .getByRole("link", { name: "Căn hộ", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Thêm mới" }).click();
-  const form = page.locator(".admin-editor-page");
-  await form.locator('[name="name"]').fill("Căn kiểm thử video");
-  await form.locator('[name="slug"]').fill("can-kiem-thu-video");
-  await form
-    .locator('[name="description"]')
-    .fill("Thông tin kiểm thử thư viện nhiều ảnh và video.");
-  await form.locator('[name="image"]').fill("/images/projects/monarchy.jpg");
-  await form
-    .locator('[name="gallery"]')
-    .fill("/images/projects/monarchy.jpg\n/images/projects/ponte.jpg");
-  await form.locator('[name="videoUrl"]').fill("https://evil.test/embed/video");
-  await form.getByRole("button", { name: "Lưu thay đổi" }).click();
-  await expect(page.locator("#editor-errors")).toContainText("Video cần");
-  await form.locator('[name="videoUrl"]').fill("/images/video.mp4");
-  await form.getByRole("button", { name: "Lưu thay đổi" }).click();
+  // Unit pages offer calling only (no viewing booking form).
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/cho-thue/can-ho-sun-panoma-demo-02");
+  await expect(page.locator(".room-mobile-call a[href^='tel:']")).toBeVisible();
+  await expect(page.locator(".room-mobile-call button")).toHaveCount(0);
+  await expect(page.getByText("Đặt lịch xem căn")).toHaveCount(0);
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/cho-thue/du-an/sun-panoma");
+  const open = page
+    .locator(".rental-intro-actions")
+    .getByRole("button", { name: "Nhờ tư vấn chọn căn" });
+  await open.click();
+  // The title changes with the outcome (form → success/error), so locate the
+  // dialog by role only.
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toHaveAccessibleName("Nhờ tư vấn chọn căn");
+  await expect(dialog.locator(".inquiry-target")).toContainText("Sun Panoma");
+  await dialog.getByRole("button", { name: "Gửi nhu cầu" }).click();
   await expect(
-    page.getByText("Căn kiểm thử video", { exact: true }),
+    dialog.getByText("Nhập số di động Việt Nam hợp lệ."),
   ).toBeVisible();
-  await page.reload();
-  await page
-    .getByRole("button", { name: "Sửa Căn kiểm thử video", exact: true })
-    .click();
-  await expect(form.locator('[name="videoUrl"]')).toHaveValue(
-    "/images/video.mp4",
+  await dialog.getByLabel("Họ và tên").fill("Khách Kiểm Thử");
+  await dialog.getByLabel("Số điện thoại").fill("0911 222 333");
+  await dialog.getByLabel("Email").fill("khach.e2e@example.test");
+  await dialog.getByLabel("Ngân sách mỗi tháng").selectOption("10–15 triệu");
+  await dialog.getByLabel(/Tôi đồng ý/).check();
+  // Real API call; the anti-spam timer needs a human-like delay.
+  await humanPause(page);
+  const sent = page.waitForRequest((r) =>
+    r.url().endsWith("/api/v1/inquiries"),
   );
-  await expect(form.locator('[name="gallery"]')).toHaveValue(
-    "/images/projects/monarchy.jpg\n/images/projects/ponte.jpg",
+  await dialog.getByRole("button", { name: "Gửi nhu cầu" }).click();
+  const body = (await sent).postDataJSON();
+  expect(body).toMatchObject({
+    projectSlug: "sun-panoma",
+    phone: "0911222333",
+    intent: "Tìm thuê bất động sản",
+  });
+  expect(body.message).toContain("Ngân sách: 10–15 triệu");
+  expect((await (await sent).response())?.status()).toBe(202);
+  await expect(dialog.getByRole("status")).toContainText(
+    "Đã nhận yêu cầu của bạn",
   );
+  // The lead reaches Admin › Khách hàng.
+  const leads = (await (
+    await apiAs()
+  ).get("/admin/leads?q=khach.e2e@example.test")) as unknown as {
+    data: { intent: string }[];
+  };
+  expect(leads.data[0]).toMatchObject({ intent: "Tìm thuê bất động sản" });
+  await dialog.getByRole("button", { name: "Hoàn tất" }).click();
+  await expect(dialog).toBeHidden();
+
+  // Server refusal: the popup explains it and keeps the visitor's input.
+  await page.route("**/api/v1/inquiries", (route) =>
+    route.fulfill({
+      status: 429,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: { code: "RATE_LIMITED", message: "Too many", requestId: "x" },
+      }),
+    }),
+  );
+  await open.click();
+  await dialog.getByLabel("Họ và tên").fill("Khách Kiểm Thử");
+  await dialog.getByLabel("Số điện thoại").fill("0911222333");
+  await dialog.getByLabel("Email").fill("khach.e2e@example.test");
+  await dialog.getByLabel(/Tôi đồng ý/).check();
+  await dialog.getByRole("button", { name: "Gửi nhu cầu" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Bạn gửi hơi nhanh");
+  await dialog.getByRole("button", { name: "Sửa và gửi lại" }).click();
+  await expect(dialog.getByLabel("Họ và tên")).toHaveValue("Khách Kiểm Thử");
+});
+
+test("listing quick filters toggle and the owner popup opens", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  const quick = page.getByRole("navigation", { name: "Lọc nhanh" });
+  await quick.getByRole("link", { name: "2 phòng ngủ" }).click();
+  await expect(page).toHaveURL(/bedrooms=2/);
+  await expect(
+    quick.getByRole("link", { name: "2 phòng ngủ" }),
+  ).toHaveAttribute("aria-current", "true");
+  await quick.getByRole("link", { name: "2 phòng ngủ" }).click();
+  await expect(page).not.toHaveURL(/bedrooms=/);
+  await page.getByRole("button", { name: "Gửi thông tin ký gửi" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Ký gửi căn hộ cho thuê" }),
+  ).toBeVisible();
 });

@@ -1,3 +1,4 @@
+/** @jsxImportSource @/i18n/jsx */
 export default function Loading() {
   return (
     <main

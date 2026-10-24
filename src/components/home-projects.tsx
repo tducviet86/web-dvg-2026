@@ -1,12 +1,15 @@
+/** @jsxImportSource @/i18n/jsx */
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import { ArrowUpRight } from "lucide-react";
-import { homeProjects } from "@/data/home-projects";
+import type { PortfolioProject } from "@/types";
 import { Reveal } from "@/components/interactive";
 export function HomeProjects({
   group,
+  projects,
 }: {
   group: "development" | "operation";
+  projects: PortfolioProject[];
 }) {
   const development = group === "development";
   return (
@@ -33,7 +36,7 @@ export function HomeProjects({
           </p>
         </div>
         <div className="home-project-cards">
-          {homeProjects
+          {projects
             .filter((p) => p.group === group)
             .map((p, i) => (
               <Reveal key={p.id}>
@@ -44,8 +47,8 @@ export function HomeProjects({
                     aria-label={`Xem chi tiết ${p.name}`}
                   >
                     <Image
-                      src={`/images/projects/${p.id}.jpg`}
-                      alt={`${p.imageType} ${p.name}`}
+                      src={p.image}
+                      alt={p.imageAlt}
                       fill
                       sizes="(max-width:600px) 100vw, (max-width:1000px) 50vw, 33vw"
                     />
@@ -60,9 +63,13 @@ export function HomeProjects({
                       <Link href={`/du-an/${p.slug}`}>{p.name}</Link>
                     </h3>
                     <div>
-                      <a href={p.source} target="_blank" rel="noreferrer">
-                        {p.imageType} · Nguồn ảnh <ArrowUpRight size={12} />
-                      </a>
+                      {p.source ? (
+                        <a href={p.source} target="_blank" rel="noreferrer">
+                          {p.imageType} · Nguồn ảnh <ArrowUpRight size={12} />
+                        </a>
+                      ) : (
+                        <span>{p.imageType}</span>
+                      )}
                       <Link href={`/du-an/${p.slug}`}>
                         {development ? "Xem chi tiết" : "Khám phá căn hộ"}{" "}
                         <ArrowUpRight size={15} />

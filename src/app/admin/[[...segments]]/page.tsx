@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Dashboard from "@/features/admin/entry";
 export const metadata: Metadata = {
-  title: "Quản trị demo",
+  title: "Quản trị",
   robots: { index: false, follow: false },
 };
 export default async function Admin({
@@ -15,8 +15,8 @@ export default async function Admin({
   const kinds = ["projects", "banners", "properties", "posts", "leads"];
   const valid =
     segments.length === 0 ||
-    (section === "settings" &&
-      (segments.length === 1 || (segments.length === 2 && id === "reset"))) ||
+    (["settings", "users", "login"].includes(section) &&
+      segments.length === 1) ||
     (kinds.includes(section) &&
       (segments.length === 1 ||
         (segments.length === 2 && id === "new") ||

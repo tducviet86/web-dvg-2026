@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -16,13 +17,14 @@ import {
 import type { RentalMedia } from "@/lib/property-media";
 
 function Video({ media }: { media: Extract<RentalMedia, { type: "video" }> }) {
+  const t = useT();
   const [failed, setFailed] = useState(false);
   if (failed)
     return (
       <p className="media-error">
-        Video chưa tải được.{" "}
+        {t("Video chưa tải được.")}{" "}
         <a href={media.src} target="_blank" rel="noopener noreferrer">
-          Mở video gốc
+          {t("Mở video gốc")}
         </a>
       </p>
     );
@@ -55,6 +57,7 @@ export function RentalGallery({
   title: string;
   demo?: boolean;
 }) {
+  const t = useT();
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(0);
@@ -72,12 +75,13 @@ export function RentalGallery({
     };
   }, [api]);
   const photoCount = media.filter((x) => x.type === "image").length;
+  const videoCount = media.length - photoCount;
   function next(delta: number) {
     setExpanded((value) => (value + delta + media.length) % media.length);
   }
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <div className="rental-gallery" aria-label="Ảnh và video căn hộ">
+      <div className="rental-gallery" aria-label={t("Ảnh và video căn hộ")}>
         <div className="rental-gallery-main">
           <div className="rental-gallery-viewport" ref={viewport}>
             <div className="rental-gallery-track">
@@ -92,7 +96,10 @@ export function RentalGallery({
                     <Dialog.Trigger asChild>
                       <button
                         className="gallery-image"
-                        aria-label={`Xem ảnh ${index + 1} của ${title}`}
+                        aria-label={t("Xem ảnh {n} của {title}", {
+                          n: index + 1,
+                          title,
+                        })}
                         onClick={() => setExpanded(index)}
                       >
                         <Image
@@ -104,7 +111,7 @@ export function RentalGallery({
                           draggable={false}
                         />
                         <span className="gallery-enlarge">
-                          <Maximize2 size={16} /> Phóng to ảnh
+                          <Maximize2 size={16} /> {t("Phóng to ảnh")}
                         </span>
                       </button>
                     </Dialog.Trigger>
@@ -118,13 +125,13 @@ export function RentalGallery({
           {media.length > 1 && (
             <div className="rental-gallery-arrows">
               <button
-                aria-label="Ảnh trước trong thư viện"
+                aria-label={t("Ảnh trước trong thư viện")}
                 onClick={() => api?.scrollPrev()}
               >
                 <ArrowLeft size={20} />
               </button>
               <button
-                aria-label="Ảnh tiếp trong thư viện"
+                aria-label={t("Ảnh tiếp trong thư viện")}
                 onClick={() => api?.scrollNext()}
               >
                 <ArrowRight size={20} />
@@ -136,7 +143,10 @@ export function RentalGallery({
             {String(media.length).padStart(2, "0")}
           </span>
         </div>
-        <div className="rental-gallery-thumbs" aria-label="Chọn ảnh hoặc video">
+        <div
+          className="rental-gallery-thumbs"
+          aria-label={t("Chọn ảnh hoặc video")}
+        >
           {media.map((item, index) => (
             <button
               key={item.src}
@@ -144,8 +154,8 @@ export function RentalGallery({
               aria-pressed={index === active}
               aria-label={
                 item.type === "video"
-                  ? "Xem video căn hộ"
-                  : `Chọn ảnh ${index + 1}`
+                  ? t("Xem video căn hộ")
+                  : t("Chọn ảnh {n}", { n: index + 1 })
               }
               onClick={() => api?.scrollTo(index)}
             >
@@ -162,12 +172,12 @@ export function RentalGallery({
         </div>
         <div className="rental-gallery-footer">
           <span>
-            <Images size={16} /> {photoCount} ảnh
-            {media.some((m) => m.type === "video") ? " · 1 video" : ""}
+            <Images size={16} /> {t("{n} ảnh", { n: photoCount })}
+            {videoCount ? ` · ${t("{n} video", { n: videoCount })}` : ""}
           </span>
           <span>
-            {demo ? "Ảnh nội thất minh họa" : "Hình ảnh căn hộ"} · Kéo để xem
-            thêm
+            {t(demo ? "Ảnh nội thất minh họa" : "Hình ảnh căn hộ")} ·{" "}
+            {t("Kéo để xem thêm")}
           </span>
         </div>
       </div>
@@ -185,8 +195,8 @@ export function RentalGallery({
         >
           <Dialog.Title>{title}</Dialog.Title>
           <Dialog.Description>
-            {demo ? "Ảnh nội thất minh họa. " : ""}Dùng phím mũi tên để chuyển
-            ảnh, Escape để đóng.
+            {demo ? `${t("Ảnh nội thất minh họa.")} ` : ""}
+            {t("Dùng phím mũi tên để chuyển ảnh, Escape để đóng.")}
           </Dialog.Description>
           <div className="rental-lightbox-stage">
             {media[expanded].type === "image" ? (
@@ -207,17 +217,17 @@ export function RentalGallery({
             )}
           </div>
           <div className="carousel-actions">
-            <button aria-label="Ảnh trước" onClick={() => next(-1)}>
+            <button aria-label={t("Ảnh trước")} onClick={() => next(-1)}>
               <ArrowLeft />
             </button>
             <span>
               {expanded + 1} / {media.length}
             </span>
-            <button aria-label="Ảnh sau" onClick={() => next(1)}>
+            <button aria-label={t("Ảnh sau")} onClick={() => next(1)}>
               <ArrowRight />
             </button>
           </div>
-          <Dialog.Close className="dialog-close" aria-label="Đóng bộ ảnh">
+          <Dialog.Close className="dialog-close" aria-label={t("Đóng bộ ảnh")}>
             <X />
           </Dialog.Close>
         </Dialog.Content>

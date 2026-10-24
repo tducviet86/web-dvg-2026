@@ -1,3 +1,4 @@
+/** @jsxImportSource @/i18n/jsx */
 import { Phone, ArrowUpRight } from "lucide-react";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import Link from "@/components/page-navigation";

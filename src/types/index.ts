@@ -9,6 +9,13 @@ export type AdminDetails = {
   handoverDate?: string;
   mapUrl?: string;
   amenities?: string;
+  /** Prices in VND and listing modes (structured data). */
+  rentVnd?: number;
+  saleVnd?: number;
+  forRent?: boolean;
+  forSale?: boolean;
+  /** Unit amenities as catalogue keys (lib/amenities.ts). */
+  amenityKeys?: string[];
   unitCode?: string;
   direction?: string;
   deposit?: string;
@@ -50,6 +57,10 @@ export type Project = AdminDetails & {
 };
 export type Property = AdminDetails & {
   isDemo?: boolean;
+  projectName?: string;
+  projectSlug?: string;
+  /** Uploaded MP4/WebM videos (in display order). */
+  videos?: string[];
   id: string;
   slug: string;
   name: string;
@@ -66,8 +77,15 @@ export type Property = AdminDetails & {
   image: string;
   description: string;
   updatedAt: string;
+  /** ISO date the unit was published (newest are listed first). */
+  publishedAt?: string;
+  /** Badge chosen in Admin (lib/highlights.ts). */
+  highlight?: string;
+  /** Many visitors looked at or asked about it lately. */
+  trending?: boolean;
 };
 export type Post = AdminDetails & {
+  isDemo?: boolean;
   id: string;
   slug: string;
   name: string;
@@ -77,6 +95,7 @@ export type Post = AdminDetails & {
   description: string;
   status: string;
   createdAt: string;
+  updatedAt?: string;
   readingTime: number;
 };
 export type Lead = AdminDetails & {
@@ -120,4 +139,35 @@ export type Banner = {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+};
+/** A project as shown in the portfolio pages (homepage, /du-an/*). */
+export type PortfolioProject = {
+  /** Stable key used for anchors and legacy lookups (e.g. "capital"). */
+  id: string;
+  slug: string;
+  /** Backend project ID. */
+  projectId: string;
+  name: string;
+  group: "development" | "operation";
+  categories: string[];
+  location: string;
+  imageType: string;
+  source: string | null;
+  /** Fan page of the building, if any. */
+  facebook: string | null;
+  image: string;
+  imageAlt: string;
+};
+export type ProjectStory = {
+  intro: string;
+  paragraphs: string[];
+  products: string[];
+  highlights: { title: string; text: string }[];
+};
+export type RentalGuide = { intro: string; focus: string; checks: string[] };
+export type ProjectLocation = {
+  url: string;
+  lat: number;
+  lng: number;
+  label: string;
 };

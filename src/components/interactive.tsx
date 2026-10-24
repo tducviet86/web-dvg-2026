@@ -2,7 +2,6 @@
 import { useSyncExternalStore, useState, useId, useEffect } from "react";
 import { motion, useReducedMotion, useScroll } from "motion/react";
 import * as Dialog from "@radix-ui/react-dialog";
-import useEmblaCarousel from "embla-carousel-react";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -16,15 +15,27 @@ import { toast, Toaster } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { testimonials, leads } from "@/data";
 import { readStore, writeStore } from "@/lib/storage";
+import { postPublic } from "@/lib/api/client";
 import { Button } from "./ui/button";
+import { useT } from "@/i18n/client";
+function subscribeNarrow(callback: () => void) {
+  const query = window.matchMedia("(max-width: 800px)");
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+}
 export function Providers() {
+  // Phones: toasts at the top so they never cover the call bar or contact buttons.
+  const narrow = useSyncExternalStore(
+    subscribeNarrow,
+    () => window.matchMedia("(max-width: 800px)").matches,
+    () => false,
+  );
   return (
     <Toaster
       richColors
       closeButton
-      position="bottom-right"
+      position={narrow ? "top-center" : "bottom-right"}
       toastOptions={{ style: { fontFamily: "var(--font-body)" } }}
     />
   );
@@ -67,6 +78,7 @@ function subscribeFavorites(callback: () => void) {
   };
 }
 export function Favorite({ id }: { id: string }) {
+  const t = useT();
   const saved = useSyncExternalStore(
     subscribeFavorites,
     () => readStore<string[]>("favorites", []).includes(id),
@@ -76,14 +88,14 @@ export function Favorite({ id }: { id: string }) {
     <button
       type="button"
       className={`favorite ${saved ? "selected" : ""}`}
-      aria-label={saved ? "Bỏ yêu thích" : "Lưu căn hộ yêu thích"}
+      aria-label={t(saved ? "Bỏ yêu thích" : "Lưu căn hộ yêu thích")}
       aria-pressed={saved}
       onClick={() => {
         const current = readStore<string[]>("favorites", []);
         const next = saved ? current.filter((x) => x !== id) : [...current, id];
         if (writeStore("favorites", next)) {
           toast.success(
-            saved ? "Đã bỏ khỏi yêu thích" : "Đã lưu căn hộ yêu thích",
+            t(saved ? "Đã bỏ khỏi yêu thích" : "Đã lưu căn hộ yêu thích"),
           );
         }
       }}
@@ -106,9 +118,13 @@ const schema = z.object({
     .string()
     .min(10, "Vui lòng mô tả nhu cầu ít nhất 10 ký tự.")
     .max(1500, "Tối đa 1.500 ký tự."),
-  consent: z.boolean().refine((v) => v, "Bạn cần đồng ý lưu thông tin demo."),
+  consent: z
+    .boolean()
+    .refine((v) => v, "Bạn cần đồng ý để Đất Vàng Group liên hệ lại."),
+  website: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
+const now = () => Date.now();
 export function ContactForm({
   source = "Liên hệ",
   compact = false,
@@ -117,7 +133,10 @@ export function ContactForm({
   compact?: boolean;
 }) {
   const formId = useId();
+  const t = useT();
   const [done, setDone] = useState(false);
+  // Anti-spam signal: humans take a few seconds to fill the form.
+  const [renderedAt] = useState(now);
   const {
     register,
     handleSubmit,
@@ -152,55 +171,69 @@ export function ContactForm({
       );
   }, [source, setValue]);
   async function submit(values: FormValues) {
-    const { consent: _consent, intent, ...data } = values;
-    void _consent;
-    const lead = {
+    const { intent, ...data } = values;
+    // Contact/partnership/career forms vs. requests about a project or unit.
+    const contact = /^(Liên hệ|Hợp tác|Ứng tuyển)/.test(source);
+    const result = await postPublic(contact ? "/contact" : "/inquiries", {
       ...data,
-      message: intent ? `[${intent}] ${data.message}` : data.message,
-      id: crypto.randomUUID(),
-      source,
-      status: "Mới",
-      assignment: "Chưa phân công",
-      notes: "",
-      createdAt: new Date().toISOString(),
-    };
-    if (writeStore("leads", [lead, ...readStore("leads", leads)])) {
-      toast.success("Đã lưu yêu cầu demo trên trình duyệt.");
-      setDone(true);
-      reset();
+      intent: intent || undefined,
+      source: source.slice(0, 80),
+      elapsedMs: now() - renderedAt,
+    });
+    if (!result.ok) {
+      toast.error(t(result.message));
+      return;
     }
+    toast.success(t("Đã gửi yêu cầu. Đất Vàng Group sẽ liên hệ lại với bạn."));
+    setDone(true);
+    reset();
   }
   return (
     <form
       className={`contact-form ${compact ? "compact" : ""}`}
       onSubmit={handleSubmit(submit, () =>
-        toast.error("Vui lòng kiểm tra các trường được đánh dấu."),
+        toast.error(t("Vui lòng kiểm tra các trường được đánh dấu.")),
       )}
       noValidate
     >
-      <span className="eyebrow">KẾT NỐI CÙNG ĐẤT VÀNG</span>
+      <span className="eyebrow">{t("KẾT NỐI CÙNG ĐẤT VÀNG")}</span>
       <h3>
-        {source.startsWith("Ứng tuyển")
-          ? "Chia sẻ về bạn"
-          : "Bắt đầu một cuộc trò chuyện"}
+        {t(
+          source.startsWith("Ứng tuyển")
+            ? "Chia sẻ về bạn"
+            : "Bắt đầu một cuộc trò chuyện",
+        )}
       </h3>
       <p className="muted">
-        Thông tin chỉ lưu trên trình duyệt này, chưa gửi đến doanh nghiệp.
+        {t(
+          "Thông tin được gửi trực tiếp đến đội ngũ Đất Vàng Group và chỉ dùng để liên hệ tư vấn.",
+        )}
       </p>
       {done && (
         <div className="confirmation" role="status">
-          <Check size={18} /> Yêu cầu demo đã lưu. Bạn có thể xem tại trang quản
-          trị.
+          <Check size={18} />{" "}
+          {t(
+            "Yêu cầu đã được ghi nhận. Chúng tôi sẽ liên hệ trong thời gian sớm nhất.",
+          )}
         </div>
       )}
+      {/* Honeypot: hidden from people and assistive tech, filled by bots. */}
+      <input
+        {...register("website")}
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="sr-only"
+      />
       <div className="form-grid">
         {(["name", "phone", "email"] as const).map((field) => (
           <label key={field} className={field === "email" ? "full" : ""}>
-            {
+            {t(
               { name: "Họ và tên", phone: "Số điện thoại", email: "Email" }[
                 field
-              ]
-            }{" "}
+              ],
+            )}{" "}
             <span aria-hidden="true">*</span>
             <input
               {...register(field)}
@@ -219,20 +252,20 @@ export function ContactForm({
                 field === "name"
                   ? "Nguyễn Minh Anh"
                   : field === "phone"
-                    ? "Số di động của bạn"
+                    ? t("Số di động của bạn")
                     : "ban@example.com"
               }
             />
             {errors[field] && (
               <span id={`${formId}-${field}-error`} className="field-error">
-                {errors[field]?.message}
+                {t(errors[field]?.message ?? "")}
               </span>
             )}
           </label>
         ))}
         {!source.startsWith("Ứng tuyển") && (
           <label className="full">
-            Nhu cầu tư vấn <span aria-hidden="true">*</span>
+            {t("Nhu cầu tư vấn")} <span aria-hidden="true">*</span>
             <select
               {...register("intent")}
               defaultValue=""
@@ -242,25 +275,34 @@ export function ContactForm({
               }
             >
               <option value="" disabled>
-                Chọn nhu cầu của bạn
+                {t("Chọn nhu cầu của bạn")}
               </option>
-              <option>Tư vấn mua bán bất động sản</option>
-              <option>Tìm thuê bất động sản</option>
-              <option>Cho thuê bất động sản</option>
-              <option>Ký gửi bán hoặc cho thuê</option>
-              <option>Hợp tác và nhu cầu khác</option>
+              {/* Values stay Vietnamese: they are stored on the lead. */}
+              {[
+                "Tư vấn mua bán bất động sản",
+                "Tìm thuê bất động sản",
+                "Cho thuê bất động sản",
+                "Ký gửi bán hoặc cho thuê",
+                "Hợp tác và nhu cầu khác",
+              ].map((option) => (
+                <option key={option} value={option}>
+                  {t(option)}
+                </option>
+              ))}
             </select>
             {errors.intent && (
               <span id={`${formId}-intent-error`} className="field-error">
-                {errors.intent.message}
+                {t(errors.intent.message ?? "")}
               </span>
             )}
           </label>
         )}
         <label className="full">
-          {source.startsWith("Ứng tuyển")
-            ? "Kinh nghiệm và vị trí mong muốn"
-            : "Thông tin chi tiết"}{" "}
+          {t(
+            source.startsWith("Ứng tuyển")
+              ? "Kinh nghiệm và vị trí mong muốn"
+              : "Thông tin chi tiết",
+          )}{" "}
           <span aria-hidden="true">*</span>
           <textarea
             {...register("message")}
@@ -270,28 +312,28 @@ export function ContactForm({
             aria-describedby={
               errors.message ? `${formId}-message-error` : undefined
             }
-            placeholder={
+            placeholder={t(
               source.startsWith("Ứng tuyển")
                 ? "Chia sẻ kinh nghiệm và vị trí bạn muốn ứng tuyển…"
-                : "Tên dự án, ngân sách, loại căn hộ hoặc thông tin tài sản cần ký gửi…"
-            }
+                : "Tên dự án, ngân sách, loại căn hộ hoặc thông tin tài sản cần ký gửi…",
+            )}
           />
           {errors.message && (
             <span id={`${formId}-message-error`} className="field-error">
-              {errors.message.message}
+              {t(errors.message.message ?? "")}
             </span>
           )}
         </label>
       </div>
       <label className="checkbox">
-        <input type="checkbox" {...register("consent")} /> Tôi đồng ý lưu thông
-        tin để trải nghiệm bản demo.
+        <input type="checkbox" {...register("consent")} />{" "}
+        {t("Tôi đồng ý để Đất Vàng Group lưu thông tin và liên hệ tư vấn.")}
       </label>
       {errors.consent && (
-        <p className="field-error">{errors.consent.message}</p>
+        <p className="field-error">{t(errors.consent.message ?? "")}</p>
       )}
       <Button disabled={isSubmitting} type="submit">
-        {isSubmitting ? "Đang lưu…" : "Đăng ký tư vấn"}
+        {t(isSubmitting ? "Đang gửi…" : "Đăng ký tư vấn")}
         <ArrowUpRight size={18} />
       </Button>
     </form>
@@ -301,6 +343,7 @@ const newsletterSchema = z.object({
   email: z.email("Vui lòng nhập email hợp lệ.").max(120),
 });
 export function Newsletter() {
+  const t = useT();
   const {
     register,
     handleSubmit,
@@ -309,36 +352,34 @@ export function Newsletter() {
   } = useForm<{ email: string }>({ resolver: zodResolver(newsletterSchema) });
   return (
     <form
-      onSubmit={handleSubmit(({ email }) => {
-        const current = readStore<string[]>("newsletter", []);
-        if (current.includes(email)) {
-          toast.info("Email này đã đăng ký trong bản demo.");
+      onSubmit={handleSubmit(async ({ email }) => {
+        const result = await postPublic("/newsletter", { email });
+        if (!result.ok) {
+          toast.error(t(result.message));
           return;
         }
-        if (writeStore("newsletter", [...current, email])) {
-          toast.success("Đã lưu đăng ký demo. Chưa gửi email thực tế.");
-          reset();
-        }
+        toast.success(t("Đã đăng ký nhận bản tin."));
+        reset();
       })}
       noValidate
     >
       <label htmlFor="newsletter">
-        Nhận những góc nhìn mới về không gian sống
+        {t("Nhận những góc nhìn mới về không gian sống")}
       </label>
       <div className="newsletter">
         <input
           id="newsletter"
           type="email"
-          placeholder="Email của bạn"
+          placeholder={t("Email của bạn")}
           {...register("email")}
           aria-invalid={!!errors.email}
         />
-        <button aria-label="Đăng ký bản tin">
+        <button aria-label={t("Đăng ký bản tin")}>
           <ArrowRight size={20} />
         </button>
       </div>
       {errors.email && (
-        <span className="field-error">{errors.email.message}</span>
+        <span className="field-error">{t(errors.email.message ?? "")}</span>
       )}
     </form>
   );
@@ -350,6 +391,7 @@ export function Gallery({
   images: string[];
   title: string;
 }) {
+  const t = useT();
   const [index, setIndex] = useState(0);
   return (
     <Dialog.Root>
@@ -359,16 +401,16 @@ export function Gallery({
             <button
               className={`gallery-image image-wrap gallery-${i}`}
               onClick={() => setIndex(i)}
-              aria-label={`Xem ảnh ${i + 1} của ${title}`}
+              aria-label={t("Xem ảnh {n} của {title}", { n: i + 1, title })}
             >
               <Image
                 src={src}
-                alt={`${title} — ảnh không gian minh họa ${i + 1}`}
+                alt={`${title} — ${t("ảnh không gian minh họa {n}", { n: i + 1 })}`}
                 fill
                 sizes={i === 0 ? "(max-width: 768px) 100vw, 66vw" : "33vw"}
                 loading={i === 0 ? "eager" : "lazy"}
               />
-              {i === 2 && <span>Xem bộ sưu tập ↗</span>}
+              {i === 2 && <span>{t("Xem bộ sưu tập ↗")}</span>}
             </button>
           </Dialog.Trigger>
         ))}
@@ -376,9 +418,11 @@ export function Gallery({
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content className="dialog-content lightbox">
-          <Dialog.Title>{title} · Ảnh minh họa</Dialog.Title>
+          <Dialog.Title>
+            {title} · {t("Ảnh minh họa")}
+          </Dialog.Title>
           <Dialog.Description className="sr-only">
-            Bộ ảnh không gian. Dùng các nút để chuyển ảnh.
+            {t("Bộ ảnh không gian. Dùng các nút để chuyển ảnh.")}
           </Dialog.Description>
           <div className="lightbox-image">
             <Image
@@ -391,7 +435,7 @@ export function Gallery({
           </div>
           <div className="carousel-actions">
             <button
-              aria-label="Ảnh trước"
+              aria-label={t("Ảnh trước")}
               onClick={() =>
                 setIndex((index + images.length - 1) % images.length)
               }
@@ -402,13 +446,13 @@ export function Gallery({
               {index + 1} / {images.length}
             </span>
             <button
-              aria-label="Ảnh sau"
+              aria-label={t("Ảnh sau")}
               onClick={() => setIndex((index + 1) % images.length)}
             >
               <ArrowRight />
             </button>
           </div>
-          <Dialog.Close className="dialog-close" aria-label="Đóng bộ ảnh">
+          <Dialog.Close className="dialog-close" aria-label={t("Đóng bộ ảnh")}>
             <X />
           </Dialog.Close>
         </Dialog.Content>
@@ -416,58 +460,8 @@ export function Gallery({
     </Dialog.Root>
   );
 }
-export function Testimonials() {
-  const [ref, api] = useEmblaCarousel({ loop: true });
-  return (
-    <section className="testimonials section">
-      <div className="container testimonial-layout">
-        <div>
-          <span className="eyebrow">NHỮNG CÂU CHUYỆN ĐỒNG HÀNH</span>
-          <h2>
-            Niềm tin, từ những
-            <br />
-            <em>điều giản dị.</em>
-          </h2>
-          <p className="muted">
-            Lời chia sẻ và nhân vật hư cấu, dùng minh họa trải nghiệm.
-          </p>
-          <div className="carousel-actions">
-            <button
-              onClick={() => api?.scrollPrev()}
-              aria-label="Lời chia sẻ trước"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <button
-              onClick={() => api?.scrollNext()}
-              aria-label="Lời chia sẻ tiếp theo"
-            >
-              <ArrowRight size={20} />
-            </button>
-          </div>
-        </div>
-        <div className="embla" ref={ref}>
-          <div className="embla-container">
-            {testimonials.map((t) => (
-              <figure className="embla-slide" key={t.id}>
-                <span className="quote-mark">“</span>
-                <blockquote>{t.quote}</blockquote>
-                <figcaption>
-                  <span className="avatar">{t.name.slice(0, 1)}</span>
-                  <div>
-                    <strong>{t.name}</strong>
-                    <small>{t.role}</small>
-                  </div>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 export function Process() {
+  const t = useT();
   const [active, setActive] = useState(0);
   const steps = [
     "Tiếp nhận nhu cầu",
@@ -480,7 +474,7 @@ export function Process() {
       <div
         className="process-tabs"
         role="tablist"
-        aria-label="Quy trình hợp tác"
+        aria-label={t("Quy trình hợp tác")}
       >
         {steps.map((step, i) => (
           <button
@@ -501,30 +495,31 @@ export function Process() {
             onClick={() => setActive(i)}
           >
             <span>0{i + 1}</span>
-            {step}
+            {t(step)}
           </button>
         ))}
       </div>
       <p role="tabpanel" id="step-panel" aria-labelledby={`step-${active}`}>
-        {
+        {t(
           [
             "Chúng tôi bắt đầu bằng việc lắng nghe mong muốn, ngân sách và kế hoạch của bạn để xác định những ưu tiên quan trọng.",
             "Cùng tìm hiểu hiện trạng không gian, nhu cầu sử dụng và những điều kiện cần thiết cho phương án hợp tác.",
             "Trình bày phạm vi công việc, cách phối hợp và các chi phí dự kiến để hai bên cùng xem xét rõ ràng.",
             "Thống nhất kế hoạch, ghi nhận các đầu việc và duy trì trao đổi định kỳ trong quá trình thực hiện.",
-          ][active]
-        }
+          ][active],
+        )}
       </p>
     </div>
   );
 }
 export function DemoAction({ children }: { children: React.ReactNode }) {
+  const t = useT();
   return (
     <Button
       variant="outline"
       onClick={() =>
         toast.info(
-          "Kênh liên hệ đang ở chế độ demo. Vui lòng dùng biểu mẫu tư vấn.",
+          t("Kênh liên hệ đang ở chế độ demo. Vui lòng dùng biểu mẫu tư vấn."),
         )
       }
     >

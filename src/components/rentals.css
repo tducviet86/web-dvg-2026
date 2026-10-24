@@ -571,7 +571,7 @@
 }
 .rental-map iframe {
   width: 100%;
-  height: 340px;
+  height: 400px;
   border: 0;
   display: block;
 }
@@ -1123,5 +1123,854 @@
   .property-card:hover,
   .rental-intro-visual:hover > img {
     transform: none;
+  }
+}
+
+/* ═══ Rental experience refresh: entrance motion, stats, quick filters, inquiry popups ═══ */
+@keyframes rental-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rental-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes rental-dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 18px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+.rental-intro-copy > * {
+  animation: rental-rise 0.7s cubic-bezier(0.2, 0.65, 0.3, 1) both;
+}
+.rental-intro-copy > :nth-child(2) {
+  animation-delay: 0.05s;
+}
+.rental-intro-copy > :nth-child(3) {
+  animation-delay: 0.12s;
+}
+.rental-intro-copy > :nth-child(4) {
+  animation-delay: 0.2s;
+}
+.rental-intro-copy > :nth-child(n + 5) {
+  animation-delay: 0.28s;
+}
+.rental-intro-visual {
+  animation: rental-rise 0.9s 0.1s cubic-bezier(0.2, 0.65, 0.3, 1) both;
+  border-radius: 4px;
+}
+.rental-intro-visual img {
+  transition: transform 6s ease-out;
+}
+.rental-intro-visual:hover img {
+  transform: scale(1.04);
+}
+.rental-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 26px;
+  margin-top: 26px;
+}
+.rental-intro-actions .button {
+  gap: 10px;
+}
+.rental-intro-actions .rental-intro-call {
+  margin-top: 0;
+}
+.rental-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 30px 0 0;
+  border-top: 1px solid #dcdfd5;
+}
+.rental-stats > div {
+  padding: 16px 28px 0 0;
+  margin-right: 28px;
+  border-right: 1px solid #e4e6de;
+}
+.rental-stats > div:last-child {
+  border-right: 0;
+  margin-right: 0;
+}
+.rental-stats dt {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #56655d;
+}
+.rental-stats dd {
+  margin: 6px 0 0;
+  font-family: var(--font-display, serif);
+  font-size: 30px;
+  color: #153d32;
+  line-height: 1.1;
+}
+.rental-stats dd small {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: #56655d;
+}
+
+/* Quick filters replace the static "sample data" line. */
+.rental-quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rental-quick-filters a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #d3d9cf;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #234a3f;
+  background: #fff;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    transform 0.2s;
+}
+.rental-quick-filters a:hover {
+  border-color: #a78d50;
+  transform: translateY(-1px);
+}
+.rental-quick-filters a[aria-current] {
+  background: #153d32;
+  border-color: #153d32;
+  color: #f3e6c4;
+}
+.rental-results-meta {
+  align-items: center;
+  gap: 16px;
+}
+.rental-demo-note {
+  margin: 22px 0 0;
+  padding: 14px 18px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #6b5426;
+  background: #f6efdf;
+  border-left: 3px solid #c6a76b;
+  border-radius: 2px;
+}
+
+/* Cards: staggered entrance, lift on hover, media count. */
+.rental-card-grid .property-card,
+.room-related .property-card {
+  animation: rental-rise 0.6s cubic-bezier(0.2, 0.65, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.property-card {
+  border-radius: 4px;
+  overflow: hidden;
+  transition:
+    box-shadow 0.3s,
+    transform 0.3s,
+    border-color 0.3s;
+}
+.property-card:hover {
+  transform: translateY(-4px);
+  border-color: #d8ccaa;
+  box-shadow: 0 22px 40px #10271914;
+}
+.property-card .image-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, #061b1659);
+  pointer-events: none;
+}
+.card-media-count {
+  position: absolute;
+  z-index: 2;
+  left: 14px;
+  bottom: 12px;
+  display: flex;
+  gap: 10px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: #fff;
+  background: #061b1680;
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.card-media-count > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.property-bottom a svg {
+  transition: transform 0.25s;
+}
+.property-card:hover .property-bottom a svg {
+  transform: translate(3px, -3px);
+}
+.rental-empty {
+  animation: rental-rise 0.5s both;
+}
+.rental-empty .button-outline {
+  gap: 10px;
+}
+.rental-owner-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+}
+.rental-owner .rental-owner-actions .button-primary {
+  background: #d4b97a;
+  border-color: #d4b97a;
+  color: #06201a;
+  gap: 10px;
+}
+.rental-owner .rental-owner-actions .button-primary:hover {
+  background: #e3cd98;
+}
+.rental-owner .text-link {
+  color: #f3e6c4;
+  font-size: 12px;
+}
+
+/* ── Inquiry dialog (viewing / advice / consign) ── */
+.inquiry-overlay {
+  z-index: 120;
+}
+.inquiry-dialog {
+  position: fixed;
+  z-index: 121;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100% - 24px));
+  max-height: calc(100svh - 24px);
+  overflow-y: auto;
+  padding: 34px 34px 28px;
+  background: #fbfaf6;
+  border-top: 3px solid #c6a76b;
+  border-radius: 6px;
+  box-shadow: 0 40px 120px #03120e66;
+  animation: rental-dialog-in 0.32s cubic-bezier(0.2, 0.65, 0.3, 1);
+}
+.inquiry-dialog:focus {
+  outline: none;
+}
+.inquiry-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #234a3f;
+  transition: background 0.2s;
+}
+.inquiry-close:hover {
+  background: #ecebe3;
+}
+.inquiry-form .signature-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.inquiry-dialog h2 {
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.25;
+  margin: 12px 0 8px;
+  color: #102f27;
+}
+.inquiry-lead {
+  font-size: 13px;
+  line-height: 1.75;
+  color: #52645b;
+  margin: 0 0 18px;
+}
+.inquiry-target {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 14px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  background: #fff;
+  border: 1px solid #e0e4d9;
+  border-left: 3px solid #153d32;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.inquiry-target strong {
+  font-weight: 600;
+  color: #153d32;
+}
+.inquiry-target span {
+  color: #56655d;
+  font-size: 12px;
+}
+.inquiry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+.inquiry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.inquiry-field.full {
+  grid-column: 1 / -1;
+}
+.inquiry-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2c4a40;
+}
+.inquiry-field label span {
+  color: #a5462f;
+}
+.inquiry-field input,
+.inquiry-field select,
+.inquiry-field textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  font: inherit;
+  font-size: 14px;
+  color: #13261f;
+  background: #fff;
+  border: 1px solid #ccd4c9;
+  border-radius: 4px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.inquiry-field textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+.inquiry-field :is(input, select, textarea):focus {
+  outline: none;
+  border-color: #153d32;
+  box-shadow: 0 0 0 3px #153d321f;
+}
+.inquiry-field [aria-invalid="true"] {
+  border-color: #b34a32;
+  background: #fff8f6;
+}
+.inquiry-field .field-error {
+  font-size: 12px;
+  color: #a33a22;
+}
+.inquiry-consent {
+  margin: 18px 0 4px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.inquiry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 20px;
+}
+.inquiry-actions .button {
+  gap: 10px;
+}
+.inquiry-actions .button[disabled] {
+  opacity: 0.7;
+  cursor: progress;
+}
+.inquiry-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #234a3f;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.inquiry-result {
+  text-align: center;
+  padding: 10px 6px 0;
+}
+.inquiry-result-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  animation: rental-pop 0.5s cubic-bezier(0.2, 0.65, 0.3, 1) both;
+}
+.inquiry-result.success .inquiry-result-icon {
+  background: #e2efe4;
+  color: #1f6a43;
+  box-shadow: 0 0 0 10px #e2efe466;
+}
+.inquiry-result.error .inquiry-result-icon {
+  background: #f9e7e1;
+  color: #a33a22;
+  box-shadow: 0 0 0 10px #f9e7e166;
+}
+.inquiry-result p {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: #52645b;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.inquiry-result .inquiry-fields {
+  margin-top: 10px;
+  color: #a33a22;
+  font-weight: 600;
+}
+.inquiry-result ul {
+  list-style: none;
+  margin: 18px auto 0;
+  padding: 14px 18px;
+  max-width: 400px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.9;
+  background: #fff;
+  border: 1px solid #e0e4d9;
+  border-radius: 4px;
+}
+.inquiry-result .inquiry-actions {
+  justify-content: center;
+}
+
+/* ── Property detail ── */
+.room-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  animation: rental-rise 0.6s both;
+}
+.room-heading-tools {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.room-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  font-size: 12px;
+  color: #234a3f;
+  border: 1px solid #d3d9cf;
+  border-radius: 999px;
+  background: #fff;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
+}
+.room-share:hover {
+  border-color: #a78d50;
+  transform: translateY(-1px);
+}
+.room-quick-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: -8px 0 22px;
+  animation: rental-rise 0.6s 0.08s both;
+}
+.room-quick-facts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  font-size: 12px;
+  color: #2c4a40;
+  background: #fff;
+  border: 1px solid #e0e4d9;
+  border-radius: 999px;
+}
+.room-quick-facts > .room-availability {
+  margin: 0;
+  border: 0;
+  font-weight: 600;
+}
+@keyframes rental-fade {
+  from {
+    opacity: 0;
+  }
+}
+/* Fade only: the gallery keeps its position while images load. */
+.rental-gallery {
+  animation: rental-fade 0.7s 0.12s both;
+}
+.room-description section {
+  animation: rental-rise 0.6s both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 30%;
+}
+.room-contact-panel {
+  animation: rental-rise 0.7s 0.2s both;
+}
+.room-contact-panel .signature-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.room-price-breakdown {
+  margin: 4px 0 20px;
+  padding: 4px 0;
+  border-top: 1px solid #e3e6de;
+}
+.room-price-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed #e3e6de;
+  font-size: 12.5px;
+}
+.room-price-breakdown dt {
+  color: #56655d;
+}
+.room-price-breakdown dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 500;
+  color: #1c3a31;
+}
+.room-contact-panel > .button-primary {
+  width: 100%;
+  gap: 10px;
+  min-height: 54px;
+  font-size: 13px;
+  box-shadow: 0 10px 24px #153d3226;
+}
+.room-contact-panel .call-button.button-outline-call {
+  background: transparent;
+  color: #153d32;
+  border-color: #c5cdc6;
+}
+.room-contact-panel .call-button.button-outline-call:hover {
+  background: #153d32;
+  color: #fff;
+}
+@media (max-width: 800px) {
+  .room-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rental-stats dd {
+    font-size: 24px;
+  }
+  .rental-stats > div {
+    padding-right: 18px;
+    margin-right: 18px;
+  }
+  .rental-results-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rental-owner-actions {
+    align-items: flex-start;
+  }
+  .room-mobile-call .button-primary {
+    flex: 1;
+    gap: 8px;
+    min-height: 48px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .room-mobile-call .room-mobile-call-button {
+    background: transparent;
+    color: #153d32;
+    border-color: #c5cdc6;
+    padding: 10px 12px;
+  }
+  .room-mobile-call .room-mobile-call-button small,
+  .room-mobile-call .room-mobile-call-button > svg:last-child {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .inquiry-dialog {
+    top: auto;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 100%;
+    max-height: 92svh;
+    border-radius: 14px 14px 0 0;
+    padding: 28px 20px max(22px, env(safe-area-inset-bottom));
+    animation: none;
+  }
+  .inquiry-grid {
+    grid-template-columns: 1fr;
+  }
+  .inquiry-dialog h2 {
+    font-size: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rental-intro-copy > *,
+  .rental-intro-visual,
+  .rental-card-grid .property-card,
+  .room-related .property-card,
+  .room-heading,
+  .room-quick-facts,
+  .rental-gallery,
+  .room-description section,
+  .room-contact-panel,
+  .inquiry-dialog,
+  .inquiry-result-icon,
+  .rental-empty {
+    animation: none;
+  }
+  .property-card:hover {
+    transform: none;
+  }
+}
+@media (max-width: 800px) {
+  .room-heading-tools .room-save {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+}
+
+/* ── Unit description (rich-text.tsx) ── */
+.rich-text {
+  display: grid;
+  gap: 14px;
+  color: #3f5149;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.rich-text p {
+  margin: 0;
+}
+.rich-text h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: #163a2e;
+}
+.rich-text ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.rich-text li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: start;
+  gap: 8px;
+}
+.rich-marker {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  border-radius: 8px;
+  background: #eef4f0;
+  font-size: 13px;
+  line-height: 1;
+}
+.room-overview-text {
+  padding: 22px 24px;
+  margin-top: 6px;
+  background: #fff;
+  border: 1px solid #e0e4d9;
+  border-radius: 6px;
+}
+@media (max-width: 600px) {
+  .rich-text {
+    font-size: 14px;
+  }
+  .room-overview-text {
+    padding: 18px 16px;
+  }
+}
+/* Editor badges (HOT, Độc quyền…) and "Đang được quan tâm": deep green,
+   metallic gold type, hairline border and one slow sheen. */
+.lux-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.property-card .lux-badges {
+  position: absolute;
+  top: 50px;
+  left: 17px;
+  z-index: 1;
+  pointer-events: none;
+}
+.lux-badge {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px 6px 9px;
+  border: 1px solid #d4b97a8c;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #0f2a22 0%, #173e34 100%);
+  box-shadow: 0 6px 18px #0b1f1959;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #e9d39f;
+  white-space: nowrap;
+}
+.lux-badge > span {
+  font-size: 9px;
+  color: #d4b97a;
+}
+.lux-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    #fff3d066 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  animation: lux-sheen 1.4s 0.6s ease-out 1 forwards;
+}
+.property-card:hover .lux-badge::after {
+  animation: lux-sheen-hover 1.1s ease-out 1;
+}
+.lux-badge.lux-trending {
+  background: #0f2a22d9;
+  border-color: #d4b97a59;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+}
+.room-quick-facts > .lux-inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.lux-inline .lux-badge {
+  padding: 9px 14px 9px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+@keyframes lux-sheen {
+  to {
+    transform: translateX(120%);
+  }
+}
+@keyframes lux-sheen-hover {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lux-badge::after {
+    display: none;
+  }
+}
+/* Fanpage of the project (rental landing of an operated building). */
+.rental-fanpage {
+  margin-top: 16px;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Unit amenities (grouped list with icons) ── */
+.room-amenities h2 {
+  margin-bottom: 4px;
+}
+.room-amenities-count {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: #56655d;
+}
+.room-amenity-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 40px;
+  padding: 20px 24px;
+  background: #fff;
+  border: 1px solid #e0e4d9;
+  border-radius: 6px;
+}
+.room-amenity-group h3 {
+  margin: 8px 0 4px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  color: #163a2e;
+}
+.room-amenity-group ul {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.room-amenity-group li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid #edf0ea;
+  font-size: 15px;
+  color: #2c3d36;
+}
+.room-amenity-group li:last-child {
+  border-bottom: 0;
+}
+.room-amenity-group li svg {
+  flex: none;
+  color: #1f342c;
+}
+@media (max-width: 700px) {
+  .room-amenity-groups {
+    grid-template-columns: 1fr;
+    padding: 16px;
   }
 }

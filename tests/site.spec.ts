@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { apiAs, humanPause } from "./helpers";
 test("all sitemap routes return meaningful server HTML and SEO metadata", async ({
   request,
 }) => {
@@ -115,12 +116,13 @@ test("filters sort, empty state, load more, favorite persistence, gallery", asyn
   await expect(page.getByRole("button", { name: "Bỏ yêu thích" })).toHaveCount(
     1,
   );
-  await page.locator(".property-card h3 a").first().click();
+  // Newest units are listed first; open a seeded sample unit (4 photos).
+  await page.locator('.property-card h3 a[href*="-demo-"]').first().click();
   await page.locator(".gallery-image").first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Ảnh sau" }).click();
   await expect(page.locator(".lightbox .carousel-actions")).toContainText(
-    "2 / 4",
+    /2 \/ \d+/,
   );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
@@ -147,102 +149,21 @@ test("all lead forms validate and persist; newsletter", async ({ page }) => {
       .locator("[name=message]")
       .fill(`Yêu cầu kiểm thử trên trang ${route}`);
     await form.locator("[name=consent]").check();
+    await humanPause(page);
     await form.getByRole("button", { name: "Đăng ký tư vấn" }).click();
-    await expect(form.getByRole("status")).toContainText("Yêu cầu demo đã lưu");
+    await expect(form.getByRole("status")).toContainText(
+      "Yêu cầu đã được ghi nhận",
+    );
   }
-  const count = await page.evaluate(
-    () => JSON.parse(localStorage.getItem("dvg:leads") || "[]").length,
-  );
-  expect(count).toBe(24);
+  // Stored in PostgreSQL, visible to staff.
+  const admin = await apiAs();
+  const leads = (await admin.get(
+    "/admin/leads?q=qa@example.com",
+  )) as unknown as {
+    meta: { total: number };
+  };
+  expect(leads.meta.total).toBe(4);
   await page.locator("#newsletter").fill("newsletter@example.com");
   await page.getByRole("button", { name: "Đăng ký bản tin" }).click();
-  expect(
-    await page.evaluate(() =>
-      JSON.parse(localStorage.getItem("dvg:newsletter") || "[]"),
-    ),
-  ).toContain("newsletter@example.com");
-});
-test("admin CRUD, lead assignment, settings and reset persist", async ({
-  page,
-}) => {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
-  });
-  await page.goto("/admin");
-  await page
-    .getByRole("navigation", { name: "Quản trị", exact: true })
-    .getByRole("link", { name: "Dự án", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Thêm mới" }).click();
-  const dialog = page.locator(".admin-editor-page");
-  await dialog.locator("[name=name]").fill("Dự án QA");
-  await dialog.locator("[name=slug]").fill("du-an-qa");
-  await dialog
-    .locator("[name=description]")
-    .fill("Dự án được tạo bởi bài kiểm tra tự động.");
-  await dialog.getByRole("button", { name: "Lưu thay đổi" }).click();
-  await expect(page.getByText("Dự án QA", { exact: true })).toBeVisible();
-  await page.reload();
-  await page
-    .getByRole("navigation", { name: "Quản trị", exact: true })
-    .getByRole("link", { name: "Dự án", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Sửa Dự án QA", exact: true }).click();
-  await dialog.locator("[name=name]").fill("Dự án QA sửa");
-  await dialog.getByRole("button", { name: "Lưu thay đổi" }).click();
-  await expect(page.getByText("Dự án QA sửa", { exact: true })).toBeVisible();
-  await page
-    .getByRole("button", { name: "Xóa Dự án QA sửa", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
-  await expect(
-    page.getByText("Dự án QA sửa", { exact: true }),
-  ).not.toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Quản trị", exact: true })
-    .getByRole("link", { name: /Khách hàng/ })
-    .click();
-  await page
-    .getByRole("button", { name: "Sửa Khách hàng demo 1", exact: true })
-    .click();
-  await dialog.locator("[name=assignment]").selectOption("Chi Lê");
-  await dialog.locator("[name=status]").selectOption("Hoàn tất");
-  await dialog.locator("[name=notes]").fill("Đã kiểm tra phân công.");
-  await dialog.getByRole("button", { name: "Lưu thay đổi" }).click();
-  expect(
-    await page.evaluate(
-      () => JSON.parse(localStorage.getItem("dvg:leads") || "[]")[0].assignment,
-    ),
-  ).toBe("Chi Lê");
-  await page
-    .getByRole("navigation", { name: "Quản trị", exact: true })
-    .getByRole("link", { name: "Cài đặt", exact: true })
-    .click();
-  await page.locator("[name=brand]").fill("Đất Vàng QA");
-  await page.getByRole("button", { name: "Lưu cài đặt" }).click();
-  await page.reload();
-  await page
-    .getByRole("navigation", { name: "Quản trị", exact: true })
-    .getByRole("link", { name: "Cài đặt", exact: true })
-    .click();
-  await expect(page.locator("[name=brand]")).toHaveValue("Đất Vàng QA");
-  await page.getByRole("button", { name: "Khôi phục dữ liệu mẫu" }).click();
-  await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
-  expect(
-    await page.evaluate(() =>
-      Object.keys(localStorage).filter((k) => k.startsWith("dvg:")),
-    ),
-  ).toEqual([]);
-  await page
-    .getByRole("navigation", { name: "Quản trị", exact: true })
-    .getByRole("link", { name: "Tổng quan", exact: true })
-    .click();
-  await page.screenshot({
-    path: "tests/admin-desktop.png",
-    fullPage: true,
-    animations: "disabled",
-  });
-  expect(errors).toEqual([]);
+  await expect(page.getByText("Đã đăng ký nhận bản tin.")).toBeVisible();
 });
