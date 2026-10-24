@@ -204,25 +204,28 @@ export function RentalPage({
             )}
           </dl>
         </div>
-        <figure className="rental-intro-visual">
-          <Image
-            src={cover.image}
-            alt={cover.imageAlt}
-            fill
-            sizes="(max-width: 800px) 100vw, 42vw"
-            loading="eager"
-          />
-          <figcaption>
-            <MapPin size={18} />
-            <div>
-              <strong>{cover.name}</strong>
-              <span>
-                {cover.location} · {cover.imageType}
-              </span>
-            </div>
-          </figcaption>
-          <span className="rental-visual-label">THE PLACES WE CALL HOME</span>
-        </figure>
+        {/* No project yet (empty database): no cover to show. */}
+        {cover && (
+          <figure className="rental-intro-visual">
+            <Image
+              src={cover.image}
+              alt={cover.imageAlt}
+              fill
+              sizes="(max-width: 800px) 100vw, 42vw"
+              loading="eager"
+            />
+            <figcaption>
+              <MapPin size={18} />
+              <div>
+                <strong>{cover.name}</strong>
+                <span>
+                  {cover.location} · {cover.imageType}
+                </span>
+              </div>
+            </figcaption>
+            <span className="rental-visual-label">THE PLACES WE CALL HOME</span>
+          </figure>
+        )}
       </section>
       <div className="container">
         <RentalSearch
