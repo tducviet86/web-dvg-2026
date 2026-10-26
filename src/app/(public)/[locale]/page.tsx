@@ -110,6 +110,7 @@ export default async function Home({ params }: Props) {
         Đất Vàng Group — Mua bán, cho thuê và ký gửi bất động sản
       </h1>
       <HomeShowcase
+        eager
         id="du-an-trien-khai"
         kicker="DỰ ÁN ĐANG TRIỂN KHAI"
         title="Dự án mới tại Đà Nẵng"

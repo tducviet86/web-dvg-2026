@@ -85,6 +85,11 @@
   background: var(--c-green-800);
   isolation: isolate;
 }
+/* The frame next/image fills (it must be positioned). */
+.showcase-photo {
+  position: absolute;
+  inset: 0;
+}
 .showcase-photo img {
   object-fit: cover;
   transition: transform 0.9s var(--ease-out);
