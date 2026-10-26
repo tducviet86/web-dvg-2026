@@ -9,7 +9,7 @@ import {
   MapPin,
 } from "lucide-react";
 import type { Property } from "@/types";
-import { money } from "@/lib/utils";
+import { vndFull } from "@/lib/utils";
 import { LuxuryBadges } from "./cards";
 
 /** Editor badges first, then units many visitors look at. */
@@ -110,7 +110,8 @@ function RentalMini({ unit }: { unit: Property }) {
           </span>
           <span className="rent-mini-foot">
             <span className="rent-mini-price">
-              <b>{money(unit.price)} triệu</b> / tháng
+              <b>{vndFull(unit.rentVnd ?? Math.round(unit.price * 1e6))} vnđ</b>{" "}
+              / tháng
             </span>
             <span className="rent-mini-open" aria-hidden="true">
               <ArrowUpRight size={16} />

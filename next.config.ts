@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { LEGACY_REDIRECTS } from "./legacy-redirects";
 
 const api = (process.env.API_INTERNAL_URL || "http://127.0.0.1:4000").replace(
   /\/$/,
@@ -40,6 +41,14 @@ const config: NextConfig = {
         pathname: `${url.pathname.replace(/\/$/, "")}/**`,
       })),
     ],
+  },
+  // Old website URLs still in Google: 301 to the matching page.
+  async redirects() {
+    return LEGACY_REDIRECTS.map(([source, destination]) => ({
+      source,
+      destination,
+      statusCode: 301 as const,
+    }));
   },
   // The browser talks to the API through the site origin: auth cookies stay
   // first-party (SameSite=Strict) and no CORS is needed.

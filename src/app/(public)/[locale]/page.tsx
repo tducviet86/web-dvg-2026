@@ -117,6 +117,7 @@ export default async function Home({ params }: Props) {
         more={{ href: "/du-an/trien-khai", label: "Xem dự án triển khai" }}
         projects={portfolio.filter((p) => p.group === "development")}
       />
+      <HomeRentals units={pickFeaturedRentals(properties)} />
       <HomeShowcase
         id="du-an-van-hanh"
         kicker="DỰ ÁN ĐANG VẬN HÀNH"
@@ -125,7 +126,6 @@ export default async function Home({ params }: Props) {
         more={{ href: "/du-an/van-hanh", label: "Xem dự án vận hành" }}
         projects={portfolio.filter((p) => p.group === "operation")}
       />
-      <HomeRentals units={pickFeaturedRentals(properties)} />
       <SignatureFields />
       <section className="signature-journal" id="goc-nhin">
         <div className="container">

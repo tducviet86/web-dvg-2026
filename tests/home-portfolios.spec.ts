@@ -193,14 +193,14 @@ test("home features a few rental units under the operated projects", async ({
   });
   await expect(section).toBeVisible();
   await expect(section).toContainText("Căn tiêu biểu trang chủ QA");
-  // Right after "Dự án đang vận hành".
-  await expect(page.locator("#du-an-van-hanh + #can-ho-tieu-bieu")).toHaveCount(
-    1,
-  );
+  // Between "Dự án đang triển khai" and "Dự án đang vận hành".
+  await expect(
+    page.locator("#du-an-trien-khai + #can-ho-tieu-bieu + #du-an-van-hanh"),
+  ).toHaveCount(1);
   const tiles = section.locator(".rent-mini");
   expect(await tiles.count()).toBeGreaterThan(0);
   expect(await tiles.count()).toBeLessThanOrEqual(4);
-  await expect(tiles.first()).toContainText("triệu");
+  await expect(tiles.first()).toContainText(/\d{1,3}(\.\d{3})+ vnđ/);
   await section.getByRole("link", { name: "Xem tất cả căn cho thuê" }).click();
   await expect(page).toHaveURL(/\/cho-thue$/);
   await page.goBack();

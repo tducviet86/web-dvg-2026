@@ -39,7 +39,12 @@ import type { EditorialContent } from "@/lib/pages";
 import { siteUrl } from "@/lib/utils";
 import { agentSchema, jsonLd } from "@/lib/structured-data";
 import { isLocale, localizeHref, type Locale } from "@/i18n/config";
-import { defaultOgImage, localeAlternates, ogLocale } from "@/i18n/metadata";
+import {
+  defaultOgImage,
+  localeAlternates,
+  ogLocale,
+  pageTitle,
+} from "@/i18n/metadata";
 import { href, setRequestLocale, t } from "@/i18n/server";
 import type { PortfolioProject, Post, Property } from "@/types";
 
@@ -358,7 +363,7 @@ export async function generateMetadata({
   const title = t(item.title);
   const description = t(item.description);
   return {
-    title,
+    title: pageTitle(title),
     description,
     alternates: localeAlternates(locale, path),
     ...(item.noindex || filteredRental
