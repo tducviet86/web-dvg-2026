@@ -23,6 +23,9 @@ const config: NextConfig = {
     formats: ["image/avif", "image/webp"],
     // 70: full-screen hero photos (lighter, no visible difference).
     qualities: [70, 75],
+    // Optimised copies are kept 30 days (default 4 h) so returning visitors
+    // and the CDN reuse them instead of asking the server again.
+    minimumCacheTTL: 2_592_000,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       ...mediaHosts.map((url) => ({
