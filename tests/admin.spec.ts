@@ -15,7 +15,7 @@ test("login is required and failures are reported", async ({ page }) => {
   await page.getByLabel("Email").fill(credentials().email);
   await page.getByLabel("Mật khẩu").fill("sai-mat-khau-123");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
-  await expect(page.locator(".admin-login .editor-errors")).toContainText(
+  await expect(page.locator(".admin-login [role=alert]")).toContainText(
     "Email hoặc mật khẩu không đúng",
   );
   await login(page);

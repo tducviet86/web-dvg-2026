@@ -15,7 +15,12 @@ function seeded(seed: number) {
  * pointer. Pauses while off screen or in a background tab, keeps still with
  * "reduce motion", and frees all GPU memory on unmount.
  */
-export default function HeroScene() {
+export default function HeroScene({
+  far = false,
+}: {
+  /** Step the camera back (tall panels such as the login page). */
+  far?: boolean;
+}) {
   const host = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -142,8 +147,9 @@ export default function HeroScene() {
       if (!width || !height) return;
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
-      // Narrow boxes (phones) step back so the whole city fits.
-      camera.position.z = width / height < 1.2 ? 15.5 : 12.5;
+      // Narrow boxes (phones, tall panels) step back so the city fits.
+      camera.position.z =
+        (width / height < 1.2 ? 15.5 : 12.5) * (far ? 1.45 : 1);
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
     };
@@ -204,7 +210,7 @@ export default function HeroScene() {
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, []);
+  }, [far]);
 
   return <div ref={host} className="hero-scene" aria-hidden="true" />;
 }
