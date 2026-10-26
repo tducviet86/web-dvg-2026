@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import Link from "@/components/page-navigation";
 import { Button } from "@/components/ui/button";
 import { api, errorMessage } from "./api";
+import { ConfirmDialog } from "./error-dialog";
 import { MediaPicker } from "./media";
 import type { MediaRef } from "./model";
 
@@ -828,6 +829,23 @@ export function BannerAdmin({
   }, [load]);
   const back = () => goTo("/admin/banners");
   const selected = banners?.find((b) => b.id === recordId);
+  /** Delete confirmation shown as a popup over the list. */
+  const [toDelete, setToDelete] = useState<AdminBanner | null>(null);
+  const deleting = toDelete ?? (action === "delete" ? selected : undefined);
+  async function removeBanner(banner: AdminBanner) {
+    setBusy(true);
+    try {
+      await api("DELETE", `/admin/banners/${banner.id}`);
+      toast.success("Đã xóa banner.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+      setToDelete(null);
+      await load();
+      if (action === "delete") back();
+    }
+  }
 
   async function patch(
     banner: AdminBanner,
@@ -872,44 +890,22 @@ export function BannerAdmin({
         }}
       />
     );
-  if (selected && action === "delete")
-    return (
-      <section className="admin-panel admin-confirm-page">
-        <span className="eyebrow">XÁC NHẬN THAO TÁC</span>
-        <h2>Xóa banner “{selected.preview.title || "không tên"}”?</h2>
-        <p>
-          {selected.project
-            ? `Chỉ xóa banner; dữ liệu dự án ${selected.project.name} được giữ nguyên và tùy chọn hiển thị trên banner của dự án sẽ chuyển về tắt.`
-            : "Banner sẽ bị gỡ khỏi trang chủ. Thao tác này không thể hoàn tác."}
-        </p>
-        <div className="dialog-actions">
-          <Button variant="outline" onClick={back}>
-            Hủy
-          </Button>
-          <Button
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                await api("DELETE", `/admin/banners/${selected.id}`);
-                toast.success("Đã xóa banner.");
-                await load();
-                back();
-              } catch (error) {
-                toast.error(errorMessage(error));
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            Xác nhận
-          </Button>
-        </div>
-      </section>
-    );
   const visibleCount = banners.filter((b) => b.publiclyVisible).length;
   return (
     <section className="admin-panel admin-list-panel">
+      <ConfirmDialog
+        open={!!deleting && !busy}
+        title={`Xóa banner “${deleting?.preview.title || "không tên"}”?`}
+        message={
+          deleting?.project
+            ? `Chỉ xóa banner; dữ liệu dự án ${deleting.project.name} được giữ nguyên và tùy chọn hiển thị trên banner của dự án sẽ chuyển về tắt.`
+            : "Banner sẽ bị gỡ khỏi trang chủ. Thao tác này không thể hoàn tác."
+        }
+        confirmLabel="Xóa banner"
+        cancelLabel="Hủy"
+        onConfirm={() => deleting && void removeBanner(deleting)}
+        onCancel={() => (action === "delete" ? back() : setToDelete(null))}
+      />
       <div className="admin-table-toolbar">
         <span>
           {banners.length} banner · {visibleCount} đang hiển thị công khai
@@ -1057,9 +1053,7 @@ export function BannerAdmin({
                         </button>
                         <button
                           aria-label={`Xóa ${title}`}
-                          onClick={() =>
-                            goTo(`/admin/banners/${banner.id}/delete`)
-                          }
+                          onClick={() => setToDelete(banner)}
                         >
                           <Trash2 size={16} />
                         </button>

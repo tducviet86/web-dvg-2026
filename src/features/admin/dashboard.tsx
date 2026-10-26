@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import Link, { usePageNavigation } from "@/components/page-navigation";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -30,7 +29,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Editor, formKeyOf, type Lookups } from "./editor";
-import type { FormIssue } from "./error-dialog";
+import { ConfirmDialog, type FormIssue } from "./error-dialog";
 import {
   BannerAdmin,
   bannerPayload,
@@ -42,6 +41,7 @@ import { LoginForm } from "./login";
 import { UsersPanel } from "./users";
 import { TranslationsPanel } from "./translations";
 import { ApplicationsPanel } from "./applications";
+import { Overview } from "./overview";
 import {
   api,
   AdminApiError,
@@ -70,10 +70,6 @@ import {
   type ListItem,
 } from "./model";
 
-const LeadChart = dynamic(() => import("./chart"), {
-  ssr: false,
-  loading: () => <div className="skeleton" style={{ height: 260 }} />,
-});
 type Tab =
   | "dashboard"
   | Kind
@@ -82,19 +78,40 @@ type Tab =
   | "settings"
   | "users"
   | "translations";
-const tabs: { id: Tab; label: string; icon: typeof House }[] = [
-  { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
-  { id: "projects", label: "Dự án", icon: Building2 },
-  { id: "banners", label: "Banner", icon: GalleryHorizontalEnd },
-  { id: "properties", label: "Căn hộ", icon: House },
-  { id: "leads", label: "Khách hàng", icon: Users },
-  { id: "posts", label: "Bài viết", icon: FileText },
-  { id: "pages", label: "Trang nội dung", icon: Files },
-  { id: "jobs", label: "Tuyển dụng", icon: BriefcaseBusiness },
-  { id: "applications", label: "Ứng viên", icon: UserCheck },
-  { id: "translations", label: "Bản dịch", icon: Languages },
-  { id: "users", label: "Người dùng", icon: UserCog },
-  { id: "settings", label: "Cài đặt", icon: Settings },
+/** Sidebar entries, grouped (the heading shows before the first of a group). */
+const tabs: { id: Tab; label: string; icon: typeof House; group: string }[] = [
+  { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard, group: "" },
+  { id: "projects", label: "Dự án", icon: Building2, group: "Bất động sản" },
+  { id: "properties", label: "Căn hộ", icon: House, group: "Bất động sản" },
+  {
+    id: "banners",
+    label: "Banner",
+    icon: GalleryHorizontalEnd,
+    group: "Bất động sản",
+  },
+  { id: "posts", label: "Bài viết", icon: FileText, group: "Nội dung" },
+  { id: "pages", label: "Trang nội dung", icon: Files, group: "Nội dung" },
+  { id: "translations", label: "Bản dịch", icon: Languages, group: "Nội dung" },
+  {
+    id: "leads",
+    label: "Khách hàng",
+    icon: Users,
+    group: "Khách & tuyển dụng",
+  },
+  {
+    id: "jobs",
+    label: "Tuyển dụng",
+    icon: BriefcaseBusiness,
+    group: "Khách & tuyển dụng",
+  },
+  {
+    id: "applications",
+    label: "Ứng viên",
+    icon: UserCheck,
+    group: "Khách & tuyển dụng",
+  },
+  { id: "users", label: "Người dùng", icon: UserCog, group: "Hệ thống" },
+  { id: "settings", label: "Cài đặt", icon: Settings, group: "Hệ thống" },
 ];
 const KINDS: Kind[] = [
   "projects",
@@ -119,6 +136,18 @@ type EditorState = {
   };
 };
 
+/**
+ * The signed-in staff member, kept across admin screens so switching tabs
+ * never shows "Đang kiểm tra phiên đăng nhập…" again.
+ */
+let knownSession: Session | null = null;
+
+/** Opens an admin screen in place (no server round trip, no re-mount). */
+function openInPlace(href: string) {
+  if (window.location.pathname + window.location.search === href) return;
+  window.history.pushState(null, "", href);
+}
+
 export default function Dashboard() {
   const pathname = usePathname();
   const [, , section] = pathname.split("/");
@@ -136,7 +165,12 @@ function Workspace() {
   const router = useRouter();
   const navigate = usePageNavigation();
   const goTo = useCallback(
-    (href: string) => (navigate ? navigate(href) : router.push(href)),
+    (href: string) =>
+      href.startsWith("/admin") && !href.startsWith("/admin/login")
+        ? openInPlace(href)
+        : navigate
+          ? navigate(href)
+          : router.push(href),
     [navigate, router],
   );
   const pathname = usePathname();
@@ -144,7 +178,15 @@ function Workspace() {
   const tab = (section || "dashboard") as Tab;
   const kind = (KINDS as string[]).includes(tab) ? (tab as Kind) : null;
 
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSessionState] = useState<Session | null>(knownSession);
+  const setSession = (next: Session) => {
+    knownSession = next;
+    setSessionState(next);
+  };
+  /** Delete / archive confirmation shown as a popup over the list. */
+  const [toDelete, setToDelete] = useState<{ id: string; name: string } | null>(
+    null,
+  );
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   /** Trang nội dung: company pages vs. "Lĩnh vực hoạt động". */
@@ -172,6 +214,8 @@ function Workspace() {
         `/admin/login?next=${encodeURIComponent(window.location.pathname)}`,
       );
     window.addEventListener(SESSION_EXPIRED, toLogin);
+    if (knownSession)
+      return () => window.removeEventListener(SESSION_EXPIRED, toLogin);
     api<{ data: Session }>("GET", "/auth/me")
       .then((res) => setSession(res.data))
       .catch(() =>
@@ -389,6 +433,7 @@ function Workspace() {
   }
   async function remove(id: string) {
     if (!kind) return;
+    setToDelete(null);
     try {
       await api("DELETE", `${endpoints[kind]}/${id}`);
       toast.success(
@@ -397,12 +442,14 @@ function Workspace() {
     } catch (error) {
       toast.error(errorMessage(error));
     }
-    closePage();
+    if (action === "delete") closePage();
+    else void loadList();
   }
   async function logout() {
     try {
       await api("POST", "/auth/logout");
     } finally {
+      knownSession = null;
       router.replace("/admin/login");
     }
   }
@@ -417,10 +464,15 @@ function Workspace() {
     (t) => t.id === "dashboard" || can(sectionPermission[t.id]),
   );
   const allowed = tab === "dashboard" || can(sectionPermission[tab]);
-  const deleting = kind && action === "delete" ? recordId : null;
-  const selectedName = deleting
-    ? rows?.find((r) => r.id === deleting)?.name
-    : undefined;
+  // Old /admin/<kind>/<id>/delete links open the same popup over the list.
+  const deleting =
+    toDelete ??
+    (kind && action === "delete" && recordId
+      ? {
+          id: recordId,
+          name: rows?.find((r) => r.id === recordId)?.name ?? names[kind],
+        }
+      : null);
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
@@ -435,23 +487,29 @@ function Workspace() {
             ĐẤT VÀNG<small>WORKSPACE</small>
           </span>
         </Link>
-        <span className="admin-nav-label">QUẢN LÝ KHÔNG GIAN</span>
         <nav aria-label="Quản trị">
-          {visibleTabs.map((t) => (
-            <Link
+          {visibleTabs.map((t, i) => [
+            t.group && t.group !== visibleTabs[i - 1]?.group && (
+              <span key={`${t.group}-label`} className="admin-nav-label">
+                {t.group}
+              </span>
+            ),
+            <a
               href={t.id === "dashboard" ? "/admin" : `/admin/${t.id}`}
               aria-current={tab === t.id ? "page" : undefined}
               key={t.id}
               className={tab === t.id ? "active" : ""}
-              onClick={() => {
-                setQuery("");
-                setStatus("");
+              onClick={(event) => {
+                // Ctrl/⌘-click still opens a new tab.
+                if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+                event.preventDefault();
+                setTab(t.id);
               }}
             >
-              <t.icon size={19} />
+              <t.icon size={18} />
               {t.label}
-            </Link>
-          ))}
+            </a>,
+          ])}
         </nav>
         <div className="admin-sidebar-bottom">
           <span className="demo-mode">● {session.roles.join(", ")}</span>
@@ -505,28 +563,7 @@ function Workspace() {
               <p>Mục này đã bị xóa hoặc chuyển vào lưu trữ.</p>
               <Button onClick={closePage}>Về danh sách</Button>
             </section>
-          ) : deleting ? (
-            <section className="admin-panel admin-confirm-page">
-              <span className="eyebrow">XÁC NHẬN THAO TÁC</span>
-              <h2>
-                {kind === "leads" ? "Xóa" : "Lưu trữ"}{" "}
-                {selectedName ?? names[kind!]}?
-              </h2>
-              <p>
-                {kind === "projects"
-                  ? "Dự án sẽ ngừng hiển thị (đường dẫn trả về 410) và banner trang chủ liên kết sẽ được gỡ. Dự án còn căn hộ liên kết sẽ không thể lưu trữ."
-                  : kind === "leads"
-                    ? "Yêu cầu sẽ bị ẩn khỏi danh sách. Thao tác được ghi vào nhật ký."
-                    : "Nội dung sẽ ngừng hiển thị trên website và được giữ trong cơ sở dữ liệu."}
-              </p>
-              <div className="dialog-actions">
-                <Button variant="outline" onClick={closePage}>
-                  Hủy
-                </Button>
-                <Button onClick={() => remove(deleting)}>Xác nhận</Button>
-              </div>
-            </section>
-          ) : kind && recordId ? (
+          ) : kind && recordId && action !== "delete" ? (
             editor && editor.kind === kind ? (
               <Editor
                 key={pathname}
@@ -563,7 +600,11 @@ function Workspace() {
           ) : tab === "settings" ? (
             <SettingsPanel />
           ) : tab === "dashboard" ? (
-            <Overview permissions={session.permissions.join(",")} goTo={goTo} />
+            <Overview
+              permissions={session.permissions}
+              name={session.name}
+              goTo={goTo}
+            />
           ) : (
             kind && (
               <section className="admin-panel admin-list-panel">
@@ -697,7 +738,10 @@ function Workspace() {
                                   <button
                                     aria-label={`Xóa ${row.name}`}
                                     onClick={() =>
-                                      goTo(`/admin/${kind}/${row.id}/delete`)
+                                      setToDelete({
+                                        id: row.id,
+                                        name: row.name,
+                                      })
                                     }
                                   >
                                     <Trash2 size={16} />
@@ -719,169 +763,28 @@ function Workspace() {
               </section>
             )
           )}
+          {kind && (
+            <ConfirmDialog
+              open={!!deleting}
+              title={`${kind === "leads" ? "Xóa" : "Lưu trữ"} “${deleting?.name ?? ""}”?`}
+              message={
+                kind === "projects"
+                  ? "Dự án sẽ ngừng hiển thị (đường dẫn trả về 410) và banner trang chủ liên kết sẽ được gỡ. Dự án còn căn hộ liên kết sẽ không thể lưu trữ."
+                  : kind === "leads"
+                    ? "Yêu cầu sẽ bị ẩn khỏi danh sách. Thao tác được ghi vào nhật ký."
+                    : "Nội dung sẽ ngừng hiển thị trên website và vẫn được giữ trong cơ sở dữ liệu."
+              }
+              confirmLabel={kind === "leads" ? "Xóa" : "Lưu trữ"}
+              cancelLabel="Hủy"
+              onConfirm={() => deleting && void remove(deleting.id)}
+              onCancel={() =>
+                action === "delete" ? closePage() : setToDelete(null)
+              }
+            />
+          )}
         </main>
       </div>
     </div>
-  );
-}
-
-function Overview({
-  permissions,
-  goTo,
-}: {
-  permissions: string;
-  goTo: (href: string) => void;
-}) {
-  const can = (permission: string) =>
-    permissions.split(",").includes(permission);
-  const [stats, setStats] = useState<{
-    projects: number;
-    posts: number;
-    drafts: number;
-    leads: {
-      createdAt: string;
-      status: string;
-      name: string;
-      email: string;
-      source: string;
-      assignee: { name: string } | null;
-      id: string;
-    }[];
-    byStatus: Record<string, number>;
-  } | null>(null);
-  useEffect(() => {
-    (async () => {
-      try {
-        const [projects, posts, drafts, leads] = await Promise.all([
-          can("content:read")
-            ? api<{ meta: { total: number } }>(
-                "GET",
-                "/admin/projects?pageSize=1",
-              )
-            : null,
-          can("content:read")
-            ? api<{ meta: { total: number } }>(
-                "GET",
-                "/admin/blog/posts?pageSize=1",
-              )
-            : null,
-          can("content:read")
-            ? api<{ meta: { total: number } }>(
-                "GET",
-                "/admin/blog/posts?pageSize=1&status=DRAFT",
-              )
-            : null,
-          can("leads:read")
-            ? api<{
-                data: AdminDto[];
-                meta: { byStatus: Record<string, number> };
-              }>("GET", "/admin/leads?pageSize=100")
-            : null,
-        ]);
-        setStats({
-          projects: projects?.meta.total ?? 0,
-          posts: posts?.meta.total ?? 0,
-          drafts: drafts?.meta.total ?? 0,
-          leads: (leads?.data ?? []) as never,
-          byStatus: leads?.meta.byStatus ?? {},
-        });
-      } catch (error) {
-        toast.error(errorMessage(error));
-      }
-    })();
-    // `can` only reads `permissions`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permissions]);
-  if (!stats) return <p role="status">Đang tải số liệu…</p>;
-  return (
-    <>
-      <div className="admin-stats">
-        {[
-          { label: "Tổng dự án", value: stats.projects, icon: Building2 },
-          { label: "Bài viết", value: stats.posts, icon: FileText },
-          {
-            label: "Đang tư vấn",
-            value: stats.byStatus.CONTACTING ?? 0,
-            icon: Users,
-          },
-          { label: "Yêu cầu mới", value: stats.byStatus.NEW ?? 0, icon: Users },
-        ].map((s) => (
-          <div key={s.label}>
-            <span>
-              {s.label}
-              <s.icon size={19} />
-            </span>
-            <strong>{s.value.toString().padStart(2, "0")}</strong>
-            <small>Số liệu từ cơ sở dữ liệu</small>
-          </div>
-        ))}
-      </div>
-      <div className="admin-dashboard-grid">
-        <section className="admin-panel">
-          <div className="panel-heading">
-            <h2>Yêu cầu tư vấn theo tháng</h2>
-            <span>6 tháng gần nhất</span>
-          </div>
-          <LeadChart leads={stats.leads} />
-        </section>
-        <section className="admin-panel">
-          <h2>Nội dung cần xử lý</h2>
-          <div className="admin-content-summary">
-            <strong>{stats.drafts}</strong>
-            <span>bài viết đang ở trạng thái bản nháp</span>
-          </div>
-          <p>
-            Bài viết chỉ xuất hiện trên website sau khi chuyển sang “Đã xuất
-            bản”.
-          </p>
-          <button className="text-link" onClick={() => goTo("/admin/posts")}>
-            Quản lý bài viết
-            <ArrowUpRight size={16} />
-          </button>
-        </section>
-      </div>
-      {can("leads:read") && (
-        <section className="admin-panel">
-          <div className="panel-heading">
-            <h2>Yêu cầu gần đây</h2>
-            <button onClick={() => goTo("/admin/leads")} className="text-link">
-              Xem tất cả
-              <ArrowUpRight size={17} />
-            </button>
-          </div>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Khách hàng</th>
-                  <th>Nhu cầu</th>
-                  <th>Trạng thái</th>
-                  <th>Phụ trách</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.leads.slice(0, 5).map((l) => (
-                  <tr key={l.id}>
-                    <td>
-                      <strong>{l.name}</strong>
-                      <small>{l.email}</small>
-                    </td>
-                    <td>{l.source}</td>
-                    <td>
-                      <span className="status-pill">
-                        {statuses.leads.find(([k]) => k === l.status)?.[1] ??
-                          l.status}
-                      </span>
-                    </td>
-                    <td>{l.assignee?.name ?? "Chưa phân công"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-    </>
   );
 }
 

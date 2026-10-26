@@ -3,6 +3,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
 import { apiAs, credentials, expectErrorPopup, login } from "./helpers";
 
+const SHOTS =
+  "/private/tmp/claude-501/-Users-tranducviet-Documents-DVG-WEB/d7e4d8d3-4b31-4315-9fe7-c92d90618232/scratchpad";
+
 const nav = (page: import("@playwright/test").Page) =>
   page.getByRole("navigation", { name: "Quản trị", exact: true });
 
@@ -85,7 +88,13 @@ test("projects persist detailed fields and duplicate slugs are refused by the se
   await page
     .getByRole("button", { name: "Xóa Dự án chi tiết QA", exact: true })
     .click();
-  await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
+  // A popup over the list (no separate page).
+  await expect(page).toHaveURL(/\/admin\/projects$/);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Lưu trữ", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator("tbody")).not.toContainText("Dự án chi tiết QA");
 });
 
@@ -385,6 +394,51 @@ test("admin screens are accessible and responsive", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({
     path: "tests/admin-editor-mobile.png",
+    fullPage: true,
+  });
+});
+
+test("admin tabs switch in place and every menu entry is reachable", async ({
+  page,
+}) => {
+  await login(page);
+  // Any request to /auth/me after this point would mean a session reload.
+  let sessionChecks = 0;
+  page.on("request", (r) => {
+    if (r.url().includes("/api/v1/auth/me")) sessionChecks++;
+  });
+  const menu = page.getByRole("navigation", { name: "Quản trị" });
+  for (const label of [
+    "Căn hộ",
+    "Bài viết",
+    "Khách hàng",
+    "Ứng viên",
+    "Cài đặt",
+  ]) {
+    await menu.getByRole("link", { name: label }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(label);
+    await expect(page.getByText("Đang kiểm tra phiên đăng nhập")).toHaveCount(
+      0,
+    );
+  }
+  expect(sessionChecks).toBe(0);
+  // Short laptop screen: the last entry can still be scrolled to and used.
+  await page.setViewportSize({ width: 1280, height: 640 });
+  const last = menu.getByRole("link", { name: "Cài đặt" });
+  await last.scrollIntoViewIfNeeded();
+  await expect(last).toBeInViewport();
+  await menu.getByRole("link", { name: "Tổng quan" }).click();
+  await expect(page.locator(".overview-kpis button").first()).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(1500); // entrance animations
+  await page.screenshot({
+    path: `${SHOTS}/admin-overview.png`,
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(800);
+  await page.screenshot({
+    path: `${SHOTS}/admin-overview-mobile.png`,
     fullPage: true,
   });
 });
