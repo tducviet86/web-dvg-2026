@@ -12,10 +12,20 @@ export default async function Admin({
 }) {
   const { segments = [] } = await params;
   const [section, id, action] = segments;
-  const kinds = ["projects", "banners", "properties", "posts", "leads"];
+  const kinds = [
+    "projects",
+    "banners",
+    "properties",
+    "posts",
+    "pages",
+    "jobs",
+    "leads",
+  ];
   const valid =
     segments.length === 0 ||
-    (["settings", "users", "login"].includes(section) &&
+    (["settings", "users", "translations", "applications", "login"].includes(
+      section,
+    ) &&
       segments.length === 1) ||
     (kinds.includes(section) &&
       (segments.length === 1 ||

@@ -20,7 +20,7 @@
 }
 .company-hero-copy .breadcrumb {
   margin: 0 0 54px;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   flex-wrap: wrap;
 }
 .company-hero h1 {
@@ -40,7 +40,7 @@
   gap: 30px;
   align-items: center;
   margin-top: 32px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: #3c5948;
   border-bottom: 1px solid #b8bda9;
   padding-bottom: 15px;
@@ -85,7 +85,7 @@
 }
 .company-art-label span {
   display: block;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   letter-spacing: 2px;
   color: #e0c58c;
 }
@@ -97,7 +97,7 @@
 .company-art-label small {
   display: block;
   margin-top: 8px;
-  font-size: 9px;
+  font-size: var(--fs-2xs);
   color: #ccd8cf;
 }
 .company-art-index {
@@ -125,11 +125,11 @@
   color: #53634d;
 }
 .company-section-bar > span {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 2px;
 }
 .company-section-bar small {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
 }
 .company-page .category-tabs {
   flex-wrap: wrap;
@@ -170,7 +170,7 @@
   background: #163b30;
   color: #fff;
   padding: 8px 12px;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
 }
 .company-project-info {
   display: grid;
@@ -618,7 +618,7 @@
   }
   .company-page .category-tabs a {
     padding: 10px 12px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
   .company-projects-grid,
   .company-news-grid,

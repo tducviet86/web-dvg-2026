@@ -15,12 +15,23 @@ export async function postPublic<T = unknown>(
   path: string,
   body: unknown,
 ): Promise<ClientResult<T>> {
+  return send<T>(path, {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+/** Multipart form with files (the browser sets the content type). */
+export function postForm<T = unknown>(path: string, body: FormData) {
+  return send<T>(path, { body });
+}
+
+async function send<T>(
+  path: string,
+  init: RequestInit,
+): Promise<ClientResult<T>> {
   try {
-    const res = await fetch(`/api/v1${path}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const res = await fetch(`/api/v1${path}`, { method: "POST", ...init });
     const json = await res.json().catch(() => null);
     if (res.ok) return { ok: true, data: json?.data as T };
     return {

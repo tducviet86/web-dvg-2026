@@ -109,7 +109,7 @@
   background: linear-gradient(transparent, #08251def);
   padding: 60px 24px 22px;
   color: white;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 .portfolio-cover figcaption a {
   display: flex;
@@ -188,7 +188,7 @@
   font-size: 18px;
 }
 .portfolio-products li > span {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: #80683d;
 }
 .portfolio-products li > svg {
@@ -371,7 +371,7 @@
   padding: 25px 0;
 }
 .service-steps li > span {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: #80683d;
   margin-top: 5px;
 }
@@ -437,7 +437,7 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   white-space: nowrap;
 }
 .room-save .favorite {
@@ -451,7 +451,7 @@
   margin-bottom: 0;
 }
 .room-image-note {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: #586650;
   margin: 15px 0 30px;
 }
@@ -478,7 +478,7 @@
   font-weight: 500;
 }
 .room-facts span {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: #536251;
 }
 .room-facts svg {
@@ -563,7 +563,7 @@
   padding: 28px;
 }
 .room-price-label {
-  font-size: 11px !important;
+  font-size: var(--fs-xs) !important;
   margin: 25px 0 8px;
 }
 .room-price {
@@ -578,7 +578,7 @@
 }
 .room-availability {
   display: inline-block;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   padding: 7px 10px;
   background: #e4eee3;
   color: #255f3c;
@@ -608,7 +608,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 .room-call-context strong {
   font-weight: 500;
@@ -750,7 +750,7 @@
     font-size: 15px;
   }
   .room-mobile-call > div:first-child span {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
   }
   .room-mobile-call .call-button {
     min-height: 48px;
@@ -758,18 +758,18 @@
     padding: 10px 15px;
   }
   .room-mobile-call .call-button small {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
   }
   .room-mobile-call .call-button > svg:last-child {
     display: none;
   }
   .room-mobile-call .call-unconfigured {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     padding: 0;
     gap: 8px;
   }
   .room-mobile-call .call-unconfigured .text-link {
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
   .room-heading {
     align-items: start;
@@ -816,7 +816,7 @@
     height: 310px;
   }
   .portfolio-cover figcaption {
-    font-size: 9px;
+    font-size: var(--fs-2xs);
     padding: 45px 15px 15px;
     gap: 10px;
   }
@@ -851,7 +851,7 @@
     font-size: 30px;
   }
   .room-heading .signature-kicker {
-    font-size: 9px;
+    font-size: var(--fs-2xs);
   }
   .room-page .gallery {
     grid-template-rows: 240px 115px;
@@ -864,7 +864,7 @@
   }
   .room-anchor-nav {
     gap: 12px;
-    font-size: 10px;
+    font-size: var(--fs-2xs);
   }
   .room-space-grid {
     grid-template-columns: 1fr;

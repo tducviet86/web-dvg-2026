@@ -14,7 +14,7 @@ import {
 import type { PortfolioProject } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { HomeProjects } from "./home-projects";
-import { PropertyCard } from "./cards";
+import { PropertyCard, SaleCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { ProjectMap } from "./project-map";
 import { complexSchema, jsonLd } from "@/lib/structured-data";
@@ -86,6 +86,9 @@ export function PortfolioDetail({
   const story = content.stories[p.id];
   const active = modes.some((m) => m.key === mode) ? mode : "thue";
   const rooms = content.properties.filter((r) => r.projectId === p.projectId);
+  // A unit can be offered for rent, for sale, or both (Admin › Căn hộ).
+  const rentals = rooms.filter((r) => r.forRent !== false);
+  const sales = rooms.filter((r) => r.forSale);
   return (
     <main
       id="main"
@@ -302,63 +305,46 @@ export function PortfolioDetail({
                     Liên hệ để xác nhận quỹ căn và hiện trạng thực tế.
                   </p>
                   <div className="grid grid-3">
-                    {rooms.map((r) => (
+                    {rentals.map((r) => (
                       <PropertyCard key={r.id} property={r} />
                     ))}
                   </div>
                 </>
               ) : active === "mua-ban" ? (
-                <div className="operation-service">
-                  <div>
-                    <span className="signature-kicker">MUA BÁN / {p.name}</span>
-                    <h2>
-                      Tìm căn hộ phù hợp.
-                      <br />
-                      <em>Kết nối đúng nhu cầu.</em>
-                    </h2>
-                    <p>
-                      Trao đổi ngân sách, diện tích, số phòng ngủ và mục tiêu sử
-                      dụng. Đất Vàng tiếp nhận nhu cầu mua hoặc bán, hỗ trợ kết
-                      nối và sắp xếp xem căn hộ.
-                    </p>
-                    <div className="inventory-empty">
+                <div className="sale-showcase">
+                  <div className="sale-showcase-head">
+                    <div>
+                      <span className="signature-kicker">
+                        MUA BÁN · {p.name}
+                      </span>
+                      <h2>
+                        Căn hộ đang <em>chào bán.</em>
+                      </h2>
+                    </div>
+                    {sales.length > 0 && (
+                      <span className="sale-showcase-count">
+                        {sales.length} căn
+                      </span>
+                    )}
+                  </div>
+                  {sales.length > 0 ? (
+                    <div className="sale-grid">
+                      {sales.map((r) => (
+                        <SaleCard key={r.id} property={r} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="inventory-empty sale-empty">
                       <Building2 size={25} />
                       <div>
                         <strong>
                           Chưa có căn bán được công bố trên website
                         </strong>
-                        <p>
-                          Gọi để trao đổi quỹ căn và thông tin của từng chủ sở
-                          hữu.
-                        </p>
+                        <p>Gọi để trao đổi quỹ căn đang bán tại dự án.</p>
                       </div>
+                      <CallContact label="Gọi tư vấn mua bán" />
                     </div>
-                    <CallContact label="Gọi tư vấn mua bán" />
-                  </div>
-                  <ol className="service-steps">
-                    {[
-                      [
-                        "Trao đổi nhu cầu",
-                        "Ngân sách, loại căn, tầng và thời gian dự kiến.",
-                      ],
-                      [
-                        "Đối chiếu thông tin",
-                        "Xem thông tin tài sản, hiện trạng và hồ sơ do chủ sở hữu cung cấp.",
-                      ],
-                      [
-                        "Hẹn xem căn hộ",
-                        "Thống nhất lịch xem và trao đổi các điều kiện giao dịch.",
-                      ],
-                    ].map(([title, text], i) => (
-                      <li key={title}>
-                        <span>0{i + 1}</span>
-                        <div>
-                          <h3>{title}</h3>
-                          <p>{text}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
+                  )}
                 </div>
               ) : (
                 <div className="operation-service">

@@ -226,6 +226,60 @@ export function MediaPicker({
   );
 }
 
+/**
+ * Inserts an image into a post's text as `![caption](url)` at the cursor, so
+ * articles can carry photos between paragraphs (rendered by blog-pages.tsx).
+ */
+export function ContentImageInsert({ targetId }: { targetId: string }) {
+  const [library, setLibrary] = useState(false);
+  function insert(media: MediaRef) {
+    const area = document.getElementById(targetId);
+    if (!(area instanceof HTMLTextAreaElement)) return;
+    const caption = window.prompt("Chú thích ảnh (có thể để trống)", "") ?? "";
+    const before = area.value.slice(0, area.selectionStart);
+    const gap =
+      !before || before.endsWith("\n\n")
+        ? ""
+        : before.endsWith("\n")
+          ? "\n"
+          : "\n\n";
+    area.setRangeText(
+      `${gap}![${caption.replace(/[[\]]/g, "")}](${media.url})\n\n`,
+      area.selectionStart,
+      area.selectionEnd,
+      "end",
+    );
+    area.dispatchEvent(new Event("input", { bubbles: true }));
+    area.focus();
+  }
+  return (
+    <div className="content-image-insert">
+      <div className="banner-image-actions">
+        <UploadButton
+          label="Chèn ảnh mới"
+          onUploaded={(items) => items.forEach(insert)}
+        />
+        <button
+          type="button"
+          className="admin-inline-button"
+          onClick={() => setLibrary((open) => !open)}
+        >
+          <Images size={14} /> Chèn từ thư viện
+        </button>
+      </div>
+      {library && (
+        <Library
+          onClose={() => setLibrary(false)}
+          onPick={(media) => {
+            insert(media);
+            setLibrary(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 /** An ordered list of images (gallery). */
 export function MediaGallery({
   value,

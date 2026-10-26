@@ -131,10 +131,16 @@ test("all lead forms validate and persist; newsletter", async ({ page }) => {
   for (const route of [
     "/lien-he",
     "/hop-tac-chu-so-huu",
-    "/tuyen-dung",
+    // /tuyen-dung has its own CV form (tests/pages-jobs.spec.ts).
     "/dich-vu/quan-ly-bat-dong-san",
   ]) {
     await page.goto(route);
+    // Service pages keep the form in a dialog behind a button.
+    if (route.startsWith("/dich-vu/"))
+      await page
+        .getByRole("button", { name: "Gửi yêu cầu tư vấn" })
+        .first()
+        .click();
     const form = page.locator(".contact-form");
     await form.getByRole("button", { name: "Đăng ký tư vấn" }).click();
     await expect(form.locator(".field-error").first()).toBeVisible();
@@ -162,7 +168,9 @@ test("all lead forms validate and persist; newsletter", async ({ page }) => {
   )) as unknown as {
     meta: { total: number };
   };
-  expect(leads.meta.total).toBe(4);
+  expect(leads.meta.total).toBe(3);
+  // Close the service consultation dialog before using the footer.
+  await page.keyboard.press("Escape");
   await page.locator("#newsletter").fill("newsletter@example.com");
   await page.getByRole("button", { name: "Đăng ký bản tin" }).click();
   await expect(page.getByText("Đã đăng ký nhận bản tin.")).toBeVisible();

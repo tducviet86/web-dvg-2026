@@ -33,7 +33,7 @@
 .signature-hero-eyebrow {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.2em;
 }
 .signature-hero-title {
@@ -83,7 +83,7 @@
   border: 0;
 }
 .signature-chapters a > span {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: #75643e;
 }
 .signature-chapters svg {
@@ -106,7 +106,7 @@
 }
 .signature-kicker,
 .signature-location {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 500;
   letter-spacing: 0.15em;
   line-height: 1.7;
@@ -171,7 +171,7 @@
   bottom: 20px;
   left: 20px;
   color: white;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.15em;
   background: #123d32;
   padding: 10px 14px;
@@ -192,7 +192,7 @@
   padding-top: 25px;
   margin-top: 25px;
   border-top: 1px solid #123d3226;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 .signature-principles > span:before {
   content: "+";
@@ -247,11 +247,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.1em;
 }
 .signature-field-caption small {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0;
   color: #d6e0d8;
 }
@@ -280,7 +280,7 @@
   border-bottom: 1px solid #ffffff30;
 }
 .signature-field-tabs button > span {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
 }
 .signature-field-tabs button strong {
   font-size: clamp(16px, 1.6vw, 23px);
@@ -380,7 +380,7 @@
   display: flex;
   gap: 28px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 .signature-project-caption {
   display: flex;
@@ -391,7 +391,7 @@
   gap: 15px;
 }
 .signature-project-caption span {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: #596354;
 }
 .signature-project-caption h3 {
@@ -433,14 +433,14 @@
   border-bottom: 1px solid #123d3226;
 }
 .signature-journal-number {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: #75643e;
 }
 .signature-journal-photo {
   height: 95px;
 }
 .signature-journal-list .signature-kicker {
-  font-size: 9px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.04em;
   color: #596354;
 }
@@ -460,7 +460,7 @@
   padding: 55px 0 50px;
 }
 .signature-connect .signature-section-top > span:last-child {
-  font-size: 9px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.1em;
 }
 .signature-connect-layout {
@@ -592,7 +592,7 @@
     bottom: 160px;
   }
   .signature-hero-eyebrow {
-    font-size: 8px;
+    font-size: var(--fs-2xs);
     gap: 20px;
   }
   .signature-hero-eyebrow > span:last-child {
@@ -617,7 +617,7 @@
   }
   .signature-chapters a {
     padding: 20px 12px;
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     gap: 8px;
   }
   .signature-chapters a > span {
@@ -634,7 +634,7 @@
   }
   .signature-kicker,
   .signature-location {
-    font-size: 9px;
+    font-size: var(--fs-2xs);
     letter-spacing: 0.08em;
   }
   .signature-location {
@@ -667,7 +667,7 @@
     padding: 45px 0 50px;
   }
   .signature-fields .signature-section-top > p {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     margin: 0;
   }
   .signature-fields-layout {
@@ -749,7 +749,7 @@
     width: 135px;
     height: 135px;
     gap: 10px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     align-self: flex-end;
     margin-top: -5px;
   }
@@ -864,7 +864,7 @@
   padding: 20px 0 0;
 }
 .home-project-info > span {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: #526356;
 }
 .home-project-info h3 {
@@ -882,7 +882,7 @@
   gap: 10px;
 }
 .home-project-info > div a {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -896,7 +896,7 @@
 }
 .signature-field-audience {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.09em;
   color: #e4ca8e;
   font-weight: 400;
@@ -943,6 +943,6 @@
     font-size: 24px;
   }
   .home-project-info > div a {
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
 }

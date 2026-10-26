@@ -36,7 +36,7 @@ export function AiSeoAssistant({
   getSource,
   onApply,
 }: {
-  kind: "post" | "project" | "property";
+  kind: "post" | "project" | "property" | "page" | "job";
   /** Public URL shown in the search preview, e.g. /blog/slug. */
   path: string;
   getSource: () => SeoSource;

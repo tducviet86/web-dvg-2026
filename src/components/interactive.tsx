@@ -1,6 +1,12 @@
 "use client";
-import { useSyncExternalStore, useState, useId, useEffect } from "react";
-import { motion, useReducedMotion, useScroll } from "motion/react";
+import {
+  useSyncExternalStore,
+  useState,
+  useId,
+  useEffect,
+  useRef,
+} from "react";
+import { motion, useScroll } from "motion/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import {
@@ -40,24 +46,58 @@ export function Providers() {
     />
   );
 }
+/**
+ * Fades content up as it scrolls into view. The server always renders it
+ * visible; only blocks still below the fold are hidden after hydration, so
+ * nothing flickers, nothing shifts and content stays readable without JS.
+ */
 export function Reveal({
   children,
   className = "",
+  delay = 0,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** Stagger in milliseconds (e.g. index × 80 in a grid). */
+  delay?: number;
 }) {
-  const reduced = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (
+      !element ||
+      !("IntersectionObserver" in window) ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      element.getBoundingClientRect().top < window.innerHeight * 0.95
+    )
+      return;
+    element.dataset.reveal = "pending";
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        element.dataset.reveal = "shown";
+        observer.disconnect();
+      },
+      { rootMargin: "0px 0px -6% 0px", threshold: 0.05 },
+    );
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      delete element.dataset.reveal;
+    };
+  }, []);
   return (
-    <motion.div
-      className={className}
-      initial={false}
-      whileInView={reduced ? {} : { opacity: [0.65, 1], y: [18, 0] }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.6 }}
+    <div
+      ref={ref}
+      className={`reveal ${className}`.trim()}
+      style={
+        delay
+          ? ({ "--reveal-delay": `${delay}ms` } as React.CSSProperties)
+          : undefined
+      }
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 export function Progress() {
@@ -337,6 +377,42 @@ export function ContactForm({
         <ArrowUpRight size={18} />
       </Button>
     </form>
+  );
+}
+/**
+ * The consultation form behind a button: pages keep their own layout and the
+ * form opens only when a visitor asks for it.
+ */
+export function ContactDialog({
+  source,
+  label = "Gửi yêu cầu tư vấn",
+  className = "button button-gold",
+}: {
+  source: string;
+  label?: string;
+  className?: string;
+}) {
+  const t = useT();
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger className={className}>
+        {t(label)}
+        <ArrowUpRight size={18} />
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="dialog-overlay" />
+        <Dialog.Content className="dialog-content contact-dialog">
+          <Dialog.Title className="sr-only">{t(label)}</Dialog.Title>
+          <Dialog.Description className="sr-only">
+            {t("Để lại thông tin, Đất Vàng Group sẽ liên hệ lại với bạn.")}
+          </Dialog.Description>
+          <ContactForm source={source} />
+          <Dialog.Close className="dialog-close" aria-label={t("Đóng")}>
+            <X />
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 const newsletterSchema = z.object({

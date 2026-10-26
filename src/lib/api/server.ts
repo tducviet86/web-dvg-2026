@@ -2,7 +2,13 @@ import type { ApiError } from "./types";
 
 /** Cache tags; BE-DVG's revalidation webhook invalidates them on writes. */
 export type CacheTag =
-  "projects" | "properties" | "banners" | "blog" | "pages" | "settings";
+  | "projects"
+  | "properties"
+  | "banners"
+  | "blog"
+  | "pages"
+  | "jobs"
+  | "settings";
 
 /** Server-to-server base URL (private network in production). */
 export const apiBase = () =>

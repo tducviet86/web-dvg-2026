@@ -4,13 +4,14 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Menu, X, ArrowUpRight, ChevronDown } from "lucide-react";
+import { Menu, X, ArrowUpRight, ChevronDown, Phone } from "lucide-react";
 import { Progress } from "../interactive";
 import { LanguageSwitcher } from "../translator";
 import { BackTrail } from "./back-button";
 import { useT } from "@/i18n/client";
 import { splitLocale } from "@/i18n/config";
-type NavLink = { label: string; href: string; note: string };
+import { companyHotline, telephoneHref } from "@/lib/company-contact";
+export type NavLink = { label: string; href: string; note: string };
 type NavItem = {
   label: string;
   href: string;
@@ -69,41 +70,34 @@ const nav: NavItem[] = [
       },
     ],
   },
+  // Items come from Admin › Trang nội dung (see withServices).
   {
     label: "Lĩnh vực hoạt động",
     href: "/dich-vu",
     eyebrow: "LĨNH VỰC HOẠT ĐỘNG",
-    sub: [
-      {
-        label: "Quản lý vận hành bất động sản",
-        href: "/dich-vu/quan-ly-bat-dong-san",
-        note: "Tiếp nhận, vận hành và báo cáo định kỳ",
-      },
-      {
-        label: "Khai thác căn hộ cho thuê",
-        href: "/dich-vu/khai-thac-cho-thue",
-        note: "Tìm khách thuê phù hợp, chăm sóc người thuê",
-      },
-      {
-        label: "Hợp tác chủ sở hữu",
-        href: "/hop-tac-chu-so-huu",
-        note: "Ký gửi căn hộ để Đất Vàng khai thác",
-      },
-      {
-        label: "Tư vấn đầu tư",
-        href: "/dich-vu/tu-van-dau-tu",
-        note: "Mục tiêu, ngân sách và thị trường",
-      },
-      {
-        label: "Tất cả lĩnh vực",
-        href: "/dich-vu",
-        note: "Xem đầy đủ các giải pháp",
-      },
-    ],
   },
   { label: "Tin tức", href: "/blog" },
+  { label: "Tuyển dụng", href: "/tuyen-dung" },
   { label: "Liên hệ", href: "/lien-he" },
 ];
+/** The "Lĩnh vực hoạt động" dropdown: services marked "hiện trên menu". */
+function withServices(services: NavLink[]): NavItem[] {
+  return nav.map((item) =>
+    item.href === "/dich-vu"
+      ? {
+          ...item,
+          sub: [
+            ...services,
+            {
+              label: "Tất cả lĩnh vực",
+              href: "/dich-vu",
+              note: "Xem đầy đủ các giải pháp",
+            },
+          ],
+        }
+      : item,
+  );
+}
 export function Logo() {
   const t = useT();
   return (
@@ -124,7 +118,13 @@ export function Logo() {
     </Link>
   );
 }
-function DesktopNavigation({ path }: { path: string }) {
+function DesktopNavigation({
+  path,
+  items,
+}: {
+  path: string;
+  items: NavItem[];
+}) {
   const t = useT();
   const [expanded, setExpanded] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
@@ -152,7 +152,7 @@ function DesktopNavigation({ path }: { path: string }) {
         }
       }}
     >
-      {nav.map((item) => {
+      {items.map((item) => {
         const active =
           path === item.href ||
           (item.href !== "/" && path.startsWith(item.href + "/"));
@@ -209,7 +209,8 @@ function DesktopNavigation({ path }: { path: string }) {
                   {t(item.label)}
                   <ChevronDown size={11} />
                 </Link>
-                <div className="mega-menu" id={id} hidden={!isOpen}>
+                {/* Closed panels use visibility (not `hidden`) so they can fade. */}
+                <div className="mega-menu" id={id} data-open={isOpen}>
                   <span className="eyebrow">{t(item.eyebrow ?? "")}</span>
                   {item.sub.map((link) => (
                     <Link
@@ -246,8 +247,9 @@ function subscribeScroll(callback: () => void) {
   window.addEventListener("scroll", callback, { passive: true });
   return () => window.removeEventListener("scroll", callback);
 }
-export function SiteHeader() {
+export function SiteHeader({ services = [] }: { services?: NavLink[] }) {
   const t = useT();
+  const items = withServices(services);
   // Paths without the /en, /ko, /zh prefix (nav entries are Vietnamese URLs).
   const path = splitLocale(usePathname()).path;
   const [open, setOpen] = useState(false);
@@ -267,7 +269,7 @@ export function SiteHeader() {
             <BackTrail />
             <Logo />
           </div>
-          <DesktopNavigation key={path} path={path} />
+          <DesktopNavigation key={path} path={path} items={items} />
           <div className="header-actions">
             <LanguageSwitcher />
             <Link className="header-cta" href="/cho-thue">
@@ -284,61 +286,99 @@ export function SiteHeader() {
               <Dialog.Portal>
                 <Dialog.Overlay className="dialog-overlay" />
                 <Dialog.Content className="mobile-drawer">
-                  <Dialog.Title>ĐẤT VÀNG GROUP</Dialog.Title>
+                  <div className="drawer-head">
+                    <Dialog.Title>ĐẤT VÀNG GROUP</Dialog.Title>
+                    <Dialog.Close
+                      className="dialog-close"
+                      aria-label={t("Đóng menu")}
+                    >
+                      <X />
+                    </Dialog.Close>
+                  </div>
                   <Dialog.Description>
                     {t(
                       "Tìm hiểu doanh nghiệp, lĩnh vực hoạt động và cơ hội hợp tác.",
                     )}
                   </Dialog.Description>
-                  <Dialog.Close
-                    className="dialog-close"
-                    aria-label={t("Đóng menu")}
-                  >
-                    <X />
-                  </Dialog.Close>
                   <nav aria-label={t("Điều hướng di động")}>
-                    {nav.map((item) =>
-                      item.sub ? (
-                        <details key={item.href}>
-                          <summary>
+                    {items.map((item, index) => {
+                      const active =
+                        path === item.href ||
+                        (item.href !== "/" && path.startsWith(item.href + "/"));
+                      const order = { "--i": index } as React.CSSProperties;
+                      return item.sub ? (
+                        <details
+                          key={item.href}
+                          style={order}
+                          open={active || undefined}
+                        >
+                          <summary data-active={active}>
                             {t(item.label)}
-                            <ChevronDown size={16} />
+                            <ChevronDown size={18} />
                           </summary>
-                          <Link href={item.href} onClick={() => setOpen(false)}>
-                            {t("Xem tất cả")}
-                          </Link>
-                          {item.sub
-                            .filter((link) => link.href !== item.href)
-                            .map((link) => (
-                              <Link
-                                key={link.href}
-                                href={link.href}
-                                onClick={() => setOpen(false)}
-                              >
-                                {t(link.label)}
-                              </Link>
-                            ))}
+                          <div className="drawer-sub">
+                            <Link
+                              href={item.href}
+                              onClick={() => setOpen(false)}
+                            >
+                              {t("Xem tất cả")}
+                            </Link>
+                            {item.sub
+                              .filter((link) => link.href !== item.href)
+                              .map((link) => (
+                                <Link
+                                  key={link.href}
+                                  href={link.href}
+                                  aria-current={
+                                    path === link.href ? "page" : undefined
+                                  }
+                                  onClick={() => setOpen(false)}
+                                >
+                                  {t(link.label)}
+                                </Link>
+                              ))}
+                          </div>
                         </details>
                       ) : (
                         <Link
                           key={item.href}
                           href={item.href}
+                          style={order}
+                          aria-current={active ? "page" : undefined}
                           onClick={() => setOpen(false)}
                         >
                           {t(item.label)}
                         </Link>
-                      ),
-                    )}
+                      );
+                    })}
                   </nav>
-                  <LanguageSwitcher variant="row" />
-                  <Link
-                    className="button button-primary"
-                    href="/lien-he"
-                    onClick={() => setOpen(false)}
-                  >
-                    {t("Kết nối hợp tác")}
-                    <ArrowUpRight size={18} />
-                  </Link>
+                  <div className="drawer-foot">
+                    <LanguageSwitcher variant="row" />
+                    <div className="drawer-actions">
+                      <Link
+                        className="button button-primary"
+                        href="/lien-he"
+                        onClick={() => setOpen(false)}
+                      >
+                        {t("Kết nối hợp tác")}
+                        <ArrowUpRight size={18} />
+                      </Link>
+                      <Link
+                        className="button button-outline"
+                        href="/cho-thue"
+                        onClick={() => setOpen(false)}
+                      >
+                        {t("Tìm căn hộ thuê")}
+                        <ArrowUpRight size={18} />
+                      </Link>
+                    </div>
+                    {telephoneHref() && (
+                      <a className="drawer-hotline" href={telephoneHref()!}>
+                        <Phone size={16} aria-hidden="true" />
+                        {t("Hotline")} {companyHotline}
+                      </a>
+                    )}
+                  </div>
                 </Dialog.Content>
               </Dialog.Portal>
             </Dialog.Root>

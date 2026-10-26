@@ -156,6 +156,42 @@ export function listItem(kind: Kind, d: AdminDto): ListItem {
           .join(" · ") || undefined,
     };
   }
+  if (kind === "pages") {
+    const service = d.kind === "SERVICE";
+    return {
+      id: d.id,
+      name: str(d.title),
+      subtitle: `/${str(d.path)}`,
+      info: service ? "Lĩnh vực hoạt động" : "Trang nội dung",
+      infoDetail: service
+        ? [d.inMenu ? "● Hiện trên menu" : "", `Thứ tự ${str(d.sortOrder)}`]
+            .filter(Boolean)
+            .join(" · ")
+        : undefined,
+      status,
+      statusLabel: statusLabel(kind, status),
+    };
+  }
+  if (kind === "jobs") {
+    const count = Number(d.applicationCount ?? 0);
+    return {
+      id: d.id,
+      name: str(d.title),
+      subtitle: str(d.slug),
+      info: `${str(d.department)} · ${str(d.location)}`,
+      infoDetail: [
+        `${count} hồ sơ`,
+        d.deadline
+          ? `Hạn ${str(d.deadline).split("-").reverse().join("/")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      status,
+      statusLabel: statusLabel(kind, status),
+      badge: status === "PUBLISHED" && !d.isOpen ? "Hết hạn" : undefined,
+    };
+  }
   if (kind === "posts") {
     const category = d.category as { name: string };
     return {
@@ -283,6 +319,47 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       imageAlt: str(d.coverImageAlt),
     };
   }
+  if (kind === "pages") {
+    const service = d.kind === "SERVICE";
+    return {
+      name: str(d.title),
+      status: str(d.status),
+      isService: service,
+      // Services: only the part after /dich-vu/ is typed.
+      path: service ? str(d.path).replace(/^dich-vu\//, "") : str(d.path),
+      eyebrow: str(d.eyebrow),
+      description: str(d.intro),
+      summary: str(d.summary),
+      sections: JSON.stringify(
+        (d.sections as { heading: string; body: string }[] | undefined) ?? [],
+      ),
+      sortOrder: str(d.sortOrder),
+      inMenu: !!d.inMenu,
+      linkHref: str(d.linkHref),
+      seoTitle: str(d.seoTitle),
+      seoDescription: str(d.seoDescription),
+    };
+  }
+  if (kind === "jobs")
+    return {
+      name: str(d.title),
+      status: str(d.status),
+      slug: str(d.slug),
+      department: str(d.department),
+      location: str(d.location),
+      employmentType: str(d.employmentType),
+      salaryMin: str(d.salaryMinVnd),
+      salaryMax: str(d.salaryMaxVnd),
+      salaryNote: str(d.salaryNote),
+      openings: str(d.openings),
+      deadline: str(d.deadline),
+      summary: str(d.summary),
+      description: str(d.description),
+      requirements: str(d.requirements),
+      benefits: str(d.benefits),
+      seoTitle: str(d.seoTitle),
+      seoDescription: str(d.seoDescription),
+    };
   const assignee = d.assignee as { id: string } | null;
   return {
     name: str(d.name),
@@ -453,6 +530,62 @@ export function payload(
       seoDescription: orNull(v.seoDescription),
       coverImageId: media.cover?.id ?? null,
       coverImageAlt: orNull(v.imageAlt),
+    };
+  if (kind === "pages") {
+    const service = !!v.isService;
+    const path = str(v.path)
+      .trim()
+      .replace(/^\/+|\/+$/g, "");
+    let sections: { heading: string; body: string }[] = [];
+    try {
+      sections = (
+        JSON.parse(str(v.sections) || "[]") as {
+          heading: string;
+          body: string;
+        }[]
+      ).filter((s) => s.heading.trim() && s.body.trim());
+    } catch {
+      /* keep empty */
+    }
+    return {
+      kind: service ? "SERVICE" : "PAGE",
+      path: service ? `dich-vu/${path.replace(/^dich-vu\//, "")}` : path,
+      title: str(v.name).trim(),
+      eyebrow: orNull(v.eyebrow),
+      intro: str(v.description).trim(),
+      summary: service ? orNull(v.summary) : null,
+      sections: sections.map((s) => ({
+        heading: s.heading.trim(),
+        body: s.body.trim(),
+      })),
+      coverImageId: media.cover?.id ?? null,
+      sortOrder: numOrNull(v.sortOrder) ?? 0,
+      inMenu: service && !!v.inMenu,
+      linkHref: service ? orNull(v.linkHref) : null,
+      status: v.status || "DRAFT",
+      seoTitle: orNull(v.seoTitle),
+      seoDescription: orNull(v.seoDescription),
+    };
+  }
+  if (kind === "jobs")
+    return {
+      title: str(v.name).trim(),
+      slug: str(v.slug).trim(),
+      status: v.status || "DRAFT",
+      department: str(v.department).trim(),
+      location: str(v.location).trim(),
+      employmentType: v.employmentType || "FULL_TIME",
+      salaryMinVnd: vnd(v.salaryMin),
+      salaryMaxVnd: vnd(v.salaryMax),
+      salaryNote: orNull(v.salaryNote),
+      openings: numOrNull(v.openings),
+      deadline: orNull(v.deadline),
+      summary: str(v.summary).trim(),
+      description: str(v.description).trim(),
+      requirements: str(v.requirements).trim(),
+      benefits: str(v.benefits).trim(),
+      seoTitle: orNull(v.seoTitle),
+      seoDescription: orNull(v.seoDescription),
     };
   // Leads: customer-submitted fields are read-only once stored.
   const tracking = {

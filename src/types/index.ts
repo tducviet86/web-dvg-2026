@@ -110,12 +110,21 @@ export type Lead = AdminDetails & {
   notes: string;
   createdAt: string;
 };
+/** "Lĩnh vực hoạt động", edited in Admin › Trang nội dung. */
 export type Service = {
   id: string;
   slug: string;
   name: string;
   description: string;
+  /** Short line under the name in the header menu. */
+  summary: string;
   image: string;
+  /** Where the card and menu link go (usually /dich-vu/<slug>). */
+  href: string;
+  inMenu: boolean;
+  sections: [heading: string, body: string][];
+  seoTitle?: string | null;
+  seoDescription?: string | null;
 };
 export type BannerType = "NORMAL" | "PROJECT";
 /**

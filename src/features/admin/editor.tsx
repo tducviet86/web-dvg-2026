@@ -19,6 +19,9 @@ import {
   Tag,
   UserRound,
   Wallet,
+  Files,
+  ListOrdered,
+  BriefcaseBusiness,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +38,8 @@ import {
 import { ConfirmDialog, ErrorDialog, type FormIssue } from "./error-dialog";
 import { DatePicker } from "./date-picker";
 import { AMENITY_GROUPS } from "@/lib/amenities";
+import { employmentOptions } from "@/lib/jobs";
+import { SectionsField, type Section } from "./sections-field";
 import {
   highlightOptions,
   TRENDING_LABEL,
@@ -42,6 +47,7 @@ import {
 } from "@/lib/highlights";
 import { AiSeoAssistant, type SeoSuggestion } from "./ai-seo";
 import {
+  ContentImageInsert,
   MediaGallery,
   MediaManager,
   MediaPicker,
@@ -78,7 +84,9 @@ type Field = {
     | "amenities"
     | "choice"
     /** Amount in đồng, typed with thousand separators (20.000.000). */
-    | "vnd";
+    | "vnd"
+    /** Page content blocks: heading + text, reorderable (JSON). */
+    | "sections";
   required?: boolean;
   default?: string | number | boolean;
   options?: [string, string][];
@@ -98,6 +106,8 @@ type Field = {
   integer?: boolean;
   pattern?: RegExp;
   patternMessage?: string;
+  /** Textarea that can receive images (`![chú thích](url)`). */
+  media?: boolean;
   /** Textarea holding one item per line. */
   lines?: { max: number; itemMax: number };
   /** Customer-submitted data: shown but not editable after creation. */
@@ -155,6 +165,24 @@ const publishChoice = f("status", "Trạng thái", {
     PUBLISHED: "Hiển thị trên website và sitemap.",
   },
 });
+/** Pages may also be archived (hidden, kept to publish again). */
+const pageStatusChoice = f("status", "Trạng thái", {
+  type: "choice",
+  required: true,
+  default: "DRAFT",
+  wide: true,
+  options: [
+    ["DRAFT", "Bản nháp"],
+    ["PUBLISHED", "Xuất bản"],
+    ["ARCHIVED", "Lưu trữ"],
+  ],
+  optionHints: {
+    DRAFT: "Chưa hiển thị trên website.",
+    PUBLISHED: "Hiển thị trên website và sitemap.",
+    ARCHIVED: "Ẩn khỏi website, vẫn giữ để dùng lại.",
+  },
+});
+const PAGE_PATH = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 const slugField = (max: number) =>
   f("slug", "Đường dẫn (slug)", {
     required: true,
@@ -615,6 +643,218 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
       },
       seoGroup,
     ];
+  if (kind === "pages")
+    return [
+      {
+        id: "basic",
+        title: "Thông tin chính",
+        description:
+          "Tiêu đề, đường dẫn và trạng thái. Trang Giới thiệu, Tầm nhìn, Đội ngũ… và các lĩnh vực hoạt động đều sửa ở đây.",
+        icon: Files,
+        fields: [
+          f("name", "Tiêu đề trang", {
+            required: true,
+            minLength: 2,
+            maxLength: 200,
+            wide: true,
+          }),
+          f("isService", "Đây là lĩnh vực hoạt động", {
+            type: "checkbox",
+            wide: true,
+            hint: "Bật để trang nằm trong mục Lĩnh vực hoạt động (/dich-vu) và có thể hiện trên menu.",
+          }),
+          f("path", "Đường dẫn", {
+            required: true,
+            maxLength: 200,
+            pattern: PAGE_PATH,
+            patternMessage:
+              "chỉ gồm chữ thường không dấu, số, “-” và “/” (vd: gioi-thieu/lich-su)",
+            placeholder: "vd: gioi-thieu/lich-su",
+            wide: true,
+            hint: "Trang thường: gioi-thieu/lich-su → /gioi-thieu/lich-su. Lĩnh vực: chỉ nhập phần sau /dich-vu/, vd moi-gioi-can-ho.",
+          }),
+          pageStatusChoice,
+          f("eyebrow", "Dòng chữ nhỏ trên tiêu đề", {
+            maxLength: 120,
+            placeholder: "vd: VỀ ĐẤT VÀNG GROUP",
+          }),
+          f("description", "Đoạn mở đầu", {
+            type: "textarea",
+            required: true,
+            minLength: 10,
+            maxLength: 2000,
+            rows: 3,
+            wide: true,
+            hint: "Hiển thị dưới tiêu đề và làm mô tả SEO mặc định.",
+          }),
+        ],
+      },
+      {
+        id: "menu",
+        title: "Menu & thẻ lĩnh vực",
+        description:
+          "Chỉ áp dụng cho lĩnh vực hoạt động: dòng mô tả trên menu, thứ tự và có hiện trong dropdown hay không.",
+        icon: ListOrdered,
+        fields: [
+          f("summary", "Mô tả ngắn trên menu", {
+            maxLength: 160,
+            wide: true,
+            showWhen: "isService",
+            placeholder: "vd: Tiếp nhận, vận hành và báo cáo định kỳ",
+          }),
+          f("inMenu", "Hiện trên menu “Lĩnh vực hoạt động”", {
+            type: "checkbox",
+            showWhen: "isService",
+          }),
+          f("sortOrder", "Thứ tự", {
+            type: "number",
+            min: 0,
+            max: 100000,
+            integer: true,
+            default: 0,
+            showWhen: "isService",
+            hint: "Số nhỏ đứng trước.",
+          }),
+          f("linkHref", "Khi bấm, mở trang khác (tùy chọn)", {
+            maxLength: 200,
+            pattern: /^\/[a-z0-9/-]*$/,
+            patternMessage: "cần bắt đầu bằng “/”, vd /hop-tac-chu-so-huu",
+            placeholder: "/hop-tac-chu-so-huu",
+            wide: true,
+            showWhen: "isService",
+            hint: "Để trống: mở trang /dich-vu/<đường dẫn> của lĩnh vực này.",
+          }),
+        ],
+      },
+      {
+        id: "content",
+        title: "Các mục nội dung",
+        description:
+          "Mỗi mục có tiêu đề và nội dung. Thêm, bớt hoặc đổi thứ tự bằng các nút bên phải.",
+        icon: ClipboardList,
+        fields: [
+          f("sections", "Các mục nội dung", { type: "sections", wide: true }),
+        ],
+      },
+      seoGroup,
+    ];
+  if (kind === "jobs")
+    return [
+      {
+        id: "basic",
+        title: "Thông tin chính",
+        description: "Vị trí, bộ phận, nơi làm việc và hạn nhận hồ sơ.",
+        icon: BriefcaseBusiness,
+        fields: [
+          f("name", "Vị trí tuyển dụng", {
+            required: true,
+            minLength: 2,
+            maxLength: 160,
+            wide: true,
+            placeholder: "vd: Chuyên viên kinh doanh",
+          }),
+          slugField(160),
+          publishChoice,
+          f("department", "Bộ phận", {
+            required: true,
+            minLength: 2,
+            maxLength: 80,
+            placeholder: "vd: Kinh doanh, Marketing, Phiên dịch",
+            hint: "Dùng làm bộ lọc trên trang Tuyển dụng: ghi giống nhau cho cùng bộ phận.",
+          }),
+          f("location", "Nơi làm việc", {
+            required: true,
+            minLength: 2,
+            maxLength: 160,
+            default: "Đà Nẵng",
+          }),
+          f("employmentType", "Hình thức", {
+            type: "select",
+            required: true,
+            default: "FULL_TIME",
+            options: employmentOptions.map(([key, v]) => [key, v.label]),
+          }),
+          f("openings", "Số lượng cần tuyển", {
+            type: "number",
+            min: 1,
+            max: 999,
+            integer: true,
+            unit: "người",
+          }),
+          f("deadline", "Hạn nhận hồ sơ", {
+            type: "date",
+            hint: "Để trống: nhận hồ sơ đến khi gỡ tin. Sau hạn, tin tự ẩn khỏi danh sách.",
+          }),
+        ],
+      },
+      {
+        id: "salary",
+        title: "Mức lương",
+        description:
+          "Theo tháng. Để trống cả hai mức thì website ghi “Thỏa thuận”.",
+        icon: Wallet,
+        fields: [
+          f("salaryMin", "Lương từ", {
+            type: "vnd",
+            unit: "đ / tháng",
+            placeholder: "10.000.000",
+          }),
+          f("salaryMax", "Lương đến", {
+            type: "vnd",
+            unit: "đ / tháng",
+            placeholder: "20.000.000",
+          }),
+          f("salaryNote", "Ghi chú lương", {
+            maxLength: 120,
+            wide: true,
+            placeholder: "vd: + hoa hồng, Thỏa thuận theo năng lực",
+          }),
+        ],
+      },
+      {
+        id: "content",
+        title: "Nội dung tin",
+        description:
+          "Xuống dòng để tách ý; dòng bắt đầu bằng “-” hiển thị thành danh sách.",
+        icon: ClipboardList,
+        fields: [
+          f("summary", "Mô tả ngắn", {
+            type: "textarea",
+            required: true,
+            minLength: 10,
+            maxLength: 400,
+            rows: 2,
+            wide: true,
+            hint: "Hiển thị trên thẻ tin ở trang Tuyển dụng.",
+          }),
+          f("description", "Mô tả công việc", {
+            type: "textarea",
+            required: true,
+            minLength: 10,
+            maxLength: 8000,
+            rows: 7,
+            wide: true,
+          }),
+          f("requirements", "Yêu cầu", {
+            type: "textarea",
+            required: true,
+            minLength: 5,
+            maxLength: 8000,
+            rows: 6,
+            wide: true,
+          }),
+          f("benefits", "Quyền lợi", {
+            type: "textarea",
+            required: true,
+            minLength: 5,
+            maxLength: 8000,
+            rows: 6,
+            wide: true,
+          }),
+        ],
+      },
+      seoGroup,
+    ];
   if (kind === "posts")
     return [
       {
@@ -661,7 +901,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
         id: "content",
         title: "Nội dung",
         description:
-          "Văn bản thuần: mỗi đoạn cách nhau một dòng trống. Thẻ HTML sẽ bị loại bỏ.",
+          "Văn bản thuần: mỗi đoạn cách nhau một dòng trống. Dòng bắt đầu bằng ## là tiêu đề mục, > là trích dẫn, - là danh sách; nút Chèn ảnh thêm ảnh vào giữa bài. Thẻ HTML sẽ bị loại bỏ.",
         icon: ClipboardList,
         fields: [
           f("description", "Mô tả ngắn (sapo)", {
@@ -675,6 +915,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           }),
           f("content", "Nội dung chi tiết", {
             type: "textarea",
+            media: true,
             maxLength: 50000,
             rows: 16,
             wide: true,
@@ -833,6 +1074,14 @@ const intro: Record<Kind, { title: string; text: string }> = {
     title: "bài viết",
     text: "Viết tiêu đề, sapo và nội dung. Có thể lưu bản nháp, xem trước hoặc hẹn giờ xuất bản.",
   },
+  pages: {
+    title: "trang nội dung",
+    text: "Sửa tiêu đề, đoạn mở đầu và từng mục nội dung. Bật “Đây là lĩnh vực hoạt động” cho các trang trong mục Lĩnh vực hoạt động.",
+  },
+  jobs: {
+    title: "tin tuyển dụng",
+    text: "Nhập vị trí, bộ phận, mức lương và nội dung tin. Tin hiển thị trên trang Tuyển dụng khi ở trạng thái “Xuất bản” và chưa hết hạn.",
+  },
   leads: {
     title: "khách hàng",
     text: "Ghi nhận khách hàng liên hệ ngoài website. Yêu cầu gửi từ website được tạo tự động.",
@@ -892,16 +1141,20 @@ const aiKind = {
   projects: "project",
   properties: "property",
   posts: "post",
+  pages: "page",
+  jobs: "job",
   leads: "post",
 } as const;
 const publicBase: Record<Kind, string> = {
   projects: "/du-an",
   properties: "/cho-thue",
   posts: "/blog",
+  pages: "",
+  jobs: "/tuyen-dung",
   leads: "",
 };
 function checkField(field: Field, value: FormValue): string | null {
-  if (field.type === "amenities") return null;
+  if (field.type === "amenities" || field.type === "sections") return null;
   if (field.type === "checkboxes")
     return field.required && !(value as string[] | undefined)?.length
       ? "cần chọn ít nhất một mục"
@@ -1280,6 +1533,30 @@ export function Editor({
           .filter(Boolean)
           .join(" · "),
       };
+    if (kind === "pages") {
+      let sections: Section[] = [];
+      try {
+        sections = JSON.parse(str(v.sections) || "[]") as Section[];
+      } catch {
+        /* none */
+      }
+      return {
+        title: str(v.name),
+        summary: str(v.description),
+        content: sections.map((x) => `${x.heading}\n${x.body}`).join("\n\n"),
+      };
+    }
+    if (kind === "jobs")
+      return {
+        title: str(v.name),
+        summary: str(v.summary),
+        content: [str(v.description), str(v.requirements), str(v.benefits)]
+          .filter(Boolean)
+          .join("\n\n"),
+        context: [str(v.department), str(v.location)]
+          .filter(Boolean)
+          .join(" · "),
+      };
     const project = lookups.projects.find(
       ([id]) => id === str(v.projectId),
     )?.[1];
@@ -1343,6 +1620,29 @@ export function Editor({
         {item.label} {error}.
       </span>
     );
+    if (item.type === "sections") {
+      let initial: Section[] = [];
+      try {
+        initial = JSON.parse(str(value) || "[]") as Section[];
+      } catch {
+        /* start empty */
+      }
+      return (
+        <div key={item.key} id={id} className="field full" tabIndex={-1}>
+          <SectionsField
+            name={item.key}
+            initial={initial}
+            describedBy={describedBy}
+            onChange={() => {
+              setDirty(true);
+              snapshot();
+            }}
+          />
+          {item.hint && <small id={`${id}-hint`}>{item.hint}</small>}
+          {errorText}
+        </div>
+      );
+    }
     if (item.type === "amenities") {
       const chosen = new Set((live[item.key] as string[] | undefined) ?? []);
       return (
@@ -1455,7 +1755,10 @@ export function Editor({
           {item.label} {tag}
         </label>
         {item.type === "textarea" ? (
-          <textarea {...shared} rows={item.rows ?? 4} />
+          <>
+            <textarea {...shared} rows={item.rows ?? 4} />
+            {item.media && !locked && <ContentImageInsert targetId={id} />}
+          </>
         ) : item.type === "select" ? (
           <select {...shared} disabled={locked || undefined}>
             {!item.options?.length && (
@@ -1640,7 +1943,11 @@ export function Editor({
                   {group.id === "seo" && kind !== "leads" && (
                     <AiSeoAssistant
                       kind={aiKind[kind]}
-                      path={`${publicBase[kind]}/${str(live.slug) || "duong-dan"}`}
+                      path={
+                        kind === "pages"
+                          ? `${live.isService ? "/dich-vu" : ""}/${str(live.path) || "duong-dan"}`
+                          : `${publicBase[kind]}/${str(live.slug) || "duong-dan"}`
+                      }
                       getSource={aiSource}
                       onApply={applySeo}
                     />
@@ -1693,7 +2000,7 @@ export function Editor({
             )}
           </div>
           <aside className="editor-aside">
-            {kind !== "leads" && (
+            {kind !== "leads" && kind !== "jobs" && (
               <section
                 className="admin-panel editor-media"
                 id="field-media"
@@ -1739,7 +2046,11 @@ export function Editor({
                     </p>
                     <MediaPicker
                       label={
-                        kind === "posts" ? "Ảnh bìa bài viết" : "Ảnh đại diện"
+                        kind === "posts"
+                          ? "Ảnh bìa bài viết"
+                          : kind === "pages"
+                            ? "Ảnh bìa trang"
+                            : "Ảnh đại diện"
                       }
                       value={media.cover}
                       onChange={(cover) => {

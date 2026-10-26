@@ -1,10 +1,11 @@
 /** @jsxImportSource @/i18n/jsx */
+import { RichText } from "@/components/rich-text";
 import { BackButton } from "@/components/layout/back-button";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import { ArrowUpRight, Compass, Layers, Handshake } from "lucide-react";
-import { photos, services } from "@/data";
-import type { Post, Project } from "@/types";
+import { photos } from "@/data";
+import type { Post, Project, Service } from "@/types";
 import type { EditorialContent } from "@/lib/pages";
 import type { Filters } from "@/lib/filter";
 import { Reveal, ContactForm, Process } from "./interactive";
@@ -77,12 +78,14 @@ export function CompanyListing({
   projects = [],
   posts = [],
   categories = [],
+  services = [],
 }: {
   kind: "projects" | "blog" | "services";
   filters: Filters;
   projects?: Project[];
   posts?: Post[];
   categories?: { slug: string; name: string }[];
+  services?: Service[];
 }) {
   const projectList =
     filters.status === "dang-khai-thac"
@@ -193,42 +196,83 @@ export function CompanyListing({
             </div>
           </>
         ) : kind === "services" ? (
-          <div className="company-service-stories">
-            {services.map((service, i) => (
-              <Reveal key={service.id}>
-                <article>
-                  <div className="company-service-copy">
-                    <span className="company-large-number">0{i + 1}</span>
-                    <span className="eyebrow">
-                      LẮNG NGHE / ĐỀ XUẤT / ĐỒNG HÀNH
-                    </span>
-                    <h2>{service.name}</h2>
-                    <p>{service.description}</p>
-                    <Link
-                      className="text-link"
-                      href={`/dich-vu/${service.slug}`}
-                    >
-                      Khám phá giải pháp
-                      <ArrowUpRight size={18} />
-                    </Link>
-                  </div>
-                  <DepthScene>
-                    <Link
-                      href={`/dich-vu/${service.slug}`}
-                      className="image-wrap"
-                    >
-                      <Image
-                        src={service.image}
-                        alt={`${service.name} — hình ảnh minh họa`}
-                        fill
-                        sizes="(max-width:768px) 100vw, 45vw"
-                      />
-                    </Link>
-                  </DepthScene>
-                </article>
-              </Reveal>
-            ))}
-          </div>
+          <>
+            <ol className="service-index">
+              {services.map((service, i) => (
+                <li key={service.id}>
+                  <Reveal delay={(i % 3) * 60}>
+                    <article className="service-row">
+                      <span className="service-row-number" aria-hidden="true">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="service-row-photo image-wrap">
+                        <Image
+                          src={service.image}
+                          alt=""
+                          fill
+                          sizes="(max-width: 760px) 96px, 220px"
+                        />
+                      </span>
+                      <div className="service-row-title">
+                        <span className="service-row-summary">
+                          {service.summary}
+                        </span>
+                        <h2>
+                          <Link href={service.href}>{service.name}</Link>
+                        </h2>
+                      </div>
+                      <p className="service-row-text">{service.description}</p>
+                      <span className="service-row-open" aria-hidden="true">
+                        <ArrowUpRight size={20} />
+                      </span>
+                    </article>
+                  </Reveal>
+                </li>
+              ))}
+            </ol>
+            <section
+              className="service-approach"
+              aria-labelledby="cach-dong-hanh"
+            >
+              <div className="service-approach-head">
+                <span className="eyebrow">CÁCH CHÚNG TÔI ĐỒNG HÀNH</span>
+                <h2 id="cach-dong-hanh">
+                  Một đầu mối, <em>bốn bước rõ ràng.</em>
+                </h2>
+                <p>
+                  Dù là vận hành, cho thuê hay đầu tư, mỗi lĩnh vực đều đi qua
+                  cùng một quy trình minh bạch để bạn luôn biết việc gì đang
+                  diễn ra.
+                </p>
+              </div>
+              <ol className="service-steps-grid">
+                {[
+                  [
+                    "Tiếp nhận nhu cầu",
+                    "Lắng nghe mong muốn, ngân sách và kế hoạch để xác định những ưu tiên quan trọng.",
+                  ],
+                  [
+                    "Khảo sát & tư vấn",
+                    "Tìm hiểu hiện trạng, nhu cầu sử dụng và các điều kiện cần thiết cho phương án.",
+                  ],
+                  [
+                    "Đề xuất giải pháp",
+                    "Trình bày phạm vi công việc, cách phối hợp và chi phí dự kiến để hai bên cùng xem xét.",
+                  ],
+                  [
+                    "Triển khai hợp tác",
+                    "Thống nhất kế hoạch, ghi nhận đầu việc và trao đổi định kỳ trong suốt quá trình.",
+                  ],
+                ].map(([title, text], i) => (
+                  <li key={title}>
+                    <span>{String(i + 1).padStart(2, "0")}</span>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </>
         ) : (
           <>
             <nav className="category-tabs" aria-label="Chuyên mục bài viết">
@@ -356,7 +400,7 @@ export function CompanyEditorial({
                   <section>
                     <span className="eyebrow">0{i + 1} / KẾT NỐI</span>
                     <h2>{heading}</h2>
-                    <p>{text}</p>
+                    <RichText text={text} />
                   </section>
                 </Reveal>
               ))}
@@ -390,7 +434,7 @@ export function CompanyEditorial({
                         <Icon size={34} strokeWidth={1} />
                         <span>0{i + 1}</span>
                         <h2>{heading}</h2>
-                        <p>{text}</p>
+                        <RichText text={text} />
                         <Link href="/hop-tac-chu-so-huu" className="text-link">
                           Trao đổi hợp táca
                           <ArrowUpRight size={17} />
@@ -436,7 +480,7 @@ export function CompanyEditorial({
                     <span>0{i + 1}</span>
                     <div>
                       <h2>{heading}</h2>
-                      <p>{text}</p>
+                      <RichText text={text} />
                       {i === 1 && (
                         <div className="company-story-inset image-wrap">
                           <Image

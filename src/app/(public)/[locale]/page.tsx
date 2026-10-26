@@ -99,61 +99,55 @@ export default async function Home({ params }: Props) {
       <HomeProjects group="development" projects={portfolio} />
       <HomeProjects group="operation" projects={portfolio} />
       <SignatureFields />
-      <section className="signature-journal">
+      <section className="signature-journal" id="goc-nhin">
         <div className="container">
-          <div className="signature-section-top">
-            <span className="signature-kicker">04 / GÓC NHÌN ĐẤT VÀNG</span>
-            <Link href="/blog" className="signature-link">
-              Tất cả bài viết
-              <ArrowUpRight size={18} />
-            </Link>
-          </div>
-          <div className="signature-journal-layout">
+          <div className="ds-section-head">
             <div>
+              <span className="signature-kicker">04 / GÓC NHÌN ĐẤT VÀNG</span>
               <h2>
-                Những câu chuyện
-                <br />
-                <em>đáng chia sẻ.</em>
+                Những câu chuyện <em>đáng chia sẻ.</em>
               </h2>
-              <p>
-                Góc nhìn về không gian sống,
-                <br />
-                con người và sự đồng hành.
-              </p>
             </div>
-            <div className="signature-journal-list">
-              {posts.slice(0, 3).map((post, index) => (
-                <Reveal key={post.id}>
-                  <article>
-                    <span className="signature-journal-number">
-                      0{index + 1}
+            <div className="ds-section-aside">
+              <p>Góc nhìn về không gian sống, con người và sự đồng hành.</p>
+              <Link href="/blog" className="signature-link">
+                Tất cả bài viết
+                <ArrowUpRight size={18} />
+              </Link>
+            </div>
+          </div>
+          <div className="journal-grid">
+            {posts.slice(0, 3).map((post, index) => (
+              <Reveal key={post.id} delay={index * 90}>
+                <article className="journal-card">
+                  <Link
+                    className="journal-card-photo image-wrap"
+                    href={`/blog/${post.slug}`}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  >
+                    <Image
+                      src={post.image}
+                      alt=""
+                      fill
+                      sizes="(max-width: 900px) 34vw, 33vw"
+                    />
+                  </Link>
+                  <div>
+                    <span className="journal-card-meta">
+                      {post.category} · {post.readingTime} PHÚT ĐỌC
                     </span>
-                    <Link
-                      className="signature-journal-photo image-wrap"
-                      href={`/blog/${post.slug}`}
-                      tabIndex={-1}
-                      aria-hidden="true"
-                    >
-                      <Image
-                        src={post.image}
-                        alt=""
-                        fill
-                        sizes="(max-width:768px) 100px, 150px"
-                      />
-                    </Link>
-                    <div>
-                      <span className="signature-kicker">
-                        {post.category} · {post.readingTime} PHÚT ĐỌC
-                      </span>
-                      <h3>
-                        <Link href={`/blog/${post.slug}`}>{post.name}</Link>
-                      </h3>
-                    </div>
-                    <ArrowUpRight size={22} />
-                  </article>
-                </Reveal>
-              ))}
-            </div>
+                    <h3>
+                      <Link href={`/blog/${post.slug}`}>{post.name}</Link>
+                    </h3>
+                    <span className="journal-card-cta" aria-hidden="true">
+                      Đọc bài viết
+                      <ArrowUpRight size={15} />
+                    </span>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>

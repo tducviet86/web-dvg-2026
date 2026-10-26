@@ -44,7 +44,9 @@ export default async function RootLayout({
   const locale = isLocale(header) ? header : "vi";
   await setRequestLocale(locale);
   return (
-    <html lang={HTML_LANG[locale]}>
+    // data-scroll-behavior: Next turns smooth scrolling off while it moves
+    // to the top of a new page, so route changes never "glide" up.
+    <html lang={HTML_LANG[locale]} data-scroll-behavior="smooth">
       <body className={times.variable}>
         <a className="skip-link" href="#main">
           Đến nội dung chính

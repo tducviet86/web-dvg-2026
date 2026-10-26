@@ -7,6 +7,7 @@ const TAGS = new Set([
   "banners",
   "blog",
   "pages",
+  "jobs",
   "settings",
 ]);
 

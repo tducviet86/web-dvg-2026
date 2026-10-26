@@ -39,7 +39,7 @@ export function HomeProjects({
           {projects
             .filter((p) => p.group === group)
             .map((p, i) => (
-              <Reveal key={p.id}>
+              <Reveal key={p.id} delay={(i % 3) * 80}>
                 <article>
                   <Link
                     className="home-project-photo image-wrap"

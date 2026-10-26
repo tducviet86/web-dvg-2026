@@ -13,7 +13,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 import type { Project, Property, Post } from "@/types";
-import { money, unitRef } from "@/lib/utils";
+import { money, salePrice, unitRef } from "@/lib/utils";
 import { propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
 import { Favorite } from "./interactive";
@@ -116,6 +116,7 @@ export function PropertyCard({
   index?: number;
 }) {
   const media = propertyMedia(property);
+  const detail = `/cho-thue/${property.slug}`;
   const photos = media.filter((m) => m.type === "image").length;
   const videos = media.length - photos;
   return (
@@ -124,7 +125,7 @@ export function PropertyCard({
       style={{ "--i": index % 9 } as React.CSSProperties}
     >
       <div className="image-wrap">
-        <Link href={`/cho-thue/${property.slug}`}>
+        <Link href={detail}>
           <Image
             src={property.image}
             loading={priority ? "eager" : "lazy"}
@@ -165,7 +166,7 @@ export function PropertyCard({
           <span>{property.isDemo ? "CĂN MẪU" : unitRef(property)}</span>
         </div>
         <h3>
-          <Link href={`/cho-thue/${property.slug}`}>{property.name}</Link>
+          <Link href={detail}>{property.name}</Link>
         </h3>
         <p className="location">
           <MapPin size={14} />
@@ -191,10 +192,7 @@ export function PropertyCard({
             <strong>{money(property.price)} triệu</strong>
             <span> / tháng</span>
           </p>
-          <Link
-            href={`/cho-thue/${property.slug}`}
-            aria-label={`Xem ${property.name}`}
-          >
+          <Link href={detail} aria-label={`Xem ${property.name}`}>
             <span className="property-detail-label">Xem căn</span>
             <ArrowUpRight size={20} />
           </Link>
@@ -210,6 +208,44 @@ export function PropertyCard({
           </span>
         </div>
       </div>
+    </article>
+  );
+}
+/** A unit offered for sale: photo-led card that opens /mua-ban/<slug>. */
+export function SaleCard({ property: p }: { property: Property }) {
+  return (
+    <article className="sale-card">
+      <Link
+        href={`/mua-ban/${p.slug}`}
+        className="sale-card-link"
+        aria-label={`Xem căn bán ${p.name}`}
+      >
+        <span className="sale-card-photo image-wrap">
+          <Image
+            src={p.image}
+            alt={p.imageAlt || `Căn hộ ${p.name}`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        </span>
+        <span className="sale-card-badge">Đang bán</span>
+        <span className="sale-card-open" aria-hidden="true">
+          <ArrowUpRight size={20} />
+        </span>
+        <span className="sale-card-body">
+          <span className="sale-card-project">{p.projectName}</span>
+          <h3 className="sale-card-name">{p.name}</h3>
+          <span className="sale-card-meta">
+            <span className="sale-card-price">
+              {p.saleVnd ? salePrice(p.saleVnd) : "Liên hệ"}
+            </span>
+            <span className="sale-card-specs">
+              {p.area} m² · {p.bedrooms ? `${p.bedrooms} PN` : "Studio"} · Tầng{" "}
+              {p.floor}
+            </span>
+          </span>
+        </span>
+      </Link>
     </article>
   );
 }

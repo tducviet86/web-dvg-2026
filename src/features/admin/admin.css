@@ -2556,3 +2556,188 @@
 .admin-confirm .dialog-actions {
   margin-top: 22px;
 }
+
+/* ── Trang nội dung: content blocks (heading + text, reorderable) ── */
+.sections-field ol {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.section-item {
+  padding: 14px;
+  border: 1px solid #dfe5dc;
+  border-radius: 12px;
+  background: #fbfcfa;
+}
+.section-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.section-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #173e34;
+  color: #f3e6c4;
+  font-size: 12px;
+}
+.section-item-head input {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+.section-item textarea {
+  width: 100%;
+}
+.section-tools {
+  display: flex;
+  gap: 4px;
+}
+.section-tools button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #dfe5dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #3c5148;
+  cursor: pointer;
+}
+.section-tools button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.section-tools button.danger:hover {
+  border-color: #c2412b;
+  color: #c2412b;
+}
+.section-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1.5px dashed #b9c7bd;
+  border-radius: 10px;
+  background: #fff;
+  color: #24553f;
+  font-weight: 600;
+  cursor: pointer;
+}
+.section-add:hover:not(:disabled) {
+  border-color: #24553f;
+}
+
+/* ── Ứng viên ── */
+.application-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.application-stats button {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid #dfe5dc;
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.application-stats strong {
+  font-size: 24px;
+  color: #173e34;
+}
+.application-stats span {
+  font-size: 12px;
+  color: #56655d;
+}
+.application-stats button[aria-pressed="true"] {
+  border-color: #173e34;
+  box-shadow: inset 0 0 0 1px #173e34;
+  background: #f1f7f3;
+}
+.application-toggle {
+  display: block;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+.application-note {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid #c6a76b;
+  background: #fbfaf6;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+.application-note label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #56655d;
+}
+.cv-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 6px 10px;
+  border: 1px solid #cfe0d5;
+  border-radius: 8px;
+  background: #eef6f0;
+  color: #1d4a37;
+  font-size: 12px;
+}
+.cv-download span {
+  display: grid;
+  min-width: 0;
+}
+.cv-download span,
+.cv-download small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-empty {
+  padding: 30px;
+  text-align: center;
+  color: #56655d;
+}
+@media (max-width: 800px) {
+  .application-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Post editor › "Chèn ảnh" under the content field. */
+.content-image-insert {
+  position: relative;
+  margin-top: 8px;
+  min-width: 0;
+}
+/* The hidden file input must not take the editor's full input width. */
+.content-image-insert input[type="file"] {
+  width: 1px;
+}
+.content-image-insert .banner-image-actions {
+  flex-wrap: wrap;
+}
+.content-image-insert .banner-upload,
+.content-image-insert .admin-inline-button {
+  max-width: 100%;
+  white-space: normal;
+}

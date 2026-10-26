@@ -1,19 +1,18 @@
 /** @jsxImportSource @/i18n/jsx */
+import { RichText } from "@/components/rich-text";
 import { BackButton } from "@/components/layout/back-button";
-import {
-  CompanyListing,
-  CompanyEditorial,
-  CompanyHero,
-} from "./company-layouts";
+import { CompanyListing, CompanyEditorial } from "./company-layouts";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Phone } from "lucide-react";
+import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { photos } from "@/data";
-import { BlogCard, SectionHeading } from "./cards";
-import { ContactForm, Process } from "./interactive";
+import { SectionHeading } from "./cards";
+import { BlogListing } from "./blog-pages";
+export { ArticlePage } from "./blog-pages";
+import { ContactDialog, ContactForm, Process, Reveal } from "./interactive";
 import type { Filters } from "@/lib/filter";
 import type { EditorialContent } from "@/lib/pages";
-import { siteUrl } from "@/lib/utils";
 import type { Post, Service } from "@/types";
 export function Breadcrumb({
   title,
@@ -59,18 +58,25 @@ export function ListingPage({
   filters,
   posts = [],
   categories = [],
+  services = [],
 }: {
   kind: "blog" | "services";
   filters: Filters;
   posts?: Post[];
   categories?: { slug: string; name: string }[];
+  services?: Service[];
 }) {
+  if (kind === "blog")
+    return (
+      <BlogListing posts={posts} categories={categories} filters={filters} />
+    );
   return (
     <CompanyListing
       kind={kind}
       filters={filters}
       posts={posts}
       categories={categories}
+      services={services}
     />
   );
 }
@@ -83,9 +89,7 @@ export function EditorialPage({
 }) {
   if (!slug.includes("chinh-sach") && !slug.includes("dieu-khoan"))
     return <CompanyEditorial slug={slug} page={page} />;
-  const hasForm = ["lien-he", "hop-tac-chu-so-huu", "tuyen-dung"].includes(
-    slug,
-  );
+  const hasForm = ["lien-he", "hop-tac-chu-so-huu"].includes(slug);
   return (
     <main id="main" className="page-main">
       <div className="container">
@@ -113,7 +117,7 @@ export function EditorialPage({
               <section key={heading}>
                 <span className="eyebrow">0{i + 1}</span>
                 <h2>{heading}</h2>
-                <p>{text}</p>
+                <RichText text={text} />
               </section>
             ))}
             {slug.startsWith("gioi-thieu") && (
@@ -135,11 +139,7 @@ export function EditorialPage({
           {hasForm && (
             <ContactForm
               source={
-                slug === "tuyen-dung"
-                  ? "Ứng tuyển demo"
-                  : slug === "hop-tac-chu-so-huu"
-                    ? "Hợp tác chủ sở hữu"
-                    : "Liên hệ"
+                slug === "hop-tac-chu-so-huu" ? "Hợp tác chủ sở hữu" : "Liên hệ"
               }
             />
           )}
@@ -157,131 +157,150 @@ export function EditorialPage({
     </main>
   );
 }
-export function ServiceDetail({ service }: { service: Service }) {
+export function ServiceDetail({
+  service,
+  services = [],
+}: {
+  service: Service;
+  /** Every service, for "Lĩnh vực khác". */
+  services?: Service[];
+}) {
+  const index = services.findIndex((s) => s.id === service.id);
+  const others = services.filter((s) => s.id !== service.id).slice(0, 3);
+  const phone = telephoneHref();
+  // CMS sections: a body of several lines is a list of steps.
+  const [lead, ...rest] = service.sections;
+  const lines = (text: string) =>
+    text
+      .split("\n")
+      .map((line) => line.trim().replace(/^[-•*]\s*/, ""))
+      .filter(Boolean);
   return (
-    <main id="main" className="company-page company-service-detail">
-      <CompanyHero
-        title={service.name}
-        eyebrow="LĨNH VỰC HOẠT ĐỘNG"
-        description={service.description}
-        image={service.image}
-      />
-      <div className="container" id="noi-dung">
-        <div className="editorial-body with-form">
-          <article>
-            <h2>Phương án phù hợp với nhu cầu thực tế.</h2>
-            <p>
-              {service.description} Mỗi phương án bắt đầu bằng việc hiểu mục
-              tiêu của bạn, các đặc điểm của tài sản và những nguồn lực sẵn có.
-            </p>
-            <h2>Phạm vi phối hợp</h2>
-            <ul className="editorial-list">
-              <li>Tiếp nhận thông tin và xác định các ưu tiên.</li>
-              <li>Khảo sát hiện trạng, làm rõ phạm vi và đầu mối công việc.</li>
-              <li>Đề xuất kế hoạch, thời gian và cơ chế cập nhật.</li>
-              <li>Theo dõi phản hồi và cùng điều chỉnh khi cần thiết.</li>
-            </ul>
-            <h2>Minh bạch trước khi bắt đầu</h2>
-            <p>
-              Các chi phí và trách nhiệm cần được trao đổi theo từng trường hợp.
-              Nội dung này là mô hình dịch vụ minh họa, không phải báo giá hoặc
-              cam kết hiệu quả tài chính.
-            </p>
-            <Link className="text-link" href="/hop-tac-chu-so-huu">
-              Tìm hiểu hợp tác chủ sở hữu
-              <ArrowUpRight size={18} />
-            </Link>
-          </article>
-          <ContactForm source={`Dịch vụ: ${service.name}`} />
-        </div>
-        <Process />
-      </div>
-    </main>
-  );
-}
-export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
-  return (
-    <main id="main" className="page-main company-article">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            headline: post.name,
-            description: post.description,
-            datePublished: post.createdAt,
-            dateModified: post.updatedAt || post.createdAt,
-            image: post.image,
-            author: {
-              "@type": "Organization",
-              name: post.author || "Đất Vàng Group",
-            },
-            mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
-          }),
-        }}
-      />
-      <div className="container">
-        <Breadcrumb title={post.name} parent={["Góc nhìn", "/blog"]} />
-        <PageIntro
-          title={post.name}
-          eyebrow={post.category}
-          description={post.description}
+    <main id="main" className="company-page service-detail">
+      <header className="service-hero">
+        <Image
+          className="service-hero-photo"
+          src={service.image}
+          alt=""
+          fill
+          sizes="100vw"
+          loading="eager"
+          fetchPriority="high"
         />
-        <div className="article-meta">
-          {post.author || "Đất Vàng Group"} ·{" "}
-          {post.createdAt.split("-").reverse().join("/")} · {post.readingTime}{" "}
-          phút đọc
-        </div>
-        <div className="editorial-banner image-wrap">
-          <Image
-            src={post.image}
-            alt={post.imageAlt || post.name}
-            fill
-            sizes="100vw"
-            loading="eager"
-            fetchPriority="high"
-          />
-        </div>
-        <article className="article-body">
-          {(post.content?.trim()
-            ? post.content.split(/\n\s*\n/)
-            : [post.description]
-          ).map((paragraph, i) => (
-            <p key={i} className={i === 0 ? "lead-copy" : undefined}>
-              {paragraph.split("\n").map((line, j) => (
-                <span key={j}>
-                  {j > 0 && <br />}
-                  {line}
-                </span>
-              ))}
-            </p>
-          ))}
-          {post.isDemo && (
-            <p className="demo-banner">
-              Bài viết biên tập minh họa. Nội dung không thay thế việc kiểm tra
-              tài sản hoặc tư vấn chuyên môn cho trường hợp cụ thể.
-            </p>
-          )}
-          <Link className="text-link" href="/cho-thue">
-            Khám phá không gian sống
-            <ArrowUpRight size={18} />
-          </Link>
-        </article>
-        <section className="section">
-          <SectionHeading eyebrow="ĐỌC TIẾP" title="Thêm một góc nhìn." />
-          <div className="grid grid-3">
-            {posts
-              .filter(
-                (p) => p.id !== post.id && p.categorySlug === post.categorySlug,
-              )
-              .slice(0, 3)
-              .map((p) => (
-                <BlogCard post={p} key={p.id} />
-              ))}
+        <div className="container service-hero-inner">
+          <nav className="breadcrumb" aria-label="Đường dẫn">
+            <BackButton />
+            <Link href="/">Trang chủ</Link>
+            <span>/</span>
+            <Link href="/dich-vu">Lĩnh vực hoạt động</Link>
+            <span>/</span>
+            <span aria-current="page">{service.name}</span>
+          </nav>
+          <div className="service-hero-copy">
+            <span className="service-hero-kicker">
+              LĨNH VỰC HOẠT ĐỘNG
+              {index >= 0 && ` · ${String(index + 1).padStart(2, "0")}`}
+            </span>
+            <h1>{service.name}</h1>
+            {service.summary !== service.description && (
+              <p className="service-hero-summary">{service.summary}</p>
+            )}
+            <p>{service.description}</p>
+            <div className="service-hero-actions">
+              <ContactDialog source={`Dịch vụ: ${service.name}`} />
+              {phone && (
+                <a className="button service-call" href={phone}>
+                  <Phone size={17} aria-hidden="true" />
+                  {companyHotline}
+                </a>
+              )}
+            </div>
           </div>
-        </section>
+        </div>
+      </header>
+      <div className="container service-body" id="noi-dung">
+        <article className="service-article">
+          {lead && (
+            <Reveal>
+              <section className="service-lead">
+                <span className="eyebrow">TỔNG QUAN</span>
+                <h2>{lead[0]}</h2>
+                <RichText text={lead[1]} />
+              </section>
+            </Reveal>
+          )}
+          {rest.map(([heading, text]) =>
+            lines(text).length >= 3 ? (
+              <Reveal key={heading}>
+                <section className="service-steps-block">
+                  <h2>{heading}</h2>
+                  <ol>
+                    {lines(text).map((line, i) => (
+                      <li key={line}>
+                        <span>{String(i + 1).padStart(2, "0")}</span>
+                        <p>{line}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              </Reveal>
+            ) : (
+              <Reveal key={heading}>
+                <section className="service-note">
+                  <h2>{heading}</h2>
+                  <RichText text={text} />
+                </section>
+              </Reveal>
+            ),
+          )}
+        </article>
+        {others.length > 0 && (
+          <section className="service-others">
+            <div className="service-others-head">
+              <h2>Lĩnh vực khác</h2>
+              <Link className="text-link" href="/dich-vu">
+                Tất cả lĩnh vực
+                <ArrowUpRight size={18} />
+              </Link>
+            </div>
+            <div className="service-others-grid">
+              {others.map((s) => (
+                <Link key={s.id} href={s.href} className="service-other">
+                  <span className="service-other-photo image-wrap">
+                    <Image
+                      src={s.image}
+                      alt=""
+                      fill
+                      sizes="(max-width: 760px) 100vw, 33vw"
+                    />
+                  </span>
+                  <span className="service-other-summary">{s.summary}</span>
+                  <strong>{s.name}</strong>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
+      <section className="service-cta">
+        <div className="container">
+          <div>
+            <span className="eyebrow">BẮT ĐẦU TỪ MỘT CUỘC TRÒ CHUYỆN</span>
+            <h2>
+              Cùng tìm phương án <em>phù hợp với bạn.</em>
+            </h2>
+          </div>
+          <div className="service-hero-actions">
+            <ContactDialog source={`Dịch vụ: ${service.name}`} />
+            {phone && (
+              <a className="button service-call" href={phone}>
+                <Phone size={17} aria-hidden="true" />
+                {companyHotline}
+              </a>
+            )}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

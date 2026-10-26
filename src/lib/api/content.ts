@@ -7,12 +7,15 @@ import type {
   ProjectStory,
   Property,
   RentalGuide,
+  Service,
 } from "@/types";
+import { photos } from "@/data";
 import type { ResolvedBanner } from "@/lib/banners";
 import { apiGet, apiGetAll, apiLookup, type Lookup } from "./server";
 import type {
   ApiBanner,
   ApiBlogCategory,
+  ApiJob,
   ApiPage,
   ApiPost,
   ApiPostSummary,
@@ -20,6 +23,7 @@ import type {
   ApiProperty,
   ApiSitemap,
   Availability,
+  EmploymentType,
   Furnishing,
   ProjectStage,
 } from "./types";
@@ -278,6 +282,52 @@ export const getPage = cache(async (path: string) => {
   const res = await apiLookup<ApiPage>(`/pages/${path}`, ["pages"]);
   return res.kind === "ok" ? res.data : null;
 });
+
+/** Pictures for services without a cover of their own (rotating). */
+const SERVICE_IMAGES = [photos.interior, photos.living, photos.building];
+export function toService(p: ApiPage, index = 0): Service {
+  const slug = p.path.replace(/^dich-vu\//, "");
+  return {
+    id: p.id,
+    slug,
+    name: p.title,
+    description: p.intro,
+    summary: p.summary || p.intro,
+    image: p.coverImage?.url || SERVICE_IMAGES[index % SERVICE_IMAGES.length],
+    href: p.linkHref || `/dich-vu/${slug}`,
+    inMenu: !!p.inMenu,
+    sections: p.sections.map((s) => [s.heading, s.body]),
+    seoTitle: p.seo.title,
+    seoDescription: p.seo.description,
+  };
+}
+/** "Lĩnh vực hoạt động" in display order. */
+export const getServices = cache(async () =>
+  (await apiGet<{ data: ApiPage[] }>("/services", ["pages"])).data.map(
+    toService,
+  ),
+);
+
+export type JobFilters = {
+  q?: string;
+  department?: string;
+  type?: EmploymentType;
+};
+/** Open postings matching the filters, plus every department with openings. */
+export const getJobs = cache(async (q = "", department = "", type = "") => {
+  const params = new URLSearchParams({ pageSize: "100" });
+  if (q) params.set("q", q);
+  if (department) params.set("department", department);
+  if (type) params.set("type", type);
+  const res = await apiGet<{
+    data: ApiJob[];
+    meta: { total: number; departments: string[] };
+  }>(`/jobs?${params}`, ["jobs"]);
+  return { jobs: res.data, departments: res.meta.departments };
+});
+export const getJob = cache(async (slug: string) =>
+  apiLookup<ApiJob>(`/jobs/${encodeURIComponent(slug)}`, ["jobs"]),
+);
 export const getBanners = cache(async () =>
   (
     await apiGet<{ data: ApiBanner[] }>("/banners", ["banners", "projects"])
@@ -301,6 +351,7 @@ export const getSitemap = cache(
         "properties",
         "blog",
         "pages",
+        "jobs",
       ])
     ).data,
 );

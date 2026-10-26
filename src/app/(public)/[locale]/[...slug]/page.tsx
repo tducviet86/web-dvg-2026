@@ -3,13 +3,14 @@ import { cache } from "react";
 import NextLink from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import { services } from "@/data";
 import {
   ListingPage,
   EditorialPage,
   ServiceDetail,
   ArticlePage,
 } from "@/components/public-pages";
+import { JobDetail, JobsPage } from "@/components/jobs";
+import { typeFromSlug } from "@/lib/jobs";
 import {
   ProjectDirectory,
   PortfolioDetail,
@@ -18,12 +19,15 @@ import { RoomDetail } from "@/components/room-detail";
 import { RentalPage } from "@/components/rental-page";
 import {
   getBlogCategories,
+  getJob,
+  getJobs,
   getPage,
   getPost,
   getPosts,
   getProjectLookup,
   getPublicSettings,
   getPropertyLookup,
+  getServices,
   getSiteContent,
   toPost,
   toProperty,
@@ -142,28 +146,41 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       ),
     };
   }
-  if (slug[0] === "cho-thue" && slug.length === 2) {
+  if ((slug[0] === "cho-thue" || slug[0] === "mua-ban") && slug.length === 2) {
+    const sale = slug[0] === "mua-ban";
     const lookup = await getPropertyLookup(slug[1]);
-    const apiRoom = settle(lookup, (s) => `/cho-thue/${s}`);
+    const apiRoom = settle(lookup, (s) => `/${slug[0]}/${s}`);
     const room: Property = toProperty(apiRoom);
+    // Each unit lives under the listing it is offered in: rentals under
+    // /cho-thue, sales under /mua-ban (a unit can be in both).
+    if (sale && !room.forSale) {
+      if (room.forRent === false) notFound();
+      permanentRedirect(href(`/cho-thue/${room.slug}`));
+    }
+    if (!sale && room.forRent === false && room.forSale)
+      permanentRedirect(href(`/mua-ban/${room.slug}`));
     const content = await getSiteContent();
+    const project = apiRoom.project;
+    const projectPath = `/du-an/${content.portfolio.find((p) => p.projectId === project.id)?.slug || project.slug}`;
     return {
       title:
         room.seoTitle ||
-        `${room.type} ${room.area}m² tại ${apiRoom.project.name}${room.isDemo ? " · Căn mẫu" : " cho thuê"}`,
+        `${room.type} ${room.area}m² tại ${project.name}${room.isDemo ? " · Căn mẫu" : sale ? " đang bán" : " cho thuê"}`,
       description:
         room.seoDescription ||
-        `${room.name} tại ${apiRoom.project.name}, ${room.area}m², ${room.furniture.toLowerCase()}. Xem ảnh, thông số, vị trí và liên hệ hẹn xem.${room.isDemo ? " Nội dung minh họa." : ""}`,
+        `${room.name} tại ${project.name}, ${room.area}m², ${room.furniture.toLowerCase()}. Xem ảnh, thông số, vị trí và liên hệ ${sale ? "tư vấn mua bán" : "hẹn xem"}.${room.isDemo ? " Nội dung minh họa." : ""}`,
       image: room.image,
       noindex: room.isDemo,
-      parents: [
-        { name: "Cho thuê căn hộ Đà Nẵng", path: "/cho-thue" },
-        {
-          name: `Cho thuê ${apiRoom.project.name}`,
-          path: `/cho-thue/du-an/${apiRoom.project.slug}`,
-        },
-      ],
-      render: () => <RoomDetail room={room} content={content} />,
+      parents: sale
+        ? [{ name: project.name, path: projectPath }]
+        : [
+            { name: "Cho thuê căn hộ Đà Nẵng", path: "/cho-thue" },
+            {
+              name: `Cho thuê ${project.name}`,
+              path: `/cho-thue/du-an/${project.slug}`,
+            },
+          ],
+      render: () => <RoomDetail room={room} content={content} sale={sale} />,
     };
   }
   if (slug[0] === "du-an" && slug.length === 2) {
@@ -218,7 +235,11 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
             categories={(await getBlogCategories()).filter((c) => c.postCount)}
           />
         ) : (
-          <ListingPage kind="services" filters={filters} />
+          <ListingPage
+            kind="services"
+            filters={filters}
+            services={await getServices()}
+          />
         ),
     };
   if (slug[0] === "blog" && slug[1] === "danh-muc" && slug.length === 3) {
@@ -257,14 +278,51 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     };
   }
   if (slug[0] === "dich-vu" && slug.length === 2) {
+    const services = await getServices();
     const service = services.find((x) => x.slug === slug[1]);
     if (!service) return null;
+    // A service presented on another page (e.g. /hop-tac-chu-so-huu).
+    if (service.href !== `/dich-vu/${service.slug}`)
+      permanentRedirect(href(service.href));
     return {
-      title: service.name,
-      description: service.description,
+      title: service.seoTitle || service.name,
+      description: service.seoDescription || service.description,
       image: service.image,
       parents: [{ name: "Lĩnh vực hoạt động", path: "/dich-vu" }],
-      render: () => <ServiceDetail service={service} />,
+      render: () => <ServiceDetail service={service} services={services} />,
+    };
+  }
+  if (path === "tuyen-dung") {
+    const page = await getPage("tuyen-dung");
+    return {
+      title: page?.seo.title || page?.title || "Tuyển dụng",
+      description:
+        page?.seo.description ||
+        page?.intro ||
+        "Cơ hội nghề nghiệp tại Đất Vàng Group: kinh doanh, marketing, phiên dịch, vận hành căn hộ tại Đà Nẵng.",
+      render: async (filters) => (
+        <JobsPage
+          page={page}
+          filters={filters}
+          data={await getJobs(
+            filters.q?.trim().slice(0, 100) ?? "",
+            filters["bo-phan"]?.slice(0, 80) ?? "",
+            typeFromSlug(filters["hinh-thuc"]),
+          )}
+        />
+      ),
+    };
+  }
+  if (slug[0] === "tuyen-dung" && slug.length === 2) {
+    const found = await getJob(slug[1]);
+    if (found.kind !== "ok") return null;
+    const job = found.data;
+    return {
+      title: job.seo.title || `${job.title} — Tuyển dụng`,
+      description: job.seo.description || job.summary,
+      noindex: !job.isOpen,
+      parents: [{ name: "Tuyển dụng", path: "/tuyen-dung" }],
+      render: () => <JobDetail job={job} />,
     };
   }
   const page = await getPage(path);
@@ -328,6 +386,13 @@ export default async function Page({ params, searchParams }: Props) {
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   );
   const path = slug.join("/");
+  // Earlier links opened the sale view as /cho-thue/<unit>?nhu-cau=mua-ban.
+  if (
+    slug[0] === "cho-thue" &&
+    slug.length === 2 &&
+    filters["nhu-cau"] === "mua-ban"
+  )
+    permanentRedirect(href(`/mua-ban/${slug[1]}`));
   const info = await resolve(path);
   if (!info) notFound();
   const parents = info.parents ?? [];

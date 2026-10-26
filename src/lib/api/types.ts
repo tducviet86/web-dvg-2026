@@ -152,11 +152,45 @@ export type ApiBanner = {
 export type ApiPage = {
   id: string;
   path: string;
+  kind?: "PAGE" | "SERVICE";
   title: string;
   eyebrow: string | null;
   intro: string;
+  /** Short line for cards and the header menu. */
+  summary?: string | null;
   sections: { heading: string; body: string }[];
+  coverImage?: ApiImage | null;
+  sortOrder?: number;
+  /** Services: shown in the header "Lĩnh vực hoạt động" dropdown. */
+  inMenu?: boolean;
+  /** Opens this page instead of /dich-vu/<slug>. */
+  linkHref?: string | null;
   seo: { title: string | null; description: string | null };
+  updatedAt: string;
+};
+
+export type EmploymentType =
+  "FULL_TIME" | "PART_TIME" | "INTERNSHIP" | "CONTRACT";
+export type ApiJob = {
+  id: string;
+  slug: string;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: EmploymentType;
+  salaryMinVnd: string | null;
+  salaryMaxVnd: string | null;
+  salaryNote: string | null;
+  openings: number | null;
+  /** Last day to apply (YYYY-MM-DD). */
+  deadline: string | null;
+  isOpen: boolean;
+  summary: string;
+  description: string;
+  requirements: string;
+  benefits: string;
+  seo: { title: string | null; description: string | null };
+  publishedAt: string | null;
   updatedAt: string;
 };
 
@@ -166,4 +200,5 @@ export type ApiSitemap = {
   posts: { slug: string; updatedAt: string }[];
   blogCategories: string[];
   pages: { path: string; updatedAt: string }[];
+  jobs?: { slug: string; updatedAt: string }[];
 };

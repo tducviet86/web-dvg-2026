@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   useContext,
+  useState,
   useTransition,
   type ComponentProps,
   type ReactNode,
@@ -49,10 +50,20 @@ export function PageNavigation({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * The page area below the fixed header. It is re-mounted on every route so
+ * the new page fades in; the first page of a visit renders without the
+ * entrance (nothing delays the first paint).
+ */
 export function PageSurface({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [landing, setLanding] = useState<string | null>(pathname);
+  if (landing !== null && pathname !== landing) setLanding(null);
   return (
-    <div key={pathname} className="page-surface">
+    <div
+      key={pathname}
+      className={landing === null ? "page-surface page-enter" : "page-surface"}
+    >
       {children}
     </div>
   );

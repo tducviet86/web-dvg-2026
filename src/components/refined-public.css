@@ -87,7 +87,7 @@
 .company-photo-caption {
   display: block;
   margin-top: 10px;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: #53604e;
 }
 .company-content {

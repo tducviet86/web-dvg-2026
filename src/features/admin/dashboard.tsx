@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link, { usePageNavigation } from "@/components/page-navigation";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,6 +23,9 @@ import {
   UserCog,
   KeyRound,
   BadgeDollarSign,
+  Files,
+  BriefcaseBusiness,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,6 +41,7 @@ import {
 import { LoginForm } from "./login";
 import { UsersPanel } from "./users";
 import { TranslationsPanel } from "./translations";
+import { ApplicationsPanel } from "./applications";
 import {
   api,
   AdminApiError,
@@ -71,7 +75,13 @@ const LeadChart = dynamic(() => import("./chart"), {
   loading: () => <div className="skeleton" style={{ height: 260 }} />,
 });
 type Tab =
-  "dashboard" | Kind | "banners" | "settings" | "users" | "translations";
+  | "dashboard"
+  | Kind
+  | "banners"
+  | "applications"
+  | "settings"
+  | "users"
+  | "translations";
 const tabs: { id: Tab; label: string; icon: typeof House }[] = [
   { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
   { id: "projects", label: "Dự án", icon: Building2 },
@@ -79,11 +89,21 @@ const tabs: { id: Tab; label: string; icon: typeof House }[] = [
   { id: "properties", label: "Căn hộ", icon: House },
   { id: "leads", label: "Khách hàng", icon: Users },
   { id: "posts", label: "Bài viết", icon: FileText },
+  { id: "pages", label: "Trang nội dung", icon: Files },
+  { id: "jobs", label: "Tuyển dụng", icon: BriefcaseBusiness },
+  { id: "applications", label: "Ứng viên", icon: UserCheck },
   { id: "translations", label: "Bản dịch", icon: Languages },
   { id: "users", label: "Người dùng", icon: UserCog },
   { id: "settings", label: "Cài đặt", icon: Settings },
 ];
-const KINDS: Kind[] = ["projects", "properties", "posts", "leads"];
+const KINDS: Kind[] = [
+  "projects",
+  "properties",
+  "posts",
+  "pages",
+  "jobs",
+  "leads",
+];
 type EditorState = {
   /** Route the state belongs to; stale state is ignored after navigation. */
   path: string;
@@ -127,6 +147,8 @@ function Workspace() {
   const [session, setSession] = useState<Session | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
+  /** Trang nội dung: company pages vs. "Lĩnh vực hoạt động". */
+  const [pageKind, setPageKind] = useState("");
   const [rows, setRows] = useState<ListItem[] | null>(null);
   const [total, setTotal] = useState(0);
   const [editorState, setEditor] = useState<EditorState | null>(null);
@@ -163,23 +185,30 @@ function Workspace() {
   }, [router]);
 
   // ── list data (server-side search and status filter) ──
+  // Only the latest request may fill the table (filters can change while an
+  // older one is still loading).
+  const listRequest = useRef(0);
   const loadList = useCallback(async () => {
     if (!kind || !session) return;
+    const request = ++listRequest.current;
     const params = new URLSearchParams({ pageSize: "100" });
     if (query) params.set("q", query);
     if (status) params.set("status", status);
+    if (kind === "pages" && pageKind) params.set("kind", pageKind);
     try {
       const res = await api<{ data: AdminDto[]; meta: { total: number } }>(
         "GET",
         `${endpoints[kind]}?${params}`,
       );
+      if (request !== listRequest.current) return;
       setRows(res.data.map((dto) => listItem(kind, dto)));
       setTotal(res.meta.total);
     } catch (error) {
+      if (request !== listRequest.current) return;
       toast.error(errorMessage(error));
       setRows([]);
     }
-  }, [kind, session, query, status]);
+  }, [kind, session, query, status, pageKind]);
   useEffect(() => {
     if (!kind || recordId) return;
     const timer = window.setTimeout(() => void loadList(), query ? 250 : 0);
@@ -312,6 +341,7 @@ function Workspace() {
     goTo(next === "dashboard" ? "/admin" : `/admin/${next}`);
     setQuery("");
     setStatus("");
+    setPageKind("");
   }
   const closePage = () => setTab(tab);
 
@@ -340,12 +370,7 @@ function Workspace() {
             payload(k, values, media, false),
           );
       } else await api("PATCH", `${endpoints[k]}/${dto!.id}`, body);
-      const noun = {
-        projects: "dự án",
-        properties: "căn hộ",
-        posts: "bài viết",
-        leads: "khách hàng",
-      }[k];
+      const noun = names[k];
       toast.success(isNew ? `Đã tạo ${noun}.` : `Đã lưu ${noun}.`);
       closePage();
     } catch (error) {
@@ -529,6 +554,8 @@ function Workspace() {
               canWrite={can("banners:write")}
               goTo={goTo}
             />
+          ) : tab === "applications" ? (
+            <ApplicationsPanel canWrite={can("leads:write")} />
           ) : tab === "translations" ? (
             <TranslationsPanel canWrite={can("pages:write")} />
           ) : tab === "users" ? (
@@ -566,6 +593,17 @@ function Workspace() {
                       </option>
                     ))}
                   </select>
+                  {kind === "pages" && (
+                    <select
+                      aria-label="Lọc loại trang"
+                      value={pageKind}
+                      onChange={(e) => setPageKind(e.target.value)}
+                    >
+                      <option value="">Tất cả loại trang</option>
+                      <option value="PAGE">Trang giới thiệu & khác</option>
+                      <option value="SERVICE">Lĩnh vực hoạt động</option>
+                    </select>
+                  )}
                   <span>
                     {rows
                       ? `${rows.length}${total > rows.length ? ` / ${total}` : ""} mục`
