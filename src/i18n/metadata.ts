@@ -24,3 +24,11 @@ export const ogLocale = (locale: Locale) => ({
   locale: OG_LOCALE[locale],
   alternateLocale: LOCALES.filter((l) => l !== locale).map((l) => OG_LOCALE[l]),
 });
+
+/** The site's share card (app/opengraph-image.tsx), for pages without a photo. */
+export const defaultOgImage = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: "Đất Vàng Group",
+};

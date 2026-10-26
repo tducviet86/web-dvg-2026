@@ -19,7 +19,7 @@ import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { photos } from "@/data";
 import { siteUrl } from "@/lib/utils";
 import { HTML_LANG, isLocale, type Locale } from "@/i18n/config";
-import { localeAlternates, ogLocale } from "@/i18n/metadata";
+import { defaultOgImage, localeAlternates, ogLocale } from "@/i18n/metadata";
 import { href, setRequestLocale, t } from "@/i18n/server";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -32,13 +32,22 @@ async function pageLocale(params: Props["params"]): Promise<Locale> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = await pageLocale(params);
+  const title = t("Đất Vàng Group | Giới thiệu doanh nghiệp");
+  const description = t(
+    "Tìm hiểu Đất Vàng Group, định hướng phát triển, lĩnh vực hoạt động, dự án và cơ hội hợp tác trong lĩnh vực bất động sản.",
+  );
   return {
-    title: t("Đất Vàng Group | Giới thiệu doanh nghiệp"),
-    description: t(
-      "Tìm hiểu Đất Vàng Group, định hướng phát triển, lĩnh vực hoạt động, dự án và cơ hội hợp tác trong lĩnh vực bất động sản.",
-    ),
+    title: { absolute: title },
+    description,
     alternates: localeAlternates(locale, "/"),
-    openGraph: ogLocale(locale),
+    openGraph: {
+      title,
+      description,
+      url: href("/"),
+      ...ogLocale(locale),
+      images: [defaultOgImage],
+    },
+    twitter: { title, description, images: [defaultOgImage] },
   };
 }
 

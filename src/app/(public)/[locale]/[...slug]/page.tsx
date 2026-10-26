@@ -39,7 +39,7 @@ import type { EditorialContent } from "@/lib/pages";
 import { siteUrl } from "@/lib/utils";
 import { agentSchema, jsonLd } from "@/lib/structured-data";
 import { isLocale, localizeHref, type Locale } from "@/i18n/config";
-import { localeAlternates, ogLocale } from "@/i18n/metadata";
+import { defaultOgImage, localeAlternates, ogLocale } from "@/i18n/metadata";
 import { href, setRequestLocale, t } from "@/i18n/server";
 import type { PortfolioProject, Post, Property } from "@/types";
 
@@ -369,13 +369,13 @@ export async function generateMetadata({
       description,
       url: localizeHref(path, locale),
       ...ogLocale(locale),
-      ...(item.image ? { images: [item.image] } : {}),
+      images: [item.image ?? defaultOgImage],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      ...(item.image ? { images: [item.image] } : {}),
+      images: [item.image ?? defaultOgImage],
     },
   };
 }
