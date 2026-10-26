@@ -25,7 +25,7 @@ import { ProjectMap } from "./project-map";
 import { LuxuryBadges, PropertyCard, SaleCard } from "./cards";
 import { ViewBeacon } from "./view-beacon";
 import { CallContact } from "./call-contact";
-import { money, salePrice, unitRef } from "@/lib/utils";
+import { money, salePrice, unitRef, vndFull } from "@/lib/utils";
 import { groupAmenities } from "@/lib/amenities";
 import { apartmentSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
@@ -57,6 +57,8 @@ export function RoomDetail({
   const amenityCount = amenities.reduce((n, g) => n + g.items.length, 0);
   const projectPage = `/du-an/${portfolio?.slug || project.slug}`;
   const salePriceText = r.saleVnd ? salePrice(r.saleVnd) : "Liên hệ";
+  // Rent in full đồng ("25.000.000"); `price` is in triệu.
+  const rentVnd = r.rentVnd ?? Math.round(r.price * 1e6);
   // "Còn trống" is rental wording; buyers see "Đang bán".
   const status = sale && available ? "Đang bán" : r.status;
   const related = content.properties.filter(
@@ -352,7 +354,7 @@ export function RoomDetail({
                     : "Giá thuê / tháng"}
                 </p>
                 <div className="room-price">
-                  {money(r.price)} <span>triệu / tháng</span>
+                  {vndFull(rentVnd)} <span>đồng / tháng</span>
                 </div>
                 {r.forSale && r.saleVnd ? (
                   <p className="room-sale-price">
@@ -467,7 +469,7 @@ export function RoomDetail({
           </div>
         ) : (
           <div>
-            <strong>{money(r.price)} triệu</strong>
+            <strong>{vndFull(rentVnd)} đ</strong>
             <span>/ tháng{r.isDemo ? " · Giá mẫu" : ""}</span>
           </div>
         )}

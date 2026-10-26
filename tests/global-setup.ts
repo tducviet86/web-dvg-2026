@@ -107,6 +107,7 @@ export default async function globalSetup() {
                   {
                     type: "text",
                     text: JSON.stringify({
+                      title: `Căn ${area} full nội thất, dọn vào ở ngay`,
                       intro: `Căn hộ rộng ${area}, sẵn sàng đón khách.`,
                       points: [
                         "Phòng khách thoáng, nhiều ánh sáng.",

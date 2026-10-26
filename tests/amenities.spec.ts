@@ -65,7 +65,7 @@ test("amenities ticked in Admin appear grouped with icons on the unit page", asy
   await expect(page.locator("#tien-nghi")).toHaveCount(0);
 });
 
-test("AI drafts a unit description from the form, with undo", async ({
+test("AI drafts a unit title and description from the form, with undo", async ({
   page,
 }) => {
   const api = await apiAs();
@@ -78,18 +78,22 @@ test("AI drafts a unit description from the form, with undo", async ({
   await login(page);
   await page.goto(`/admin/properties/${unit.id}/edit`);
   const description = page.locator("textarea[name=description]");
+  const title = page.locator("input[name=name]");
   const before = await description.inputValue();
+  const titleBefore = await title.inputValue();
   await page.locator("[name=area]").fill("88");
   const ai = page.getByRole("button", {
-    name: /mô tả bằng AI|Viết lại bằng AI/,
+    name: /tiêu đề & mô tả bằng AI/,
   });
   await ai.scrollIntoViewIfNeeded();
   await ai.click();
   await expect(description).toHaveValue(
     "Căn hộ rộng 88 m², sẵn sàng đón khách.\n\n- Phòng khách thoáng, nhiều ánh sáng.\n- Nội thất đầy đủ, dọn vào ở ngay.",
   );
+  await expect(title).toHaveValue("Căn 88 m² full nội thất, dọn vào ở ngay");
   await page.screenshot({ path: `${SHOTS}/ai-describe.png` });
   // Undo puts the previous text back; nothing is saved until "Lưu".
   await page.getByRole("button", { name: "Hoàn tác" }).click();
   await expect(description).toHaveValue(before);
+  await expect(title).toHaveValue(titleBefore);
 });

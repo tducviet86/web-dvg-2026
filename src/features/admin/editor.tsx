@@ -442,8 +442,17 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             maxLength: 160,
             wide: true,
             placeholder: "vd: Căn 2 phòng ngủ view sông Hàn",
+            hint: 'Có thể để AI đặt tiêu đề: bấm "Viết tiêu đề & mô tả bằng AI" ở mục Mô tả.',
           }),
-          slugField(160),
+          f("slug", "Đường dẫn (slug)", {
+            maxLength: 160,
+            pattern: SLUG,
+            patternMessage:
+              "chỉ gồm chữ thường không dấu, số và dấu gạch ngang (vd: can-2pn-view-song-han)",
+            placeholder: "Tự tạo từ tên căn",
+            wide: true,
+            hint: "Tự đổi theo tên căn (sửa tay để giữ cố định); nếu trùng với căn khác sẽ thêm mã căn. Địa chỉ cũ tự chuyển hướng sang địa chỉ mới.",
+          }),
           publishChoice,
           f("projectId", "Dự án", {
             type: "select",
@@ -454,6 +463,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           f("unitCode", "Mã căn / số phòng", {
             maxLength: 40,
             placeholder: "vd: A-12.05",
+            hint: "Để trống, hệ thống tự tạo mã (vd: DVG-3F2A).",
           }),
           f("location", "Khu vực", {
             required: true,
@@ -1384,6 +1394,24 @@ export function Editor({
     if (formRef.current) setLive(readForm(formRef.current, allFields));
   }
   /**
+   * A unit's slug follows its title while it still matches it (empty, or
+   * made from the title); typing a slug by hand stops that, clearing the
+   * slug starts it again.
+   */
+  const slugFollows = useRef(
+    kind === "properties" &&
+      (!str(data.slug) ||
+        str(data.slug).startsWith(slugify(str(data.name))) ||
+        !str(data.name)),
+  );
+  function followTitle() {
+    const form = formRef.current;
+    if (!form || kind !== "properties" || !slugFollows.current) return;
+    const name = form.elements.namedItem("name") as HTMLInputElement | null;
+    const slug = form.elements.namedItem("slug") as HTMLInputElement | null;
+    if (name && slug) slug.value = slugify(name.value).slice(0, 160);
+  }
+  /**
    * Units inherit the project's area and address: choosing a project fills
    * them, unless the editor already typed something different.
    */
@@ -1409,7 +1437,7 @@ export function Editor({
     ].some(Boolean);
     if (changed) toast.success(`Đã điền khu vực và địa chỉ theo ${next.name}.`);
   }
-  /** Folder for uploads: the unit code (or slug) typed in the form right now. */
+  /** Folder for uploads: the unit code (or slug, or name) typed right now. */
   function uploadPlace(): UploadPlace | null {
     const form = formRef.current;
     const value = (name: string) =>
@@ -1417,7 +1445,10 @@ export function Editor({
         form?.elements.namedItem(name) as HTMLInputElement | null
       )?.value.trim() ?? "";
     if (kind === "properties")
-      return { owner: "property", code: value("unitCode") || value("slug") };
+      return {
+        owner: "property",
+        code: value("unitCode") || value("slug") || slugify(value("name")),
+      };
     if (kind === "projects") return { owner: "project", code: value("slug") };
     if (kind === "posts") return { owner: "post", code: value("slug") };
     return null;
@@ -1812,8 +1843,10 @@ export function Editor({
             {item.ai && !locked && (
               <AiDescribe
                 targetId={id}
+                titleName="name"
                 getFacts={unitFacts}
                 onApplied={() => {
+                  followTitle();
                   setDirty(true);
                   snapshot();
                 }}
@@ -1908,6 +1941,7 @@ export function Editor({
               const name = form.elements.namedItem("name") as HTMLInputElement;
               const slug = form.elements.namedItem("slug") as HTMLInputElement;
               slug.value = slugify(name.value);
+              slugFollows.current = true;
               setDirty(true);
               snapshot();
             }}
@@ -1928,6 +1962,8 @@ export function Editor({
           const target = event.target as unknown as HTMLInputElement;
           if (kind === "properties" && target.name === "projectId")
             fillFromProject(target.value);
+          if (target.name === "slug") slugFollows.current = !target.value;
+          if (target.name === "name") followTitle();
           setDirty(true);
           snapshot();
         }}

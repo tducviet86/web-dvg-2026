@@ -15,6 +15,7 @@ import { Reveal } from "@/components/interactive";
 import { CorporateBanner } from "@/components/corporate-banner";
 import { SignatureFields } from "@/components/signature-fields";
 import { HomeShowcase } from "@/components/home-showcase";
+import { HomeRentals, pickFeaturedRentals } from "@/components/home-rentals";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { photos } from "@/data";
 import { siteUrl } from "@/lib/utils";
@@ -69,12 +70,13 @@ const fallbackSlides: ResolvedBanner[] = [
 
 export default async function Home({ params }: Props) {
   const locale = await pageLocale(params);
-  const [banners, { portfolio }, posts, settings] = await Promise.all([
-    getBanners(),
-    getSiteContent(),
-    getPosts(),
-    getPublicSettings().catch(() => ({}) as Record<string, string>),
-  ]);
+  const [banners, { portfolio, properties }, posts, settings] =
+    await Promise.all([
+      getBanners(),
+      getSiteContent(),
+      getPosts(),
+      getPublicSettings().catch(() => ({}) as Record<string, string>),
+    ]);
   // The company as a local real-estate agent (address, hours from Admin › Cài đặt).
   const agent = graphNode(agentSchema(settings));
   return (
@@ -123,6 +125,7 @@ export default async function Home({ params }: Props) {
         more={{ href: "/du-an/van-hanh", label: "Xem dự án vận hành" }}
         projects={portfolio.filter((p) => p.group === "operation")}
       />
+      <HomeRentals units={pickFeaturedRentals(properties)} />
       <SignatureFields />
       <section className="signature-journal" id="goc-nhin">
         <div className="container">

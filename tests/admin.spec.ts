@@ -293,6 +293,45 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await expect(page.locator(".rental-gallery")).toContainText("Video");
 });
 
+test("a unit saved without slug or code gets both; the page shows rent in đồng", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/admin/properties/new");
+  const form = page.locator(".admin-editor-page");
+  const slug = form.locator("[name=slug]");
+  // The slug follows the title until it is typed by hand.
+  await form.locator("[name=name]").fill("Căn tạm QA");
+  await expect(slug).toHaveValue("can-tam-qa");
+  await slug.fill("duong-dan-rieng");
+  await form.locator("[name=name]").fill("Căn tạm QA 2");
+  await expect(slug).toHaveValue("duong-dan-rieng");
+  await slug.fill("");
+  await form.locator("[name=name]").fill("Căn tự tạo đường dẫn QA");
+  await expect(slug).toHaveValue("can-tu-tao-duong-dan-qa");
+  await expect(form.locator("[name=unitCode]")).toHaveValue("");
+  await form
+    .locator("[name=description]")
+    .fill("Căn hộ kiểm tra đường dẫn và mã căn tự tạo.");
+  await form.locator("[name=price]").pressSequentially("25000000");
+  await form.getByRole("button", { name: "Tạo căn hộ" }).click();
+  await expect(page).toHaveURL(/\/admin\/properties$/);
+  const api = await apiAs();
+  const units = (await api.get(
+    "/admin/properties?q=tu tao duong dan qa",
+  )) as unknown as { data: { id: string; slug: string; unitCode: string }[] };
+  const unit = units.data[0];
+  expect(unit.slug).toBe("can-tu-tao-duong-dan-qa");
+  expect(unit.unitCode).toMatch(/^DVG-[0-9A-F]{4}$/);
+  await api.send("patch", `/admin/properties/${unit.id}`, {
+    status: "PUBLISHED",
+  });
+  await page.goto(`/cho-thue/${unit.slug}`);
+  await expect(page.locator(".room-contact-panel .room-price")).toHaveText(
+    "25.000.000 đồng / tháng",
+  );
+});
+
 test("settings persist and roles limit what staff can open", async ({
   page,
   browser,

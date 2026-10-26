@@ -470,7 +470,8 @@ export function payload(
     return {
       name: str(v.name).trim(),
       status: v.status || "DRAFT",
-      slug: str(v.slug).trim(),
+      // Empty: the server makes it from the name (and the unit code if taken).
+      slug: str(v.slug).trim() || undefined,
       projectId: v.projectId,
       propertyType: v.type,
       unitCode: orNull(v.unitCode),

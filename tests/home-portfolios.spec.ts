@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { API_URL } from "../playwright.config";
+import { apiAs } from "./helpers";
 import { telephoneHref } from "../src/lib/company-contact";
 
 test("project entry points separate introductions from operations", async ({
@@ -162,4 +163,47 @@ test("home: no search box, project rows open project pages", async ({
   await expect(page.locator("#du-an-van-hanh .showcase-card")).toHaveCount(5);
   await page.locator("#du-an-van-hanh .showcase-card a").first().click();
   await expect(page).toHaveURL(/\/du-an\/[a-z0-9-]+$/);
+});
+
+test("home features a few rental units under the operated projects", async ({
+  page,
+}) => {
+  // Sample (demo) units never show here: publish a real one first.
+  const api = await apiAs();
+  const units = (await api.get(
+    "/admin/properties?pageSize=100",
+  )) as unknown as { data: { projectId?: string; project?: { id: string } }[] };
+  const projectId = units.data[0].projectId ?? units.data[0].project!.id;
+  await api.send("post", "/admin/properties", {
+    name: "Căn tiêu biểu trang chủ QA",
+    projectId,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 72,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn hộ kiểm tra khối căn tiêu biểu trên trang chủ.",
+    rentPriceVnd: "18000000",
+    highlight: "hot",
+    status: "PUBLISHED",
+  });
+  await page.goto("/");
+  const section = page.getByRole("region", {
+    name: "Căn hộ cho thuê tiêu biểu",
+  });
+  await expect(section).toBeVisible();
+  await expect(section).toContainText("Căn tiêu biểu trang chủ QA");
+  // Right after "Dự án đang vận hành".
+  await expect(page.locator("#du-an-van-hanh + #can-ho-tieu-bieu")).toHaveCount(
+    1,
+  );
+  const tiles = section.locator(".rent-mini");
+  expect(await tiles.count()).toBeGreaterThan(0);
+  expect(await tiles.count()).toBeLessThanOrEqual(4);
+  await expect(tiles.first()).toContainText("triệu");
+  await section.getByRole("link", { name: "Xem tất cả căn cho thuê" }).click();
+  await expect(page).toHaveURL(/\/cho-thue$/);
+  await page.goBack();
+  await page.locator("#can-ho-tieu-bieu .rent-mini a").first().click();
+  await expect(page).toHaveURL(/\/cho-thue\/[^/]+$/);
 });

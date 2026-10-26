@@ -11,6 +11,10 @@ export function money(value: number) {
   );
 }
 
+/** Full amount in đồng: 25000000 → "25.000.000". */
+export const vndFull = (vnd: number) =>
+  new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(vnd);
+
 /** Sale price for visitors: "5 tỷ", "850 triệu". */
 export function salePrice(vnd: number) {
   return vnd >= 1e9 ? `${money(vnd / 1e9)} tỷ` : `${money(vnd / 1e6)} triệu`;

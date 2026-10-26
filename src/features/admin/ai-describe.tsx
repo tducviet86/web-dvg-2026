@@ -8,16 +8,20 @@ export type UnitFacts =
   { facts: string; listing: "rent" | "sale" | "both" } | { missing: string };
 
 /**
- * "Viết mô tả bằng AI" under a unit's description: Gemini drafts an opening
- * line and a few key points from the facts already typed in the form. The
- * draft replaces the text (with an undo) and is only saved with the form.
+ * "Viết tiêu đề & mô tả bằng AI" under a unit's description: Gemini drafts a
+ * catchy title, an opening line and a few key points from the facts already
+ * typed in the form. The draft replaces both texts (with an undo) and is
+ * only saved with the form.
  */
 export function AiDescribe({
   targetId,
+  titleName,
   getFacts,
   onApplied,
 }: {
   targetId: string;
+  /** `name` of the title input in the same form. */
+  titleName: string;
   getFacts: () => UnitFacts;
   onApplied: () => void;
 }) {
@@ -27,11 +31,23 @@ export function AiDescribe({
   function field() {
     return document.getElementById(targetId) as HTMLTextAreaElement | null;
   }
-  function write(text: string) {
-    const target = field();
+  function titleField() {
+    return field()?.form?.elements.namedItem(
+      titleName,
+    ) as HTMLInputElement | null;
+  }
+  function set(
+    target: HTMLInputElement | HTMLTextAreaElement | null,
+    text: string,
+  ) {
     if (!target) return;
     target.value = text;
     target.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  /** `title` null: keep the title as it is. */
+  function write(title: string | null, text: string) {
+    if (title !== null) set(titleField(), title);
+    set(field(), text);
     onApplied();
   }
 
@@ -41,21 +57,31 @@ export function AiDescribe({
       toast.error(facts.missing);
       return;
     }
-    const before = field()?.value ?? "";
+    const before = {
+      title: titleField()?.value ?? "",
+      text: field()?.value ?? "",
+    };
     setBusy(true);
     try {
-      const res = await api<{ data: { description: string } }>(
+      const res = await api<{ data: { title?: string; description: string } }>(
         "POST",
         "/admin/ai/unit-description",
         facts,
       );
-      write(res.data.description);
+      write(res.data.title || null, res.data.description);
       setHasText(true);
-      toast.success("Đã viết mô tả. Hãy đọc lại và chỉnh trước khi lưu.", {
-        action: before.trim()
-          ? { label: "Hoàn tác", onClick: () => write(before) }
-          : undefined,
-      });
+      toast.success(
+        "Đã viết tiêu đề và mô tả. Hãy đọc lại và chỉnh trước khi lưu.",
+        {
+          action:
+            before.title.trim() || before.text.trim()
+              ? {
+                  label: "Hoàn tác",
+                  onClick: () => write(before.title, before.text),
+                }
+              : undefined,
+        },
+      );
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -77,12 +103,13 @@ export function AiDescribe({
         {busy
           ? "AI đang viết…"
           : hasText
-            ? "Viết lại bằng AI"
-            : "Viết mô tả bằng AI"}
+            ? "Viết lại tiêu đề & mô tả bằng AI"
+            : "Viết tiêu đề & mô tả bằng AI"}
       </button>
       <small>
-        Dựa trên thông tin đã điền ở trên (dự án, diện tích, phòng, nội thất,
-        tiện nghi, giá). AI chỉ dùng thông tin bạn nhập.
+        Dựa trên dự án và thông tin đã điền (diện tích, phòng, nội thất, tiện
+        nghi, giá). AI chỉ dùng thông tin bạn nhập và thay cả tên căn lẫn mô tả;
+        có nút hoàn tác.
       </small>
     </div>
   );
