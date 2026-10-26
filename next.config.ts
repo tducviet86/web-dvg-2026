@@ -18,9 +18,14 @@ const config: NextConfig = {
     // Admin uploads (videos up to 100 MB) pass through the /api/v1 rewrite.
     proxyClientMaxBodySize: "110mb",
     proxyTimeout: 120_000,
+    // Pages already opened (or loaded on hover) are reused for a while, so
+    // going back and forth does not wait for the server again.
+    staleTimes: { dynamic: 60, static: 300 },
   },
   images: {
-    formats: ["image/avif", "image/webp"],
+    // WebP only: Cloudflare (free plan) caches one copy per URL and ignores
+    // "Vary: Accept", so every browser must be able to read that copy.
+    formats: ["image/webp"],
     // 70: full-screen hero photos (lighter, no visible difference).
     qualities: [70, 75],
     // Optimised copies are kept 30 days (default 4 h) so returning visitors

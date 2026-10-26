@@ -118,7 +118,7 @@ export default async function Home({ params }: Props) {
       <HomeShowcase
         id="du-an-van-hanh"
         kicker="DỰ ÁN ĐANG VẬN HÀNH"
-        title="Thuê, mua và ký gửi căn hộ"
+        title=""
         lead="Căn hộ thực tế tại các tòa nhà Đất Vàng Group đang vận hành."
         more={{ href: "/du-an/van-hanh", label: "Xem dự án vận hành" }}
         projects={portfolio.filter((p) => p.group === "operation")}

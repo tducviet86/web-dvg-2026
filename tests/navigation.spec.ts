@@ -19,15 +19,15 @@ test("navigation provides pending feedback, preserves document and supports back
     .locator(".site-footer")
     .getByRole("link", { name: "Về Đất Vàng", exact: true })
     .click();
-  await expect(
-    page.getByRole("status").filter({ hasText: "Đang chuyển trang" }),
-  ).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Đang chuyển trang…");
+  await expect(page.locator(".navigation-skeleton")).toBeVisible();
   release();
   await expect(page).toHaveURL(/\/gioi-thieu$/);
   await expect(page.locator(".navigation-shell")).toHaveAttribute(
     "data-navigating",
     "false",
   );
+  await expect(page.locator(".navigation-skeleton")).toHaveCount(0);
   await expect(page.locator("html")).toHaveAttribute(
     "data-navigation-probe",
     "retained",

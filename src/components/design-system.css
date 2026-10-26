@@ -587,6 +587,100 @@ textarea {
     transform: translate3d(0, -6px, 0);
   }
 }
+/* Slow page change: the next page's outline over the old one (after a beat,
+   so prefetched pages swap without a flash). The text stays for readers. */
+.navigation-status > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.navigation-skeleton {
+  position: fixed;
+  inset: var(--header-h) 0 0;
+  z-index: 40;
+  overflow: hidden;
+  background: var(--c-ivory-50);
+  animation: nav-sk-in var(--dur-2) var(--ease-out) 180ms backwards;
+}
+@keyframes nav-sk-in {
+  from {
+    opacity: 0;
+  }
+}
+.nav-sk-hero {
+  display: flex;
+  align-items: center;
+  height: min(62vh, 560px);
+  background: linear-gradient(100deg, #0d3128 0%, #174b3d 55%, #2a5d4c 100%);
+}
+.nav-sk-hero .container {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: 100%;
+}
+.nav-sk-line,
+.nav-sk-box,
+.nav-sk-cards > span {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #ffffff14 25%,
+    #ffffff2e 50%,
+    #ffffff14 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.nav-sk-line {
+  width: min(520px, 80%);
+  height: 38px;
+}
+.nav-sk-short {
+  width: min(340px, 60%);
+  height: 18px;
+}
+.nav-sk-box {
+  width: min(920px, 100%);
+  height: 120px;
+  margin-top: 18px;
+  border-radius: 18px;
+}
+.nav-sk-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-block: 40px;
+}
+.nav-sk-cards > span {
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  background-image: linear-gradient(
+    90deg,
+    #e7e9df 25%,
+    #f2f3ed 50%,
+    #e7e9df 75%
+  );
+}
+@media (max-width: 760px) {
+  .nav-sk-cards {
+    grid-template-columns: 1fr;
+  }
+  .nav-sk-cards > span + span {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-sk-line,
+  .nav-sk-box,
+  .nav-sk-cards > span {
+    animation: none;
+  }
+}
 /* Scroll reveal (components/interactive.tsx › Reveal). */
 .reveal[data-reveal="pending"] {
   opacity: 0;
@@ -2822,7 +2916,10 @@ textarea {
     var(--space-3);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: max(var(--gutter), calc((100% - var(--container-max)) / 2));
+  scroll-padding-inline: max(
+    var(--gutter),
+    calc((100% - var(--container-max)) / 2)
+  );
   scrollbar-width: thin;
   list-style: none;
 }
