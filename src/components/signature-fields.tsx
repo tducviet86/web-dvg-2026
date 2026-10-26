@@ -42,7 +42,7 @@ export function SignatureFields() {
   return (
     <section className="signature-fields" id="linh-vuc">
       <div className="container signature-section-top">
-        <span className="signature-kicker">{t("03 / LĨNH VỰC HOẠT ĐỘNG")}</span>
+        <span className="signature-kicker">{t("LĨNH VỰC HOẠT ĐỘNG")}</span>
         <p>
           {t("Mỗi tài sản một đặc điểm.")}
           <br />

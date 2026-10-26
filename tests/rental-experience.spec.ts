@@ -116,9 +116,13 @@ test("rental search, project landing, real map links and filter removal", async 
   await page.evaluate(() => {
     document.documentElement.dataset.searchProbe = "retained";
   });
-  const search = page.locator(".rental-search");
+  // One search box: the one over the photo.
+  await expect(page.locator("main form")).toHaveCount(1);
+  const search = page.locator(".hero-search");
   await search.locator('[name="q"]').fill("monarchy");
-  await search.getByRole("button", { name: "Tìm căn hộ", exact: true }).click();
+  await search
+    .getByRole("button", { name: "Tìm căn thuê", exact: true })
+    .click();
   await expect(page.locator(".property-card")).toHaveCount(5);
   await expect(page.locator("html")).toHaveAttribute(
     "data-search-probe",
@@ -129,11 +133,7 @@ test("rental search, project landing, real map links and filter removal", async 
       (s) => s.includes("Monarchy"),
     ),
   ).toBeTruthy();
-  await page
-    .getByRole("navigation", { name: "Thuê theo dự án" })
-    .getByRole("link", { name: "Sun Panoma", exact: true })
-    .click();
-  await expect(page).toHaveURL(/cho-thue\/du-an\/sun-panoma/);
+  await page.goto("/cho-thue/du-an/sun-panoma");
   await expect(
     page.locator('main a[href="https://maps.app.goo.gl/9z4BBFMd3ovgpS5y5"]'),
   ).toHaveCount(1);
@@ -142,7 +142,7 @@ test("rental search, project landing, real map links and filter removal", async 
     /16.0524094,108.236731/,
   );
   await page.goto("/cho-thue/du-an/sun-panoma?bedrooms=2&sort=price-asc");
-  await expect(page.locator('.rental-search [name="project"]')).toHaveCount(0);
+  await expect(page.locator('.hero-search [name="project"]')).toHaveCount(0);
   await page.locator(".filter-chips a").click();
   await expect(page).not.toHaveURL(/bedrooms=/);
   await expect(page).toHaveURL(/sun-panoma\?sort=price-asc/);
@@ -315,13 +315,13 @@ test("advice request popup validates, reaches the API with the project, and repo
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/cho-thue/du-an/sun-panoma");
   const open = page
-    .locator(".rental-intro-actions")
-    .getByRole("button", { name: "Nhờ tư vấn chọn căn" });
+    .locator(".hero-contact")
+    .getByRole("button", { name: "Tư vấn chọn căn" });
   await open.click();
   // The title changes with the outcome (form → success/error), so locate the
   // dialog by role only.
   const dialog = page.getByRole("dialog");
-  await expect(dialog).toHaveAccessibleName("Nhờ tư vấn chọn căn");
+  await expect(dialog).toHaveAccessibleName("Tư vấn chọn căn");
   await expect(dialog.locator(".inquiry-target")).toContainText("Sun Panoma");
   await dialog.getByRole("button", { name: "Gửi nhu cầu" }).click();
   await expect(
@@ -380,20 +380,64 @@ test("advice request popup validates, reaches the API with the project, and repo
   await expect(dialog.getByLabel("Họ và tên")).toHaveValue("Khách Kiểm Thử");
 });
 
-test("listing quick filters toggle and the owner popup opens", async ({
+test("detailed filters live in the hero search and the owner popup opens", async ({
   page,
 }) => {
   await page.goto("/cho-thue");
-  const quick = page.getByRole("navigation", { name: "Lọc nhanh" });
-  await quick.getByRole("link", { name: "2 phòng ngủ" }).click();
-  await expect(page).toHaveURL(/bedrooms=2/);
-  await expect(
-    quick.getByRole("link", { name: "2 phòng ngủ" }),
-  ).toHaveAttribute("aria-current", "true");
-  await quick.getByRole("link", { name: "2 phòng ngủ" }).click();
-  await expect(page).not.toHaveURL(/bedrooms=/);
+  const search = page.locator(".hero-search");
+  await search.getByRole("button", { name: /Bộ lọc chi tiết/ }).click();
+  await search.getByLabel("Diện tích").selectOption("60");
+  await search.getByLabel("Sắp xếp").selectOption("price-asc");
+  await search.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await expect(page).toHaveURL(/area=60/);
+  await expect(page).toHaveURL(/sort=price-asc/);
+  // Opened again on arrival, showing the filters in use.
+  await expect(search.getByLabel("Diện tích")).toHaveValue("60");
+  await page.locator(".filter-chips a", { hasText: "Từ 60 m²" }).click();
+  await expect(page).not.toHaveURL(/area=/);
   await page.getByRole("button", { name: "Gửi thông tin ký gửi" }).click();
   await expect(
     page.getByRole("dialog", { name: "Ký gửi căn hộ cho thuê" }),
   ).toBeVisible();
+});
+
+test("full-screen search: rent, buy and consign from the rental page", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/cho-thue");
+  const hero = page.locator(".rental-hero");
+  await expect(hero.getByRole("heading", { level: 1 })).toBeVisible();
+  // The photo fills the screen under the header.
+  const box = (await hero.boundingBox())!;
+  expect(box.height).toBeGreaterThan(700);
+
+  // Rent: results below, filtered, scrolled into view.
+  await hero.getByLabel("Phòng ngủ").selectOption("1");
+  await hero.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await expect(page).toHaveURL(/\/cho-thue\?bedrooms=1#can-ho$/);
+  await expect(page.locator(".rental-results-heading h2")).toHaveText(
+    "Khám phá căn hộ cho thuê",
+  );
+  await expect(page.locator("#can-ho")).toBeInViewport();
+
+  // Buy: the list switches to units for sale.
+  await page.goto("/cho-thue");
+  await hero.getByRole("tab", { name: "Mua" }).click();
+  await expect(hero.getByLabel("Giá bán")).toBeVisible();
+  await hero.getByRole("button", { name: "Tìm căn bán" }).click();
+  await expect(page).toHaveURL(/nhu-cau=mua/);
+  await expect(page.locator(".rental-results-heading h2")).toHaveText(
+    "Căn hộ đang bán",
+  );
+  await expect(hero.getByRole("tab", { name: "Mua" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.locator(".rental-card-grid .property-card")).toHaveCount(0);
+
+  // Consign: a request form, no search.
+  await hero.getByRole("tab", { name: "Ký gửi" }).click();
+  await hero.getByRole("button", { name: "Gửi thông tin ký gửi" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
 });

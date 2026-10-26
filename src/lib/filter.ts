@@ -35,3 +35,20 @@ export function filterProperties(items: Property[], f: Filters) {
             : 0,
     );
 }
+
+/** "?nhu-cau=mua" (also the older "mua-ban") lists units for sale. */
+export const isSaleSearch = (f: Filters) =>
+  f["nhu-cau"] === "mua" || f["nhu-cau"] === "mua-ban";
+
+/**
+ * The units a search box asks for: rentals (rent filters) or units for sale
+ * (same filters, the budget in tỷ via "gia-ban").
+ */
+export function searchUnits(items: Property[], f: Filters) {
+  const sale = isSaleSearch(f);
+  const listed = items.filter((p) => (sale ? p.forSale : p.forRent !== false));
+  const budget = Number(f["gia-ban"]) || 0;
+  return filterProperties(listed, sale ? { ...f, price: undefined } : f).filter(
+    (p) => !sale || !budget || (!!p.saleVnd && p.saleVnd <= budget * 1e9),
+  );
+}

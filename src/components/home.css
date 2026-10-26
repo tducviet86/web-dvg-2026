@@ -1,0 +1,278 @@
+/* ── Trang chủ: search on the banner, project rows, journal, call to action ── */
+
+/* Section heads: one quiet style for every home section. */
+.home-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px 48px;
+  margin-bottom: clamp(24px, 3vw, 40px);
+}
+.home-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--c-gold-700);
+}
+.home-kicker::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: currentColor;
+}
+.home-head h2 {
+  margin: 12px 0 0;
+  font: 400 clamp(30px, 3.2vw, 44px) / 1.12 var(--font-heading);
+  color: var(--c-green-800);
+}
+.home-head-aside {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  max-width: 380px;
+  text-align: right;
+}
+.home-head-aside p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #56655d;
+}
+.home-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--c-gold-500);
+  font-size: 14px;
+  color: var(--c-green-700);
+  transition: gap var(--dur-2) var(--ease-out);
+}
+.home-more:hover {
+  gap: 12px;
+}
+
+/* Project rows: tall photo cards, name over the photo. */
+.home-showcase {
+  padding-block: clamp(56px, 7vw, 96px) 0;
+}
+.home-showcase + .home-showcase {
+  padding-top: clamp(48px, 6vw, 80px);
+}
+.home-showcase + .home-showcase + * {
+  margin-top: clamp(56px, 7vw, 96px);
+}
+.showcase-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.showcase-row[data-count="5"] {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.showcase-card a {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--c-green-800);
+  isolation: isolate;
+}
+.showcase-photo img {
+  object-fit: cover;
+  transition: transform 0.9s var(--ease-out);
+}
+.showcase-card a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to top, #04150fe6 0%, #04150f40 45%, transparent 70%);
+  transition: opacity var(--dur-3) var(--ease-out);
+}
+.showcase-number {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  z-index: 2;
+  font: 400 15px/1 var(--font-heading);
+  letter-spacing: 1px;
+  color: #f3ecdc;
+}
+.showcase-body {
+  position: absolute;
+  inset: auto 18px 18px;
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  padding-right: 44px;
+}
+.showcase-body strong {
+  font: 400 clamp(20px, 1.7vw, 26px) / 1.15 var(--font-heading);
+  color: #fff;
+}
+.showcase-body small {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #e6e1d4;
+}
+.showcase-open {
+  position: absolute;
+  right: 16px;
+  bottom: 18px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #ffffff59;
+  border-radius: 50%;
+  color: #fff;
+  transition:
+    background var(--dur-2),
+    border-color var(--dur-2),
+    color var(--dur-2);
+}
+@media (hover: hover) {
+  .showcase-card a:hover .showcase-photo img {
+    transform: scale(1.06);
+  }
+  .showcase-card a:hover .showcase-open {
+    background: var(--c-gold-400);
+    border-color: var(--c-gold-400);
+    color: var(--c-green-900);
+  }
+}
+.showcase-card a:focus-visible {
+  outline: 3px solid var(--c-gold-500);
+  outline-offset: 3px;
+}
+
+/* Journal keeps its cards; only the head changes. */
+.corporate-home .signature-journal {
+  padding-block: clamp(56px, 7vw, 96px);
+}
+
+/* Call to action: a photo band like the page heroes. */
+.home-cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: clamp(380px, 52vh, 520px);
+  overflow: hidden;
+  color: #fff;
+  isolation: isolate;
+}
+.home-cta-photo {
+  z-index: -2;
+  object-fit: cover;
+}
+.home-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, #04150ff2 0%, #04150fb3 45%, #04150f33 100%);
+}
+.home-cta-inner {
+  padding-block: 56px;
+}
+.home-cta .home-kicker {
+  color: var(--c-gold-300);
+}
+.home-cta h2 {
+  max-width: 640px;
+  margin: 14px 0 12px;
+  font: 400 clamp(32px, 3.6vw, 50px) / 1.1 var(--font-heading);
+  color: #fff;
+}
+.home-cta p {
+  max-width: 520px;
+  margin: 0 0 26px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #d8d2c2;
+}
+.home-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.home-cta-actions .hero-submit {
+  background: var(--c-gold-400);
+  color: var(--c-green-900);
+}
+.home-cta-actions .hero-submit:hover {
+  background: var(--c-gold-300);
+}
+.home-cta-actions > a:not(.hero-submit) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 20px;
+  border: 1px solid #ffffff59;
+  border-radius: 11px;
+  color: #fff;
+  font-size: 15px;
+  transition:
+    border-color var(--dur-2),
+    background var(--dur-2);
+}
+.home-cta-actions > a:not(.hero-submit):hover {
+  border-color: var(--c-gold-400);
+  background: #ffffff14;
+}
+
+@media (max-width: 1080px) {
+  .showcase-row[data-count="5"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .home-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .home-head-aside {
+    justify-items: start;
+    text-align: left;
+  }
+  /* Phones: one row that scrolls sideways, cards snap into place. */
+  .showcase-row,
+  .showcase-row[data-count="5"] {
+    display: flex;
+    gap: 12px;
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .showcase-row::-webkit-scrollbar {
+    display: none;
+  }
+  .showcase-card {
+    flex: 0 0 76%;
+    scroll-snap-align: start;
+  }
+  .home-cta-actions > * {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .showcase-photo img {
+    transition: none;
+  }
+}

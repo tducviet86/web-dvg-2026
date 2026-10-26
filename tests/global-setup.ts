@@ -74,7 +74,8 @@ export default async function globalSetup() {
           s
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
-            .replace(/đ/g, "d").replace(/Đ/g, "D");
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "D");
         const items = (
           JSON.parse(body.input ?? "[]") as { i: number; vi: string }[]
         ).map(({ i, vi }) => ({ i, t: `${tag}: ${plain(vi)}` }));
@@ -85,6 +86,35 @@ export default async function globalSetup() {
               {
                 type: "model_output",
                 content: [{ type: "text", text: JSON.stringify({ items }) }],
+              },
+            ],
+          }),
+        );
+        return;
+      }
+      if (body.system_instruction?.includes("mô tả cho trang một căn hộ")) {
+        // Unit description: echo a fact so the test sees the form reached AI.
+        const input = String((body as { input?: string }).input ?? "");
+        const area = input.match(/Diện tích: ([^\n]+)/)?.[1] ?? "?";
+        reply.writeHead(200, { "content-type": "application/json" });
+        reply.end(
+          JSON.stringify({
+            status: "completed",
+            steps: [
+              {
+                type: "model_output",
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify({
+                      intro: `Căn hộ rộng ${area}, sẵn sàng đón khách.`,
+                      points: [
+                        "Phòng khách thoáng, nhiều ánh sáng.",
+                        "Nội thất đầy đủ, dọn vào ở ngay.",
+                      ],
+                    }),
+                  },
+                ],
               },
             ],
           }),

@@ -61,7 +61,7 @@ test("client components (popups, forms) are translated too", async ({
   // No entrance animation, so the accessibility check sees final colours.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/en/cho-thue");
-  const open = page.locator(".rental-intro-actions button.button-primary");
+  const open = page.locator(".hero-contact button").first();
   await reloadUntil(page, async () =>
     (await open.innerText()).includes("EN: "),
   );
@@ -71,7 +71,7 @@ test("client components (popups, forms) are translated too", async ({
     if (!(await dialog.isVisible())) await open.click();
     return (await dialog.locator("h2").innerText()).startsWith("EN: ");
   });
-  await expect(dialog.locator("h2")).toHaveText("EN: Nho tu van chon can");
+  await expect(dialog.locator("h2")).toHaveText("EN: Tu van chon can");
   const audit = await new AxeBuilder({ page })
     .include(".inquiry-dialog")
     .withTags(["wcag2a", "wcag2aa"])

@@ -1,16 +1,12 @@
 /** @jsxImportSource @/i18n/jsx */
 import { BackButton } from "@/components/layout/back-button";
-import { href } from "@/i18n/server";
-import Image from "next/image";
 import Link from "@/components/page-navigation";
 import {
   ArrowUpRight,
   ArrowRight,
   LayoutGrid,
   List,
-  MapPin,
   Check,
-  Phone,
   MessageCircle,
   KeyRound,
   Facebook,
@@ -18,23 +14,19 @@ import {
 import type { PortfolioProject } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { rentalFaqs } from "@/data/rental-content";
-import { filterProperties, type Filters } from "@/lib/filter";
-import { RentalSearch } from "./rental-search";
-import { PropertyCard } from "./cards";
+import {
+  filterProperties,
+  isSaleSearch,
+  searchUnits,
+  type Filters,
+} from "@/lib/filter";
+import { PropertyCard, SaleCard } from "./cards";
+import { SearchHero } from "./search-hero";
 import { ProjectMap } from "./project-map";
 import { CallContact } from "./call-contact";
-import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { money, siteUrl } from "@/lib/utils";
 import { InquiryDialog } from "./rental-inquiry";
 import { Counter } from "./counter";
-
-const quickFilters: { label: string; set: Record<string, string> }[] = [
-  { label: "Studio", set: { bedrooms: "0" } },
-  { label: "1 phòng ngủ", set: { bedrooms: "1" } },
-  { label: "2 phòng ngủ", set: { bedrooms: "2" } },
-  { label: "Dưới 15 triệu", set: { price: "15" } },
-  { label: "Còn trống", set: { status: "Còn trống" } },
-];
 
 export function RentalPage({
   filters,
@@ -53,7 +45,9 @@ export function RentalPage({
     ...filters,
     ...(project ? { project: project.slug } : {}),
   };
-  const result = filterProperties(content.properties, effective);
+  // Hero search: "Thuê" lists rentals, "Mua" lists units for sale.
+  const sale = isSaleSearch(filters);
+  const result = searchUnits(content.properties, effective);
   const visible = Math.min(100, Math.max(9, Number(filters.limit) || 9));
   const guide = project ? content.rentalGuides[project.slug] : null;
   const scope = filterProperties(
@@ -66,7 +60,30 @@ export function RentalPage({
     from: scope.length ? Math.min(...scope.map((p) => p.price)) : 0,
   };
   const showsDemo = result.some((p) => p.isDemo);
-  const cover = project || locations[0] || content.portfolio[0];
+  // Full-screen photos: the project (and its units) or every rental project.
+  const slides = (
+    project
+      ? [
+          { src: project.image, alt: project.imageAlt, caption: project.name },
+          ...scope
+            .filter((p) => !p.isDemo && p.image)
+            .map((p) => ({
+              src: p.image,
+              alt: p.imageAlt || p.name,
+              caption: p.name,
+            })),
+        ]
+      : locations.map((p) => ({
+          src: p.image,
+          alt: p.imageAlt,
+          caption: p.name,
+        }))
+  )
+    .filter((x, i, all) => x.src && all.findIndex((y) => y.src === x.src) === i)
+    .slice(0, 4);
+  const heroProjects = locations
+    .filter((p) => content.properties.some((r) => r.projectId === p.projectId))
+    .map((p) => [p.slug, p.name] as [string, string]);
   const nextUrl = (changes: Record<string, string | undefined>) => {
     const q = new URLSearchParams(
       Object.entries({ ...filters, ...changes }).filter(
@@ -108,9 +125,22 @@ export function RentalPage({
           }).replace(/</g, "\\u003c"),
         }}
       />
-      <section className="rental-intro container">
-        <div className="rental-intro-copy">
-          <nav className="breadcrumb" aria-label="Đường dẫn">
+      <SearchHero
+        slides={slides}
+        action={base}
+        mode={sale ? "mua" : "thue"}
+        values={effective}
+        projects={heroProjects}
+        locations={[...new Set(content.properties.map((p) => p.location))]}
+        project={project && { slug: project.slug, name: project.name }}
+        title={
+          project
+            ? `Căn hộ tại ${project.name}`
+            : "Bất động sản cho thuê & mua bán tại Đà Nẵng"
+        }
+        count={result.length}
+        crumbs={
+          <>
             <BackButton />
             <Link href="/">Trang chủ</Link>
             <span>/</span>
@@ -123,64 +153,10 @@ export function RentalPage({
             ) : (
               <span aria-current="page">Cho thuê căn hộ</span>
             )}
-          </nav>
-          <span className="signature-kicker">ĐẤT VÀNG LIVING / ĐÀ NẴNG</span>
-          <h1>
-            {project ? (
-              <>
-                Cho thuê căn hộ
-                <br />
-                <em>{project.name}.</em>
-              </>
-            ) : (
-              <>
-                Một nơi ở.
-                <br />
-                <em>Đúng nhịp sống bạn.</em>
-              </>
-            )}
-          </h1>
-          <p>
-            {guide?.intro ||
-              "Tìm căn hộ cho thuê tại Đà Nẵng theo dự án, ngân sách và không gian bạn cần. Xem thông tin căn, lưu lựa chọn yêu thích và gọi trực tiếp để hẹn xem."}
-          </p>
-          <div className="rental-intro-actions">
-            <InquiryDialog
-              mode="advice"
-              target={
-                project
-                  ? { projectSlug: project.slug, label: project.name }
-                  : {}
-              }
-              trigger={
-                <button type="button" className="button button-primary">
-                  <MessageCircle size={18} /> Nhờ tư vấn chọn căn
-                </button>
-              }
-            />
-            <a
-              className="rental-intro-call"
-              href={telephoneHref() || href("/lien-he")}
-            >
-              <Phone size={17} />
-              <span>
-                Gọi <strong>{companyHotline}</strong>
-              </span>
-              <ArrowUpRight size={19} />
-            </a>
-          </div>
-          {project?.facebook && (
-            <a
-              className="project-facebook rental-fanpage"
-              href={project.facebook}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Facebook size={15} aria-hidden="true" />
-              Fanpage {project.name}
-            </a>
-          )}
-          <dl className="rental-stats">
+          </>
+        }
+        stats={
+          <>
             <div>
               <dt>Căn đang trống</dt>
               <dd>
@@ -202,55 +178,26 @@ export function RentalPage({
                 </dd>
               </div>
             )}
-          </dl>
-        </div>
-        {/* No project yet (empty database): no cover to show. */}
-        {cover && (
-          <figure className="rental-intro-visual">
-            <Image
-              src={cover.image}
-              alt={cover.imageAlt}
-              fill
-              sizes="(max-width: 800px) 100vw, 42vw"
-              loading="eager"
-            />
-            <figcaption>
-              <MapPin size={18} />
+            {project?.facebook && (
               <div>
-                <strong>{cover.name}</strong>
-                <span>
-                  {cover.location} · {cover.imageType}
-                </span>
+                <dt>Fanpage</dt>
+                <dd>
+                  <a
+                    className="rental-hero-fanpage"
+                    href={project.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Facebook size={15} aria-hidden="true" />
+                    {project.name}
+                  </a>
+                </dd>
               </div>
-            </figcaption>
-            <span className="rental-visual-label">THE PLACES WE CALL HOME</span>
-          </figure>
-        )}
-      </section>
+            )}
+          </>
+        }
+      />
       <div className="container">
-        <RentalSearch
-          values={effective}
-          action={base}
-          projectId={project?.projectId}
-          content={content}
-        />
-        <nav className="rental-project-nav" aria-label="Thuê theo dự án">
-          <Link
-            href="/cho-thue#can-ho"
-            aria-current={!project ? "page" : undefined}
-          >
-            Tất cả dự án
-          </Link>
-          {locations.map((p) => (
-            <Link
-              key={p.id}
-              href={`/cho-thue/du-an/${p.slug}#can-ho`}
-              aria-current={p.id === project?.id ? "page" : undefined}
-            >
-              {p.name}
-            </Link>
-          ))}
-        </nav>
         <section
           id="can-ho"
           className="rental-results"
@@ -260,9 +207,13 @@ export function RentalPage({
             <div>
               <span className="signature-kicker">KHÔNG GIAN DÀNH CHO BẠN</span>
               <h2>
-                {project
-                  ? `Căn hộ tại ${project.name}`
-                  : "Khám phá căn hộ cho thuê"}
+                {sale
+                  ? project
+                    ? `Căn hộ đang bán tại ${project.name}`
+                    : "Căn hộ đang bán"
+                  : project
+                    ? `Căn hộ tại ${project.name}`
+                    : "Khám phá căn hộ cho thuê"}
               </h2>
             </div>
             <span className="rental-result-count">
@@ -270,25 +221,6 @@ export function RentalPage({
             </span>
           </div>
           <div className="rental-results-meta">
-            <nav className="rental-quick-filters" aria-label="Lọc nhanh">
-              {quickFilters.map((q) => {
-                const [key, value] = Object.entries(q.set)[0];
-                const active = effective[key] === value;
-                return (
-                  <Link
-                    key={q.label}
-                    href={nextUrl({
-                      [key]: active ? undefined : value,
-                      limit: undefined,
-                    })}
-                    aria-current={active ? "true" : undefined}
-                  >
-                    {active && <Check size={14} aria-hidden="true" />}
-                    {q.label}
-                  </Link>
-                );
-              })}
-            </nav>
             <div className="view-toggle">
               <Link
                 aria-label="Xem dạng lưới"
@@ -326,15 +258,19 @@ export function RentalPage({
                 >
                   {k === "project"
                     ? locations.find((p) => p.slug === v)?.name
-                    : k === "price"
-                      ? `Đến ${v} triệu`
-                      : k === "area"
-                        ? `Từ ${v} m²`
-                        : k === "bedrooms"
-                          ? v === "0"
-                            ? "Studio"
-                            : `${v} phòng ngủ`
-                          : v}{" "}
+                    : k === "nhu-cau"
+                      ? "Đang bán"
+                      : k === "gia-ban"
+                        ? `Đến ${v} tỷ`
+                        : k === "price"
+                          ? `Đến ${v} triệu`
+                          : k === "area"
+                            ? `Từ ${v} m²`
+                            : k === "bedrooms"
+                              ? v === "0"
+                                ? "Studio"
+                                : `${v} phòng ngủ`
+                              : v}{" "}
                   <span aria-hidden>×</span>
                 </Link>
               ))}
@@ -343,9 +279,15 @@ export function RentalPage({
             <div
               className={`rental-card-grid ${filters.view === "list" ? "list-view" : ""}`}
             >
-              {result.slice(0, visible).map((p, i) => (
-                <PropertyCard property={p} key={p.id} index={i} />
-              ))}
+              {result
+                .slice(0, visible)
+                .map((p, i) =>
+                  sale ? (
+                    <SaleCard property={p} key={p.id} />
+                  ) : (
+                    <PropertyCard property={p} key={p.id} index={i} />
+                  ),
+                )}
             </div>
           ) : (
             <div className="empty-state rental-empty">

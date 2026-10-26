@@ -37,7 +37,8 @@ import {
 } from "./adapters";
 import { ConfirmDialog, ErrorDialog, type FormIssue } from "./error-dialog";
 import { DatePicker } from "./date-picker";
-import { AMENITY_GROUPS } from "@/lib/amenities";
+import { AMENITY_GROUPS, amenityOf } from "@/lib/amenities";
+import { AiDescribe, type UnitFacts } from "./ai-describe";
 import { employmentOptions } from "@/lib/jobs";
 import { SectionsField, type Section } from "./sections-field";
 import {
@@ -108,6 +109,8 @@ type Field = {
   patternMessage?: string;
   /** Textarea that can receive images (`![chú thích](url)`). */
   media?: boolean;
+  /** Unit description: "Viết mô tả bằng AI" from the facts in the form. */
+  ai?: boolean;
   /** Textarea holding one item per line. */
   lines?: { max: number; itemMax: number };
   /** Customer-submitted data: shown but not editable after creation. */
@@ -636,8 +639,9 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             required: true,
             minLength: 10,
             maxLength: 10000,
-            rows: 6,
+            rows: 8,
             wide: true,
+            ai: true,
           }),
         ],
       },
@@ -1601,6 +1605,53 @@ export function Editor({
     snapshot();
   }
 
+  /** The unit as typed so far, for the AI description writer. */
+  function unitFacts(): UnitFacts {
+    const v = formRef.current ? readForm(formRef.current, allFields) : live;
+    const label = (options: [string, string][] | undefined, key: FormValue) =>
+      options?.find(([k]) => k === str(key))?.[1] ?? "";
+    const area = str(v.area);
+    if (!str(v.type) || !area)
+      return {
+        missing:
+          "Hãy chọn loại căn hộ và nhập diện tích trước khi nhờ AI viết mô tả.",
+      };
+    const bedrooms = str(v.bedrooms);
+    const amenities = ((v.amenities as string[] | undefined) ?? [])
+      .map((key) => amenityOf(key)?.label ?? key)
+      .join(", ");
+    const rent = v.forRent && str(v.price) ? `${str(v.price)} đ/tháng` : "";
+    const sale = v.forSale && str(v.salePrice) ? `${str(v.salePrice)} đ` : "";
+    const lines = [
+      ["Tên căn", str(v.name)],
+      ["Dự án", label(lookups.projects, v.projectId)],
+      ["Loại căn hộ", label(lookups.propertyTypes, v.type)],
+      ["Khu vực", str(v.location)],
+      ["Diện tích", `${area} m²`],
+      ["Phòng ngủ", bedrooms === "0" ? "Studio" : bedrooms],
+      ["Phòng tắm", str(v.bathrooms)],
+      ["Tầng", str(v.floor)],
+      ["Hướng", str(v.direction)],
+      ["Nội thất", label(furnishingOptions, v.furniture)],
+      ["Tiện nghi", amenities],
+      ["Giá thuê", rent],
+      ["Giá bán", sale],
+      ["Đặt cọc", str(v.depositMonths) ? `${str(v.depositMonths)} tháng` : ""],
+      [
+        "Thuê tối thiểu",
+        str(v.minimumLease) ? `${str(v.minimumLease)} tháng` : "",
+      ],
+      ["Ghi chú hiện có", str(v.description).slice(0, 1500)],
+    ]
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n");
+    return {
+      facts: lines,
+      listing: v.forRent && v.forSale ? "both" : v.forSale ? "sale" : "rent",
+    };
+  }
+
   function renderField(item: Field) {
     const id = `field-${item.key}`;
     const value: FormValue = data[item.key] ?? item.default ?? "";
@@ -1758,6 +1809,16 @@ export function Editor({
           <>
             <textarea {...shared} rows={item.rows ?? 4} />
             {item.media && !locked && <ContentImageInsert targetId={id} />}
+            {item.ai && !locked && (
+              <AiDescribe
+                targetId={id}
+                getFacts={unitFacts}
+                onApplied={() => {
+                  setDirty(true);
+                  snapshot();
+                }}
+              />
+            )}
           </>
         ) : item.type === "select" ? (
           <select {...shared} disabled={locked || undefined}>

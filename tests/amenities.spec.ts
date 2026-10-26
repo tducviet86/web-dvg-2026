@@ -8,7 +8,9 @@ test("amenities ticked in Admin appear grouped with icons on the unit page", asy
   page,
 }) => {
   const api = await apiAs();
-  const units = (await api.get("/admin/properties?pageSize=100")) as unknown as { data: { id: string; slug: string }[] };
+  const units = (await api.get(
+    "/admin/properties?pageSize=100",
+  )) as unknown as { data: { id: string; slug: string }[] };
   const unit = units.data.find((u) => u.slug === "can-ho-sun-panoma-demo-02")!;
   await login(page);
   await page.goto(`/admin/properties/${unit.id}/edit`);
@@ -61,4 +63,33 @@ test("amenities ticked in Admin appear grouped with icons on the unit page", asy
   });
   await page.reload();
   await expect(page.locator("#tien-nghi")).toHaveCount(0);
+});
+
+test("AI drafts a unit description from the form, with undo", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const units = (await api.get(
+    "/admin/properties?pageSize=100",
+  )) as unknown as {
+    data: { id: string; slug: string }[];
+  };
+  const unit = units.data.find((u) => u.slug === "can-ho-sun-panoma-demo-02")!;
+  await login(page);
+  await page.goto(`/admin/properties/${unit.id}/edit`);
+  const description = page.locator("textarea[name=description]");
+  const before = await description.inputValue();
+  await page.locator("[name=area]").fill("88");
+  const ai = page.getByRole("button", {
+    name: /mô tả bằng AI|Viết lại bằng AI/,
+  });
+  await ai.scrollIntoViewIfNeeded();
+  await ai.click();
+  await expect(description).toHaveValue(
+    "Căn hộ rộng 88 m², sẵn sàng đón khách.\n\n- Phòng khách thoáng, nhiều ánh sáng.\n- Nội thất đầy đủ, dọn vào ở ngay.",
+  );
+  await page.screenshot({ path: `${SHOTS}/ai-describe.png` });
+  // Undo puts the previous text back; nothing is saved until "Lưu".
+  await page.getByRole("button", { name: "Hoàn tác" }).click();
+  await expect(description).toHaveValue(before);
 });

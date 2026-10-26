@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import type { Metadata } from "next";
-import { ArrowUpRight, ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, KeyRound, Phone } from "lucide-react";
 import {
   getBanners,
   getPosts,
@@ -14,11 +14,13 @@ import type { ResolvedBanner } from "@/lib/banners";
 import { Reveal } from "@/components/interactive";
 import { CorporateBanner } from "@/components/corporate-banner";
 import { SignatureFields } from "@/components/signature-fields";
-import { HomeProjects } from "@/components/home-projects";
+import { HomeShowcase } from "@/components/home-showcase";
+import { companyHotline, telephoneHref } from "@/lib/company-contact";
+import { photos } from "@/data";
 import { siteUrl } from "@/lib/utils";
 import { HTML_LANG, isLocale, type Locale } from "@/i18n/config";
 import { localeAlternates, ogLocale } from "@/i18n/metadata";
-import { setRequestLocale, t } from "@/i18n/server";
+import { href, setRequestLocale, t } from "@/i18n/server";
 
 type Props = { params: Promise<{ locale: string }> };
 async function pageLocale(params: Props["params"]): Promise<Locale> {
@@ -96,23 +98,38 @@ export default async function Home({ params }: Props) {
       <h1 className="sr-only">
         Đất Vàng Group — Mua bán, cho thuê và ký gửi bất động sản
       </h1>
-      <HomeProjects group="development" projects={portfolio} />
-      <HomeProjects group="operation" projects={portfolio} />
+      <HomeShowcase
+        id="du-an-trien-khai"
+        kicker="DỰ ÁN ĐANG TRIỂN KHAI"
+        title="Dự án mới tại Đà Nẵng"
+        lead="Thông tin, vị trí và sản phẩm của các dự án đang phát triển."
+        more={{ href: "/du-an/trien-khai", label: "Xem dự án triển khai" }}
+        projects={portfolio.filter((p) => p.group === "development")}
+      />
+      <HomeShowcase
+        id="du-an-van-hanh"
+        kicker="DỰ ÁN ĐANG VẬN HÀNH"
+        title="Thuê, mua và ký gửi căn hộ"
+        lead="Căn hộ thực tế tại các tòa nhà Đất Vàng Group đang vận hành."
+        more={{ href: "/du-an/van-hanh", label: "Xem dự án vận hành" }}
+        projects={portfolio.filter((p) => p.group === "operation")}
+      />
       <SignatureFields />
       <section className="signature-journal" id="goc-nhin">
         <div className="container">
-          <div className="ds-section-head">
+          <div className="home-head">
             <div>
-              <span className="signature-kicker">04 / GÓC NHÌN ĐẤT VÀNG</span>
-              <h2>
-                Những câu chuyện <em>đáng chia sẻ.</em>
-              </h2>
+              <span className="home-kicker">GÓC NHÌN ĐẤT VÀNG</span>
+              <h2>Tin tức & cẩm nang</h2>
             </div>
-            <div className="ds-section-aside">
-              <p>Góc nhìn về không gian sống, con người và sự đồng hành.</p>
-              <Link href="/blog" className="signature-link">
+            <div className="home-head-aside">
+              <p>
+                Góc nhìn về không gian sống, thị trường và kinh nghiệm thuê,
+                mua.
+              </p>
+              <Link href="/blog" className="home-more">
                 Tất cả bài viết
-                <ArrowUpRight size={18} />
+                <ArrowRight size={17} aria-hidden="true" />
               </Link>
             </div>
           </div>
@@ -151,36 +168,36 @@ export default async function Home({ params }: Props) {
           </div>
         </div>
       </section>
-      <section className="signature-connect">
-        <div className="container">
-          <div className="signature-section-top">
-            <span className="signature-kicker">KẾT NỐI VỚI ĐẤT VÀNG GROUP</span>
-            <span>CÙNG BẮT ĐẦU MỘT ĐIỀU MỚI</span>
-          </div>
-          <div className="signature-connect-layout">
-            <h2>
-              Bạn có một ý tưởng.
-              <br />
-              <em>
-                Chúng ta có thể
-                <br />
-                bắt đầu từ đó.
-              </em>
-            </h2>
-            <Link href="/lien-he" className="signature-contact-orbit">
-              <ArrowUpRight size={48} />
-              <span>Liên hệ hợp tác</span>
+      <section className="home-cta" aria-labelledby="home-cta-title">
+        <Image
+          className="home-cta-photo"
+          src={
+            portfolio.find((p) => p.group === "operation")?.image ??
+            photos.building
+          }
+          alt=""
+          fill
+          sizes="100vw"
+        />
+        <div className="container home-cta-inner">
+          <span className="home-kicker">KẾT NỐI VỚI ĐẤT VÀNG GROUP</span>
+          <h2 id="home-cta-title">Cùng tìm không gian phù hợp với bạn</h2>
+          <p>
+            Thuê, mua hay ký gửi căn hộ tại Đà Nẵng: chia sẻ nhu cầu, tư vấn
+            viên sẽ liên hệ lại trong ngày.
+          </p>
+          <div className="home-cta-actions">
+            <Link href="/lien-he" className="hero-submit">
+              Liên hệ tư vấn
+              <ArrowRight size={18} aria-hidden="true" />
             </Link>
-          </div>
-          <div className="signature-connect-bottom">
-            <p>
-              Chia sẻ nhu cầu, trao đổi định hướng,
-              <br />
-              cùng tìm một cách đồng hành.
-            </p>
+            <a href={telephoneHref() || href("/lien-he")}>
+              <Phone size={16} aria-hidden="true" />
+              Gọi <strong>{companyHotline}</strong>
+            </a>
             <Link href="/hop-tac-chu-so-huu">
-              Dành cho chủ sở hữu
-              <ArrowRight size={17} />
+              <KeyRound size={16} aria-hidden="true" />
+              Ký gửi căn hộ
             </Link>
           </div>
         </div>

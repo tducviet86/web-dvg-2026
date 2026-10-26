@@ -7,88 +7,293 @@ import {
   MapPin,
   ArrowRight,
   Building2,
-  KeyRound,
-  Handshake,
   Facebook,
+  Phone,
 } from "lucide-react";
 import type { PortfolioProject } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { HomeProjects } from "./home-projects";
+import { PhotoHero, SearchHero } from "./search-hero";
+import type { HeroMode } from "./rental-hero-search";
+import { isSaleSearch, searchUnits, type Filters } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { ProjectMap } from "./project-map";
 import { complexSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
+import { money } from "@/lib/utils";
+import { companyHotline, telephoneHref } from "@/lib/company-contact";
 
+const directoryCrumbs = (current: string) => (
+  <>
+    <BackButton />
+    <Link href="/">Trang chủ</Link>
+    <span>/</span>
+    {current === "Dự án" ? (
+      <span aria-current="page">Dự án</span>
+    ) : (
+      <>
+        <Link href="/du-an">Dự án</Link>
+        <span>/</span>
+        <span aria-current="page">{current}</span>
+      </>
+    )}
+  </>
+);
+const photosOf = (projects: PortfolioProject[]) =>
+  projects
+    .filter((p) => p.image)
+    .slice(0, 4)
+    .map((p) => ({ src: p.image, alt: p.imageAlt }));
+
+/**
+ * /du-an, /du-an/trien-khai, /du-an/van-hanh: full-screen photos, then the
+ * projects. Operated projects get the same search as "Cho thuê" (results
+ * listed below); projects under construction get shortcuts and a call.
+ */
 export function ProjectDirectory({
   group,
-  projects,
+  content,
+  filters = {},
 }: {
   group?: "development" | "operation";
-  projects: PortfolioProject[];
+  content: SiteContent;
+  filters?: Filters;
 }) {
+  const projects = content.portfolio;
+  const development = projects.filter((p) => p.group === "development");
+  const operation = projects.filter((p) => p.group === "operation");
+
+  if (group === "operation") {
+    const ids = new Set(operation.map((p) => p.projectId));
+    const units = content.properties.filter((r) => ids.has(r.projectId));
+    const sale = isSaleSearch(filters);
+    const found = searchUnits(units, filters);
+    const rentals = units.filter((r) => r.forRent !== false && r.price > 0);
+    return (
+      <main
+        id="main"
+        className="portfolio-page portfolio-directory directory-operation signature-home"
+      >
+        <SearchHero
+          slides={photosOf(operation)}
+          crumbs={directoryCrumbs("Dự án đang vận hành")}
+          title="Dự án đang vận hành"
+          subtitle={`${operation.length} dự án · thuê, mua và ký gửi căn hộ`}
+          action="/du-an/van-hanh"
+          mode={
+            sale ? "mua" : filters["nhu-cau"] === "ky-gui" ? "ky-gui" : "thue"
+          }
+          values={filters}
+          projects={operation
+            .filter((p) => units.some((r) => r.projectId === p.projectId))
+            .map((p) => [p.slug, p.name] as [string, string])}
+          locations={[...new Set(units.map((r) => r.location))]}
+          count={found.length}
+          stats={
+            <>
+              <div>
+                <dt>Căn đang trống</dt>
+                <dd>{units.filter((r) => r.status === "Còn trống").length}</dd>
+              </div>
+              <div>
+                <dt>Dự án vận hành</dt>
+                <dd>{String(operation.length).padStart(2, "0")}</dd>
+              </div>
+              {rentals.length > 0 && (
+                <div>
+                  <dt>Giá thuê từ</dt>
+                  <dd>
+                    {money(Math.min(...rentals.map((r) => r.price)))}
+                    <small> triệu/tháng</small>
+                  </dd>
+                </div>
+              )}
+            </>
+          }
+        />
+        <div className="container">
+          <section id="can-ho" className="operation-content">
+            <div className="operation-content-heading">
+              <div>
+                <span className="signature-kicker">
+                  {sale ? "MUA BÁN" : "KHÁM PHÁ KHÔNG GIAN SỐNG"}
+                </span>
+                <h2>{sale ? "Căn hộ đang bán" : "Căn hộ cho thuê"}</h2>
+              </div>
+              <span className="rental-result-count">
+                {found.length} căn phù hợp
+              </span>
+            </div>
+            {found.length ? (
+              <div className={sale ? "sale-grid" : "grid grid-3"}>
+                {found
+                  .slice(0, 12)
+                  .map((r) =>
+                    sale ? (
+                      <SaleCard key={r.id} property={r} />
+                    ) : (
+                      <PropertyCard key={r.id} property={r} />
+                    ),
+                  )}
+              </div>
+            ) : (
+              <div className="inventory-empty sale-empty">
+                <Building2 size={25} />
+                <div>
+                  <strong>Chưa có căn phù hợp với bộ lọc</strong>
+                  <p>Thử bỏ bớt bộ lọc hoặc gọi để được tìm căn.</p>
+                </div>
+                <CallContact label="Gọi tư vấn" />
+              </div>
+            )}
+            {found.length > 12 && (
+              <Link
+                className="button button-outline directory-more"
+                href={`/cho-thue${sale ? "?nhu-cau=mua" : ""}#can-ho`}
+              >
+                Xem tất cả {found.length} căn <ArrowRight size={18} />
+              </Link>
+            )}
+          </section>
+          <div className="operation-content-heading directory-projects-title">
+            <h2>Các dự án đang vận hành</h2>
+            <span className="rental-result-count">
+              {operation.length} dự án
+            </span>
+          </div>
+        </div>
+        <HomeProjects group="operation" projects={projects} />
+      </main>
+    );
+  }
+
+  if (group === "development")
+    return (
+      <main
+        id="main"
+        className="portfolio-page portfolio-directory directory-development signature-home"
+      >
+        <PhotoHero
+          slides={photosOf(development)}
+          crumbs={directoryCrumbs("Dự án đang triển khai")}
+          title="Dự án đang triển khai"
+          subtitle={`${development.length} dự án tại Đà Nẵng`}
+          scroll={{ label: "Xem các dự án", target: "#du-an-trien-khai" }}
+        >
+          <div className="hero-shortcuts">
+            <nav aria-label="Chọn dự án">
+              {development.map((p) => (
+                <Link key={p.id} href={`/du-an/${p.slug}`}>
+                  <span>
+                    <strong>{p.name}</strong>
+                    <small>{p.location}</small>
+                  </span>
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </Link>
+              ))}
+            </nav>
+            <div className="hero-contact">
+              <Link href="/lien-he?intent=mua-ban">
+                <Building2 size={16} aria-hidden="true" />
+                Tư vấn dự án
+              </Link>
+              <a href={telephoneHref() || href("/lien-he")}>
+                <Phone size={16} aria-hidden="true" />
+                Gọi <strong>{companyHotline}</strong>
+              </a>
+            </div>
+          </div>
+        </PhotoHero>
+        <HomeProjects group="development" projects={projects} />
+      </main>
+    );
+
   return (
     <main
       id="main"
-      className="portfolio-page portfolio-directory signature-home"
+      className="portfolio-page portfolio-directory directory-all signature-home"
     >
-      <header className="container portfolio-intro">
-        <span className="signature-kicker">DANH MỤC ĐẤT VÀNG GROUP</span>
-        <h1>
-          Dự án &<br />
-          <em>những giá trị kết nối.</em>
-        </h1>
-        <p>
-          Tìm hiểu dự án triển khai. Khám phá căn hộ và các dịch vụ mua bán, cho
-          thuê, ký gửi tại dự án đang vận hành.
-        </p>
-        <nav className="portfolio-tabs" aria-label="Nhóm dự án">
+      <PhotoHero
+        slides={photosOf(projects)}
+        crumbs={directoryCrumbs("Dự án")}
+        title="Dự án của Đất Vàng Group"
+        subtitle="Dự án đang triển khai và dự án đang vận hành tại Đà Nẵng"
+        scroll={{ label: "Xem tất cả dự án", target: "#du-an-trien-khai" }}
+      >
+        <nav className="hero-groups" aria-label="Nhóm dự án">
           {[
-            ["Tất cả", "/du-an", undefined],
-            ["Triển khai", "/du-an/trien-khai", "development"],
-            ["Vận hành", "/du-an/van-hanh", "operation"],
-          ].map(([label, href, value]) => (
-            <Link
-              key={href}
-              href={href!}
-              aria-current={value === group ? "page" : undefined}
-            >
-              {label}
-              <ArrowUpRight size={16} />
+            {
+              href: "/du-an/trien-khai",
+              label: "Đang triển khai",
+              note: "Dự án mới, tư vấn mua",
+              items: development,
+            },
+            {
+              href: "/du-an/van-hanh",
+              label: "Đang vận hành",
+              note: "Thuê, mua và ký gửi căn hộ",
+              items: operation,
+            },
+          ].map((g) => (
+            <Link key={g.href} href={g.href}>
+              <span className="hero-group-count">
+                {String(g.items.length).padStart(2, "0")}
+              </span>
+              <span>
+                <strong>{g.label}</strong>
+                <small>{g.note}</small>
+              </span>
+              <ArrowUpRight size={20} aria-hidden="true" />
             </Link>
           ))}
         </nav>
-      </header>
-      {(!group || group === "development") && (
-        <HomeProjects group="development" projects={projects} />
-      )}
-      {(!group || group === "operation") && (
-        <HomeProjects group="operation" projects={projects} />
-      )}
+      </PhotoHero>
+      <HomeProjects group="development" projects={projects} />
+      <HomeProjects group="operation" projects={projects} />
     </main>
   );
 }
-const modes = [
-  { key: "mua-ban", label: "Mua bán", icon: Building2 },
-  { key: "thue", label: "Cho thuê", icon: KeyRound },
-  { key: "ky-gui", label: "Ký gửi", icon: Handshake },
-];
 export function PortfolioDetail({
   project: p,
   content,
-  mode = "thue",
+  filters = {},
 }: {
   project: PortfolioProject;
   content: SiteContent;
-  mode?: string;
+  filters?: Filters;
 }) {
   const development = p.group === "development";
   const story = content.stories[p.id];
-  const active = modes.some((m) => m.key === mode) ? mode : "thue";
+  // The hero search drives the page: rent (default), buy or consign.
+  const active: HeroMode = isSaleSearch(filters)
+    ? "mua"
+    : filters["nhu-cau"] === "ky-gui"
+      ? "ky-gui"
+      : "thue";
   const rooms = content.properties.filter((r) => r.projectId === p.projectId);
   // A unit can be offered for rent, for sale, or both (Admin › Căn hộ).
-  const rentals = rooms.filter((r) => r.forRent !== false);
-  const sales = rooms.filter((r) => r.forSale);
+  const found = searchUnits(rooms, filters);
+  const slides = [
+    { src: p.image, alt: p.imageAlt },
+    ...rooms
+      .filter((r) => !r.isDemo && r.image)
+      .map((r) => ({ src: r.image, alt: r.imageAlt || r.name })),
+  ]
+    .filter((x, i, all) => x.src && all.findIndex((y) => y.src === x.src) === i)
+    .slice(0, 4);
+  const crumbs = (
+    <>
+      <BackButton />
+      <Link href="/">Trang chủ</Link>
+      <span>/</span>
+      <Link href={`/du-an/${development ? "trien-khai" : "van-hanh"}`}>
+        {development ? "Dự án đang triển khai" : "Dự án đang vận hành"}
+      </Link>
+      <span>/</span>
+      <span aria-current="page">{p.name}</span>
+    </>
+  );
   return (
     <main
       id="main"
@@ -113,44 +318,88 @@ export function PortfolioDetail({
           />
         ) : null;
       })()}
-      <div className="container">
-        <nav className="breadcrumb" aria-label="Đường dẫn">
-          <BackButton />
-          <Link href="/">Trang chủ</Link>
-          <span>/</span>
-          <Link href={`/du-an/${development ? "trien-khai" : "van-hanh"}`}>
-            {development ? "Dự án đang triển khai" : "Dự án đang vận hành"}
-          </Link>
-          <span>/</span>
-          <span aria-current="page">{p.name}</span>
-        </nav>
-        <header className="portfolio-detail-heading">
-          <div>
-            <h1>{p.name}</h1>
-            <p className="location">
-              <MapPin size={16} />
+      {!development && (
+        <SearchHero
+          slides={slides}
+          crumbs={crumbs}
+          title={p.name}
+          subtitle={
+            <>
+              <MapPin size={16} aria-hidden="true" />
               {p.location}
-            </p>
-          </div>
-          <p>{story.intro}</p>
-        </header>
-        <figure className="portfolio-cover">
-          <Image
-            src={p.image}
-            alt={p.imageAlt}
-            fill
-            sizes="100vw"
-            loading="eager"
-          />
-          <figcaption>
-            {p.imageType}
-            {p.source && (
-              <a href={p.source} target="_blank" rel="noreferrer">
-                Nguồn thông tin & hình ảnh <ArrowUpRight size={13} />
-              </a>
-            )}
-          </figcaption>
-        </figure>
+            </>
+          }
+          action={`/du-an/${p.slug}`}
+          mode={active}
+          values={filters}
+          project={{ slug: p.slug, name: p.name }}
+          count={found.length}
+          stats={
+            <>
+              <div>
+                <dt>Căn đang trống</dt>
+                <dd>{rooms.filter((r) => r.status === "Còn trống").length}</dd>
+              </div>
+              {rooms.some((r) => r.forRent !== false && r.price > 0) && (
+                <div>
+                  <dt>Giá thuê từ</dt>
+                  <dd>
+                    {money(
+                      Math.min(
+                        ...rooms
+                          .filter((r) => r.forRent !== false && r.price > 0)
+                          .map((r) => r.price),
+                      ),
+                    )}
+                    <small> triệu/tháng</small>
+                  </dd>
+                </div>
+              )}
+              {rooms.some((r) => r.forSale) && (
+                <div>
+                  <dt>Căn đang bán</dt>
+                  <dd>{rooms.filter((r) => r.forSale).length}</dd>
+                </div>
+              )}
+            </>
+          }
+        />
+      )}
+      <div className="container">
+        {development && (
+          <>
+            <nav className="breadcrumb" aria-label="Đường dẫn">
+              {crumbs}
+            </nav>
+            <header className="portfolio-detail-heading">
+              <div>
+                <h1>{p.name}</h1>
+                <p className="location">
+                  <MapPin size={16} />
+                  {p.location}
+                </p>
+              </div>
+              <p>{story.intro}</p>
+            </header>
+            <figure className="portfolio-cover">
+              <Image
+                src={p.image}
+                alt={p.imageAlt}
+                fill
+                sizes="100vw"
+                loading="eager"
+              />
+              <figcaption>
+                {p.imageType}
+                {p.source && (
+                  <a href={p.source} target="_blank" rel="noreferrer">
+                    Nguồn thông tin & hình ảnh <ArrowUpRight size={13} />
+                  </a>
+                )}
+              </figcaption>
+            </figure>
+          </>
+        )}
         {development ? (
           <>
             <nav className="portfolio-anchor-nav" aria-label="Nội dung dự án">
@@ -243,110 +492,23 @@ export function PortfolioDetail({
           </>
         ) : (
           <>
-            <section className="operation-overview">
-              <div>
-                <span className="signature-kicker">
-                  ĐỒNG HÀNH CÙNG KHÁCH HÀNG & CHỦ SỞ HỮU
-                </span>
-                <h2>
-                  Bạn đang quan tâm
-                  <br />
-                  <em>điều gì tại {p.name}?</em>
-                </h2>
-              </div>
-              <div>
-                <p>{story.paragraphs[0]}</p>
-                {p.facebook && (
-                  <a
-                    href={p.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="project-facebook project-facebook-lg"
-                  >
-                    <Facebook size={18} aria-hidden="true" />
-                    Theo dõi fanpage {p.name}
-                    <ArrowUpRight size={16} aria-hidden="true" />
-                  </a>
-                )}
-              </div>
-            </section>
-            <nav className="operation-modes" aria-label="Nhu cầu tại dự án">
-              {modes.map((m) => (
-                <Link
-                  key={m.key}
-                  href={`/du-an/${p.slug}?nhu-cau=${m.key}#nhu-cau`}
-                  aria-current={active === m.key ? "page" : undefined}
+            <section className="operation-intro">
+              <p>{story.paragraphs[0] || story.intro}</p>
+              {p.facebook && (
+                <a
+                  href={p.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="project-facebook project-facebook-lg"
                 >
-                  <m.icon size={22} />
-                  <span>{m.label}</span>
-                  <ArrowUpRight size={20} />
-                </Link>
-              ))}
-            </nav>
-            <section id="nhu-cau" className="operation-content">
-              {active === "thue" ? (
-                <>
-                  <div className="operation-content-heading">
-                    <div>
-                      <span className="signature-kicker">
-                        KHÁM PHÁ KHÔNG GIAN SỐNG
-                      </span>
-                      <h2>Căn hộ cho thuê tại {p.name}</h2>
-                    </div>
-                    <Link
-                      href={`/cho-thue/du-an/${p.slug}`}
-                      className="text-link"
-                    >
-                      Tìm & lọc căn hộ <ArrowUpRight size={18} />
-                    </Link>
-                  </div>
-                  <p className="portfolio-data-note">
-                    Danh sách căn hộ, giá và ảnh nội thất là dữ liệu minh họa.
-                    Liên hệ để xác nhận quỹ căn và hiện trạng thực tế.
-                  </p>
-                  <div className="grid grid-3">
-                    {rentals.map((r) => (
-                      <PropertyCard key={r.id} property={r} />
-                    ))}
-                  </div>
-                </>
-              ) : active === "mua-ban" ? (
-                <div className="sale-showcase">
-                  <div className="sale-showcase-head">
-                    <div>
-                      <span className="signature-kicker">
-                        MUA BÁN · {p.name}
-                      </span>
-                      <h2>
-                        Căn hộ đang <em>chào bán.</em>
-                      </h2>
-                    </div>
-                    {sales.length > 0 && (
-                      <span className="sale-showcase-count">
-                        {sales.length} căn
-                      </span>
-                    )}
-                  </div>
-                  {sales.length > 0 ? (
-                    <div className="sale-grid">
-                      {sales.map((r) => (
-                        <SaleCard key={r.id} property={r} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="inventory-empty sale-empty">
-                      <Building2 size={25} />
-                      <div>
-                        <strong>
-                          Chưa có căn bán được công bố trên website
-                        </strong>
-                        <p>Gọi để trao đổi quỹ căn đang bán tại dự án.</p>
-                      </div>
-                      <CallContact label="Gọi tư vấn mua bán" />
-                    </div>
-                  )}
-                </div>
-              ) : (
+                  <Facebook size={18} aria-hidden="true" />
+                  Theo dõi fanpage {p.name}
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </a>
+              )}
+            </section>
+            <section id="can-ho" className="operation-content">
+              {active === "ky-gui" ? (
                 <div className="operation-service">
                   <div>
                     <span className="signature-kicker">
@@ -399,6 +561,68 @@ export function PortfolioDetail({
                     ))}
                   </ol>
                 </div>
+              ) : (
+                <>
+                  <div className="operation-content-heading">
+                    <div>
+                      <span className="signature-kicker">
+                        {active === "mua"
+                          ? `MUA BÁN · ${p.name}`
+                          : "KHÁM PHÁ KHÔNG GIAN SỐNG"}
+                      </span>
+                      <h2>
+                        {active === "mua"
+                          ? `Căn hộ đang bán tại ${p.name}`
+                          : `Căn hộ cho thuê tại ${p.name}`}
+                      </h2>
+                    </div>
+                    <span className="rental-result-count">
+                      {found.length} căn phù hợp
+                    </span>
+                  </div>
+                  {found.some((r) => r.isDemo) && (
+                    <p className="portfolio-data-note">
+                      Một số căn là dữ liệu minh họa. Liên hệ để xác nhận quỹ
+                      căn và hiện trạng thực tế.
+                    </p>
+                  )}
+                  {found.length ? (
+                    <div
+                      className={active === "mua" ? "sale-grid" : "grid grid-3"}
+                    >
+                      {found.map((r) =>
+                        active === "mua" ? (
+                          <SaleCard key={r.id} property={r} />
+                        ) : (
+                          <PropertyCard key={r.id} property={r} />
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <div className="inventory-empty sale-empty">
+                      <Building2 size={25} />
+                      <div>
+                        <strong>
+                          {active === "mua"
+                            ? "Chưa có căn bán được công bố trên website"
+                            : "Chưa có căn phù hợp với bộ lọc"}
+                        </strong>
+                        <p>
+                          {active === "mua"
+                            ? "Gọi để trao đổi quỹ căn đang bán tại dự án."
+                            : "Thử bỏ bớt bộ lọc hoặc gọi để được tìm căn."}
+                        </p>
+                      </div>
+                      <CallContact
+                        label={
+                          active === "mua"
+                            ? "Gọi tư vấn mua bán"
+                            : "Gọi tư vấn thuê"
+                        }
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </section>
             <ProjectMap place={content.locations[p.projectId]} />

@@ -5,6 +5,7 @@ import "@/components/signature-home.css";
 import "@/components/portfolio-pages.css";
 import "@/components/rentals.css";
 import "@/components/jobs.css";
+import "@/components/home.css";
 // Design system last: it settles the page stylesheets on shared tokens.
 import "@/components/design-system.css";
 import { notFound } from "next/navigation";

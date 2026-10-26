@@ -45,7 +45,7 @@ const copy: Record<
   }
 > = {
   advice: {
-    title: "Nhờ tư vấn chọn căn",
+    title: "Tư vấn chọn căn",
     lead: "Cho chúng tôi biết ngân sách và nhu cầu, tư vấn viên sẽ gửi các căn phù hợp.",
     intent: "Tìm thuê bất động sản",
     source: "Cho thuê căn hộ",
@@ -106,7 +106,7 @@ function compose(mode: InquiryMode, target: InquiryTarget, v: Values) {
     .filter(Boolean)
     .join(" · ");
   if (mode === "advice") {
-    lines.push(`Nhờ tư vấn chọn căn hộ thuê${unit ? ` tại ${unit}` : ""}.`);
+    lines.push(`Tư vấn chọn căn hộ thuê${unit ? ` tại ${unit}` : ""}.`);
     if (v.budget) lines.push(`Ngân sách: ${v.budget}.`);
   } else {
     lines.push(

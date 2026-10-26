@@ -107,10 +107,11 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
           : "Dự án đang vận hành"
         : "Dự án bất động sản",
       description: "Danh mục dự án và dịch vụ bất động sản của Đất Vàng Group.",
-      render: async () => (
+      render: async (filters) => (
         <ProjectDirectory
           group={group}
-          projects={(await getSiteContent()).portfolio}
+          content={await getSiteContent()}
+          filters={filters}
         />
       ),
     };
@@ -217,7 +218,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
         <PortfolioDetail
           project={portfolio}
           content={content}
-          mode={filters["nhu-cau"]}
+          filters={filters}
         />
       ),
     };

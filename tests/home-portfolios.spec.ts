@@ -38,10 +38,14 @@ test("project entry points separate introductions from operations", async ({
   await expect(page).toHaveURL(/nhu-cau=ky-gui/);
   await expect(page.locator(".consign-checklist")).toBeVisible();
   await expect(page.locator(".service-steps li")).toHaveCount(3);
-  await page
-    .getByRole("navigation", { name: "Nhu cầu tại dự án" })
-    .getByRole("link", { name: "Mua bán", exact: true })
-    .click();
+  const hero = page.locator(".hero-search");
+  await expect(hero.getByRole("tab", { name: "Ký gửi" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await hero.getByRole("tab", { name: "Mua" }).click();
+  await hero.getByRole("button", { name: "Tìm căn bán" }).click();
+  await expect(page).toHaveURL(/nhu-cau=mua/);
   await expect(page.locator(".inventory-empty")).toContainText(
     "Chưa có căn bán",
   );
@@ -116,4 +120,46 @@ test("project and room layouts fit mobile with accessible content", async ({
       route,
     ).toEqual([]);
   }
+});
+
+test("project directories open on full-screen photos with their own shortcuts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // Vận hành: the same search as "Cho thuê", results listed below.
+  await page.goto("/du-an/van-hanh");
+  await expect(page.locator("main h1")).toHaveText("Dự án đang vận hành");
+  await expect(page.locator("main form")).toHaveCount(1);
+  await expect(page.locator("#can-ho .property-card")).not.toHaveCount(0);
+  const search = page.locator(".hero-search");
+  await search.getByRole("tab", { name: "Mua" }).click();
+  await search.getByRole("button", { name: "Tìm căn bán" }).click();
+  await expect(page).toHaveURL(/\/du-an\/van-hanh\?nhu-cau=mua/);
+  await expect(page.locator("#can-ho h2")).toHaveText("Căn hộ đang bán");
+  // Triển khai: shortcuts to each project, no search.
+  await page.goto("/du-an/trien-khai");
+  await expect(page.locator("main form")).toHaveCount(0);
+  const picks = page.getByRole("navigation", { name: "Chọn dự án" });
+  await expect(picks.getByRole("link")).not.toHaveCount(0);
+  await picks.getByRole("link").first().click();
+  await expect(page).toHaveURL(/\/du-an\/[a-z0-9-]+$/);
+  // Tất cả: two entry cards.
+  await page.goto("/du-an");
+  const groups = page.getByRole("navigation", { name: "Nhóm dự án" });
+  await groups.getByRole("link", { name: /Đang vận hành/ }).click();
+  await expect(page).toHaveURL(/\/du-an\/van-hanh$/);
+});
+
+test("home: no search box, project rows open project pages", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await expect(page.locator("main form")).toHaveCount(0);
+  await expect(
+    page.locator("#du-an-trien-khai .showcase-card"),
+  ).not.toHaveCount(0);
+  await expect(page.locator("#du-an-van-hanh .showcase-card")).toHaveCount(5);
+  await page.locator("#du-an-van-hanh .showcase-card a").first().click();
+  await expect(page).toHaveURL(/\/du-an\/[a-z0-9-]+$/);
 });

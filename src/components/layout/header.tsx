@@ -273,7 +273,7 @@ export function SiteHeader({ services = [] }: { services?: NavLink[] }) {
           <div className="header-actions">
             <LanguageSwitcher />
             <Link className="header-cta" href="/cho-thue">
-              {t("Tìm căn hộ thuê")}
+              {t("Tìm kiếm bất động sản")}
               <ArrowUpRight size={15} />
             </Link>
             <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -368,7 +368,7 @@ export function SiteHeader({ services = [] }: { services?: NavLink[] }) {
                         href="/cho-thue"
                         onClick={() => setOpen(false)}
                       >
-                        {t("Tìm căn hộ thuê")}
+                        {t("Tìm kiếm bất động sản")}
                         <ArrowUpRight size={18} />
                       </Link>
                     </div>

@@ -21,6 +21,8 @@ const config: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    // 70: full-screen hero photos (lighter, no visible difference).
+    qualities: [70, 75],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       ...mediaHosts.map((url) => ({

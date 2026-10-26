@@ -19,7 +19,7 @@ test("corporate homepage uses company logo and image banner without sales UI", a
     page.getByRole("heading", { name: /Bất động sản.*Giải pháp cho bạn/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Liên hệ hợp tác", exact: true }),
+    page.getByRole("link", { name: "Liên hệ tư vấn", exact: true }),
   ).toHaveAttribute("href", "/lien-he");
   await page.getByRole("button", { name: "Tạm dừng trình chiếu" }).click();
   await expect(
