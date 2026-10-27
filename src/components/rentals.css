@@ -3063,3 +3063,12 @@
 .room-project-block .rental-map {
   margin-top: 16px;
 }
+
+/* Card titles use the full width (balanced wrapping left half of it empty). */
+.property-card h3,
+.rent-mini-body strong {
+  text-wrap: pretty;
+}
+.property-bottom strong {
+  white-space: nowrap;
+}

@@ -1,6 +1,5 @@
-import type { FormValues, Kind, ListItem, MediaRef } from "./model";
-import { isVideo, statusLabel } from "./model";
-import { highlightLabel, TRENDING_LABEL } from "@/lib/highlights";
+import type { FormValues, Kind, MediaRef } from "./model";
+import { isVideo } from "./model";
 
 /** Admin DTOs as returned by BE-DVG (only the fields the screens use). */
 type Image = { id: string; url: string } | null;
@@ -17,18 +16,6 @@ export type MediaState = {
 
 const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
 /** 2.500.000.000 → "2,5 tỷ"; 950.000.000 → "950 triệu". */
-function saleText(vnd: string) {
-  const n = Number(vnd);
-  const fmt = (v: number) =>
-    v.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
-  return n >= 1e9 ? `${fmt(n / 1e9)} tỷ` : `${fmt(n / 1e6)} triệu`;
-}
-/** "32 lượt xem · 2 yêu cầu / 14 ngày" for the unit list. */
-function interestText(value: unknown) {
-  const i = value as { days: number; views: number; leads: number } | undefined;
-  if (!i || (!i.views && !i.leads)) return undefined;
-  return `${i.views} lượt xem · ${i.leads} yêu cầu / ${i.days} ngày`;
-}
 const lines = (v: unknown) => (Array.isArray(v) ? v.join("\n") : "");
 const splitLines = (v: unknown) =>
   str(v)
@@ -108,116 +95,6 @@ export const priorityOptions: [string, string][] = [
   ["HIGH", "Cao"],
   ["LOW", "Thấp"],
 ];
-
-// ─────────────────────────────── list rows ───────────────────────────────
-
-export function listItem(kind: Kind, d: AdminDto): ListItem {
-  const status = str(d.status);
-  if (kind === "projects") {
-    const banner = d.banner as { isActive: boolean } | null;
-    return {
-      id: d.id,
-      name: str(d.name),
-      subtitle: str(d.slug),
-      info: str(d.location),
-      infoDetail: banner?.isActive ? "● Banner trang chủ" : undefined,
-      status,
-      statusLabel: statusLabel(kind, status),
-    };
-  }
-  if (kind === "properties") {
-    const project = d.project as { name: string };
-    const rent = d.forRent ? (d.rentPriceVnd as string | null) : null;
-    const sale = d.forSale ? (d.salePriceVnd as string | null) : null;
-    return {
-      id: d.id,
-      name: str(d.name),
-      subtitle: str(d.slug),
-      info:
-        [
-          rent && `${Number(rent) / 1_000_000} triệu / tháng`,
-          sale && saleText(sale),
-        ]
-          .filter(Boolean)
-          .join(" · ") || "Chưa có giá",
-      listing: { rent: !!d.forRent, sale: !!d.forSale },
-      infoDetail: [project?.name, interestText(d.interest)]
-        .filter(Boolean)
-        .join(" · "),
-      status,
-      statusLabel: statusLabel(kind, status),
-      badge:
-        [
-          d.isDemo && "Căn mẫu",
-          highlightLabel(d.highlight as string),
-          d.trending && TRENDING_LABEL,
-        ]
-          .filter(Boolean)
-          .join(" · ") || undefined,
-    };
-  }
-  if (kind === "pages") {
-    const service = d.kind === "SERVICE";
-    return {
-      id: d.id,
-      name: str(d.title),
-      subtitle: `/${str(d.path)}`,
-      info: service ? "Lĩnh vực hoạt động" : "Trang nội dung",
-      infoDetail: service
-        ? [d.inMenu ? "● Hiện trên menu" : "", `Thứ tự ${str(d.sortOrder)}`]
-            .filter(Boolean)
-            .join(" · ")
-        : undefined,
-      status,
-      statusLabel: statusLabel(kind, status),
-    };
-  }
-  if (kind === "jobs") {
-    const count = Number(d.applicationCount ?? 0);
-    return {
-      id: d.id,
-      name: str(d.title),
-      subtitle: str(d.slug),
-      info: `${str(d.department)} · ${str(d.location)}`,
-      infoDetail: [
-        `${count} hồ sơ`,
-        d.deadline
-          ? `Hạn ${str(d.deadline).split("-").reverse().join("/")}`
-          : "",
-      ]
-        .filter(Boolean)
-        .join(" · "),
-      status,
-      statusLabel: statusLabel(kind, status),
-      badge: status === "PUBLISHED" && !d.isOpen ? "Hết hạn" : undefined,
-    };
-  }
-  if (kind === "posts") {
-    const category = d.category as { name: string };
-    return {
-      id: d.id,
-      name: str(d.title),
-      subtitle: str(d.slug),
-      info: category?.name,
-      infoDetail: d.publishedAt
-        ? new Date(str(d.publishedAt)).toLocaleDateString("vi-VN")
-        : undefined,
-      status,
-      statusLabel: statusLabel(kind, status),
-      badge: d.isDemo ? "Minh họa" : undefined,
-    };
-  }
-  const assignee = d.assignee as { name: string } | null;
-  return {
-    id: d.id,
-    name: str(d.name),
-    subtitle: `${str(d.email)} ${str(d.phone)}`.trim(),
-    info: str(d.source),
-    infoDetail: assignee?.name ?? "Chưa phân công",
-    status,
-    statusLabel: statusLabel(kind, status),
-  };
-}
 
 // ────────────────────────────── form values ──────────────────────────────
 

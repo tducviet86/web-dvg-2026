@@ -93,9 +93,8 @@ test("filters sort, empty state, load more, favorite persistence, gallery", asyn
   const prices = await page
     .locator(".property-bottom strong")
     .allTextContents();
-  const numbers = prices.map((v) =>
-    Number(v.replace(" triệu", "").replace(",", ".")),
-  );
+  // "15.000.000 vnđ" → 15 (triệu).
+  const numbers = prices.map((v) => Number(v.replace(/\D/g, "")) / 1e6);
   expect(numbers.length).toBeGreaterThan(0);
   expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
   expect(numbers.every((v) => v <= 20)).toBeTruthy();

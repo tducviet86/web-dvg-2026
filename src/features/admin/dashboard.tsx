@@ -1,5 +1,11 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Link, { usePageNavigation } from "@/components/page-navigation";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -12,16 +18,10 @@ import {
   Settings,
   ArrowUpRight,
   Plus,
-  Search,
-  Pencil,
-  Trash2,
   GalleryHorizontalEnd,
   Languages,
-  Download,
   LogOut,
   UserCog,
-  KeyRound,
-  BadgeDollarSign,
   Files,
   BriefcaseBusiness,
   UserCheck,
@@ -43,6 +43,7 @@ import { TranslationsPanel } from "./translations";
 import { ApplicationsPanel } from "./applications";
 import { Overview } from "./overview";
 import { PropertiesList } from "./properties-list";
+import { ContentList } from "./content-list";
 import {
   api,
   AdminApiError,
@@ -54,7 +55,6 @@ import {
 } from "./api";
 import {
   formValues,
-  listItem,
   mediaState,
   payload,
   type AdminDto,
@@ -64,11 +64,9 @@ import {
   endpoints,
   names,
   sectionPermission,
-  statuses,
   writePermission,
   type FormValues,
   type Kind,
-  type ListItem,
 } from "./model";
 
 type Tab =
@@ -142,6 +140,36 @@ type EditorState = {
  * never shows "Đang kiểm tra phiên đăng nhập…" again.
  */
 let knownSession: Session | null = null;
+/**
+ * Who is signed in, kept in this browser so a reload shows Admin at once
+ * while the session is checked again in the background (names and
+ * permissions only: the API still checks every request).
+ */
+const SESSION_KEY = "dvg:admin-session";
+function cacheSession(session: Session | null) {
+  try {
+    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch {
+    /* storage blocked: the check simply runs before showing Admin */
+  }
+}
+const readCachedRaw = () => {
+  try {
+    return localStorage.getItem(SESSION_KEY);
+  } catch {
+    return null;
+  }
+};
+const noSubscribe = () => () => {};
+function parseSession(raw: string | null): Session | null {
+  try {
+    const value = raw ? (JSON.parse(raw) as Session) : null;
+    return value && Array.isArray(value.permissions) ? value : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Opens an admin screen in place (no server round trip, no re-mount). */
 function openInPlace(href: string) {
@@ -179,23 +207,25 @@ function Workspace() {
   const tab = (section || "dashboard") as Tab;
   const kind = (KINDS as string[]).includes(tab) ? (tab as Kind) : null;
 
-  const [session, setSessionState] = useState<Session | null>(knownSession);
+  const [checked, setSessionState] = useState<Session | null>(knownSession);
+  const cachedRaw = useSyncExternalStore(
+    noSubscribe,
+    readCachedRaw,
+    () => null,
+  );
+  const cached = useMemo(() => parseSession(cachedRaw), [cachedRaw]);
+  const session = checked ?? cached;
   const setSession = (next: Session) => {
     knownSession = next;
+    cacheSession(next);
     setSessionState(next);
   };
   /** Delete / archive confirmation shown as a popup over the list. */
   const [toDelete, setToDelete] = useState<{ id: string; name: string } | null>(
     null,
   );
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("");
-  /** Trang nội dung: company pages vs. "Lĩnh vực hoạt động". */
-  const [pageKind, setPageKind] = useState("");
-  const [rows, setRows] = useState<ListItem[] | null>(null);
   /** "Căn hộ" has its own list; bumped to reload it after an archive. */
   const [unitsReload, setUnitsReload] = useState(0);
-  const [total, setTotal] = useState(0);
   const [editorState, setEditor] = useState<EditorState | null>(null);
   const [missingPath, setMissing] = useState("");
   const editor = editorState?.path === pathname ? editorState : null;
@@ -212,10 +242,13 @@ function Workspace() {
 
   // ── session ──
   useEffect(() => {
-    const toLogin = () =>
+    const toLogin = () => {
+      knownSession = null;
+      cacheSession(null);
       router.replace(
         `/admin/login?next=${encodeURIComponent(window.location.pathname)}`,
       );
+    };
     window.addEventListener(SESSION_EXPIRED, toLogin);
     if (knownSession)
       return () => window.removeEventListener(SESSION_EXPIRED, toLogin);
@@ -231,40 +264,8 @@ function Workspace() {
     return () => window.removeEventListener(SESSION_EXPIRED, toLogin);
   }, [router]);
 
-  // ── list data (server-side search and status filter) ──
-  // Only the latest request may fill the table (filters can change while an
-  // older one is still loading).
-  const listRequest = useRef(0);
-  const loadList = useCallback(async () => {
-    if (!kind || !session) return;
-    if (kind === "properties") {
-      setUnitsReload((n) => n + 1);
-      return;
-    }
-    const request = ++listRequest.current;
-    const params = new URLSearchParams({ pageSize: "100" });
-    if (query) params.set("q", query);
-    if (status) params.set("status", status);
-    if (kind === "pages" && pageKind) params.set("kind", pageKind);
-    try {
-      const res = await api<{ data: AdminDto[]; meta: { total: number } }>(
-        "GET",
-        `${endpoints[kind]}?${params}`,
-      );
-      if (request !== listRequest.current) return;
-      setRows(res.data.map((dto) => listItem(kind, dto)));
-      setTotal(res.meta.total);
-    } catch (error) {
-      if (request !== listRequest.current) return;
-      toast.error(errorMessage(error));
-      setRows([]);
-    }
-  }, [kind, session, query, status, pageKind]);
-  useEffect(() => {
-    if (!kind || recordId) return;
-    const timer = window.setTimeout(() => void loadList(), query ? 250 : 0);
-    return () => window.clearTimeout(timer);
-  }, [kind, recordId, query, loadList]);
+  // ── lists: each list component loads its own rows; this asks it to reload ──
+  const loadList = useCallback(() => setUnitsReload((n) => n + 1), []);
 
   // ── lookups for editor selects ──
   const loadLookups = useCallback(
@@ -390,9 +391,6 @@ function Workspace() {
 
   function setTab(next: Tab) {
     goTo(next === "dashboard" ? "/admin" : `/admin/${next}`);
-    setQuery("");
-    setStatus("");
-    setPageKind("");
   }
   const closePage = () => setTab(tab);
 
@@ -457,6 +455,7 @@ function Workspace() {
       await api("POST", "/auth/logout");
     } finally {
       knownSession = null;
+      cacheSession(null);
       router.replace("/admin/login");
     }
   }
@@ -477,7 +476,7 @@ function Workspace() {
     (kind && action === "delete" && recordId
       ? {
           id: recordId,
-          name: rows?.find((r) => r.id === recordId)?.name ?? names[kind],
+          name: names[kind],
         }
       : null);
   return (
@@ -619,161 +618,21 @@ function Workspace() {
               onArchive={setToDelete}
               reloadKey={unitsReload}
             />
-          ) : (
-            kind && (
-              <section className="admin-panel admin-list-panel">
-                <div className="admin-table-toolbar">
-                  <label className="admin-search">
-                    <Search size={18} />
-                    <input
-                      aria-label="Tìm trong bảng"
-                      placeholder={
-                        kind === "leads"
-                          ? "Tìm tên, email, điện thoại, công ty…"
-                          : "Tìm tên, đường dẫn…"
-                      }
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                    />
-                  </label>
-                  <select
-                    aria-label="Lọc trạng thái"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    <option value="">Tất cả trạng thái</option>
-                    {statuses[kind].map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  {kind === "pages" && (
-                    <select
-                      aria-label="Lọc loại trang"
-                      value={pageKind}
-                      onChange={(e) => setPageKind(e.target.value)}
-                    >
-                      <option value="">Tất cả loại trang</option>
-                      <option value="PAGE">Trang giới thiệu & khác</option>
-                      <option value="SERVICE">Lĩnh vực hoạt động</option>
-                    </select>
-                  )}
-                  <span>
-                    {rows
-                      ? `${rows.length}${total > rows.length ? ` / ${total}` : ""} mục`
-                      : "Đang tải…"}
-                  </span>
-                  {kind === "leads" && can("leads:export") && (
-                    <a
-                      className="text-link"
-                      href={`/api/v1/admin/leads/export${status ? `?status=${status}` : ""}`}
-                    >
-                      <Download size={16} /> Xuất CSV
-                    </a>
-                  )}
-                </div>
-                <div className="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>{kind === "leads" ? "Khách hàng" : "Tên"}</th>
-                        <th>
-                          {kind === "leads"
-                            ? "Nguồn / Người phụ trách"
-                            : "Thông tin"}
-                        </th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(rows ?? []).map((row) => (
-                        <tr key={row.id}>
-                          <td>
-                            <strong>{row.name}</strong>
-                            <small>
-                              {row.subtitle}
-                              {row.badge && ` · ${row.badge}`}
-                            </small>
-                          </td>
-                          <td>
-                            {row.info}
-                            {row.infoDetail && <small>{row.infoDetail}</small>}
-                          </td>
-                          {row.listing && (
-                            <td>
-                              <span className="listing-pills">
-                                {row.listing.rent && (
-                                  <span
-                                    className="listing-pill"
-                                    data-mode="rent"
-                                  >
-                                    <span aria-hidden="true">
-                                      <KeyRound size={12} />
-                                    </span>
-                                    Cho thuê
-                                  </span>
-                                )}
-                                {row.listing.sale && (
-                                  <span
-                                    className="listing-pill"
-                                    data-mode="sale"
-                                  >
-                                    <span aria-hidden="true">
-                                      <BadgeDollarSign size={12} />
-                                    </span>
-                                    Bán
-                                  </span>
-                                )}
-                              </span>
-                            </td>
-                          )}
-                          <td>
-                            <span className="status-pill">
-                              {row.statusLabel}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="table-actions">
-                              <button
-                                aria-label={`Sửa ${row.name}`}
-                                onClick={() =>
-                                  goTo(`/admin/${kind}/${row.id}/edit`)
-                                }
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              {can(writePermission[kind]) &&
-                                (kind !== "leads" || can("leads:export")) && (
-                                  <button
-                                    aria-label={`Xóa ${row.name}`}
-                                    onClick={() =>
-                                      setToDelete({
-                                        id: row.id,
-                                        name: row.name,
-                                      })
-                                    }
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {rows && !rows.length && (
-                  <div className="empty-state">
-                    <h3>Chưa có kết quả</h3>
-                    <p>Thử đổi từ khóa, trạng thái hoặc thêm dữ liệu mới.</p>
-                  </div>
-                )}
-              </section>
-            )
-          )}
+          ) : kind ? (
+            <ContentList
+              key={kind}
+              kind={kind}
+              canWrite={can(writePermission[kind])}
+              canDelete={
+                can(writePermission[kind]) &&
+                (kind !== "leads" || can("leads:export"))
+              }
+              canExport={can("leads:export")}
+              goTo={goTo}
+              onRemove={setToDelete}
+              reloadKey={unitsReload}
+            />
+          ) : null}
           {kind && (
             <ConfirmDialog
               open={!!deleting}

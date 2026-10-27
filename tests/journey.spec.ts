@@ -74,7 +74,7 @@ test("admin → database → public site → search engines → leads", async ({
   await expect(page).toHaveURL(/\/admin\/projects$/);
   await expect(
     page.locator("tbody tr", { hasText: "Dự án Hành Trình QA" }),
-  ).toContainText("● Banner trang chủ");
+  ).toContainText("Banner trang chủ");
 
   // The database holds the project, its media and exactly one banner.
   const admin = await apiAs();

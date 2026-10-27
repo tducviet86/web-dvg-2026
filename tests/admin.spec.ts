@@ -19,8 +19,24 @@ test("login is required and failures are reported", async ({ page }) => {
     "Email hoặc mật khẩu không đúng",
   );
   await login(page);
+  // A reload shows Admin straight away (session checked in the background).
+  await page.goto("/admin/projects");
+  await expect(nav(page)).toBeVisible();
+  await page.reload();
+  await expect(nav(page)).toBeVisible({ timeout: 1500 });
+  // A session that ended elsewhere still sends the visitor to the login.
+  await page.context().clearCookies();
+  await page.reload();
+  await expect(page).toHaveURL(/\/admin\/login/);
+  expect(
+    await page.evaluate(() => localStorage.getItem("dvg:admin-session")),
+  ).toBeNull();
+  await login(page);
   await page.getByRole("button", { name: "Đăng xuất" }).click();
   await expect(page).toHaveURL(/\/admin\/login/);
+  expect(
+    await page.evaluate(() => localStorage.getItem("dvg:admin-session")),
+  ).toBeNull();
   await page.goto("/admin/projects");
   await expect(page).toHaveURL(/\/admin\/login/);
 });
@@ -586,6 +602,118 @@ test("the unit list filters, sorts, pages and changes units in bulk", async ({
   await expect(page.getByRole("textbox", { name: "Tìm căn hộ" })).toHaveValue(
     "",
   );
+  const results = await new AxeBuilder({ page })
+    .include(".units")
+    .withTags(["wcag2a", "wcag2aa"])
+    .analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test("every admin list counts, filters, sorts and changes items in bulk", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const categories = (await api.get("/admin/blog/categories")) as unknown as {
+    data: { slug: string }[];
+  };
+  for (const n of [1, 2])
+    await api.send("post", "/admin/blog/posts", {
+      slug: `bai-hang-loat-qa-${n}`,
+      title: `Bài hàng loạt QA ${n}`,
+      excerpt: "Bài viết kiểm tra thao tác hàng loạt trong Admin.",
+      content:
+        "Nội dung bài viết kiểm tra thao tác hàng loạt.\n\nĐoạn thứ hai của bài viết đủ dài để xuất bản trên website.",
+      category: categories.data[0].slug,
+    });
+  await login(page);
+  await page.goto("/admin/posts");
+  const rows = page.locator(".units-table tbody tr");
+  const count = page.locator(".units-count");
+  // Status cards: drafts include the two new posts; a card filters the list.
+  const stats = page.getByRole("group", { name: "Tóm tắt bài viết" });
+  const drafts = stats.getByRole("button", { name: /Bản nháp/ });
+  await drafts.click();
+  await expect(drafts).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("textbox", { name: "Tìm trong bảng" })
+    .fill("hàng loạt QA");
+  await expect(count).toHaveText("2 mục");
+  await page.getByLabel("Sắp xếp").selectOption("name");
+  await expect(rows.first()).toContainText("Bài hàng loạt QA 1");
+  // Who created it is shown.
+  await expect(rows.first().locator(".units-author")).not.toContainText("—");
+  // Bulk publish, then one back to draft inline.
+  await page
+    .getByRole("checkbox", { name: "Chọn tất cả mục trên trang" })
+    .check();
+  const bulk = page.getByRole("region", { name: "Thao tác hàng loạt" });
+  await bulk.getByRole("button", { name: "Xuất bản" }).click();
+  await expect(page.getByText("Đã cập nhật 2 mục.")).toBeVisible();
+  await expect(count).toHaveText("0 mục");
+  await stats.getByRole("button", { name: /Đã xuất bản/ }).click();
+  await expect(count).toHaveText("2 mục");
+  await rows
+    .first()
+    .getByRole("button", { name: "Chuyển Bài hàng loạt QA 1 về bản nháp" })
+    .click();
+  await expect(page.getByText("Đã cập nhật.")).toBeVisible();
+  await expect(count).toHaveText("1 mục");
+  // Archive the rest in bulk; the filter survives a reload.
+  await page.reload();
+  await expect(count).toHaveText("1 mục");
+  await page
+    .getByRole("checkbox", { name: "Chọn tất cả mục trên trang" })
+    .check();
+  await bulk.getByRole("button", { name: "Lưu trữ" }).click();
+  await page
+    .getByRole("button", { name: "Lưu trữ", exact: true })
+    .last()
+    .click();
+  await expect(page.getByText("Đã chuyển 1 mục vào lưu trữ.")).toBeVisible();
+  await expect(count).toHaveText("0 mục");
+  await page.getByRole("button", { name: "Bỏ lọc" }).click();
+
+  // Customer requests: status cards and an inline status change.
+  await api.send("post", "/admin/leads", {
+    kind: "INQUIRY",
+    name: "Khách danh sách QA",
+    email: "khach-danh-sach@example.com",
+    message: "Tôi cần tư vấn thuê căn hộ 2 phòng ngủ.",
+    source: "Nhập tay",
+  });
+  await page.goto("/admin/leads");
+  await page
+    .getByRole("textbox", { name: "Tìm trong bảng" })
+    .fill("danh sách QA");
+  await expect(count).toHaveText("1 mục");
+  await expect(
+    page.getByRole("group", { name: "Tóm tắt yêu cầu" }),
+  ).toBeVisible();
+  const lead = rows.first();
+  const leadName = (await lead.locator(".units-title").innerText()).trim();
+  await lead.getByLabel(`Trạng thái ${leadName}`).selectOption("CONTACTING");
+  await expect(page.getByText("Đã cập nhật.")).toBeVisible();
+  await expect(lead.getByLabel(`Trạng thái ${leadName}`)).toHaveValue(
+    "CONTACTING",
+  );
+  await page.getByRole("button", { name: "Bỏ lọc" }).click();
+  await page.screenshot({ path: `${SHOTS}/admin-leads.png`, fullPage: true });
+  // Projects, pages and jobs use the same list.
+  for (const [path, label] of [
+    ["projects", "Tóm tắt dự án"],
+    ["pages", "Tóm tắt trang"],
+    ["jobs", "Tóm tắt tin tuyển dụng"],
+  ]) {
+    await page.goto(`/admin/${path}`);
+    await expect(page.getByRole("group", { name: label })).toBeVisible();
+    await expect(count).toHaveText(/^\d+ mục$/);
+  }
+  await page.goto("/admin/projects");
+  await expect(rows.first()).toBeVisible();
+  await page.screenshot({
+    path: `${SHOTS}/admin-projects.png`,
+    fullPage: true,
+  });
   const results = await new AxeBuilder({ page })
     .include(".units")
     .withTags(["wcag2a", "wcag2aa"])

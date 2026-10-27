@@ -13,7 +13,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 import type { Project, Property, Post } from "@/types";
-import { money, salePrice, unitRef } from "@/lib/utils";
+import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
 import { Favorite } from "./interactive";
@@ -189,7 +189,10 @@ export function PropertyCard({
         </div>
         <div className="property-bottom">
           <p>
-            <strong>{money(property.price)} triệu</strong>
+            <strong>
+              {vndFull(property.rentVnd ?? Math.round(property.price * 1e6))}{" "}
+              vnđ
+            </strong>
             <span> / tháng</span>
           </p>
           <Link href={detail} aria-label={`Xem ${property.name}`}>

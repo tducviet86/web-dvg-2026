@@ -10,20 +10,6 @@ export const isVideo = (m: MediaRef) =>
   m.mimeType
     ? m.mimeType.startsWith("video/")
     : /\.(mp4|webm|mov)(\?|$)/i.test(m.url);
-/** One row of an admin list table. */
-export type ListItem = {
-  id: string;
-  name: string;
-  subtitle: string;
-  info: string;
-  infoDetail?: string;
-  status: string;
-  statusLabel: string;
-  badge?: string;
-  /** Units only: "Cho thuê" and/or "Bán". */
-  listing?: { rent: boolean; sale: boolean };
-};
-
 export const endpoints: Record<Kind, string> = {
   projects: "/admin/projects",
   properties: "/admin/properties",
@@ -54,10 +40,6 @@ export const statuses: Record<Kind, [string, string][]> = {
   jobs: publishOptions.slice(0, 2),
   leads: leadStatusOptions,
 };
-export const statusLabel = (kind: Kind, value: string) =>
-  statuses[kind].find(([key]) => key === value)?.[1] ??
-  publishOptions.find(([key]) => key === value)?.[1] ??
-  value;
 
 export const names: Record<Kind, string> = {
   projects: "dự án",
