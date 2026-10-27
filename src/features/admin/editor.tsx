@@ -451,7 +451,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
               "chỉ gồm chữ thường không dấu, số và dấu gạch ngang (vd: can-2pn-view-song-han)",
             placeholder: "Tự tạo từ tên căn",
             wide: true,
-            hint: "Tự đổi theo tên căn (sửa tay để giữ cố định); nếu trùng với căn khác sẽ thêm mã căn. Địa chỉ cũ tự chuyển hướng sang địa chỉ mới.",
+            hint: "Tự tạo từ tên căn + mã căn (sửa tay để giữ cố định); mã căn để trống thì hệ thống tự tạo mã và thêm vào khi lưu. Địa chỉ cũ tự chuyển hướng sang địa chỉ mới.",
           }),
           publishChoice,
           f("projectId", "Dự án", {
@@ -1393,6 +1393,14 @@ export function Editor({
   function snapshot() {
     if (formRef.current) setLive(readForm(formRef.current, allFields));
   }
+  /** Unit slug: the name, then the unit code ("can-1pn-view-song-pt029"). */
+  function unitSlug(form: HTMLFormElement) {
+    const value = (n: string) =>
+      (form.elements.namedItem(n) as HTMLInputElement | null)?.value ?? "";
+    const code = slugify(value("unitCode"));
+    const name = slugify(value("name")).slice(0, 120).replace(/-+$/, "");
+    return [name, code].filter(Boolean).join("-").slice(0, 160);
+  }
   /**
    * A unit's slug follows its title while it still matches it (empty, or
    * made from the title); typing a slug by hand stops that, clearing the
@@ -1407,9 +1415,8 @@ export function Editor({
   function followTitle() {
     const form = formRef.current;
     if (!form || kind !== "properties" || !slugFollows.current) return;
-    const name = form.elements.namedItem("name") as HTMLInputElement | null;
     const slug = form.elements.namedItem("slug") as HTMLInputElement | null;
-    if (name && slug) slug.value = slugify(name.value).slice(0, 160);
+    if (slug) slug.value = unitSlug(form);
   }
   /**
    * Units inherit the project's area and address: choosing a project fills
@@ -1938,15 +1945,22 @@ export function Editor({
             onClick={() => {
               const form = formRef.current;
               if (!form) return;
-              const name = form.elements.namedItem("name") as HTMLInputElement;
               const slug = form.elements.namedItem("slug") as HTMLInputElement;
-              slug.value = slugify(name.value);
+              slug.value =
+                kind === "properties"
+                  ? unitSlug(form)
+                  : slugify(
+                      (form.elements.namedItem("name") as HTMLInputElement)
+                        .value,
+                    );
               slugFollows.current = true;
               setDirty(true);
               snapshot();
             }}
           >
-            Tạo đường dẫn từ tên
+            {kind === "properties"
+              ? "Tạo đường dẫn từ tên + mã căn"
+              : "Tạo đường dẫn từ tên"}
           </button>
         )}
       </div>
@@ -1963,7 +1977,8 @@ export function Editor({
           if (kind === "properties" && target.name === "projectId")
             fillFromProject(target.value);
           if (target.name === "slug") slugFollows.current = !target.value;
-          if (target.name === "name") followTitle();
+          if (target.name === "name" || target.name === "unitCode")
+            followTitle();
           setDirty(true);
           snapshot();
         }}
