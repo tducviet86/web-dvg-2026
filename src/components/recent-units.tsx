@@ -62,7 +62,7 @@ export function RecentUnits({ current }: { current: RecentUnit }) {
   const t = useT();
   const raw = useSyncExternalStore(subscribe, readRaw, () => "[]");
   const units = useMemo(
-    () => parse(raw, current.slug).slice(0, 8),
+    () => parse(raw, current.slug).slice(0, 5),
     [raw, current.slug],
   );
   useEffect(() => {

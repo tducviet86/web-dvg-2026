@@ -82,9 +82,10 @@ export function RoomDetail({
   for (const p of ranked)
     byProject.set(p.projectId, [...(byProject.get(p.projectId) ?? []), p]);
   const explore: Property[] = [];
-  for (let i = 0; explore.length < Math.min(12, ranked.length); i++)
+  for (let i = 0; explore.length < Math.min(5, ranked.length); i++)
     for (const list of byProject.values()) if (list[i]) explore.push(list[i]);
-  explore.splice(12);
+  // A few suggestions; "Xem tất cả" opens the full list.
+  explore.splice(5);
   const facts = [
     { icon: Expand, value: `${r.area} m²`, label: "Diện tích" },
     {

@@ -461,18 +461,19 @@ test("unit page folds long lists, offers other rentals and remembers viewed unit
   await toggle.click();
   await expect(specs.getByRole("button", { name: "Thu gọn" })).toBeVisible();
   await expect(specs.getByText("Ngày cập nhật")).toBeInViewport();
-  // Featured rentals: a sideways row mixing the projects.
+  // Featured rentals mixing the projects.
   const explore = page.locator(".room-more", {
     has: page.getByRole("heading", {
       name: "Căn hộ nổi bật đang được quan tâm",
     }),
   });
   const cards = explore.locator(".rent-mini");
-  expect(await cards.count()).toBeGreaterThan(3);
+  // A few suggestions (5) in a row, no sideways scrolling.
+  await expect(cards).toHaveCount(5);
   expect(
     await explore
       .locator(".room-strip")
-      .evaluate((el) => el.scrollWidth > el.clientWidth),
+      .evaluate((el) => el.scrollWidth <= el.clientWidth),
   ).toBe(true);
   // Projects take turns: the first cards come from different projects.
   const projects = await explore.locator(".rent-mini small").allInnerTexts();
