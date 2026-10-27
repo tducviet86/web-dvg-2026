@@ -1417,6 +1417,33 @@ export function Editor({
     if (!form || kind !== "properties" || !slugFollows.current) return;
     const slug = form.elements.namedItem("slug") as HTMLInputElement | null;
     if (slug) slug.value = unitSlug(form);
+    lastCode.current = slugify(
+      (form.elements.namedItem("unitCode") as HTMLInputElement | null)?.value ??
+        "",
+    );
+  }
+  /**
+   * A slug typed by hand still ends with the unit code: a changed code
+   * replaces the old one at the end, a missing one is added.
+   */
+  const lastCode = useRef(slugify(str(data.unitCode)));
+  function keepCode() {
+    const form = formRef.current;
+    if (!form || kind !== "properties") return;
+    const slug = form.elements.namedItem("slug") as HTMLInputElement | null;
+    const code = slugify(
+      (form.elements.namedItem("unitCode") as HTMLInputElement | null)?.value ??
+        "",
+    );
+    if (!slug) return;
+    let value = slugify(slug.value);
+    const old = lastCode.current;
+    if (old && old !== code && value.endsWith(`-${old}`))
+      value = value.slice(0, -old.length - 1);
+    if (value && code && !value.endsWith(`-${code}`))
+      value = `${value.slice(0, 159 - code.length)}-${code}`;
+    slug.value = value;
+    lastCode.current = code;
   }
   /**
    * Units inherit the project's area and address: choosing a project fills
@@ -1503,6 +1530,7 @@ export function Editor({
   }
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    keepCode();
     const raw = readForm(event.currentTarget, allFields);
     const issues: FormIssue[] = [];
     for (const field of allFields) {
@@ -1853,6 +1881,8 @@ export function Editor({
                 titleName="name"
                 getFacts={unitFacts}
                 onApplied={() => {
+                  // A new title from AI brings a new slug (name + unit code).
+                  slugFollows.current = true;
                   followTitle();
                   setDirty(true);
                   snapshot();
@@ -1972,13 +2002,19 @@ export function Editor({
       <form
         ref={formRef}
         onSubmit={submit}
+        onBlur={(event) => {
+          if ((event.target as unknown as HTMLInputElement).name === "slug")
+            keepCode();
+        }}
         onChange={(event) => {
           const target = event.target as unknown as HTMLInputElement;
           if (kind === "properties" && target.name === "projectId")
             fillFromProject(target.value);
           if (target.name === "slug") slugFollows.current = !target.value;
-          if (target.name === "name" || target.name === "unitCode")
-            followTitle();
+          if (target.name === "name") followTitle();
+          if (target.name === "unitCode")
+            if (slugFollows.current) followTitle();
+            else keepCode();
           setDirty(true);
           snapshot();
         }}

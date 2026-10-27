@@ -82,6 +82,8 @@ test("AI drafts a unit title and description from the form, with undo", async ({
   const before = await description.inputValue();
   const titleBefore = await title.inputValue();
   await page.locator("[name=area]").fill("88");
+  await page.locator("[name=unitCode]").fill("PN-88");
+  const slug = page.locator("input[name=slug]");
   const ai = page.getByRole("button", {
     name: /tiêu đề & mô tả bằng AI/,
   });
@@ -91,6 +93,8 @@ test("AI drafts a unit title and description from the form, with undo", async ({
     "Căn hộ rộng 88 m², sẵn sàng đón khách.\n\n- Phòng khách thoáng, nhiều ánh sáng.\n- Nội thất đầy đủ, dọn vào ở ngay.",
   );
   await expect(title).toHaveValue("Căn 88 m² full nội thất, dọn vào ở ngay");
+  // The AI title brings its slug, ending with the unit code.
+  await expect(slug).toHaveValue(/^can-88-m.*-don-vao-o-ngay-pn-88$/);
   await page.screenshot({ path: `${SHOTS}/ai-describe.png` });
   // Undo puts the previous text back; nothing is saved until "Lưu".
   await page.getByRole("button", { name: "Hoàn tác" }).click();
@@ -100,4 +104,10 @@ test("AI drafts a unit title and description from the form, with undo", async ({
   await title.fill("");
   await ai.click();
   await expect(title).toHaveValue("Căn 88 m² full nội thất, dọn vào ở ngay");
+  // A slug typed by hand keeps the unit code too; a new code replaces it.
+  await slug.fill("duong-dan-rieng");
+  await slug.blur();
+  await expect(slug).toHaveValue("duong-dan-rieng-pn-88");
+  await page.locator("[name=unitCode]").fill("PN-99");
+  await expect(slug).toHaveValue("duong-dan-rieng-pn-99");
 });
