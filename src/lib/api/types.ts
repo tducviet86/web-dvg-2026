@@ -108,6 +108,8 @@ export type ApiProperty = {
   highlight?: string | null;
   /** Many recent views/enquiries (computed by the server). */
   trending?: boolean;
+  /** Views + 5 × enquiries over the last 14 days. */
+  interestScore?: number;
   publishedAt: string | null;
   updatedAt: string;
 };

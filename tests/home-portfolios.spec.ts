@@ -3,6 +3,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { API_URL } from "../playwright.config";
 import { apiAs } from "./helpers";
 import { telephoneHref } from "../src/lib/company-contact";
+import { pickFeaturedRentals } from "../src/components/home-rentals";
+import type { Property } from "../src/types";
 
 test("project entry points separate introductions from operations", async ({
   page,
@@ -206,4 +208,28 @@ test("home features a few rental units under the operated projects", async ({
   await page.goBack();
   await page.locator("#can-ho-tieu-bieu .rent-mini a").first().click();
   await expect(page).toHaveURL(/\/cho-thue\/[^/]+$/);
+});
+
+test("featured rentals: much-viewed units rise above HOT without a badge", () => {
+  const unit = (slug: string, extra: Partial<Property> = {}) =>
+    ({ id: slug, slug, status: "Còn trống", ...extra }) as Property;
+  const order = pickFeaturedRentals(
+    [
+      unit("moi"),
+      unit("hot", { highlight: "hot" }),
+      unit("it-xem", { interestScore: 12 }),
+      unit("dong-xem", { interestScore: 25, trending: true }),
+      unit("rat-dong-xem", { interestScore: 180, trending: true }),
+      unit("hot-het-phong", { highlight: "hot", status: "Đã thuê" }),
+    ],
+    6,
+  ).map((p) => p.slug);
+  expect(order).toEqual([
+    "rat-dong-xem",
+    "dong-xem",
+    "hot",
+    "it-xem",
+    "moi",
+    "hot-het-phong",
+  ]);
 });

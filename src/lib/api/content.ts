@@ -149,6 +149,7 @@ export function toProperty(p: ApiProperty): Property {
     publishedAt: p.publishedAt ?? undefined,
     highlight: p.highlight ?? undefined,
     trending: !!p.trending,
+    interestScore: p.interestScore ?? 0,
     unitCode: p.unitCode ?? undefined,
     direction: p.direction ?? undefined,
     deposit: depositText(p.depositVnd, p.rentPriceVnd),

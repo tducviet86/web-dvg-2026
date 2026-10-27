@@ -83,6 +83,8 @@ export type Property = AdminDetails & {
   highlight?: string;
   /** Many visitors looked at or asked about it lately. */
   trending?: boolean;
+  /** Views + 5 × enquiries over the last 14 days (server). */
+  interestScore?: number;
 };
 export type Post = AdminDetails & {
   isDemo?: boolean;
