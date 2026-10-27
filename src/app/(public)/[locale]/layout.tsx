@@ -6,6 +6,8 @@ import "@/components/portfolio-pages.css";
 import "@/components/rentals.css";
 import "@/components/jobs.css";
 import "@/components/home.css";
+import "@/components/about.css";
+import "@/components/contact.css";
 // Design system last: it settles the page stylesheets on shared tokens.
 import "@/components/design-system.css";
 import { notFound } from "next/navigation";

@@ -96,4 +96,8 @@ test("AI drafts a unit title and description from the form, with undo", async ({
   await page.getByRole("button", { name: "Hoàn tác" }).click();
   await expect(description).toHaveValue(before);
   await expect(title).toHaveValue(titleBefore);
+  // With the title cleared, AI fills it again.
+  await title.fill("");
+  await ai.click();
+  await expect(title).toHaveValue("Căn 88 m² full nội thất, dọn vào ở ngay");
 });

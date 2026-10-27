@@ -68,10 +68,14 @@ export function AiDescribe({
         "/admin/ai/unit-description",
         facts,
       );
-      write(res.data.title || null, res.data.description);
+      const title = res.data.title?.trim() || null;
+      write(title, res.data.description);
       setHasText(true);
       toast.success(
-        "Đã viết tiêu đề và mô tả. Hãy đọc lại và chỉnh trước khi lưu.",
+        title
+          ? "Đã viết tiêu đề và mô tả. Hãy đọc lại và chỉnh trước khi lưu."
+          : // An API that has not been updated yet only sends the description.
+            "Đã viết mô tả; máy chủ chưa trả về tiêu đề nên tên căn giữ nguyên.",
         {
           action:
             before.title.trim() || before.text.trim()

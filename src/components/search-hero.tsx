@@ -20,6 +20,7 @@ export function PhotoHero({
   children,
   stats,
   scroll,
+  className = "",
 }: {
   slides: Slide[];
   crumbs: React.ReactNode;
@@ -29,9 +30,11 @@ export function PhotoHero({
   stats?: React.ReactNode;
   /** "Xem … căn phù hợp ↓" link to the list below. */
   scroll?: { label: string; target: string };
+  /** Extra class, e.g. a shorter hero. */
+  className?: string;
 }) {
   return (
-    <section className="rental-hero" aria-label={title}>
+    <section className={`rental-hero ${className}`.trim()} aria-label={title}>
       <div
         className="rental-hero-media"
         data-count={slides.length}

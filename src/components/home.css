@@ -1,12 +1,16 @@
 /* ── Trang chủ: search on the banner, project rows, journal, call to action ── */
 
 /* Section heads: one quiet style for every home section. */
+.corporate-home {
+  /* One gap between the home sections (was up to 96px each). */
+  --home-gap: clamp(36px, 4.5vw, 60px);
+}
 .home-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px 48px;
-  margin-bottom: clamp(24px, 3vw, 40px);
+  margin-bottom: clamp(18px, 2.2vw, 28px);
 }
 .home-kicker {
   display: inline-flex;
@@ -57,13 +61,13 @@
 
 /* Project rows: tall photo cards, name over the photo. */
 .home-showcase {
-  padding-block: clamp(56px, 7vw, 96px) 0;
+  padding-block: var(--home-gap) 0;
 }
 .home-showcase + .home-showcase {
-  padding-top: clamp(48px, 6vw, 80px);
+  padding-top: var(--home-gap);
 }
 .home-showcase + .home-showcase + * {
-  margin-top: clamp(56px, 7vw, 96px);
+  margin-top: var(--home-gap);
 }
 .showcase-row {
   display: grid;
@@ -169,7 +173,7 @@
 
 /* Journal keeps its cards; only the head changes. */
 .corporate-home .signature-journal {
-  padding-block: clamp(56px, 7vw, 96px);
+  padding-block: var(--home-gap);
 }
 
 /* Call to action: a photo band like the page heroes. */
@@ -295,14 +299,14 @@
 /* Featured rentals: a row of compact cards, photo on top, white body,
    price in deep green with a gold hairline. */
 .home-rentals {
-  padding-top: clamp(48px, 6vw, 80px);
+  padding-top: var(--home-gap);
 }
 /* Between the two project rows. */
 .home-rentals + .home-showcase {
-  padding-top: clamp(48px, 6vw, 80px);
+  padding-top: var(--home-gap);
 }
 .home-rentals + .home-showcase + * {
-  margin-top: clamp(56px, 7vw, 96px);
+  margin-top: var(--home-gap);
 }
 .rent-mini-row {
   display: grid;

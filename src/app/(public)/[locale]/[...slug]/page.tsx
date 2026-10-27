@@ -17,6 +17,9 @@ import {
 } from "@/components/portfolio-pages";
 import { RoomDetail } from "@/components/room-detail";
 import { RentalPage } from "@/components/rental-page";
+import { AboutPage } from "@/components/about-page";
+import { ContactPage } from "@/components/contact-page";
+import { ABOUT_SUBPAGES, AboutSubPage } from "@/components/about-subpage";
 import {
   getBlogCategories,
   getJob,
@@ -334,6 +337,57 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
   const page = await getPage(path);
   if (!page) return null;
   const editorial = toEditorial(page);
+  if (path === "lien-he")
+    return {
+      title: editorial.seoTitle || editorial.title,
+      description: editorial.seoDescription || editorial.intro,
+      render: async () => {
+        const [{ portfolio }, settings] = await Promise.all([
+          getSiteContent(),
+          getPublicSettings().catch(() => ({}) as Record<string, string>),
+        ]);
+        return (
+          <ContactPage
+            page={editorial}
+            settings={settings}
+            portfolio={portfolio}
+          />
+        );
+      },
+    };
+  const sub = ABOUT_SUBPAGES[path];
+  if (sub)
+    return {
+      title: editorial.seoTitle || editorial.title,
+      description: editorial.seoDescription || editorial.intro,
+      render: async () => (
+        <AboutSubPage
+          slug={path}
+          kind={sub}
+          page={editorial}
+          portfolio={(await getSiteContent()).portfolio}
+        />
+      ),
+    };
+  if (path === "gioi-thieu")
+    return {
+      title: editorial.seoTitle || editorial.title,
+      description: editorial.seoDescription || editorial.intro,
+      render: async () => {
+        const [{ portfolio, properties }, services] = await Promise.all([
+          getSiteContent(),
+          getServices().catch(() => []),
+        ]);
+        return (
+          <AboutPage
+            page={editorial}
+            portfolio={portfolio}
+            properties={properties}
+            services={services}
+          />
+        );
+      },
+    };
   return {
     title: editorial.seoTitle || editorial.title,
     description: editorial.seoDescription || editorial.intro,
