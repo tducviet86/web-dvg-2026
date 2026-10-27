@@ -751,46 +751,6 @@
   align-items: center;
   gap: 8px;
 }
-.rental-lightbox.dialog-content {
-  width: min(1180px, 96vw);
-  max-width: 1180px;
-  background: #101e1a;
-  color: white;
-  padding: 28px;
-}
-.rental-lightbox h2 {
-  font-size: 20px;
-  padding-right: 40px;
-}
-.rental-lightbox p {
-  font-size: var(--fs-xs);
-  color: #d0d9cd;
-  margin: 10px 0;
-}
-.rental-lightbox-stage {
-  position: relative;
-  height: 65vh;
-  margin-top: 20px;
-}
-.rental-lightbox-stage iframe,
-.rental-lightbox-stage video {
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-.rental-lightbox .carousel-actions {
-  justify-content: center;
-  margin-top: 15px;
-  color: white;
-  font-size: 12px;
-}
-.rental-lightbox .carousel-actions button {
-  border-color: #7a8e7b;
-  color: #fff;
-}
-.rental-lightbox .dialog-close {
-  color: white;
-}
 .media-error {
   display: grid;
   place-content: center;
@@ -980,12 +940,6 @@
   .rental-map iframe {
     height: 290px;
   }
-  .rental-lightbox.dialog-content {
-    padding: 20px;
-  }
-  .rental-lightbox-stage {
-    height: 58vh;
-  }
   .room-description section h2 {
     font-size: 29px;
   }
@@ -1080,9 +1034,6 @@
   .rental-gallery-arrows button {
     width: 36px;
     height: 36px;
-  }
-  .rental-lightbox h2 {
-    font-size: 17px;
   }
   .rental-map > a {
     padding: 16px;
@@ -2658,4 +2609,445 @@
 }
 .directory-operation .home-projects {
   padding-top: 0;
+}
+
+/* ── Unit photos: full-screen viewer, title over the photo ── */
+.rental-lightbox-overlay {
+  background: #050d0bf2;
+}
+.rental-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  color: #fff;
+  outline: none;
+  animation: ds-fade-in var(--dur-3) var(--ease-out);
+}
+.rental-lightbox-stage {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y;
+  user-select: none;
+}
+.rental-lightbox-stage img {
+  padding: 72px 72px 108px;
+}
+.rental-lightbox-stage iframe,
+.rental-lightbox-stage video {
+  position: absolute;
+  inset: 72px 72px 108px;
+  width: calc(100% - 144px);
+  height: calc(100% - 180px);
+  border: 0;
+}
+.rental-lightbox-top {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 24px 34px;
+  background: linear-gradient(#000000b3, #0000);
+  pointer-events: none;
+}
+.rental-lightbox-top > * {
+  pointer-events: auto;
+}
+.rental-lightbox-top > div {
+  flex: 1;
+  min-width: 0;
+}
+.rental-lightbox-top h2 {
+  overflow: hidden;
+  margin: 0;
+  font: 400 clamp(18px, 2vw, 24px) / 1.3 var(--font-heading);
+  color: #fff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 8px #0008;
+}
+.rental-lightbox-hint {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.rental-lightbox-count {
+  padding: 6px 12px;
+  border: 1px solid #ffffff40;
+  border-radius: 999px;
+  background: #0006;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.rental-lightbox-close,
+.rental-lightbox-arrow {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #ffffff40;
+  border-radius: 50%;
+  background: #0000004d;
+  color: #fff;
+  backdrop-filter: blur(6px);
+  transition:
+    background var(--dur-2),
+    border-color var(--dur-2);
+}
+.rental-lightbox-close:hover,
+.rental-lightbox-arrow:hover {
+  background: #ffffff26;
+  border-color: #fff9;
+}
+.rental-lightbox-close:focus-visible,
+.rental-lightbox-arrow:focus-visible,
+.rental-lightbox-thumbs button:focus-visible {
+  outline: 2px solid #d4b97a;
+  outline-offset: 3px;
+}
+.rental-lightbox-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 52px;
+  height: 52px;
+  transform: translateY(-50%);
+}
+.rental-lightbox-arrow.prev {
+  left: 18px;
+}
+.rental-lightbox-arrow.next {
+  right: 18px;
+}
+.rental-lightbox-thumbs {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  display: flex;
+  justify-content: safe center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 26px 24px 18px;
+  background: linear-gradient(#0000, #000000a6);
+  scrollbar-width: none;
+}
+.rental-lightbox-thumbs button {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 58px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: #ffffff1a;
+  color: #fff;
+  opacity: 0.55;
+  transition:
+    opacity var(--dur-2),
+    border-color var(--dur-2);
+}
+.rental-lightbox-thumbs button img {
+  object-fit: cover;
+}
+.rental-lightbox-thumbs button:hover,
+.rental-lightbox-thumbs button.selected {
+  opacity: 1;
+}
+.rental-lightbox-thumbs button.selected {
+  border-color: #d4b97a;
+}
+@media (max-width: 760px) {
+  .rental-lightbox-stage img {
+    padding: 64px 0 92px;
+  }
+  .rental-lightbox-stage iframe,
+  .rental-lightbox-stage video {
+    inset: 64px 0 92px;
+    width: 100%;
+    height: calc(100% - 156px);
+  }
+  .rental-lightbox-top {
+    padding: 12px 14px 28px;
+    gap: 10px;
+  }
+  .rental-lightbox-arrow {
+    width: 40px;
+    height: 40px;
+  }
+  .rental-lightbox-arrow.prev {
+    left: 8px;
+  }
+  .rental-lightbox-arrow.next {
+    right: 8px;
+  }
+  .rental-lightbox-thumbs {
+    justify-content: flex-start;
+    padding: 20px 14px 14px;
+  }
+  .rental-lightbox-thumbs button {
+    width: 64px;
+    height: 46px;
+  }
+}
+
+/* ── Unit page: "Xem thêm" for long lists ── */
+.show-more-body {
+  position: relative;
+  overflow: hidden;
+  transition: max-height var(--dur-3) var(--ease-out);
+}
+.show-more[data-folded="true"] .show-more-body::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 110px;
+  background: linear-gradient(#fff0, var(--show-more-fade, #f8f7f3) 88%);
+  pointer-events: none;
+}
+.show-more-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: 1px solid #c5cdc6;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #153d32;
+  transition:
+    background var(--dur-2),
+    border-color var(--dur-2),
+    color var(--dur-2);
+}
+.show-more-toggle:hover {
+  background: #153d32;
+  border-color: #153d32;
+  color: #fff;
+}
+.show-more-toggle svg {
+  transition: transform var(--dur-2);
+}
+.show-more-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+/* Amenities sit in a white box: fade to white inside it. */
+.room-amenities .show-more-body {
+  --show-more-fade: #fff;
+  border-radius: 6px;
+}
+
+/* ── Unit page: the project block, map and project link side by side ── */
+.room-project-block .rental-map {
+  margin-bottom: 14px;
+}
+.room-project-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border: 1px solid #153d32;
+  border-radius: 4px;
+  background: #153d32;
+  color: #fff;
+  transition: background var(--dur-2);
+}
+.room-project-link small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d4b97a;
+}
+.room-project-link strong {
+  display: block;
+  margin-top: 4px;
+  font: 400 18px / 1.3 var(--font-heading);
+}
+.room-project-link:hover {
+  background: #0f2e26;
+}
+
+/* Contact panel: the unit code as a tag, consign link as a quiet button. */
+.room-contact-panel .room-call-context {
+  margin: 20px 0 16px;
+  padding: 14px 16px;
+  border: 1px dashed #c6a76b;
+  border-radius: 6px;
+  background: #fbf7ec;
+  gap: 4px;
+}
+.room-contact-panel .room-call-context span {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7b6533;
+}
+.room-contact-panel .room-call-context b {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.room-consign-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #dce1d8;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2c4a40;
+  transition:
+    border-color var(--dur-2),
+    background var(--dur-2);
+}
+.room-consign-link:hover {
+  border-color: #153d32;
+  background: #f3f5f0;
+}
+
+/* Call button: the phone number large and bold. */
+.room-contact-panel .call-button.button-outline-call {
+  min-height: 76px;
+  gap: 16px;
+  padding: 14px 18px;
+  border-color: #153d32;
+  background: #153d32;
+  color: #fff;
+  box-shadow: 0 12px 28px #153d3240;
+}
+.room-contact-panel .call-button.button-outline-call:hover {
+  background: #0f2e26;
+}
+.room-contact-panel .call-button > span {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.room-contact-panel .call-button small {
+  margin-top: 2px;
+  font: 700 25px / 1.15 var(--font-body);
+  letter-spacing: 0.05em;
+  color: #f0d695;
+  white-space: nowrap;
+}
+.room-contact-panel .call-button > svg:first-child {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  border-radius: 50%;
+  background: #d4b97a;
+  color: #153d32;
+  animation: call-ring 3s ease-in-out infinite;
+}
+
+/* ── Unit page: "Khám phá thêm" and "Vừa xem" as sideways rows ── */
+.room-more {
+  padding-top: 40px;
+}
+.room-more + .room-more {
+  padding-top: 28px;
+}
+.room-more-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+.room-more-head h2 {
+  margin: 6px 0 0;
+  font-size: clamp(26px, 3vw, 36px);
+}
+.room-recent-clear {
+  font-size: 13px;
+  color: #5f6b62;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.room-strip {
+  display: grid;
+  grid-auto-columns: 250px;
+  grid-auto-flow: column;
+  gap: 16px;
+  overflow-x: auto;
+  margin: 0 calc(var(--gutter, 20px) * -1);
+  padding: 4px var(--gutter, 20px) 18px;
+  list-style: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter, 20px);
+  scrollbar-width: thin;
+  scrollbar-color: #c6a76b transparent;
+}
+.room-strip > li {
+  scroll-snap-align: start;
+}
+.room-strip .rent-mini-body strong {
+  font-size: 16px;
+}
+@media (hover: none) {
+  .room-strip {
+    scrollbar-width: none;
+  }
+}
+@media (max-width: 800px) {
+  /* Bottom call bar: the number stands out too. */
+  .room-page .room-mobile-call .call-button small {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #f0d695;
+  }
+}
+@media (max-width: 560px) {
+  .room-strip {
+    grid-auto-columns: 72%;
+  }
+  .room-more-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .room-contact-panel .call-button small {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-contact-panel .call-button > svg:first-child {
+    animation: none;
+  }
+  .show-more-body {
+    transition: none;
+  }
+}
+
+/* Unit page: tighter rhythm between the sections. */
+.room-description > section {
+  padding: 26px 0 6px;
+}
+.room-description section h2 {
+  margin: 8px 0 14px;
+}
+.room-amenities h2 {
+  margin-bottom: 2px;
+}
+.room-amenities-count {
+  margin-bottom: 12px;
+}
+.room-project-block {
+  margin-top: 20px;
+}
+.room-project-block .rental-map {
+  margin-top: 16px;
 }

@@ -22,15 +22,18 @@ import { RentalGallery } from "./rental-gallery";
 import { RichText } from "./rich-text";
 import { propertyMedia } from "@/lib/property-media";
 import { ProjectMap } from "./project-map";
-import { LuxuryBadges, PropertyCard, SaleCard } from "./cards";
+import { LuxuryBadges, SaleCard } from "./cards";
 import { ViewBeacon } from "./view-beacon";
 import { CallContact } from "./call-contact";
-import { money, salePrice, unitRef, vndFull } from "@/lib/utils";
+import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { groupAmenities } from "@/lib/amenities";
 import { apartmentSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
 import { ShareButton } from "./rental-inquiry";
 import { Reveal } from "./interactive";
+import { RentalMini, rentalScore } from "./home-rentals";
+import { ShowMore } from "./show-more";
+import { RecentUnits } from "./recent-units";
 
 export function RoomDetail({
   room: r,
@@ -61,12 +64,27 @@ export function RoomDetail({
   const rentVnd = r.rentVnd ?? Math.round(r.price * 1e6);
   // "Còn trống" is rental wording; buyers see "Đang bán".
   const status = sale && available ? "Đang bán" : r.status;
-  const related = content.properties.filter(
+  const others = content.properties.filter(
     (x) =>
-      x.projectId === r.projectId &&
       x.id !== r.id &&
-      (sale ? x.forSale : x.forRent !== false),
+      (sale ? x.forSale : x.forRent !== false) &&
+      // Sample units only next to other samples.
+      (r.isDemo || !x.isDemo),
   );
+  const related = others.filter((x) => x.projectId === r.projectId);
+  // "Khám phá thêm": hot / much-viewed units first, taking turns between
+  // projects so Monarchy, Panoma, Ponte… all show up early.
+  const ranked = others
+    .map((p, order) => ({ p, order }))
+    .sort((a, b) => rentalScore(b.p) - rentalScore(a.p) || a.order - b.order)
+    .map(({ p }) => p);
+  const byProject = new Map<string, Property[]>();
+  for (const p of ranked)
+    byProject.set(p.projectId, [...(byProject.get(p.projectId) ?? []), p]);
+  const explore: Property[] = [];
+  for (let i = 0; explore.length < Math.min(12, ranked.length); i++)
+    for (const list of byProject.values()) if (list[i]) explore.push(list[i]);
+  explore.splice(12);
   const facts = [
     { icon: Expand, value: `${r.area} m²`, label: "Diện tích" },
     {
@@ -219,52 +237,56 @@ export function RoomDetail({
                 <span className="signature-kicker">TIỆN NGHI</span>
                 <h2>Tiện ích căn hộ</h2>
                 <p className="room-amenities-count">{amenityCount} tiện nghi</p>
-                <div className="room-amenity-groups">
-                  {amenities.map((group) => (
-                    <div key={group.title} className="room-amenity-group">
-                      <h3>{group.title}</h3>
-                      <ul>
-                        {group.items.map((a) => (
-                          <li key={a.key}>
-                            <a.icon
-                              size={22}
-                              strokeWidth={1.6}
-                              aria-hidden="true"
-                            />
-                            <span>{a.label}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
+                <ShowMore height={330}>
+                  <div className="room-amenity-groups">
+                    {amenities.map((group) => (
+                      <div key={group.title} className="room-amenity-group">
+                        <h3>{group.title}</h3>
+                        <ul>
+                          {group.items.map((a) => (
+                            <li key={a.key}>
+                              <a.icon
+                                size={22}
+                                strokeWidth={1.6}
+                                aria-hidden="true"
+                              />
+                              <span>{a.label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </ShowMore>
               </section>
             )}
             <section id="thong-tin">
               <span className="signature-kicker">02 / THÔNG SỐ CĂN HỘ</span>
               <h2>Thông số & nội thất</h2>
-              <dl className="room-spec-table">
-                {[
-                  ["Mã căn", code],
-                  ["Dự án", project.name],
-                  ["Loại căn hộ", r.type],
-                  ["Diện tích", `${r.area} m²`],
-                  ["Phòng ngủ", r.bedrooms ? String(r.bedrooms) : "Studio"],
-                  ["Phòng tắm", String(r.bathrooms)],
-                  ["Tầng", String(r.floor)],
-                  ["Nội thất", r.furniture],
-                  [r.isDemo ? "Tình trạng mẫu" : "Tình trạng", status],
-                  [
-                    "Ngày cập nhật",
-                    new Date(r.updatedAt).toLocaleDateString("vi-VN"),
-                  ],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <dt>{k}</dt>
-                    <dd>{v}</dd>
-                  </div>
-                ))}
-              </dl>
+              <ShowMore height={300}>
+                <dl className="room-spec-table">
+                  {[
+                    ["Mã căn", code],
+                    ["Dự án", project.name],
+                    ["Loại căn hộ", r.type],
+                    ["Diện tích", `${r.area} m²`],
+                    ["Phòng ngủ", r.bedrooms ? String(r.bedrooms) : "Studio"],
+                    ["Phòng tắm", String(r.bathrooms)],
+                    ["Tầng", String(r.floor)],
+                    ["Nội thất", r.furniture],
+                    [r.isDemo ? "Tình trạng mẫu" : "Tình trạng", status],
+                    [
+                      "Ngày cập nhật",
+                      new Date(r.updatedAt).toLocaleDateString("vi-VN"),
+                    ],
+                  ].map(([k, v]) => (
+                    <div key={k}>
+                      <dt>{k}</dt>
+                      <dd>{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </ShowMore>
             </section>
             <section id="dieu-kien">
               <span className="signature-kicker">
@@ -291,7 +313,7 @@ export function RoomDetail({
                   : [
                       [
                         r.isDemo ? "Giá thuê minh họa" : "Giá thuê",
-                        `${money(r.price)} triệu / tháng`,
+                        `${vndFull(rentVnd)} đồng / tháng`,
                       ],
                       ["Tiền đặt cọc", r.deposit || "Trao đổi theo từng căn"],
                       [
@@ -332,8 +354,12 @@ export function RoomDetail({
               <h2>{project.name}</h2>
               <p>{project.description}</p>
               <ProjectMap place={content.locations[r.projectId]} />
-              <Link href={projectPage} className="text-link">
-                Khám phá dự án <ArrowUpRight size={18} />
+              <Link href={projectPage} className="room-project-link">
+                <span>
+                  <small>Dự án</small>
+                  <strong>Khám phá {project.name}</strong>
+                </span>
+                <ArrowUpRight size={18} aria-hidden="true" />
               </Link>
             </section>
           </article>
@@ -414,51 +440,75 @@ export function RoomDetail({
             <div className="room-call-context">
               <span>Mã căn khi trao đổi</span>
               <strong>
-                {project.name} · {code}
+                {project.name} · <b>{code}</b>
               </strong>
             </div>
             <Link
               href={`/du-an/${project.slug}?nhu-cau=ky-gui#nhu-cau`}
-              className="text-link"
+              className="room-consign-link"
             >
-              Bạn có căn hộ cần ký gửi? <ArrowUpRight size={17} />
+              <KeyRound size={17} aria-hidden="true" />
+              Bạn có căn hộ cần ký gửi?
+              <ArrowUpRight size={16} aria-hidden="true" />
             </Link>
           </aside>
         </div>
-        {related.length > 0 && (
-          <Reveal>
-            <section className="room-related">
-              <div className="operation-content-heading">
-                <div>
-                  <span className="signature-kicker">
-                    THÊM LỰA CHỌN CHO BẠN
-                  </span>
-                  <h2>{sale ? "Căn bán cùng dự án." : "Căn hộ cùng dự án."}</h2>
-                </div>
-                <Link
-                  href={
-                    sale
-                      ? `${projectPage}?nhu-cau=mua-ban#nhu-cau`
-                      : `/cho-thue/du-an/${project.slug}#can-ho`
-                  }
-                  className="text-link"
-                >
-                  Xem tất cả <ArrowUpRight size={18} />
-                </Link>
-              </div>
-              <div className={sale ? "sale-grid" : "grid grid-3"}>
-                {related
-                  .slice(0, 3)
-                  .map((x, i) =>
-                    sale ? (
+        {sale
+          ? related.length > 0 && (
+              <Reveal>
+                <section className="room-related">
+                  <div className="operation-content-heading">
+                    <div>
+                      <span className="signature-kicker">
+                        THÊM LỰA CHỌN CHO BẠN
+                      </span>
+                      <h2>Căn bán cùng dự án.</h2>
+                    </div>
+                    <Link
+                      href={`${projectPage}?nhu-cau=mua-ban#nhu-cau`}
+                      className="text-link"
+                    >
+                      Xem tất cả <ArrowUpRight size={18} />
+                    </Link>
+                  </div>
+                  <div className="sale-grid">
+                    {related.slice(0, 3).map((x) => (
                       <SaleCard key={x.id} property={x} />
-                    ) : (
-                      <PropertyCard key={x.id} property={x} index={i} />
-                    ),
-                  )}
-              </div>
-            </section>
-          </Reveal>
+                    ))}
+                  </div>
+                </section>
+              </Reveal>
+            )
+          : explore.length > 0 && (
+              <section className="room-more" aria-labelledby="room-explore">
+                <div className="room-more-head">
+                  <div>
+                    <span className="signature-kicker">KHÁM PHÁ THÊM</span>
+                    <h2 id="room-explore">Căn hộ nổi bật đang được quan tâm</h2>
+                  </div>
+                  <Link href="/cho-thue" className="text-link">
+                    Xem tất cả <ArrowUpRight size={18} />
+                  </Link>
+                </div>
+                <ul className="room-strip">
+                  {explore.map((x) => (
+                    <RentalMini key={x.id} unit={x} />
+                  ))}
+                </ul>
+              </section>
+            )}
+        {!sale && (
+          <RecentUnits
+            current={{
+              slug: r.slug,
+              name: r.name,
+              image: media.find((m) => m.type === "image")?.src ?? r.image,
+              project: project.name,
+              area: r.area,
+              bedrooms: r.bedrooms,
+              rent: vndFull(rentVnd),
+            }}
+          />
         )}
       </div>
       <div className="room-mobile-call">

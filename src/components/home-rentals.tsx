@@ -19,7 +19,7 @@ const BADGE_RANK: Record<string, number> = {
   rare: 2,
   "good-price": 1,
 };
-const score = (p: Property) =>
+export const rentalScore = (p: Property) =>
   (p.status === "Còn trống" ? 10 : 0) +
   (BADGE_RANK[p.highlight ?? ""] ?? 0) +
   (p.trending ? 2 : 0);
@@ -32,7 +32,7 @@ export function pickFeaturedRentals(units: Property[], count = 4) {
   return units
     .filter((p) => p.forRent !== false && !p.isDemo)
     .map((p, order) => ({ p, order }))
-    .sort((a, b) => score(b.p) - score(a.p) || a.order - b.order)
+    .sort((a, b) => rentalScore(b.p) - rentalScore(a.p) || a.order - b.order)
     .slice(0, count)
     .map(({ p }) => p);
 }
@@ -76,7 +76,7 @@ export function HomeRentals({ units }: { units: Property[] }) {
   );
 }
 
-function RentalMini({ unit }: { unit: Property }) {
+export function RentalMini({ unit }: { unit: Property }) {
   return (
     <li className="rent-mini">
       <Link href={`/cho-thue/${unit.slug}`} aria-label={`Xem căn ${unit.name}`}>

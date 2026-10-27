@@ -205,9 +205,7 @@ test("room gallery loads supplied MP4, opens photos, and keeps call CTAs without
     .click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("ArrowRight");
-  await expect(page.locator(".lightbox .carousel-actions")).toContainText(
-    "2 / 4",
-  );
+  await expect(page.locator(".rental-lightbox-count")).toContainText("2 / 4");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
@@ -440,4 +438,62 @@ test("full-screen search: rent, buy and consign from the rental page", async ({
   await hero.getByRole("tab", { name: "Ký gửi" }).click();
   await hero.getByRole("button", { name: "Gửi thông tin ký gửi" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+});
+
+test("unit page folds long lists, offers other rentals and remembers viewed units", async ({
+  page,
+}) => {
+  const other = "/cho-thue/can-ho-sam-tower-demo-04";
+  await page.goto(other);
+  // Saved once the page is interactive.
+  await page.waitForFunction(() =>
+    localStorage.getItem("dvg:recent-rentals")?.includes("sam-tower-demo-04"),
+  );
+  await page.goto(room);
+  // Specs: folded with a "Xem thêm" button that unfolds every row.
+  const specs = page.locator("#thong-tin");
+  const toggle = specs.getByRole("button", { name: "Xem thêm" });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(specs.locator(".show-more")).toHaveAttribute(
+    "data-folded",
+    "true",
+  );
+  await toggle.click();
+  await expect(specs.getByRole("button", { name: "Thu gọn" })).toBeVisible();
+  await expect(specs.getByText("Ngày cập nhật")).toBeInViewport();
+  // Featured rentals: a sideways row mixing the projects.
+  const explore = page.locator(".room-more", {
+    has: page.getByRole("heading", {
+      name: "Căn hộ nổi bật đang được quan tâm",
+    }),
+  });
+  const cards = explore.locator(".rent-mini");
+  expect(await cards.count()).toBeGreaterThan(3);
+  expect(
+    await explore
+      .locator(".room-strip")
+      .evaluate((el) => el.scrollWidth > el.clientWidth),
+  ).toBe(true);
+  // Projects take turns: the first cards come from different projects.
+  const projects = await explore.locator(".rent-mini small").allInnerTexts();
+  expect(new Set(projects.slice(0, 3)).size).toBe(3);
+  // Recently viewed: the unit seen before, not the current one.
+  const recent = page.locator(".room-recent");
+  await expect(recent.locator(".rent-mini a")).toHaveCount(1);
+  await expect(recent.locator(".rent-mini a")).toHaveAttribute(
+    "href",
+    new RegExp(`${other}$`),
+  );
+  await recent.getByRole("button", { name: "Xóa lịch sử" }).click();
+  await expect(recent).toHaveCount(0);
+  // Photos open full screen, the title over the photo.
+  await page.locator(".gallery-image").first().click();
+  const viewer = page.locator(".rental-lightbox");
+  await expect(viewer.getByRole("heading")).toBeVisible();
+  const box = (await viewer.boundingBox())!;
+  expect(box.width).toBe(page.viewportSize()!.width);
+  await viewer.getByRole("button", { name: "Ảnh sau" }).click();
+  await expect(viewer.locator(".rental-lightbox-count")).toContainText("2 /");
+  await page.keyboard.press("Escape");
+  await expect(viewer).toHaveCount(0);
 });

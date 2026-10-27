@@ -121,7 +121,7 @@ test("filters sort, empty state, load more, favorite persistence, gallery", asyn
   await page.locator(".gallery-image").first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Ảnh sau" }).click();
-  await expect(page.locator(".lightbox .carousel-actions")).toContainText(
+  await expect(page.locator(".rental-lightbox-count")).toContainText(
     /2 \/ \d+/,
   );
   await page.keyboard.press("Escape");

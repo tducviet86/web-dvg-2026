@@ -5088,6 +5088,23 @@ html[lang="zh-Hans"] :is(h1, h2, h3, em) {
     transform: scale(1.35);
   }
 }
+@keyframes call-ring {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+  74%,
+  82%,
+  90% {
+    transform: rotate(-14deg);
+  }
+  78%,
+  86%,
+  94% {
+    transform: rotate(14deg);
+  }
+}
 /* One contact button: hover (desktop) or tap (phone) fans out the channels. */
 .dock-contact {
   display: flex;
@@ -5095,9 +5112,31 @@ html[lang="zh-Hans"] :is(h1, h2, h3, em) {
   align-items: flex-end;
   gap: 12px;
 }
+/* Bright call green with a soft blinking ring and a short ring every few seconds. */
 .dock-contact-toggle {
-  background: #c6a76b;
-  color: #102f27;
+  background: radial-gradient(circle at 30% 25%, #3ad08a, #11965c 72%);
+  color: #fff;
+  border: 2px solid #ffffffcc;
+}
+.dock-contact-toggle::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 3px solid #22c27a;
+  animation: dock-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+.dock-contact-toggle > svg {
+  animation: call-ring 3s ease-in-out infinite;
+}
+.dock-contact[data-open="true"] .dock-contact-toggle::after,
+.dock-contact[data-open="true"] .dock-contact-toggle > svg {
+  animation: none;
+  display: none;
+}
+.dock-contact[data-open="true"] .dock-contact-toggle > svg {
+  display: block;
 }
 .dock-contact[data-open="true"] .dock-contact-toggle {
   background: #102f27;
@@ -5278,6 +5317,8 @@ html[lang="zh-Hans"] :is(h1, h2, h3, em) {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .dock-contact-toggle::after,
+  .dock-contact-toggle > svg,
   .dock-bot::after,
   .dock-bubble,
   .dock-panel {

@@ -2,7 +2,7 @@
 
 import { useT } from "@/i18n/client";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import useEmblaCarousel from "embla-carousel-react";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -61,6 +61,7 @@ export function RentalGallery({
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(0);
+  const swipe = useRef<number | null>(null);
   const reduced = useReducedMotion();
   const [viewport, api] = useEmblaCarousel({
     loop: media.length > 1,
@@ -182,9 +183,9 @@ export function RentalGallery({
         </div>
       </div>
       <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
+        <Dialog.Overlay className="dialog-overlay rental-lightbox-overlay" />
         <Dialog.Content
-          className="dialog-content rental-lightbox lightbox"
+          className="rental-lightbox"
           onKeyDown={(e) => {
             if ((e.target as HTMLElement).closest("video, iframe")) return;
             if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -193,18 +194,45 @@ export function RentalGallery({
             }
           }}
         >
-          <Dialog.Title>{title}</Dialog.Title>
-          <Dialog.Description>
-            {demo ? `${t("Ảnh nội thất minh họa.")} ` : ""}
-            {t("Dùng phím mũi tên để chuyển ảnh, Escape để đóng.")}
-          </Dialog.Description>
-          <div className="rental-lightbox-stage">
+          <div className="rental-lightbox-top">
+            <div>
+              <Dialog.Title>{title}</Dialog.Title>
+              <Dialog.Description className="rental-lightbox-hint">
+                {demo ? `${t("Ảnh nội thất minh họa.")} ` : ""}
+                {t("Dùng phím mũi tên để chuyển ảnh, Escape để đóng.")}
+              </Dialog.Description>
+            </div>
+            <span className="rental-lightbox-count" aria-live="polite">
+              {expanded + 1} / {media.length}
+            </span>
+            <Dialog.Close
+              className="rental-lightbox-close"
+              aria-label={t("Đóng bộ ảnh")}
+            >
+              <X size={22} />
+            </Dialog.Close>
+          </div>
+          <div
+            className="rental-lightbox-stage"
+            onPointerDown={(e) => {
+              swipe.current = e.clientX;
+            }}
+            onPointerUp={(e) => {
+              const start = swipe.current;
+              swipe.current = null;
+              if (start === null) return;
+              const dx = e.clientX - start;
+              if (Math.abs(dx) > 50) next(dx < 0 ? 1 : -1);
+            }}
+          >
             {media[expanded].type === "image" ? (
               <Image
+                key={media[expanded].src}
                 src={media[expanded].src}
                 alt={media[expanded].alt}
                 fill
-                sizes="95vw"
+                sizes="100vw"
+                draggable={false}
                 style={{ objectFit: "contain" }}
               />
             ) : (
@@ -216,20 +244,57 @@ export function RentalGallery({
               />
             )}
           </div>
-          <div className="carousel-actions">
-            <button aria-label={t("Ảnh trước")} onClick={() => next(-1)}>
-              <ArrowLeft />
-            </button>
-            <span>
-              {expanded + 1} / {media.length}
-            </span>
-            <button aria-label={t("Ảnh sau")} onClick={() => next(1)}>
-              <ArrowRight />
-            </button>
-          </div>
-          <Dialog.Close className="dialog-close" aria-label={t("Đóng bộ ảnh")}>
-            <X />
-          </Dialog.Close>
+          {media.length > 1 && (
+            <>
+              <button
+                className="rental-lightbox-arrow prev"
+                aria-label={t("Ảnh trước")}
+                onClick={() => next(-1)}
+              >
+                <ArrowLeft size={22} />
+              </button>
+              <button
+                className="rental-lightbox-arrow next"
+                aria-label={t("Ảnh sau")}
+                onClick={() => next(1)}
+              >
+                <ArrowRight size={22} />
+              </button>
+              <div
+                className="rental-lightbox-thumbs"
+                aria-label={t("Chọn ảnh hoặc video")}
+              >
+                {media.map((item, index) => (
+                  <button
+                    key={item.src}
+                    ref={
+                      index === expanded
+                        ? (el) =>
+                            el?.scrollIntoView({
+                              inline: "center",
+                              block: "nearest",
+                            })
+                        : undefined
+                    }
+                    className={index === expanded ? "selected" : ""}
+                    aria-pressed={index === expanded}
+                    aria-label={
+                      item.type === "video"
+                        ? t("Xem video căn hộ")
+                        : t("Chọn ảnh {n}", { n: index + 1 })
+                    }
+                    onClick={() => setExpanded(index)}
+                  >
+                    {item.type === "image" ? (
+                      <Image src={item.src} alt="" fill sizes="96px" />
+                    ) : (
+                      <Play size={20} />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
