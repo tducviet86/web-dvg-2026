@@ -42,6 +42,7 @@ import { UsersPanel } from "./users";
 import { TranslationsPanel } from "./translations";
 import { ApplicationsPanel } from "./applications";
 import { Overview } from "./overview";
+import { PropertiesList } from "./properties-list";
 import {
   api,
   AdminApiError,
@@ -192,6 +193,8 @@ function Workspace() {
   /** Trang nội dung: company pages vs. "Lĩnh vực hoạt động". */
   const [pageKind, setPageKind] = useState("");
   const [rows, setRows] = useState<ListItem[] | null>(null);
+  /** "Căn hộ" has its own list; bumped to reload it after an archive. */
+  const [unitsReload, setUnitsReload] = useState(0);
   const [total, setTotal] = useState(0);
   const [editorState, setEditor] = useState<EditorState | null>(null);
   const [missingPath, setMissing] = useState("");
@@ -234,6 +237,10 @@ function Workspace() {
   const listRequest = useRef(0);
   const loadList = useCallback(async () => {
     if (!kind || !session) return;
+    if (kind === "properties") {
+      setUnitsReload((n) => n + 1);
+      return;
+    }
     const request = ++listRequest.current;
     const params = new URLSearchParams({ pageSize: "100" });
     if (query) params.set("q", query);
@@ -605,6 +612,13 @@ function Workspace() {
               name={session.name}
               goTo={goTo}
             />
+          ) : kind === "properties" ? (
+            <PropertiesList
+              canWrite={can(writePermission.properties)}
+              goTo={goTo}
+              onArchive={setToDelete}
+              reloadKey={unitsReload}
+            />
           ) : (
             kind && (
               <section className="admin-panel admin-list-panel">
@@ -665,13 +679,10 @@ function Workspace() {
                       <tr>
                         <th>{kind === "leads" ? "Khách hàng" : "Tên"}</th>
                         <th>
-                          {kind === "properties"
-                            ? "Giá / Dự án"
-                            : kind === "leads"
-                              ? "Nguồn / Người phụ trách"
-                              : "Thông tin"}
+                          {kind === "leads"
+                            ? "Nguồn / Người phụ trách"
+                            : "Thông tin"}
                         </th>
-                        {kind === "properties" && <th>Hình thức</th>}
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                       </tr>

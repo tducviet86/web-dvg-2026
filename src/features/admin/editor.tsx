@@ -1416,7 +1416,9 @@ export function Editor({
     const form = formRef.current;
     if (!form || kind !== "properties" || !slugFollows.current) return;
     const slug = form.elements.namedItem("slug") as HTMLInputElement | null;
-    if (slug) slug.value = unitSlug(form);
+    if (!slug) return;
+    slug.value = unitSlug(form);
+    slugTouched.current = true;
     lastCode.current = slugify(
       (form.elements.namedItem("unitCode") as HTMLInputElement | null)?.value ??
         "",
@@ -1427,6 +1429,8 @@ export function Editor({
    * replaces the old one at the end, a missing one is added.
    */
   const lastCode = useRef(slugify(str(data.unitCode)));
+  /** The slug, unit code or title was changed in this editor. */
+  const slugTouched = useRef(false);
   function keepCode() {
     const form = formRef.current;
     if (!form || kind !== "properties") return;
@@ -1436,6 +1440,7 @@ export function Editor({
         "",
     );
     if (!slug) return;
+    slugTouched.current = true;
     let value = slugify(slug.value);
     const old = lastCode.current;
     if (old && old !== code && value.endsWith(`-${old}`))
@@ -1530,7 +1535,8 @@ export function Editor({
   }
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    keepCode();
+    // Only a new unit or a slug / code changed here: a saved unit keeps its URL.
+    if (isNew || slugTouched.current) keepCode();
     const raw = readForm(event.currentTarget, allFields);
     const issues: FormIssue[] = [];
     for (const field of allFields) {
@@ -2003,14 +2009,21 @@ export function Editor({
         ref={formRef}
         onSubmit={submit}
         onBlur={(event) => {
-          if ((event.target as unknown as HTMLInputElement).name === "slug")
+          // Leaving a slug the editor typed in adds the unit code.
+          if (
+            (event.target as unknown as HTMLInputElement).name === "slug" &&
+            slugTouched.current
+          )
             keepCode();
         }}
         onChange={(event) => {
           const target = event.target as unknown as HTMLInputElement;
           if (kind === "properties" && target.name === "projectId")
             fillFromProject(target.value);
-          if (target.name === "slug") slugFollows.current = !target.value;
+          if (target.name === "slug") {
+            slugFollows.current = !target.value;
+            slugTouched.current = true;
+          }
           if (target.name === "name") followTitle();
           if (target.name === "unitCode")
             if (slugFollows.current) followTitle();

@@ -3508,3 +3508,452 @@
   font-size: 12px;
   color: #5f6b62;
 }
+
+/* ── Căn hộ: list for hundreds of units ── */
+.units {
+  display: grid;
+  gap: 16px;
+}
+.units-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.units-stat {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.units-stat strong {
+  font: 500 26px/1 var(--font-heading);
+  color: #1d4535;
+}
+.units-stat span {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+.units-stat:hover {
+  border-color: #a7bfb0;
+}
+.units-stat[aria-pressed="true"] {
+  border-color: #1d4535;
+  background: #eef4f0;
+  box-shadow: inset 0 0 0 1px #1d4535;
+}
+.units-panel {
+  padding: 0;
+  overflow: hidden;
+}
+.units-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--admin-border);
+}
+.units-search {
+  flex: 1 1 260px;
+  min-height: 40px;
+}
+.units-toolbar > select,
+.units-bulk select,
+.units-pager select {
+  min-height: 40px;
+  padding: 0 30px 0 10px;
+  border: 1px solid #d6e0d9;
+  border-radius: 8px;
+  background-color: #fff;
+  font-size: 13px;
+}
+.units-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #a24739;
+}
+.units-clear:hover {
+  background: #fbeeea;
+}
+.units-count {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--admin-muted);
+  white-space: nowrap;
+}
+.units-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #1d4535;
+  color: #fff;
+  font-size: 13px;
+}
+.units-bulk strong {
+  margin-right: 6px;
+}
+.units-bulk button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #ffffff55;
+  border-radius: 7px;
+  color: #fff;
+}
+.units-bulk button:hover:not(:disabled) {
+  background: #ffffff1f;
+}
+.units-bulk button.danger {
+  border-color: #f0a99c;
+  color: #ffd9d1;
+}
+.units-bulk select {
+  min-height: 34px;
+  color: #1d4535;
+}
+.units-bulk .units-bulk-cancel {
+  margin-left: auto;
+  border: 0;
+  text-decoration: underline;
+}
+.units-table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.units-table th {
+  padding: 10px 12px;
+  background: #f6f8f6;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  color: var(--admin-muted);
+  white-space: nowrap;
+}
+.units-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #edf1ee;
+  vertical-align: middle;
+}
+.units-table td > small {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+.units-table tbody tr:hover {
+  background: #fafcfa;
+}
+.units-table tbody tr[data-selected] {
+  background: #eef4f0;
+}
+.units-check {
+  width: 40px;
+}
+.units-check input {
+  width: 17px;
+  height: 17px;
+  accent-color: #1d4535;
+}
+.units-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 420px;
+}
+.units-name > span:last-child {
+  min-width: 0;
+}
+.units-thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #eef2ef;
+  color: #9aa9a0;
+}
+.units-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.units-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  color: #1d3a30;
+}
+.units-title:hover {
+  text-decoration: underline;
+}
+.units-name small {
+  display: block;
+  overflow: hidden;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--admin-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.units-name small b {
+  margin-right: 6px;
+  font-weight: 600;
+  color: #1d4535;
+}
+.units-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.units-badges em {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f6efdc;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 600;
+  color: #7b6533;
+}
+.units-price span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.units-price span + span {
+  margin-top: 4px;
+}
+.units-price span[data-mode="sale"] {
+  color: #7b6533;
+}
+.units-availability {
+  min-height: 32px;
+  padding: 0 26px 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-color: #f1efe6;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b5a2c;
+}
+.units-availability[data-value="AVAILABLE"] {
+  background-color: #e4f1e7;
+  color: #255f3c;
+}
+.units-availability[data-value="RENTED"],
+.units-availability[data-value="SOLD"] {
+  background-color: #eceff1;
+  color: #4a5560;
+}
+.units-publish {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid #dfe5e2;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  color: #6a5a32;
+}
+.units-publish > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c9a95d;
+}
+.units-publish[data-on="true"] {
+  color: #255f3c;
+}
+.units-publish[data-on="true"] > span {
+  background: #2f9e6a;
+}
+.units-publish:hover:not(:disabled) {
+  border-color: #a7bfb0;
+}
+.units-interest {
+  white-space: nowrap;
+}
+.units-interest svg {
+  margin-right: 4px;
+  vertical-align: -2px;
+  color: var(--admin-muted);
+}
+.units-date {
+  white-space: nowrap;
+  color: var(--admin-muted);
+}
+.units-actions a {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #dce5df;
+  border-radius: 7px;
+  background: #fff;
+  color: #1d4535;
+}
+.units-actions a:hover {
+  background: #eaf1ec;
+}
+.units-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.units-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  font-size: 13px;
+  color: var(--admin-muted);
+}
+.units-pager label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.units-pager > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.units-pager button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dce5df;
+  border-radius: 7px;
+  background: #fff;
+}
+.units-pager button:disabled {
+  opacity: 0.4;
+}
+@media (max-width: 1100px) {
+  .units-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .units-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .units-toolbar > select {
+    flex: 1 1 45%;
+  }
+  .units-count {
+    margin-left: 0;
+  }
+}
+.units-search input {
+  font-size: 13.5px;
+  color: #1d3a30;
+}
+.units-search input::placeholder {
+  color: #5f6f66;
+}
+/* The base admin table gives every cell 115–300px: the unit table sizes its own. */
+.admin-shell .units-table {
+  min-width: 1000px;
+  font-size: 13px;
+}
+.admin-shell .units-table th {
+  padding: 10px 10px;
+  font-size: 11.5px;
+}
+.admin-shell .units-table td {
+  min-width: 0;
+  max-width: none;
+  padding: 10px 10px;
+  line-height: 1.45;
+}
+.admin-shell .units-table td small {
+  display: block;
+  max-width: none;
+  margin-top: 3px;
+  font-size: 11.5px;
+}
+.admin-shell .units-table .units-check {
+  width: 36px;
+  padding-left: 18px;
+  padding-right: 4px;
+}
+.admin-shell .units-table .units-name {
+  min-width: 300px;
+  max-width: 380px;
+}
+.admin-shell .units-table .units-name small {
+  overflow-wrap: normal;
+}
+.units-interest > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.units-interest svg {
+  margin: 0;
+}
+.admin-shell .units-table td:last-child {
+  padding-right: 18px;
+}
+.admin-shell .units-table .units-project {
+  min-width: 130px;
+}
+.admin-shell .units-table .units-project small {
+  white-space: nowrap;
+}
+.admin-shell .units-table .units-author {
+  min-width: 120px;
+  white-space: nowrap;
+}
+.admin-shell .units-table .units-state {
+  min-width: 150px;
+}
+/* A table cell must stay a cell: stack the two controls as blocks. */
+.units-state > .units-availability,
+.units-state > .units-publish {
+  display: flex;
+  width: fit-content;
+}
+.units-state > .units-publish {
+  margin-top: 6px;
+}
+.admin-shell .units-table {
+  min-width: 960px;
+}
+.admin-shell .units-table .units-name {
+  min-width: 260px;
+  max-width: 340px;
+}

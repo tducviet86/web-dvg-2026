@@ -267,9 +267,9 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await form.getByRole("button", { name: "Tạo căn hộ" }).click();
   await expect(page).toHaveURL(/\/admin\/properties$/);
   await page
-    .getByRole("textbox", { name: "Tìm trong bảng" })
+    .getByRole("textbox", { name: "Tìm căn hộ" })
     .fill("Căn kiểm thử media");
-  await expect(page.locator("tbody")).toContainText("12.5 triệu / tháng");
+  await expect(page.locator("tbody")).toContainText("12.500.000 đ");
   await page
     .getByRole("button", { name: "Sửa Căn kiểm thử media", exact: true })
     .click();
@@ -486,4 +486,109 @@ test("admin tabs switch in place and every menu entry is reachable", async ({
     path: `${SHOTS}/admin-overview-mobile.png`,
     fullPage: true,
   });
+});
+
+test("the unit list filters, sorts, pages and changes units in bulk", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const all = (await api.get("/admin/properties?pageSize=100")) as unknown as {
+    data: { id: string; slug: string; name: string }[];
+    meta: { total: number };
+  };
+  expect(all.meta.total).toBeGreaterThan(20);
+  await login(page);
+  await page.goto("/admin/properties");
+  const rows = page.locator(".units-table tbody tr");
+  // 20 units per page, with summary cards and pages.
+  await expect(rows).toHaveCount(20);
+  const stats = page.getByRole("group", { name: "Tóm tắt căn hộ" });
+  await expect(
+    stats.getByRole("button", { name: /Tổng căn hộ/ }),
+  ).toContainText(String(all.meta.total));
+  await expect(page.locator(".units-pager")).toContainText(
+    `Trang 1 / ${Math.ceil(all.meta.total / 20)}`,
+  );
+  await page.getByRole("button", { name: "Trang sau" }).click();
+  await expect(rows).toHaveCount(Math.min(20, all.meta.total - 20));
+  await page.screenshot({ path: `${SHOTS}/admin-units.png`, fullPage: true });
+  // Search and filters narrow the list; the filter survives a reload.
+  const expected = (
+    (await api.get(
+      "/admin/properties?q=sam tower&pageSize=100",
+    )) as unknown as {
+      meta: { total: number };
+    }
+  ).meta.total;
+  expect(expected).toBeGreaterThan(1);
+  await page.getByRole("textbox", { name: "Tìm căn hộ" }).fill("sam tower");
+  await page.getByLabel("Sắp xếp").selectOption("name");
+  const count = page.locator(".units-count");
+  await expect(count).toHaveText(`${expected} căn`);
+  await expect(rows).toHaveCount(Math.min(20, expected));
+  await expect(rows.first()).toContainText(/Sam Tower/i);
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Tìm căn hộ" })).toHaveValue(
+    "sam tower",
+  );
+  await expect(page.getByLabel("Sắp xếp")).toHaveValue("name");
+  await expect(count).toHaveText(`${expected} căn`);
+  // Inline and bulk changes, on two units made for this test.
+  const projectId = (
+    all.data[0] as unknown as { projectId?: string; project?: { id: string } }
+  ).projectId;
+  for (const n of [1, 2])
+    await api.send("post", "/admin/properties", {
+      name: `Căn hàng loạt QA ${n}`,
+      projectId,
+      propertyType: "2pn",
+      location: "Đà Nẵng",
+      areaM2: 70,
+      bedrooms: 2,
+      bathrooms: 2,
+      description: "Căn hộ kiểm tra thao tác hàng loạt trong Admin.",
+      rentPriceVnd: "15000000",
+      status: "PUBLISHED",
+    });
+  await page.getByRole("button", { name: "Bỏ lọc" }).click();
+  await page.getByRole("textbox", { name: "Tìm căn hộ" }).fill("hang loat qa");
+  await expect(count).toHaveText("2 căn");
+  // Who created it is shown.
+  await expect(rows.first().locator(".units-author")).not.toContainText("—");
+  const first = rows.first();
+  const name = (await first.locator(".units-title").innerText()).trim();
+  await first.getByLabel(`Tình trạng ${name}`).selectOption("RENTED");
+  await expect(page.getByText("Đã cập nhật.")).toBeVisible();
+  await expect(first.getByLabel(`Tình trạng ${name}`)).toHaveValue("RENTED");
+  await page
+    .getByRole("checkbox", { name: "Chọn tất cả căn trên trang" })
+    .check();
+  const bulk = page.getByRole("region", { name: "Thao tác hàng loạt" });
+  await expect(bulk).toContainText("Đã chọn 2 căn");
+  await bulk.getByRole("button", { name: "Chuyển nháp" }).click();
+  await expect(page.getByText("Đã cập nhật 2 căn.")).toBeVisible();
+  await page.getByLabel("Lọc trạng thái đăng").selectOption("PUBLISHED");
+  await expect(count).toHaveText("0 căn");
+  await page.getByLabel("Lọc trạng thái đăng").selectOption("DRAFT");
+  await expect(rows).toHaveCount(2);
+  // Archive both: they leave the list.
+  await page
+    .getByRole("checkbox", { name: "Chọn tất cả căn trên trang" })
+    .check();
+  await bulk.getByRole("button", { name: "Lưu trữ" }).click();
+  await page
+    .getByRole("button", { name: "Lưu trữ", exact: true })
+    .last()
+    .click();
+  await expect(page.getByText("Đã chuyển 2 căn vào lưu trữ.")).toBeVisible();
+  await expect(count).toHaveText("0 căn");
+  await page.getByRole("button", { name: "Bỏ lọc" }).click();
+  await expect(page.getByRole("textbox", { name: "Tìm căn hộ" })).toHaveValue(
+    "",
+  );
+  const results = await new AxeBuilder({ page })
+    .include(".units")
+    .withTags(["wcag2a", "wcag2aa"])
+    .analyze();
+  expect(results.violations).toEqual([]);
 });

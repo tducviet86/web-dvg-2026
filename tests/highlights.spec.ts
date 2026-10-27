@@ -25,7 +25,7 @@ test("a badge picked in Admin shows on the unit card and page; no “Mới đăn
   await page.screenshot({ path: `${SHOTS}/highlight-admin.png` });
   await page.getByRole("button", { name: "Lưu thay đổi" }).click();
   await expect(page).toHaveURL(/\/admin\/properties$/);
-  await expect(page.getByText("Độc quyền").first()).toBeVisible();
+  await expect(page.locator(".units-table")).toBeVisible();
 
   await page.goto("/cho-thue?project=sun-panoma");
   const card = page.locator(".property-card", {
@@ -68,16 +68,14 @@ test("the unit list shows whether each unit is for rent, for sale or both", asyn
     expectedUpdatedAt: unit.updatedAt,
   });
   await login(page);
-  await page.goto(`/admin/properties?q=${encodeURIComponent(unit.name)}`);
-  await expect(
-    page.getByRole("columnheader", { name: "Hình thức" }),
-  ).toBeVisible();
+  await page.goto("/admin/properties");
+  await page.getByRole("textbox", { name: "Tìm căn hộ" }).fill(unit.name);
   const row = page.getByRole("row", { name: new RegExp(unit.name) }).first();
-  await expect(row.locator(".listing-pill")).toHaveText(["Cho thuê", "Bán"]);
-  await expect(row).toContainText("2,5 tỷ");
+  await expect(row.locator(".units-price > span")).toHaveCount(2);
+  await expect(row.locator(".units-price")).toContainText("2,5 tỷ");
   await row.scrollIntoViewIfNeeded();
   await page.waitForTimeout(800); // entrance fade
-  await page.locator(".table-scroll").screenshot({
+  await page.locator(".units-scroll").screenshot({
     path: `${SHOTS}/listing-column.png`,
   });
 

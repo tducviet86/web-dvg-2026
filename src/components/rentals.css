@@ -1526,17 +1526,25 @@
   gap: 20px;
   animation: rental-rise 0.6s both;
 }
+/* The long unit name must never squeeze the buttons onto two lines. */
+.room-heading > div:first-child {
+  min-width: 0;
+}
 .room-heading-tools {
   display: flex;
+  flex: none;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 .room-share {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: 7px;
-  padding: 9px 14px;
-  font-size: 12px;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  font-size: 13px;
+  white-space: nowrap;
   color: #234a3f;
   border: 1px solid #d3d9cf;
   border-radius: 999px;
@@ -2811,27 +2819,30 @@
   background: linear-gradient(#fff0, var(--show-more-fade, #f8f7f3) 88%);
   pointer-events: none;
 }
+/* A plain centred text button under the faded list. */
+.show-more {
+  display: flex;
+  flex-direction: column;
+}
 .show-more-toggle {
   display: inline-flex;
+  align-self: center;
   align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 10px 20px;
-  border: 1px solid #c5cdc6;
-  border-radius: 999px;
-  background: #fff;
-  font-size: 13.5px;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  font-size: 14px;
   font-weight: 600;
   color: #153d32;
-  transition:
-    background var(--dur-2),
-    border-color var(--dur-2),
-    color var(--dur-2);
+  text-decoration: underline;
+  text-decoration-color: #c6a76b;
+  text-underline-offset: 5px;
+  transition: color var(--dur-2);
 }
 .show-more-toggle:hover {
-  background: #153d32;
-  border-color: #153d32;
-  color: #fff;
+  color: #8a6d2f;
 }
 .show-more-toggle svg {
   transition: transform var(--dur-2);
