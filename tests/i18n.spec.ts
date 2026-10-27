@@ -143,7 +143,7 @@ test("editors correct a translation in Admin and the website shows it", async ({
   );
   const admin = await apiAs("editor");
   const list = (await admin.get(
-    `/admin/translations?locale=en&q=${encodeURIComponent("Liên hệ")}`,
+    `/admin/translations?locale=en&pageSize=100&q=${encodeURIComponent("Liên hệ")}`,
   )) as unknown as {
     data: { id: string; source: string; updatedAt: string }[];
   };

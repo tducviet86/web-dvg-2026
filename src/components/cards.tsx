@@ -59,7 +59,7 @@ export function ProjectCard({ project }: { project: Project }) {
       <Link href={`/du-an/${project.slug}`} className="image-wrap">
         <Image
           src={project.image}
-          alt={`Kiến trúc minh họa ${project.name}`}
+          alt={`Dự án ${project.name}`}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
@@ -70,7 +70,7 @@ export function ProjectCard({ project }: { project: Project }) {
       </Link>
       <div className="card-meta">
         <span>{project.type}</span>
-        <span>DỮ LIỆU DEMO</span>
+        <span>{project.location}</span>
       </div>
       <h3>
         <Link href={`/du-an/${project.slug}`}>{project.name}</Link>
@@ -255,7 +255,7 @@ export function BlogCard({ post }: { post: Post }) {
       <Link className="image-wrap" href={`/blog/${post.slug}`}>
         <Image
           src={post.image}
-          alt={`Không gian minh họa: ${post.name}`}
+          alt={post.name}
           fill
           sizes="(max-width: 640px) 100vw, 33vw"
         />

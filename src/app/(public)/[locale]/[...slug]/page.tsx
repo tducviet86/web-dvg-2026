@@ -73,6 +73,32 @@ const lists: Record<string, string> = {
   blog: "Tin tức & cẩm nang",
   "dich-vu": "Lĩnh vực hoạt động",
 };
+/** Search descriptions of the list pages (their headings stay short). */
+const listDescriptions: Record<string, string> = {
+  blog: "Cẩm nang thuê, mua căn hộ và tin thị trường bất động sản Đà Nẵng từ Đất Vàng Group: kinh nghiệm, chi phí, khu vực đáng sống.",
+  "dich-vu":
+    "Lĩnh vực hoạt động của Đất Vàng Group: quản lý vận hành, khai thác cho thuê, tư vấn đầu tư, tối ưu không gian và bảo trì căn hộ tại Đà Nẵng.",
+};
+/**
+ * Search titles for pages whose heading is a slogan ("Cùng nhau tạo nên
+ * giá trị."): what the page is about, with the words people search for.
+ * An SEO title typed in Admin still wins.
+ */
+const SEO_TITLES: Record<string, string> = {
+  "gioi-thieu": "Giới thiệu Đất Vàng Group – quản lý, cho thuê căn hộ Đà Nẵng",
+  "gioi-thieu/tam-nhin-su-menh": "Tầm nhìn & sứ mệnh Đất Vàng Group",
+  "gioi-thieu/doi-ngu": "Đội ngũ tư vấn và vận hành căn hộ – Đất Vàng Group",
+  "gioi-thieu/doi-tac":
+    "Đối tác & hợp tác bất động sản Đà Nẵng – Đất Vàng Group",
+  "lien-he": "Liên hệ Đất Vàng Group – hotline tư vấn căn hộ Đà Nẵng",
+  "hop-tac-chu-so-huu": "Ký gửi căn hộ Đà Nẵng cho thuê và bán",
+  "tuyen-dung": "Tuyển dụng Đất Vàng Group – việc làm bất động sản Đà Nẵng",
+};
+/** Short descriptions (under ~110 characters) get one line of context. */
+const withContext = (text: string, more: string) =>
+  text && text.length >= 110
+    ? text
+    : `${text ? `${text.replace(/[.\s]*$/, ".")} ` : ""}${more}`;
 
 /** Follows an old slug to its new URL with a 308, otherwise 404. */
 function settle<T>(lookup: Lookup<T>, pathFor: (slug: string) => string): T {
@@ -111,10 +137,14 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     return {
       title: group
         ? group === "development"
-          ? "Dự án đang triển khai"
-          : "Dự án đang vận hành"
-        : "Dự án bất động sản",
-      description: "Danh mục dự án và dịch vụ bất động sản của Đất Vàng Group.",
+          ? "Dự án căn hộ đang triển khai tại Đà Nẵng"
+          : "Dự án căn hộ đang vận hành tại Đà Nẵng"
+        : "Dự án căn hộ Đà Nẵng",
+      description: group
+        ? group === "development"
+          ? "Các dự án căn hộ mới đang triển khai tại Đà Nẵng: vị trí, tiến độ, mặt bằng và sản phẩm, cập nhật bởi Đất Vàng Group."
+          : "Các tòa căn hộ Đất Vàng Group đang vận hành tại Đà Nẵng: xem căn đang cho thuê, mua bán, tiện ích và vị trí từng dự án."
+        : "Danh mục dự án căn hộ tại Đà Nẵng mà Đất Vàng Group triển khai và vận hành: The Monarchy, Sun Panoma, Sun Ponte, Capital Square…",
       render: async (filters) => (
         <ProjectDirectory
           group={group}
@@ -205,8 +235,15 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     );
     if (!portfolio) notFound();
     return {
-      title: project.seo.title || project.name,
-      description: project.seo.description || project.intro,
+      title:
+        project.seo.title ||
+        `${project.name} Đà Nẵng: căn hộ & tiện ích`,
+      description:
+        project.seo.description ||
+        withContext(
+          project.intro,
+          `Xem vị trí, tiện ích và căn hộ cho thuê, mua bán tại ${project.name} cùng Đất Vàng Group.`,
+        ),
       noindex: !!draft,
       preview: draft?.status,
       image: portfolio.image,
@@ -234,7 +271,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
   if (lists[path])
     return {
       title: lists[path],
-      description: `Khám phá ${lists[path].toLowerCase()} cùng Đất Vàng Group.`,
+      description: listDescriptions[path],
       render: async (filters) =>
         path === "blog" ? (
           <ListingPage
@@ -304,7 +341,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
   if (path === "tuyen-dung") {
     const page = await getPage("tuyen-dung");
     return {
-      title: page?.seo.title || page?.title || "Tuyển dụng",
+      title: page?.seo.title || SEO_TITLES["tuyen-dung"],
       description:
         page?.seo.description ||
         page?.intro ||
@@ -339,7 +376,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
   const editorial = toEditorial(page);
   if (path === "lien-he")
     return {
-      title: editorial.seoTitle || editorial.title,
+      title: editorial.seoTitle || SEO_TITLES[path] || editorial.title,
       description: editorial.seoDescription || editorial.intro,
       render: async () => {
         const [{ portfolio }, settings] = await Promise.all([
@@ -358,7 +395,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
   const sub = ABOUT_SUBPAGES[path];
   if (sub)
     return {
-      title: editorial.seoTitle || editorial.title,
+      title: editorial.seoTitle || SEO_TITLES[path] || editorial.title,
       description: editorial.seoDescription || editorial.intro,
       render: async () => (
         <AboutSubPage
@@ -371,7 +408,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     };
   if (path === "gioi-thieu")
     return {
-      title: editorial.seoTitle || editorial.title,
+      title: editorial.seoTitle || SEO_TITLES[path] || editorial.title,
       description: editorial.seoDescription || editorial.intro,
       render: async () => {
         const [{ portfolio, properties }, services] = await Promise.all([
@@ -389,7 +426,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       },
     };
   return {
-    title: editorial.seoTitle || editorial.title,
+    title: editorial.seoTitle || SEO_TITLES[path] || editorial.title,
     description: editorial.seoDescription || editorial.intro,
     render: () => <EditorialPage slug={path} page={editorial} />,
   };

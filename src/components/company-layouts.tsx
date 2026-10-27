@@ -41,13 +41,12 @@ export function CompanyHero({
         <div className="company-hero-photo image-wrap">
           <Image
             src={image}
-            alt="Không gian kiến trúc — hình ảnh minh họa"
+            alt={`${title} — Đất Vàng Group`}
             fill
             sizes="(max-width: 768px) 100vw, 48vw"
             loading="eager"
           />
         </div>
-        <small className="company-photo-caption">Hình ảnh minh họa</small>
       </DepthScene>
     </header>
   );
@@ -117,7 +116,7 @@ export function CompanyListing({
         }
         description={
           kind === "projects"
-            ? "Khám phá kiến trúc, trải nghiệm sống và những không gian minh họa định hướng hoạt động của Đất Vàng Group."
+            ? "Dự án căn hộ tại Đà Nẵng mà Đất Vàng Group đồng hành: vị trí, tiện ích và căn đang cho thuê, mua bán."
             : kind === "services"
               ? "Từ quản lý đến khai thác bất động sản, mỗi giải pháp bắt đầu bằng việc lắng nghe và làm rõ những điều bạn cần."
               : "Những chia sẻ về không gian sống, vận hành và các mối quan hệ bền vững trong lĩnh vực bất động sản."
@@ -139,7 +138,6 @@ export function CompanyListing({
                 ? "NĂNG LỰC & GIẢI PHÁP"
                 : "TẠP CHÍ ĐẤT VÀNG"}
           </span>
-          <small>Nội dung và hình ảnh minh họa</small>
         </div>
         {kind === "projects" ? (
           <>
@@ -168,7 +166,7 @@ export function CompanyListing({
                       <Link href={`/du-an/${p.slug}`} className="image-wrap">
                         <Image
                           src={p.image}
-                          alt={`Kiến trúc minh họa ${p.name}`}
+                          alt={`Dự án ${p.name} tại Đà Nẵng`}
                           fill
                           sizes="(max-width:768px) 100vw, 50vw"
                         />
@@ -346,7 +344,7 @@ export function CompanyEditorial({
   const partner = slug === "gioi-thieu/doi-tac";
   const source =
     slug === "tuyen-dung"
-      ? "Ứng tuyển demo"
+      ? "Ứng tuyển"
       : slug === "hop-tac-chu-so-huu"
         ? "Hợp tác chủ sở hữu"
         : "Liên hệ";
@@ -389,7 +387,7 @@ export function CompanyEditorial({
                 <div className="image-wrap">
                   <Image
                     src={photos.architecture}
-                    alt="Không gian kết nối — hình ảnh minh họa"
+                    alt="Văn phòng và không gian Đất Vàng Group"
                     fill
                     sizes="(max-width:768px) 100vw, 42vw"
                   />
@@ -485,7 +483,7 @@ export function CompanyEditorial({
                         <div className="company-story-inset image-wrap">
                           <Image
                             src={photos.pool}
-                            alt="Kiến trúc kết nối thiên nhiên — minh họa"
+                            alt="Không gian sống kết nối thiên nhiên"
                             fill
                             sizes="(max-width:768px) 100vw, 55vw"
                           />

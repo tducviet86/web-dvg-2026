@@ -5,7 +5,7 @@ export const rentalFaqs = [
   ],
   [
     "Giá thuê đã bao gồm những khoản nào?",
-    "Mỗi căn có cách tính chi phí riêng. Cần xác nhận tiền thuê, phí quản lý, điện nước, internet, gửi xe và tiền cọc. Các mức giá đang hiển thị trong bản xem trước là dữ liệu minh họa, chưa phải báo giá thực tế.",
+    "Mỗi căn có cách tính chi phí riêng. Cần xác nhận tiền thuê, phí quản lý, điện nước, internet, gửi xe và tiền cọc. Giá trên website là giá chào thuê hiện tại; chuyên viên sẽ xác nhận lại chi phí đầy đủ trước khi ký hợp đồng.",
   ],
   [
     "Có thể xem video trước khi đến trực tiếp không?",

@@ -33,9 +33,9 @@ async function pageLocale(params: Props["params"]): Promise<Locale> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = await pageLocale(params);
-  const title = t("Đất Vàng Group | Giới thiệu doanh nghiệp");
+  const title = t("Cho thuê, mua bán & ký gửi căn hộ Đà Nẵng | Đất Vàng Group");
   const description = t(
-    "Tìm hiểu Đất Vàng Group, định hướng phát triển, lĩnh vực hoạt động, dự án và cơ hội hợp tác trong lĩnh vực bất động sản.",
+    "Đất Vàng Group cho thuê, mua bán và ký gửi căn hộ tại Đà Nẵng: The Monarchy, Sun Panoma, Sun Ponte… Ảnh thật, giá rõ ràng, tư vấn trong ngày.",
   );
   return {
     title: { absolute: title },
@@ -64,7 +64,7 @@ const fallbackSlides: ResolvedBanner[] = [
     label: "ĐẤT VÀNG GROUP",
     title: "Kết nối giá trị bất động sản",
     image: "/images/img1.png",
-    alt: "Không gian kiến trúc — hình ảnh minh họa",
+    alt: "Không gian kiến trúc Đất Vàng Group",
   },
 ];
 

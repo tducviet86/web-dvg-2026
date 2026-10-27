@@ -103,7 +103,7 @@ export function EditorialPage({
           <div className="editorial-banner image-wrap">
             <Image
               src={slug === "gioi-thieu" ? photos.building : photos.interior}
-              alt="Không gian kiến trúc minh họa định hướng Đất Vàng Group"
+              alt="Không gian kiến trúc Đất Vàng Group"
               fill
               sizes="100vw"
               loading="eager"

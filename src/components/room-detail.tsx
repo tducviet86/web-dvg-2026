@@ -296,7 +296,7 @@ export function RoomDetail({
                       ["Tiền đặt cọc", r.deposit || "Trao đổi theo từng căn"],
                       [
                         "Phí quản lý",
-                        r.managementFee || "Chưa bao gồm trong giá minh họa",
+                        r.managementFee || "Liên hệ để biết chi tiết",
                       ],
                       [
                         "Thời hạn thuê",
