@@ -33,7 +33,8 @@ async function pageLocale(params: Props["params"]): Promise<Locale> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = await pageLocale(params);
-  const title = t("Cho thuê, mua bán & ký gửi căn hộ Đà Nẵng | Đất Vàng Group");
+  // The brand alone (same in every language); the description carries the keywords.
+  const title = "Đất Vàng Group";
   const description = t(
     "Đất Vàng Group cho thuê, mua bán và ký gửi căn hộ tại Đà Nẵng: The Monarchy, Sun Panoma, Sun Ponte… Ảnh thật, giá rõ ràng, tư vấn trong ngày.",
   );

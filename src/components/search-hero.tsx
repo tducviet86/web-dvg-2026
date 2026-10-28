@@ -47,7 +47,7 @@ export function PhotoHero({
             alt=""
             fill
             sizes="100vw"
-            quality={70}
+            quality={65}
             priority={i === 0}
             loading={i === 0 ? "eager" : "lazy"}
             style={

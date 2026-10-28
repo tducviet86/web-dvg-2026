@@ -20,6 +20,7 @@ function BannerPicture({
     alt: slide.alt,
     fill: true,
     sizes: "100vw",
+    quality: 65,
     loading: first ? ("eager" as const) : ("lazy" as const),
     fetchPriority: first ? ("high" as const) : ("auto" as const),
   };

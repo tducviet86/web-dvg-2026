@@ -40,4 +40,7 @@ test("a title that already names the brand does not get it twice", async ({
   const created = (await res.json()) as { data: { slug: string } };
   await page.goto(`/cho-thue/${created.data.slug}`);
   await expect(page).toHaveTitle("Căn 2PN kiểm tra SEO | Đất Vàng Group");
+  // The home page is the brand name alone.
+  await page.goto("/");
+  await expect(page).toHaveTitle("Đất Vàng Group");
 });
