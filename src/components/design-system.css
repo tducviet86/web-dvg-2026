@@ -3004,3 +3004,80 @@ textarea {
     transform: none;
   }
 }
+
+/* ── Bài viết: calmer hero, one reading column, real text size ── */
+/* Old ".article-body p/h2" rules (14px, 30px) must not shrink the article. */
+.article-main.article-body {
+  max-width: none;
+  margin: 0;
+}
+.article-main .article-prose p,
+.article-main .article-prose li {
+  margin-bottom: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+.article-main .article-prose > * + * {
+  margin-top: 1.2em;
+}
+.article-main .article-prose h2 {
+  margin: 2em 0 0;
+  font-size: clamp(24px, 2.4vw, 30px);
+  line-height: 1.3;
+}
+.article-main .article-prose h3 {
+  margin: 1.6em 0 0;
+  font-size: clamp(19px, 1.8vw, 22px);
+  line-height: 1.35;
+}
+.article-main .article-prose h2 + *,
+.article-main .article-prose h3 + * {
+  margin-top: 0.6em;
+}
+/* Reading column: 720px of text, the contents box the same width. */
+.article-column {
+  max-width: calc(720px + 2 * var(--gutter));
+}
+@media (min-width: 1081px) {
+  .article-hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.article-hero h1 {
+  font-size: clamp(30px, 3.2vw, 46px);
+  line-height: 1.18;
+  text-wrap: balance;
+}
+.article-standfirst {
+  font-size: clamp(17px, 1.4vw, 19px);
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--c-ink-700, #3a4a43);
+}
+.article-hero-photo {
+  aspect-ratio: 4 / 3;
+  margin-top: var(--space-3);
+}
+.article-toc {
+  padding: var(--space-4) var(--space-5);
+}
+.article-toc a {
+  min-height: 30px;
+  font-size: 15.5px;
+  line-height: 1.45;
+}
+@media (max-width: 1080px) {
+  .article-hero-photo {
+    margin-top: 0;
+  }
+}
+@media (max-width: 640px) {
+  .article-main .article-prose {
+    font-size: 17px;
+    line-height: 1.75;
+  }
+  .article-hero h1 {
+    font-size: 28px;
+  }
+}

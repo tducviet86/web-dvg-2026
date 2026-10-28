@@ -17,7 +17,7 @@ const slugify = (text: string) =>
     .replace(/^-|-$/g, "");
 
 /**
- * Plain text from Admin › Bài viết: paragraphs separated by a blank line,
+ * Plain text from Admin › Bài viết: one paragraph per line (blank lines optional),
  * "## " / "### " headings, "> " quotes, "- " lists and `![chú thích](url)`
  * images inserted with the editor's "Chèn ảnh" button.
  */
@@ -54,8 +54,9 @@ export function parseArticle(text: string): ArticleBlock[] {
         else blocks.push({ kind: "list", items: [item[1]] });
         continue;
       }
-      if (last?.kind === "p" && i > 0) last.text += `\n${line}`;
-      else blocks.push({ kind: "p", text: line });
+      // Every line is its own paragraph: articles pasted from Word or a chat
+      // tool put one line break between paragraphs.
+      blocks.push({ kind: "p", text: line });
     }
   }
   return blocks;

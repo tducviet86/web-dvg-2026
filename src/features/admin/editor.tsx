@@ -916,7 +916,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
         id: "content",
         title: "Nội dung",
         description:
-          "Mỗi đoạn cách nhau một dòng trống. Dùng thanh công cụ dưới ô nội dung để thêm tiêu đề mục, trích dẫn, danh sách và ảnh có chú thích; bấm “Xem trước bài viết” để xem bố cục như trên website trước khi lưu.",
+          "Mỗi dòng là một đoạn văn. Dùng thanh công cụ dưới ô nội dung để thêm tiêu đề mục, trích dẫn, danh sách và ảnh có chú thích; bấm “Xem trước bài viết” để xem bố cục như trên website trước khi lưu.",
         icon: ClipboardList,
         fields: [
           f("description", "Mô tả ngắn (sapo)", {
