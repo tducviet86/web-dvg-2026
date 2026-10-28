@@ -46,10 +46,43 @@ test("articles render images, headings, quotes and lists written in Admin", asyn
     await expect(page.locator(".article-prose li")).toHaveCount(3);
     const toc = page.getByRole("navigation", { name: "Mục lục bài viết" });
     await expect(toc.getByRole("link")).toHaveText([
-      "Khu vực phù hợp",
-      "Kiểm tra hiện trạng",
+      /Khu vực phù hợp$/,
+      /Kiểm tra hiện trạng$/,
     ]);
     await expect(page.locator("main h1")).toHaveCount(1);
+    // Reading tools: the section on screen is lit up in the contents…
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+    await expect(toc.locator('a[aria-current="location"]')).toHaveText(
+      /Kiểm tra hiện trạng$/,
+    );
+    await expect(page.locator(".reader-progress span")).toHaveAttribute(
+      "style",
+      /scaleX\(0\.[1-9]|scaleX\(1\)/,
+    );
+    // …the text size is chosen and remembered…
+    const prose = page.locator(".reader-prose");
+    await page.getByRole("button", { name: "Chữ lớn hơn" }).click();
+    await expect(prose).toHaveCSS("font-size", "19.5px");
+    await page.reload();
+    await expect(prose).toHaveCSS("font-size", "19.5px");
+    await page.getByRole("button", { name: "Chữ nhỏ hơn" }).click();
+    await expect(prose).toHaveCSS("font-size", "18px");
+    // …and the link can be copied, with the author and a call to action.
+    await page
+      .context()
+      .grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page
+      .getByRole("group", { name: "Chia sẻ bài viết" })
+      .first()
+      .getByRole("button", { name: "Sao chép liên kết" })
+      .click();
+    await expect(
+      page.getByText("Đã sao chép liên kết bài viết."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Về tác giả" }),
+    ).toBeVisible();
+    await expect(page.locator(".reader-cta")).toContainText("Cần tư vấn");
     for (const width of [360, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       expect(

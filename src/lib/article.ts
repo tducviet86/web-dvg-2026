@@ -38,7 +38,12 @@ export function parseArticle(text: string): ArticleBlock[] {
       const heading = line.match(/^(#{2,3})\s+(.+)$/);
       if (heading) {
         const level = heading[1].length === 2 ? "h2" : "h3";
-        blocks.push({ kind: level, text: heading[2], id: slugify(heading[2]) });
+        // "1. Toàn cảnh…": the page numbers the sections itself.
+        const text =
+          level === "h2"
+            ? heading[2].replace(/^\d{1,2}[.)]\s+/, "")
+            : heading[2];
+        blocks.push({ kind: level, text, id: slugify(text) });
         continue;
       }
       const last = blocks.at(-1);
@@ -61,4 +66,3 @@ export function parseArticle(text: string): ArticleBlock[] {
   }
   return blocks;
 }
-
