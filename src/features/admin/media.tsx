@@ -32,7 +32,7 @@ const UploadPlaceContext = createContext<() => UploadPlace | null>(() => null);
 export const UploadPlaceProvider = UploadPlaceContext.Provider;
 
 /** Recent uploads to pick from (the media library). */
-function Library({
+export function Library({
   onPick,
   onClose,
   type = "image",
@@ -120,7 +120,7 @@ function Library({
   );
 }
 
-function UploadButton({
+export function UploadButton({
   multiple,
   onUploaded,
   label = "Tải ảnh lên",
@@ -170,15 +170,21 @@ export function MediaPicker({
   onChange,
   required,
   hint,
+  minWidth,
 }: {
   label: string;
   value: MediaRef | null;
   onChange: (value: MediaRef | null) => void;
   required?: boolean;
   hint?: string;
+  /** Warn when the chosen image is narrower (it would look blurry). */
+  minWidth?: number;
 }) {
   const id = useId();
   const [library, setLibrary] = useState(false);
+  /** Real width of the chosen image, read when its preview loads. */
+  const [natural, setNatural] = useState<{ url: string; width: number }>();
+  const width = natural?.url === value?.url ? natural?.width : undefined;
   return (
     <div className="banner-image-field full" role="group" aria-labelledby={id}>
       <span id={id} className="media-field-label">
@@ -188,11 +194,27 @@ export function MediaPicker({
       <div className="editor-image-preview">
         {value ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={value.url} alt="" />
+          <img
+            src={value.url}
+            alt=""
+            onLoad={(e) =>
+              setNatural({
+                url: value.url,
+                width: e.currentTarget.naturalWidth,
+              })
+            }
+          />
         ) : (
           <span>Chưa chọn ảnh</span>
         )}
       </div>
+      {minWidth && width && width < minWidth ? (
+        <p className="banner-section-warning full" role="status">
+          Ảnh này chỉ rộng {width}px nên hiện toàn màn hình sẽ bị mờ. Hãy dùng
+          ảnh gốc rộng từ {minWidth}px (ảnh chụp từ máy ảnh/điện thoại, không
+          lấy ảnh đã qua Zalo/Facebook vì bị nén nhỏ).
+        </p>
+      ) : null}
       <div className="banner-image-actions">
         <UploadButton onUploaded={([media]) => onChange(media)} />
         <button
@@ -222,60 +244,6 @@ export function MediaPicker({
         />
       )}
       {hint && <small>{hint}</small>}
-    </div>
-  );
-}
-
-/**
- * Inserts an image into a post's text as `![caption](url)` at the cursor, so
- * articles can carry photos between paragraphs (rendered by blog-pages.tsx).
- */
-export function ContentImageInsert({ targetId }: { targetId: string }) {
-  const [library, setLibrary] = useState(false);
-  function insert(media: MediaRef) {
-    const area = document.getElementById(targetId);
-    if (!(area instanceof HTMLTextAreaElement)) return;
-    const caption = window.prompt("Chú thích ảnh (có thể để trống)", "") ?? "";
-    const before = area.value.slice(0, area.selectionStart);
-    const gap =
-      !before || before.endsWith("\n\n")
-        ? ""
-        : before.endsWith("\n")
-          ? "\n"
-          : "\n\n";
-    area.setRangeText(
-      `${gap}![${caption.replace(/[[\]]/g, "")}](${media.url})\n\n`,
-      area.selectionStart,
-      area.selectionEnd,
-      "end",
-    );
-    area.dispatchEvent(new Event("input", { bubbles: true }));
-    area.focus();
-  }
-  return (
-    <div className="content-image-insert">
-      <div className="banner-image-actions">
-        <UploadButton
-          label="Chèn ảnh mới"
-          onUploaded={(items) => items.forEach(insert)}
-        />
-        <button
-          type="button"
-          className="admin-inline-button"
-          onClick={() => setLibrary((open) => !open)}
-        >
-          <Images size={14} /> Chèn từ thư viện
-        </button>
-      </div>
-      {library && (
-        <Library
-          onClose={() => setLibrary(false)}
-          onPick={(media) => {
-            insert(media);
-            setLibrary(false);
-          }}
-        />
-      )}
     </div>
   );
 }

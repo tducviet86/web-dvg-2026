@@ -405,12 +405,14 @@ function Workspace() {
     if (!isNew) body.expectedUpdatedAt = dto?.updatedAt;
     if (k === "projects" && banner) body.banner = bannerPayload(banner);
     try {
+      let id = dto?.id as string | undefined;
       if (isNew) {
         const created = await api<{ data: AdminDto }>(
           "POST",
           endpoints[k],
           body,
         );
+        id = created.data.id;
         // Manually entered leads: apply follow-up fields after creation.
         if (k === "leads")
           await api(
@@ -420,7 +422,35 @@ function Workspace() {
           );
       } else await api("PATCH", `${endpoints[k]}/${dto!.id}`, body);
       const noun = names[k];
-      toast.success(isNew ? `Đã tạo ${noun}.` : `Đã lưu ${noun}.`);
+      const when = body.publishedAt ? new Date(String(body.publishedAt)) : null;
+      if (k !== "leads" && body.status === "DRAFT" && id) {
+        // Drafts are easy to miss: say so, and offer to publish at once.
+        const target = id;
+        toast.warning(
+          `Đã lưu ${noun} ở dạng Bản nháp, chưa hiện trên website.`,
+          {
+            duration: 12_000,
+            description: "Chọn “Xuất bản” khi nội dung đã sẵn sàng.",
+            action: {
+              label: "Xuất bản ngay",
+              onClick: () =>
+                api("PATCH", `${endpoints[k]}/${target}`, {
+                  status: "PUBLISHED",
+                })
+                  .then(() => {
+                    toast.success(`Đã xuất bản ${noun}.`);
+                    loadList();
+                  })
+                  .catch((error) => toast.error(errorMessage(error))),
+            },
+          },
+        );
+      } else if (body.status === "PUBLISHED" && when && when > new Date())
+        toast.success(
+          `Đã hẹn đăng ${noun} lúc ${when.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}.`,
+          { description: "Đến giờ đó bài mới hiện trên website." },
+        );
+      else toast.success(isNew ? `Đã tạo ${noun}.` : `Đã lưu ${noun}.`);
       closePage();
     } catch (error) {
       // Field errors from the API are shown on the fields and in the popup.

@@ -334,6 +334,8 @@ export function ContentList({
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  /** When the rows were loaded: tells scheduled posts from published ones. */
+  const [loadedAt, setLoadedAt] = useState(0);
   const [bulkRemove, setBulkRemove] = useState(false);
   const request = useRef(0);
 
@@ -371,6 +373,7 @@ export function ContentList({
       setRows(res.data);
       setTotal(res.meta.total);
       setCounts(res.meta.byStatus ?? {});
+      setLoadedAt(Date.now());
     } catch (error) {
       if (id !== request.current) return;
       toast.error(errorMessage(error));
@@ -633,6 +636,11 @@ export function ContentList({
                 ) as string[];
                 const status = str(d.status);
                 const published = status === "PUBLISHED";
+                const goesLive = d.publishedAt
+                  ? new Date(String(d.publishedAt))
+                  : null;
+                const scheduled =
+                  published && !!goesLive && goesLive.getTime() > loadedAt;
                 const href = config.view?.(d);
                 const thumb = config.thumb?.(d);
                 return (
@@ -718,6 +726,7 @@ export function ContentList({
                           type="button"
                           className="units-publish"
                           data-on={published}
+                          data-scheduled={scheduled || undefined}
                           disabled={!canWrite || busy}
                           aria-label={
                             published
@@ -731,7 +740,11 @@ export function ContentList({
                           }
                         >
                           <span aria-hidden="true" />
-                          {published ? "Đã xuất bản" : "Bản nháp"}
+                          {scheduled
+                            ? `Hẹn đăng ${goesLive!.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}`
+                            : published
+                              ? "Đã xuất bản"
+                              : "Bản nháp"}
                         </button>
                       )}
                     </td>

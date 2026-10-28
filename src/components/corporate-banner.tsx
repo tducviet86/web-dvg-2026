@@ -20,7 +20,8 @@ function BannerPicture({
     alt: slide.alt,
     fill: true,
     sizes: "100vw",
-    quality: 65,
+    // Full-screen photos: a little less compression than other heroes.
+    quality: 70,
     loading: first ? ("eager" as const) : ("lazy" as const),
     fetchPriority: first ? ("high" as const) : ("auto" as const),
   };

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { apiAs, expectErrorPopup, login } from "./helpers";
@@ -310,4 +311,32 @@ test("banner admin and homepage banner pass axe checks", async ({ page }) => {
     (await new AxeBuilder({ page }).include(".corporate-banner").analyze())
       .violations,
   ).toEqual([]);
+});
+
+test("a banner photo too small for a full screen is flagged before saving", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/admin/banners/new");
+  const desktop = page.getByRole("group", { name: /Ảnh banner \(desktop\)/ });
+  // A 1×1 PNG: far below the 1920px a full-screen banner needs.
+  const tiny = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  await desktop
+    .locator("input[type=file]")
+    .setInputFiles({ name: "nho.png", mimeType: "image/png", buffer: tiny });
+  await expect(desktop.getByRole("status")).toContainText(
+    "chỉ rộng 1px nên hiện toàn màn hình sẽ bị mờ",
+  );
+  // A large photo shows no warning.
+  await desktop.getByRole("button", { name: "Bỏ ảnh" }).click();
+  await desktop.locator("input[type=file]").setInputFiles({
+    name: "lon.jpg",
+    mimeType: "image/jpeg",
+    buffer: readFileSync("public/images/projects/capital.jpg"),
+  });
+  await expect(desktop.locator(".editor-image-preview img")).toBeVisible();
+  await expect(desktop.getByRole("status")).toHaveCount(0);
 });

@@ -27,7 +27,7 @@ const config: NextConfig = {
     // WebP only: Cloudflare (free plan) caches one copy per URL and ignores
     // "Vary: Accept", so every browser must be able to read that copy.
     formats: ["image/webp"],
-    // 65: full-screen hero photos and banners; 70: every other photo (the
+    // 65: page hero photos; 70: home banners and every other photo (the
     // default 75 is served as 70). Lighter files, no visible difference.
     qualities: [65, 70],
     // Optimised copies are kept 30 days (default 4 h) so returning visitors

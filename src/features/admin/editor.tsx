@@ -23,6 +23,7 @@ import {
   ListOrdered,
   BriefcaseBusiness,
   type LucideIcon,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -47,8 +48,8 @@ import {
   TRENDING_SCORE,
 } from "@/lib/highlights";
 import { AiSeoAssistant, type SeoSuggestion } from "./ai-seo";
+import { PostComposer } from "./post-composer";
 import {
-  ContentImageInsert,
   MediaGallery,
   MediaManager,
   MediaPicker,
@@ -915,7 +916,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
         id: "content",
         title: "Nội dung",
         description:
-          "Văn bản thuần: mỗi đoạn cách nhau một dòng trống. Dòng bắt đầu bằng ## là tiêu đề mục, > là trích dẫn, - là danh sách; nút Chèn ảnh thêm ảnh vào giữa bài. Thẻ HTML sẽ bị loại bỏ.",
+          "Mỗi đoạn cách nhau một dòng trống. Dùng thanh công cụ dưới ô nội dung để thêm tiêu đề mục, trích dẫn, danh sách và ảnh có chú thích; bấm “Xem trước bài viết” để xem bố cục như trên website trước khi lưu.",
         icon: ClipboardList,
         fields: [
           f("description", "Mô tả ngắn (sapo)", {
@@ -1880,7 +1881,7 @@ export function Editor({
         {item.type === "textarea" ? (
           <>
             <textarea {...shared} rows={item.rows ?? 4} />
-            {item.media && !locked && <ContentImageInsert targetId={id} />}
+            {item.media && !locked && <PostComposer targetId={id} />}
             {item.ai && !locked && (
               <AiDescribe
                 targetId={id}
@@ -1956,6 +1957,9 @@ export function Editor({
         )}
         {locked && item.type === "select" && (
           <input type="hidden" name={item.key} value={String(value ?? "")} />
+        )}
+        {item.key === "publishDate" && (
+          <ScheduleNote id={id} value={live.publishDate} onClear={snapshot} />
         )}
         {(item.hint || (item.maxLength && !locked)) && (
           <div className="field-foot">
@@ -2343,5 +2347,63 @@ export function Editor({
         />
       </form>
     </UploadPlaceProvider>
+  );
+}
+
+/**
+ * Under "Thời điểm xuất bản": a future time means the post waits until then,
+ * which is easy to miss; say when it goes live and offer to publish now.
+ */
+function ScheduleNote({
+  id,
+  value,
+  onClear,
+}: {
+  id: string;
+  value: FormValue;
+  onClear: () => void;
+}) {
+  // The clock moves on while the form is open.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const when = value ? new Date(String(value)) : null;
+  if (!when || Number.isNaN(when.getTime()) || when.getTime() <= now)
+    return null;
+  const minutes = Math.round((when.getTime() - now) / 60_000);
+  const wait =
+    minutes < 60
+      ? `${minutes} phút`
+      : minutes < 48 * 60
+        ? `${Math.round(minutes / 60)} giờ`
+        : `${Math.round(minutes / 1440)} ngày`;
+  return (
+    <p className="schedule-note" role="status">
+      <CalendarClock size={16} aria-hidden="true" />
+      <span>
+        Hẹn đăng lúc{" "}
+        <strong>
+          {when.toLocaleString("vi-VN", {
+            dateStyle: "short",
+            timeStyle: "short",
+          })}
+        </strong>{" "}
+        (còn khoảng {wait}). Trước giờ đó bài chưa hiện trên website.
+      </span>
+      <button
+        type="button"
+        onClick={() => {
+          const input = document.getElementById(id) as HTMLInputElement | null;
+          if (!input) return;
+          input.value = "";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          onClear();
+        }}
+      >
+        Đăng ngay
+      </button>
+    </p>
   );
 }

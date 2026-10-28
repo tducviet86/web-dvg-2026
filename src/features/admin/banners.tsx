@@ -418,12 +418,14 @@ export function ProjectBannerSection({
                   required
                   value={draft.image}
                   onChange={(img) => set({ image: img })}
+                  minWidth={1920}
                   hint="Khuyến nghị ảnh ngang ≥ 1920px, tỷ lệ khoảng 16:9."
                 />
                 <MediaPicker
                   label="Ảnh banner cho mobile (tùy chọn)"
                   value={draft.mobileImage}
                   onChange={(img) => set({ mobileImage: img })}
+                  minWidth={1080}
                   hint="Ảnh dọc cho màn hình nhỏ. Để trống sẽ dùng ảnh desktop."
                 />
               </>
@@ -711,12 +713,14 @@ function BannerForm({
                     required
                     value={form.image}
                     onChange={(img) => set({ image: img })}
+                    minWidth={1920}
                     hint="Khuyến nghị ảnh ngang ≥ 1920px, tỷ lệ khoảng 16:9."
                   />
                   <MediaPicker
                     label="Ảnh banner cho mobile (tùy chọn)"
                     value={form.mobileImage}
                     onChange={(img) => set({ mobileImage: img })}
+                    minWidth={1080}
                     hint="Ảnh dọc cho màn hình nhỏ. Để trống sẽ dùng ảnh desktop."
                   />
                 </>

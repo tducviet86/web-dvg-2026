@@ -720,3 +720,142 @@ test("every admin list counts, filters, sorts and changes items in bulk", async 
     .analyze();
   expect(results.violations).toEqual([]);
 });
+
+test("the post editor formats text, inserts captioned photos and previews the article", async ({
+  page,
+}) => {
+  let prompted = false;
+  page.on("dialog", (d) => {
+    prompted = true;
+    void d.dismiss();
+  });
+  await login(page);
+  await page.goto("/admin/posts/new");
+  const form = page.locator(".admin-editor-page");
+  await form.locator("[name=name]").fill("Bài soạn thảo QA");
+  await form.locator("[name=slug]").fill("bai-soan-thao-qa");
+  await form
+    .locator("textarea[name=description]")
+    .fill("Bài viết kiểm tra công cụ soạn thảo trong Admin.");
+  const content = form.locator("[name=content]");
+  await content.fill("Kinh nghiệm chọn căn");
+  // Toolbar: the line becomes a section heading, then back.
+  const toolbar = page.getByRole("toolbar", { name: "Định dạng nội dung" });
+  await toolbar.getByRole("button", { name: "Tiêu đề mục" }).click();
+  await expect(content).toHaveValue("## Kinh nghiệm chọn căn");
+  await content.press("End");
+  await content.pressSequentially("\n\nĐoạn mở đầu của bài viết.\n\n");
+  // A photo asks for its caption in a dialog, not the browser prompt.
+  const png = readFileSync("public/images/img1.png");
+  await toolbar
+    .locator("input[type=file]")
+    .setInputFiles({ name: "anh.png", mimeType: "image/png", buffer: png });
+  const dialog = page.getByRole("dialog", { name: "Chèn ảnh vào bài" });
+  await expect(dialog.locator(".post-image-preview")).toBeVisible();
+  await dialog.getByLabel("Chú thích ảnh").fill("Phòng khách view sông");
+  await dialog.getByRole("button", { name: "Chèn vào bài" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(content).toHaveValue(/!\[Phòng khách view sông\]\(.+\)/);
+  expect(prompted).toBe(false);
+  await expect(toolbar).toContainText(/\d+ chữ · khoảng 1 phút đọc/);
+  // Preview: laid out like the site, from the unsaved text.
+  await toolbar.getByRole("button", { name: "Xem trước bài viết" }).click();
+  const preview = page.getByRole("dialog", { name: "Xem trước bài viết" });
+  await expect(preview.getByRole("heading", { level: 1 })).toHaveText(
+    "Bài soạn thảo QA",
+  );
+  await expect(preview.getByRole("heading", { level: 2 }).last()).toHaveText(
+    "Kinh nghiệm chọn căn",
+  );
+  await expect(preview.locator("figcaption")).toHaveText(
+    "Phòng khách view sông",
+  );
+  await page.screenshot({ path: `${SHOTS}/post-preview.png` });
+  await preview.getByRole("button", { name: "Đóng xem trước" }).click();
+  // Saved, the site shows the same article.
+  await form.getByRole("button", { name: "Tạo bài viết" }).click();
+  await expect(page).toHaveURL(/\/admin\/posts$/);
+  const api = await apiAs();
+  const posts = (await api.get(
+    "/admin/blog/posts?q=Bài soạn thảo QA",
+  )) as unknown as { data: { id: string }[] };
+  await api.send("patch", `/admin/blog/posts/${posts.data[0].id}`, {
+    status: "PUBLISHED",
+  });
+  await page.goto("/blog/bai-soan-thao-qa");
+  await expect(page.locator(".article-body h2")).toHaveText(
+    "Kinh nghiệm chọn căn",
+  );
+  await expect(page.locator(".article-body figcaption")).toHaveText(
+    "Phòng khách view sông",
+  );
+});
+
+test("saving a draft says it is not on the site yet and can publish it at once", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/admin/posts/new");
+  const form = page.locator(".admin-editor-page");
+  await form.locator("[name=name]").fill("Thị trường căn hộ Đà Nẵng QA");
+  await form.locator("[name=slug]").fill("thi-truong-can-ho-da-nang-qa");
+  await form
+    .locator("textarea[name=description]")
+    .fill("Bài viết thị trường kiểm tra thông báo bản nháp.");
+  await form
+    .locator("[name=content]")
+    .fill(
+      "Giá thuê căn hộ tăng nhẹ.\n\nNguồn cung mới tập trung ven sông Hàn.",
+    );
+  await form.getByRole("button", { name: "Tạo bài viết" }).click();
+  await expect(page).toHaveURL(/\/admin\/posts$/);
+  await expect(
+    page.getByText("Đã lưu bài viết ở dạng Bản nháp, chưa hiện trên website."),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Xuất bản ngay" }).click();
+  await expect(page.getByText("Đã xuất bản bài viết.")).toBeVisible();
+  await page.goto("/blog");
+  await expect(
+    page.getByRole("link", { name: /Thị trường căn hộ Đà Nẵng QA/ }).first(),
+  ).toBeVisible();
+});
+
+test("a post scheduled for later says so, and can be published now", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const categories = (await api.get("/admin/blog/categories")) as unknown as {
+    data: { slug: string }[];
+  };
+  const later = new Date(Date.now() + 3 * 3_600_000).toISOString();
+  const res = await api.send("post", "/admin/blog/posts", {
+    slug: "bai-hen-gio-qa",
+    title: "Bài hẹn giờ QA",
+    excerpt: "Bài viết kiểm tra hẹn giờ đăng trong Admin.",
+    content: "Nội dung bài hẹn giờ.\n\nĐoạn thứ hai đủ dài để xuất bản.",
+    category: categories.data[0].slug,
+    status: "PUBLISHED",
+    publishedAt: later,
+  });
+  expect(res.status()).toBe(201);
+  const created = (await res.json()) as { data: { id: string } };
+  await login(page);
+  await page.goto("/admin/posts");
+  await page
+    .getByRole("textbox", { name: "Tìm trong bảng" })
+    .fill("hẹn giờ QA");
+  const row = page.locator(".units-table tbody tr").first();
+  await expect(row.locator(".units-publish")).toContainText("Hẹn đăng");
+  await page.goto(`/admin/posts/${created.data.id}/edit`);
+  const note = page.locator(".schedule-note");
+  await expect(note).toContainText("Hẹn đăng lúc");
+  await expect(note).toContainText("còn khoảng 3 giờ");
+  await note.getByRole("button", { name: "Đăng ngay" }).click();
+  await expect(note).toHaveCount(0);
+  await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+  await expect(page).toHaveURL(/\/admin\/posts$/);
+  await page.goto("/blog/bai-hen-gio-qa");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Bài hẹn giờ QA",
+  );
+});
