@@ -18,6 +18,7 @@ import {
 import { postPublic } from "@/lib/api/client";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { useT } from "@/i18n/client";
+import { track } from "@/lib/analytics";
 
 /**
  * What the visitor asks for. Each mode sends a lead to `POST /inquiries`
@@ -169,6 +170,7 @@ export function InquiryDialog({
           ] as ([string, string] | null)[]
         ).filter((x): x is [string, string] => !!x),
       });
+      track("generate_lead", { form: mode, source: text.source });
       toast.success(t("Đã gửi yêu cầu tới Đất Vàng Group."));
       reset();
       return;

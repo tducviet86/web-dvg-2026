@@ -705,6 +705,13 @@ const SETTINGS: [string, string, string?][] = [
   ["seo.defaultTitle", "Tiêu đề SEO mặc định"],
   ["seo.defaultDescription", "Mô tả SEO mặc định"],
   ["leads.notificationEmail", "Email tiếp nhận yêu cầu (nội bộ)", "email"],
+  ["tracking.ga4", "Google Analytics 4 (G-XXXXXXX)"],
+  ["tracking.googleAds", "Google Ads (AW-XXXXXXXXX)"],
+  [
+    "tracking.googleAdsLead",
+    "Chuyển đổi Google Ads khách liên hệ (AW-XXX/nhãn)",
+  ],
+  ["tracking.metaPixel", "Facebook / Meta Pixel ID"],
 ];
 function SettingsPanel() {
   const [values, setValues] = useState<Record<string, string> | null>(null);

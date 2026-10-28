@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { postForm } from "@/lib/api/client";
 import { CV_TYPES, MAX_CV_MB, fileSize } from "@/lib/jobs";
 import { useT } from "@/i18n/client";
+import { track } from "@/lib/analytics";
 import { Button } from "./ui/button";
 
 type Field = "name" | "phone" | "email" | "cv" | "consent";
@@ -82,6 +83,7 @@ export function JobApplyForm({
       );
       return;
     }
+    track("submit_application", { job: jobSlug || "general" });
     toast.success(t("Đã nhận hồ sơ của bạn. Cảm ơn bạn đã ứng tuyển!"));
     setDone(true);
     setFile(null);

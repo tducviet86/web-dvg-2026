@@ -3081,3 +3081,60 @@ textarea {
     font-size: 28px;
   }
 }
+
+/* Cookie notice (components/analytics.tsx): small, bottom left. */
+.consent-bar {
+  position: fixed;
+  z-index: 85;
+  left: 20px;
+  bottom: 20px;
+  display: grid;
+  gap: 12px;
+  width: min(420px, calc(100vw - 40px));
+  padding: 16px 18px;
+  border: 1px solid #e3dccb;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 44px #0b1f1926;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #2c3d36;
+  animation: ds-fade-in var(--dur-3) var(--ease-out);
+}
+.consent-bar p {
+  margin: 0;
+}
+.consent-bar a {
+  color: var(--c-green-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.consent-bar > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.consent-bar button {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid #d6d0bf;
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: #2c3d36;
+}
+.consent-bar .consent-accept {
+  border-color: var(--c-green-800);
+  background: var(--c-green-800);
+  color: #fff;
+}
+@media (max-width: 800px) {
+  .consent-bar {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+  body:has(.room-mobile-call) .consent-bar {
+    bottom: 88px;
+  }
+}

@@ -20,7 +20,9 @@ import { I18nProvider } from "@/i18n/client";
 import { isLocale, textKey } from "@/i18n/config";
 import { getDictionary, reportMissing } from "@/i18n/dictionary";
 import { setRequestLocale, t } from "@/i18n/server";
-import { getServices } from "@/lib/api/content";
+import { getPublicSettings, getServices } from "@/lib/api/content";
+import { trackingIds } from "@/lib/analytics";
+import { Analytics } from "@/components/analytics";
 import clientStrings from "@/i18n/client-strings.json";
 
 export default async function PublicLayout({
@@ -48,6 +50,8 @@ export default async function PublicLayout({
   const services = (await getServices().catch(() => []))
     .filter((s) => s.inMenu)
     .map((s) => ({ label: t(s.name), href: s.href, note: t(s.summary) }));
+  // GA4 / Google Ads / Meta Pixel IDs from Admin › Cài đặt.
+  const tracking = trackingIds(await getPublicSettings().catch(() => ({})));
   return (
     <I18nProvider locale={locale} messages={messages}>
       <PageNavigation>
@@ -55,6 +59,7 @@ export default async function PublicLayout({
         <PageSurface>{children}</PageSurface>
         <SiteFooter />
         <ContactDock />
+        <Analytics ids={tracking} />
       </PageNavigation>
     </I18nProvider>
   );

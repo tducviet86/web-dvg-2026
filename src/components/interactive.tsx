@@ -25,6 +25,7 @@ import { readStore, writeStore } from "@/lib/storage";
 import { postPublic } from "@/lib/api/client";
 import { Button } from "./ui/button";
 import { useT } from "@/i18n/client";
+import { track } from "@/lib/analytics";
 function subscribeNarrow(callback: () => void) {
   const query = window.matchMedia("(max-width: 800px)");
   query.addEventListener("change", callback);
@@ -224,6 +225,7 @@ export function ContactForm({
       toast.error(t(result.message));
       return;
     }
+    track("generate_lead", { form: contact ? "contact" : "inquiry", source });
     toast.success(t("Đã gửi yêu cầu. Đất Vàng Group sẽ liên hệ lại với bạn."));
     setDone(true);
     reset();
@@ -434,6 +436,7 @@ export function Newsletter() {
           toast.error(t(result.message));
           return;
         }
+        track("sign_up", { form: "newsletter" });
         toast.success(t("Đã đăng ký nhận bản tin."));
         reset();
       })}
