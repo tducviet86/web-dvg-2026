@@ -1587,6 +1587,9 @@ export function Editor({
   }
 
   /** Current form text the AI reads (unsaved edits included). */
+  /** What a unit is offered as: rent, sale or both. */
+  const listingOf = (v: Record<string, FormValue>): "rent" | "sale" | "both" =>
+    v.forRent && v.forSale ? "both" : v.forSale ? "sale" : "rent";
   function aiSource() {
     const v = formRef.current ? readForm(formRef.current, allFields) : live;
     if (kind === "posts")
@@ -1640,7 +1643,7 @@ export function Editor({
     return {
       title: str(v.name),
       summary: str(v.description),
-      content: [str(v.amenities), str(v.rentalPolicy)]
+      content: [str(v.amenities), v.forRent ? str(v.rentalPolicy) : ""]
         .filter(Boolean)
         .join("\n\n"),
       context: [
@@ -1648,9 +1651,12 @@ export function Editor({
         str(v.location),
         str(v.area) && `${str(v.area)} m²`,
         `${str(v.bedrooms)} phòng ngủ`,
+        v.forRent && str(v.price) && `Giá thuê: ${str(v.price)} đ/tháng`,
+        v.forSale && str(v.salePrice) && `Giá bán: ${str(v.salePrice)} đ`,
       ]
         .filter(Boolean)
         .join(" · "),
+      listing: listingOf(v),
     };
   }
   /** Writes an accepted AI suggestion into the (uncontrolled) inputs. */
@@ -1709,10 +1715,16 @@ export function Editor({
       ["Tiện nghi", amenities],
       ["Giá thuê", rent],
       ["Giá bán", sale],
-      ["Đặt cọc", str(v.depositMonths) ? `${str(v.depositMonths)} tháng` : ""],
+      // Rental terms only for a unit offered for rent.
+      [
+        "Đặt cọc",
+        v.forRent && str(v.depositMonths)
+          ? `${str(v.depositMonths)} tháng`
+          : "",
+      ],
       [
         "Thuê tối thiểu",
-        str(v.minimumLease) ? `${str(v.minimumLease)} tháng` : "",
+        v.forRent && str(v.minimumLease) ? `${str(v.minimumLease)} tháng` : "",
       ],
       ["Ghi chú hiện có", str(v.description).slice(0, 1500)],
     ]
@@ -1721,7 +1733,7 @@ export function Editor({
       .join("\n");
     return {
       facts: lines,
-      listing: v.forRent && v.forSale ? "both" : v.forSale ? "sale" : "rent",
+      listing: listingOf(v),
     };
   }
 

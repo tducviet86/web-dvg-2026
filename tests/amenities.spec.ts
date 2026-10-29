@@ -110,4 +110,25 @@ test("AI drafts a unit title and description from the form, with undo", async ({
   await expect(slug).toHaveValue("duong-dan-rieng-pn-88");
   await page.locator("[name=unitCode]").fill("PN-99");
   await expect(slug).toHaveValue("duong-dan-rieng-pn-99");
+  // A unit for sale: AI writes for buyers, without rental terms or rent.
+  await page.locator("label[for=field-forSale]").dispatchEvent("click");
+  await page.locator("label[for=field-forRent]").dispatchEvent("click");
+  await expect(page.locator("input[name=forSale]")).toBeChecked();
+  await expect(page.locator("input[name=forRent]")).not.toBeChecked();
+  const describe = page.waitForRequest(/\/admin\/ai\/unit-description/);
+  await ai.click();
+  const asked = (await describe).postDataJSON() as {
+    facts: string;
+    listing: string;
+  };
+  expect(asked.listing).toBe("sale");
+  expect(asked.facts).not.toMatch(/Giá thuê|Đặt cọc|Thuê tối thiểu/);
+  const seo = page.waitForRequest(/\/admin\/ai\/seo-suggest/);
+  await page.getByRole("button", { name: /Tạo gợi ý|Gợi ý lại/ }).click();
+  const seoAsked = (await seo).postDataJSON() as {
+    listing: string;
+    context: string;
+  };
+  expect(seoAsked.listing).toBe("sale");
+  expect(seoAsked.context).not.toContain("Giá thuê");
 });

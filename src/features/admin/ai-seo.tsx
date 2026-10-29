@@ -16,6 +16,8 @@ export type SeoSource = {
   summary?: string;
   content?: string;
   context?: string;
+  /** Units: whether the page speaks to tenants, buyers or both. */
+  listing?: "rent" | "sale" | "both";
 };
 
 let status: Promise<boolean> | null = null;
