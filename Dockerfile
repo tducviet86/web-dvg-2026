@@ -20,7 +20,9 @@ ENV API_INTERNAL_URL=$API_INTERNAL_URL \
     NEXT_OUTPUT=standalone \
     NEXT_TELEMETRY_DISABLED=1
 COPY . .
-RUN test -n "$API_INTERNAL_URL" && npx next build --webpack
+# The build cache is kept between deploys: only changed files are recompiled.
+RUN --mount=type=cache,target=/app/.next/cache \
+  test -n "$API_INTERNAL_URL" && npx next build --webpack
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 WORKDIR /app
