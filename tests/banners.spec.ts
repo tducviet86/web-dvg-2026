@@ -123,9 +123,14 @@ test("2/3/6. the project form creates one linked banner that opens the detail pa
     data: { projectId: string | null }[];
   };
   expect(all.data.filter((b) => b.projectId === capitalId)).toHaveLength(1);
-  await page.goto("/");
+  // The homepage is rebuilt once the save clears its cache: reload until then.
   const link = slideLinks(page).first();
-  await expect(link).toHaveAttribute("href", "/du-an/capital-square");
+  await expect(async () => {
+    await page.goto("/");
+    await expect(link).toHaveAttribute("href", "/du-an/capital-square", {
+      timeout: 2000,
+    });
+  }).toPass({ timeout: 20_000 });
   expect(await link.evaluate((el) => getComputedStyle(el).cursor)).toBe(
     "pointer",
   );

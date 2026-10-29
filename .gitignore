@@ -6,3 +6,5 @@ node_modules/
 playwright-report/
 test-results/
 .playwright/
+# Screenshots written by the e2e tests (output, not baselines)
+tests/*.png

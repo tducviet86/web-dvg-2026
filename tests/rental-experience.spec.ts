@@ -460,7 +460,14 @@ test("unit page folds long lists, offers other rentals and remembers viewed unit
   );
   await toggle.click();
   await expect(specs.getByRole("button", { name: "Thu gọn" })).toBeVisible();
-  await expect(specs.getByText("Ngày cập nhật")).toBeInViewport();
+  // The last row is no longer clipped: it can be scrolled into view.
+  await expect(specs.locator(".show-more")).toHaveAttribute(
+    "data-folded",
+    "false",
+  );
+  const lastRow = specs.getByText("Ngày cập nhật");
+  await lastRow.scrollIntoViewIfNeeded();
+  await expect(lastRow).toBeInViewport();
   // Featured rentals mixing the projects.
   const explore = page.locator(".room-more", {
     has: page.getByRole("heading", {
