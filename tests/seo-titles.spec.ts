@@ -8,6 +8,8 @@ test("old website URLs move permanently to the matching page", async ({
     ["/ve-chung-toi", "/gioi-thieu"],
     ["/can-ho-cao-cap-monarchy-da-nang", "/du-an/monarchy-apartments"],
     ["/tong-quan-du-an-capital-square-da-nang", "/du-an/capital-square"],
+    ["/tin-tuc-du-an", "/blog"],
+    ["/tin-tuc-du-an/page/9", "/blog"],
   ]) {
     const res = await request.get(from, { maxRedirects: 0 });
     expect(res.status(), from).toBe(301);

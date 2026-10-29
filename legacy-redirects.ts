@@ -46,6 +46,8 @@ export const LEGACY_REDIRECTS: [from: string, to: string][] = [
     "/dat-vang-group-ra-mat-combo-tron-goi-quan-ly-van-hanh-can-ho-cho-fpt-plaza2",
     "/dich-vu/quan-ly-bat-dong-san",
   ],
-  // Articles
+  // Articles; the old news listing and its pages ("/tin-tuc-du-an/page/9")
+  ["/tin-tuc-du-an", "/blog"],
+  ["/tin-tuc-du-an/:path*", "/blog"],
   ["/6-luu-y-khi-dau-tu-bat-dong-san-de-tranh-mat-sach-von", "/blog"],
 ];
