@@ -489,7 +489,7 @@ test("admin tabs switch in place and every menu entry is reachable", async ({
   await last.scrollIntoViewIfNeeded();
   await expect(last).toBeInViewport();
   await menu.getByRole("link", { name: "Tổng quan" }).click();
-  await expect(page.locator(".overview-kpis button").first()).toBeVisible();
+  await expect(page.locator(".dash-kpi").first()).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(1500); // entrance animations
   await page.screenshot({
