@@ -23,9 +23,14 @@ export default async function Admin({
   ];
   const valid =
     segments.length === 0 ||
-    (["settings", "users", "translations", "applications", "login"].includes(
-      section,
-    ) &&
+    ([
+      "settings",
+      "users",
+      "translations",
+      "applications",
+      "media",
+      "login",
+    ].includes(section) &&
       segments.length === 1) ||
     (kinds.includes(section) &&
       (segments.length === 1 ||

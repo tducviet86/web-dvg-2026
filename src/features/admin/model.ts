@@ -63,6 +63,7 @@ export const sectionPermission: Record<string, string> = {
   settings: "settings:write",
   users: "users:manage",
   translations: "content:read",
+  media: "content:read",
 };
 export const writePermission: Record<Kind, string> = {
   projects: "projects:write",

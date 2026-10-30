@@ -19,6 +19,7 @@ import {
   ArrowUpRight,
   Plus,
   GalleryHorizontalEnd,
+  Images,
   Languages,
   LogOut,
   UserCog,
@@ -37,6 +38,7 @@ import {
   type ProjectBannerDraft,
   type ProjectBannerRecord,
 } from "./banners";
+import { MediaLibraryPanel } from "./media-library";
 import { LoginForm } from "./login";
 import { UsersPanel } from "./users";
 import { TranslationsPanel } from "./translations";
@@ -73,6 +75,7 @@ type Tab =
   | "dashboard"
   | Kind
   | "banners"
+  | "media"
   | "applications"
   | "settings"
   | "users"
@@ -90,6 +93,7 @@ const tabs: { id: Tab; label: string; icon: typeof House; group: string }[] = [
   },
   { id: "posts", label: "Bài viết", icon: FileText, group: "Nội dung" },
   { id: "pages", label: "Trang nội dung", icon: Files, group: "Nội dung" },
+  { id: "media", label: "Thư viện ảnh", icon: Images, group: "Nội dung" },
   { id: "translations", label: "Bản dịch", icon: Languages, group: "Nội dung" },
   {
     id: "leads",
@@ -629,6 +633,8 @@ function Workspace() {
             />
           ) : tab === "applications" ? (
             <ApplicationsPanel canWrite={can("leads:write")} />
+          ) : tab === "media" ? (
+            <MediaLibraryPanel canWrite={can("media:write")} goTo={goTo} />
           ) : tab === "translations" ? (
             <TranslationsPanel canWrite={can("pages:write")} />
           ) : tab === "users" ? (
