@@ -14,6 +14,7 @@ import type { ResolvedBanner } from "@/lib/banners";
 import { Reveal } from "@/components/client-basics";
 import { CorporateBanner } from "@/components/corporate-banner";
 import { SignatureFields } from "@/components/signature-fields";
+import { Reviews } from "@/components/reviews-section";
 import { HomeShowcase } from "@/components/home-showcase";
 import { HomeRentals, pickFeaturedRentals } from "@/components/home-rentals";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
@@ -129,6 +130,7 @@ export default async function Home({ params }: Props) {
         projects={portfolio.filter((p) => p.group === "operation")}
       />
       <SignatureFields />
+      <Reviews />
       <section className="signature-journal" id="goc-nhin">
         <div className="container">
           <div className="home-head">

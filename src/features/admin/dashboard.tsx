@@ -20,6 +20,7 @@ import {
   Plus,
   GalleryHorizontalEnd,
   Images,
+  MessageSquareQuote,
   Languages,
   LogOut,
   UserCog,
@@ -39,6 +40,7 @@ import {
   type ProjectBannerRecord,
 } from "./banners";
 import { MediaLibraryPanel } from "./media-library";
+import { ReviewsPanel } from "./reviews";
 import { LoginForm } from "./login";
 import { UsersPanel } from "./users";
 import { TranslationsPanel } from "./translations";
@@ -76,6 +78,7 @@ type Tab =
   | Kind
   | "banners"
   | "media"
+  | "reviews"
   | "applications"
   | "settings"
   | "users"
@@ -94,6 +97,12 @@ const tabs: { id: Tab; label: string; icon: typeof House; group: string }[] = [
   { id: "posts", label: "Bài viết", icon: FileText, group: "Nội dung" },
   { id: "pages", label: "Trang nội dung", icon: Files, group: "Nội dung" },
   { id: "media", label: "Thư viện ảnh", icon: Images, group: "Nội dung" },
+  {
+    id: "reviews",
+    label: "Đánh giá",
+    icon: MessageSquareQuote,
+    group: "Nội dung",
+  },
   { id: "translations", label: "Bản dịch", icon: Languages, group: "Nội dung" },
   {
     id: "leads",
@@ -633,6 +642,8 @@ function Workspace() {
             />
           ) : tab === "applications" ? (
             <ApplicationsPanel canWrite={can("leads:write")} />
+          ) : tab === "reviews" ? (
+            <ReviewsPanel canWrite={can("pages:write")} goTo={goTo} />
           ) : tab === "media" ? (
             <MediaLibraryPanel canWrite={can("media:write")} goTo={goTo} />
           ) : tab === "translations" ? (
@@ -708,6 +719,14 @@ const SETTINGS: [string, string, string?][] = [
   ["social.facebook", "Facebook", "url"],
   ["social.zalo", "Zalo", "url"],
   ["social.youtube", "YouTube", "url"],
+  [
+    "reviews.googleUrl",
+    "Link xem đánh giá Google (trang Google Business Profile)",
+    "url",
+  ],
+  ["reviews.googleWriteUrl", "Link viết đánh giá Google", "url"],
+  ["reviews.googleRating", "Điểm Google hiện tại (vd 4.9)"],
+  ["reviews.googleCount", "Số đánh giá trên Google (vd 23)"],
   ["seo.defaultTitle", "Tiêu đề SEO mặc định"],
   ["seo.defaultDescription", "Mô tả SEO mặc định"],
   ["leads.notificationEmail", "Email tiếp nhận yêu cầu (nội bộ)", "email"],

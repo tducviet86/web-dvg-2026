@@ -8,6 +8,7 @@ const TAGS = new Set([
   "blog",
   "pages",
   "jobs",
+  "reviews",
   "settings",
 ]);
 

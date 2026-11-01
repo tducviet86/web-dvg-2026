@@ -64,6 +64,7 @@ export const sectionPermission: Record<string, string> = {
   users: "users:manage",
   translations: "content:read",
   media: "content:read",
+  reviews: "content:read",
 };
 export const writePermission: Record<Kind, string> = {
   projects: "projects:write",

@@ -29,6 +29,7 @@ export default async function Admin({
       "translations",
       "applications",
       "media",
+      "reviews",
       "login",
     ].includes(section) &&
       segments.length === 1) ||

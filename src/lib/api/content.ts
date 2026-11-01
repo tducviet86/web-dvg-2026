@@ -336,6 +336,25 @@ export const getBanners = cache(async () =>
     .map(toSlide)
     .filter((b): b is ResolvedBanner => !!b),
 );
+export type Review = {
+  id: string;
+  authorName: string;
+  rating: number;
+  content: string;
+  source: "GOOGLE" | "FACEBOOK" | "DIRECT";
+  sourceUrl: string | null;
+  reviewedAt: string;
+  project: { id: string; name: string; slug: string } | null;
+};
+/** Published reviews (about one project and general ones); none if the API fails. */
+export const getReviews = cache(async (project = "") =>
+  (
+    await apiGet<{ data: Review[] }>(
+      `/reviews${project ? `?project=${encodeURIComponent(project)}` : ""}`,
+      ["reviews"],
+    ).catch(() => ({ data: [] as Review[] }))
+  ).data,
+);
 export const getPublicSettings = cache(
   async () =>
     (

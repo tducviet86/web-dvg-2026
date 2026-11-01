@@ -16,6 +16,7 @@ import type { SiteContent } from "@/lib/api/content";
 import { rentalFaqs } from "@/data/rental-content";
 import { listingFaqs } from "@/lib/faq";
 import { FaqSection } from "./faq-section";
+import { Reviews } from "./reviews-section";
 import {
   filterProperties,
   isSaleSearch,
@@ -369,6 +370,7 @@ export function RentalPage({
           </div>
         </section>
         {project && <ProjectMap place={content.locations[project.projectId]} />}
+        <Reviews project={project?.slug} limit={3} />
         <FaqSection
           faqs={[
             ...listingFaqs(content.properties, project, locations),

@@ -8,6 +8,7 @@ export type CacheTag =
   | "blog"
   | "pages"
   | "jobs"
+  | "reviews"
   | "settings";
 
 /** Server-to-server base URL (private network in production). */
