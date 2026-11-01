@@ -45,6 +45,10 @@ test("AI assistants may read the site; llms.txt and the Bing key are served", as
   expect(home).toContain(
     '<meta name="msvalidate.01" content="EDE7796E0A03190449BB1CD1C13A1E9D"/>',
   );
+  // IndexNow key file (the API sends this key with every change).
+  const key = await request.get("/f2f3bf2db002372ff737c2fcfe17c9ba.txt");
+  expect(key.status()).toBe(200);
+  expect((await key.text()).trim()).toBe("f2f3bf2db002372ff737c2fcfe17c9ba");
   const bing = await request.get("/BingSiteAuth.xml");
   expect(bing.status()).toBe(200);
   expect(await bing.text()).toContain("EDE7796E0A03190449BB1CD1C13A1E9D");
