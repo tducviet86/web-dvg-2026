@@ -1,4 +1,4 @@
-export const rentalFaqs = [
+export const rentalFaqs: [question: string, answer: string][] = [
   [
     "Làm thế nào để hẹn xem căn hộ?",
     "Chọn căn hộ hoặc dự án phù hợp, sau đó nhấn Gọi hẹn xem phòng. Cung cấp mã căn, thời gian muốn xem và ngày dự kiến chuyển vào để đội ngũ tư vấn kiểm tra trước với chủ nhà.",

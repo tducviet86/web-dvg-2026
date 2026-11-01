@@ -20,8 +20,12 @@ const times = Tinos({
 });
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  // Google Search Console ownership (keep it, even after verification).
-  verification: { google: "7QndLoCvARPuQRIfxGAmp244agtGdNpdbDs8Dv-g9jE" },
+  // Google Search Console and Bing Webmaster Tools ownership (keep them,
+  // even after verification; Bing also reads /BingSiteAuth.xml).
+  verification: {
+    google: "7QndLoCvARPuQRIfxGAmp244agtGdNpdbDs8Dv-g9jE",
+    other: { "msvalidate.01": "EDE7796E0A03190449BB1CD1C13A1E9D" },
+  },
   title: {
     default: "Đất Vàng Group | Đồng hành cùng giá trị bền vững",
     template: "%s | Đất Vàng Group",

@@ -14,6 +14,8 @@ import {
 import type { PortfolioProject } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { rentalFaqs } from "@/data/rental-content";
+import { listingFaqs } from "@/lib/faq";
+import { FaqSection } from "./faq-section";
 import {
   filterProperties,
   isSaleSearch,
@@ -23,7 +25,6 @@ import {
 import { PropertyCard, SaleCard } from "./cards";
 import { SearchHero } from "./search-hero";
 import { ProjectMap } from "./project-map";
-import { CallContact } from "./call-contact";
 import { money, siteUrl } from "@/lib/utils";
 import { InquiryDialog } from "./rental-inquiry";
 import { Counter } from "./counter";
@@ -368,28 +369,12 @@ export function RentalPage({
           </div>
         </section>
         {project && <ProjectMap place={content.locations[project.projectId]} />}
-        <section className="rental-faq">
-          <div>
-            <span className="signature-kicker">GIẢI ĐÁP CÙNG ĐẤT VÀNG</span>
-            <h2>
-              Những điều bạn
-              <br />
-              <em>muốn biết thêm.</em>
-            </h2>
-            <CallContact label="Trao đổi trực tiếp" />
-          </div>
-          <div>
-            {rentalFaqs.map(([q, a]) => (
-              <details key={q}>
-                <summary>
-                  {q}
-                  <span>+</span>
-                </summary>
-                <p>{a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
+        <FaqSection
+          faqs={[
+            ...listingFaqs(content.properties, project, locations),
+            ...rentalFaqs,
+          ]}
+        />
         <section className="rental-owner">
           <div>
             <span className="signature-kicker">DÀNH CHO CHỦ SỞ HỮU</span>

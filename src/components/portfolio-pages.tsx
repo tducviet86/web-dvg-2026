@@ -18,6 +18,8 @@ import type { HeroMode } from "./rental-hero-search";
 import { isSaleSearch, searchUnits, type Filters } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { CallContact } from "./call-contact";
+import { FaqSection } from "./faq-section";
+import { listingFaqs } from "@/lib/faq";
 import { ProjectMap } from "./project-map";
 import { complexSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
@@ -628,6 +630,11 @@ export function PortfolioDetail({
             <ProjectMap place={content.locations[p.projectId]} />
           </>
         )}
+        {!development &&
+          (() => {
+            const faqs = listingFaqs(content.properties, p);
+            return faqs.length > 1 ? <FaqSection faqs={faqs} /> : null;
+          })()}
         <section className="portfolio-related">
           <div className="operation-content-heading">
             <h2>Tiếp tục khám phá</h2>
