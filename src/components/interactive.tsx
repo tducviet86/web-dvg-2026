@@ -1,150 +1,16 @@
 "use client";
-import {
-  useSyncExternalStore,
-  useState,
-  useId,
-  useEffect,
-  useRef,
-} from "react";
-import { motion, useScroll } from "motion/react";
+import { useState, useId, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Heart,
-  X,
-  Check,
-  ArrowUpRight,
-} from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { ArrowLeft, ArrowRight, X, Check, ArrowUpRight } from "lucide-react";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { readStore, writeStore } from "@/lib/storage";
 import { postPublic } from "@/lib/api/client";
 import { Button } from "./ui/button";
 import { useT } from "@/i18n/client";
 import { track } from "@/lib/analytics";
-function subscribeNarrow(callback: () => void) {
-  const query = window.matchMedia("(max-width: 800px)");
-  query.addEventListener("change", callback);
-  return () => query.removeEventListener("change", callback);
-}
-export function Providers() {
-  // Phones: toasts at the top so they never cover the call bar or contact buttons.
-  const narrow = useSyncExternalStore(
-    subscribeNarrow,
-    () => window.matchMedia("(max-width: 800px)").matches,
-    () => false,
-  );
-  return (
-    <Toaster
-      richColors
-      closeButton
-      position={narrow ? "top-center" : "bottom-right"}
-      toastOptions={{ style: { fontFamily: "var(--font-body)" } }}
-    />
-  );
-}
-/**
- * Fades content up as it scrolls into view. The server always renders it
- * visible; only blocks still below the fold are hidden after hydration, so
- * nothing flickers, nothing shifts and content stays readable without JS.
- */
-export function Reveal({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  /** Stagger in milliseconds (e.g. index × 80 in a grid). */
-  delay?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const element = ref.current;
-    if (
-      !element ||
-      !("IntersectionObserver" in window) ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-      element.getBoundingClientRect().top < window.innerHeight * 0.95
-    )
-      return;
-    element.dataset.reveal = "pending";
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        element.dataset.reveal = "shown";
-        observer.disconnect();
-      },
-      { rootMargin: "0px 0px -6% 0px", threshold: 0.05 },
-    );
-    observer.observe(element);
-    return () => {
-      observer.disconnect();
-      delete element.dataset.reveal;
-    };
-  }, []);
-  return (
-    <div
-      ref={ref}
-      className={`reveal ${className}`.trim()}
-      style={
-        delay
-          ? ({ "--reveal-delay": `${delay}ms` } as React.CSSProperties)
-          : undefined
-      }
-    >
-      {children}
-    </div>
-  );
-}
-export function Progress() {
-  const { scrollYProgress } = useScroll();
-  return (
-    <motion.div
-      className="scroll-progress"
-      style={{ scaleX: scrollYProgress }}
-    />
-  );
-}
-function subscribeFavorites(callback: () => void) {
-  window.addEventListener("dvg-storage", callback);
-  window.addEventListener("storage", callback);
-  return () => {
-    window.removeEventListener("dvg-storage", callback);
-    window.removeEventListener("storage", callback);
-  };
-}
-export function Favorite({ id }: { id: string }) {
-  const t = useT();
-  const saved = useSyncExternalStore(
-    subscribeFavorites,
-    () => readStore<string[]>("favorites", []).includes(id),
-    () => false,
-  );
-  return (
-    <button
-      type="button"
-      className={`favorite ${saved ? "selected" : ""}`}
-      aria-label={t(saved ? "Bỏ yêu thích" : "Lưu căn hộ yêu thích")}
-      aria-pressed={saved}
-      onClick={() => {
-        const current = readStore<string[]>("favorites", []);
-        const next = saved ? current.filter((x) => x !== id) : [...current, id];
-        if (writeStore("favorites", next)) {
-          toast.success(
-            t(saved ? "Đã bỏ khỏi yêu thích" : "Đã lưu căn hộ yêu thích"),
-          );
-        }
-      }}
-    >
-      <Heart size={18} fill={saved ? "currentColor" : "none"} />
-    </button>
-  );
-}
 const schema = z.object({
   intent: z.string(),
   name: z
@@ -415,52 +281,6 @@ export function ContactDialog({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
-  );
-}
-const newsletterSchema = z.object({
-  email: z.email("Vui lòng nhập email hợp lệ.").max(120),
-});
-export function Newsletter() {
-  const t = useT();
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<{ email: string }>({ resolver: zodResolver(newsletterSchema) });
-  return (
-    <form
-      onSubmit={handleSubmit(async ({ email }) => {
-        const result = await postPublic("/newsletter", { email });
-        if (!result.ok) {
-          toast.error(t(result.message));
-          return;
-        }
-        track("sign_up", { form: "newsletter" });
-        toast.success(t("Đã đăng ký nhận bản tin."));
-        reset();
-      })}
-      noValidate
-    >
-      <label htmlFor="newsletter">
-        {t("Nhận những góc nhìn mới về không gian sống")}
-      </label>
-      <div className="newsletter">
-        <input
-          id="newsletter"
-          type="email"
-          placeholder={t("Email của bạn")}
-          {...register("email")}
-          aria-invalid={!!errors.email}
-        />
-        <button aria-label={t("Đăng ký bản tin")}>
-          <ArrowRight size={20} />
-        </button>
-      </div>
-      {errors.email && (
-        <span className="field-error">{t(errors.email.message ?? "")}</span>
-      )}
-    </form>
   );
 }
 export function Gallery({

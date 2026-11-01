@@ -17,7 +17,7 @@ import type { PortfolioProject } from "@/types";
 import { BackButton } from "./layout/back-button";
 import { RichText } from "./rich-text";
 import { PhotoHero } from "./search-hero";
-import { Reveal } from "./interactive";
+import { Reveal } from "./client-basics";
 import { AboutCta, AboutExplore, AboutProjects, AboutTabs } from "./about-page";
 
 export type AboutSubKind = "vision" | "team" | "partners";

@@ -27,7 +27,8 @@ import { href } from "@/i18n/server";
 import { BackButton } from "./layout/back-button";
 import { RichText } from "./rich-text";
 import { PhotoHero } from "./search-hero";
-import { ContactForm, Reveal } from "./interactive";
+import { ContactForm } from "./interactive-lazy";
+import { Reveal } from "./client-basics";
 
 const NEEDS = [
   {

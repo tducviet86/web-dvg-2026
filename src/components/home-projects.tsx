@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "@/components/page-navigation";
 import { ArrowUpRight } from "lucide-react";
 import type { PortfolioProject } from "@/types";
-import { Reveal } from "@/components/interactive";
+import { Reveal } from "@/components/client-basics";
 export function HomeProjects({
   group,
   projects,

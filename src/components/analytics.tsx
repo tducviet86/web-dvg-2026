@@ -100,15 +100,17 @@ gtag("js",new Date());
 ${ids.ga4 ? `gtag("config",${JSON.stringify(ids.ga4)});` : ""}
 ${ids.googleAds ? `gtag("config",${JSON.stringify(ids.googleAds)});` : ""}`}
           </Script>
+          {/* The library itself waits until the page has loaded: events
+              sent earlier wait in dataLayer (gtag-consent) and are kept. */}
           <Script
             id="gtag-lib"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             src={`https://www.googletagmanager.com/gtag/js?id=${google}`}
           />
         </>
       )}
       {pixel && choice === "granted" && (
-        <Script id="meta-pixel" strategy="afterInteractive">
+        <Script id="meta-pixel" strategy="lazyOnload">
           {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init',${JSON.stringify(ids.metaPixel)});fbq('track','PageView');`}
         </Script>

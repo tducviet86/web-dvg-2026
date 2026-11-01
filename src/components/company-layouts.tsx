@@ -8,7 +8,8 @@ import { photos } from "@/data";
 import type { Post, Project, Service } from "@/types";
 import type { EditorialContent } from "@/lib/pages";
 import type { Filters } from "@/lib/filter";
-import { Reveal, ContactForm, Process } from "./interactive";
+import { ContactForm, Process } from "./interactive-lazy";
+import { Reveal } from "./client-basics";
 import { DepthScene } from "./depth-scene";
 import { BlogCard } from "./cards";
 

@@ -11,7 +11,7 @@ import {
 } from "@/lib/api/content";
 import { agentSchema, graphNode, jsonLd } from "@/lib/structured-data";
 import type { ResolvedBanner } from "@/lib/banners";
-import { Reveal } from "@/components/interactive";
+import { Reveal } from "@/components/client-basics";
 import { CorporateBanner } from "@/components/corporate-banner";
 import { SignatureFields } from "@/components/signature-fields";
 import { HomeShowcase } from "@/components/home-showcase";

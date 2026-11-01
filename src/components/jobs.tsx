@@ -23,7 +23,7 @@ import { siteUrl } from "@/lib/utils";
 import { href } from "@/i18n/server";
 import { CompanyHero } from "./company-layouts";
 import { Breadcrumb } from "./public-pages";
-import { Reveal } from "./interactive";
+import { Reveal } from "./client-basics";
 import { RichText } from "./rich-text";
 import { JobApplyForm } from "./job-apply-form";
 

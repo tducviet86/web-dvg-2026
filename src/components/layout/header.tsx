@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X, ArrowUpRight, ChevronDown, Phone } from "lucide-react";
-import { Progress } from "../interactive";
+import { Progress } from "../client-basics";
 import { LanguageSwitcher } from "../translator";
 import { BackTrail } from "./back-button";
 import { useT } from "@/i18n/client";

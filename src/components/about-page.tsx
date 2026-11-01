@@ -20,7 +20,7 @@ import { BackButton } from "./layout/back-button";
 import { RichText } from "./rich-text";
 import { PhotoHero } from "./search-hero";
 import { Counter } from "./counter";
-import { Reveal } from "./interactive";
+import { Reveal } from "./client-basics";
 
 /** The four "Giới thiệu" pages, in menu order. */
 export const ABOUT_PAGES = [

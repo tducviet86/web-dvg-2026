@@ -1,31 +1,42 @@
 "use client";
-import { useEffect, useRef } from "react";
-import {
-  animate,
-  motion,
-  useInView,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-} from "motion/react";
+import { useEffect, useRef, useState } from "react";
+
+const pad = (n: number) => Math.round(n).toString().padStart(2, "0");
+
+/** A number that counts up once it scrolls into view (still with "reduce motion"). */
 export function Counter({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const visible = useInView(ref, { once: true });
-  const reduced = useReducedMotion();
-  const count = useMotionValue(value);
-  const rounded = useTransform(count, (n) =>
-    Math.round(n).toString().padStart(2, "0"),
-  );
+  const [shown, setShown] = useState(value);
   useEffect(() => {
-    if (!visible || reduced) return;
-    count.set(0);
-    const control = animate(count, value, { duration: 1.1, ease: "easeOut" });
-    return () => control.stop();
-  }, [count, visible, reduced, value]);
+    const el = ref.current;
+    if (
+      !el ||
+      !("IntersectionObserver" in window) ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    let frame = 0;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      const start = performance.now();
+      const step = (now: number) => {
+        const t = Math.min((now - start) / 1100, 1);
+        setShown(value * (1 - (1 - t) ** 3));
+        if (t < 1) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+    });
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [value]);
   return (
     <span ref={ref} className="counter-value">
       <span className="sr-only">{value}</span>
-      <motion.span aria-hidden="true">{rounded}</motion.span>
+      <span aria-hidden="true">{pad(shown)}</span>
     </span>
   );
 }

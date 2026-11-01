@@ -16,7 +16,7 @@ import type { Project, Property, Post } from "@/types";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
-import { Favorite } from "./interactive";
+import { Favorite } from "./client-basics";
 export function SectionHeading({
   eyebrow,
   title,

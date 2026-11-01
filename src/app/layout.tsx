@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { Tinos } from "next/font/google";
 import { headers } from "next/headers";
-import { Providers } from "@/components/interactive";
+import { Providers } from "@/components/client-basics";
 import { HTML_LANG, isLocale } from "@/i18n/config";
 import { setRequestLocale } from "@/i18n/server";
 import { siteUrl } from "@/lib/utils";

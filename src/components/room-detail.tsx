@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Property } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
-import { Favorite } from "./interactive";
+import { Favorite } from "./client-basics";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { RentalGallery } from "./rental-gallery";
@@ -30,7 +30,7 @@ import { groupAmenities } from "@/lib/amenities";
 import { apartmentSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
 import { ShareButton } from "./rental-inquiry";
-import { Reveal } from "./interactive";
+import { Reveal } from "./client-basics";
 import { RentalMini, rentalScore } from "./home-rentals";
 import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";

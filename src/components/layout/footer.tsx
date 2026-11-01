@@ -7,7 +7,7 @@ import {
   companyHotline,
   telephoneHref,
 } from "@/lib/company-contact";
-import { Newsletter } from "../interactive";
+import { Newsletter } from "../client-basics";
 export function SiteFooter() {
   return (
     <footer className="site-footer">

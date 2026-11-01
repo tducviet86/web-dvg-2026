@@ -24,7 +24,7 @@ import {
   ShareLinks,
   TextSize,
 } from "./article-reader";
-import { Reveal } from "./interactive";
+import { Reveal } from "./client-basics";
 
 type Category = { slug: string; name: string; postCount?: number };
 
