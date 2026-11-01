@@ -25,8 +25,12 @@ export function DepthScene({
       s.x = s.tx;
       s.y = s.ty;
     }
+    // Back at rest: no transform at all (crisp text, no extra layer).
     if (surface.current)
-      surface.current.style.transform = `rotateX(${s.x.toFixed(2)}deg) rotateY(${s.y.toFixed(2)}deg)`;
+      surface.current.style.transform =
+        settled && !s.x && !s.y
+          ? ""
+          : `rotateX(${s.x.toFixed(2)}deg) rotateY(${s.y.toFixed(2)}deg)`;
     s.frame = settled ? 0 : requestAnimationFrame(step);
   };
   const aim = (x: number, y: number) => {

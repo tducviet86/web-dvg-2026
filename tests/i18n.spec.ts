@@ -65,10 +65,19 @@ test("client components (popups, forms) are translated too", async ({
   await reloadUntil(page, async () =>
     (await open.innerText()).includes("EN: "),
   );
-  await open.click();
   const dialog = page.getByRole("dialog");
+  // The form is downloaded on the first click, so the dialog opens a moment later.
   await reloadUntil(page, async () => {
-    if (!(await dialog.isVisible())) await open.click();
+    if (!(await dialog.isVisible())) {
+      await open.click();
+      if (
+        !(await dialog.waitFor({ timeout: 5000 }).then(
+          () => true,
+          () => false,
+        ))
+      )
+        return false;
+    }
     return (await dialog.locator("h2").innerText()).startsWith("EN: ");
   });
   await expect(dialog.locator("h2")).toHaveText("EN: Tu van chon can");
