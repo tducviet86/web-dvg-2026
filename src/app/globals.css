@@ -5311,6 +5311,13 @@ html[lang="zh-Hans"] :is(h1, h2, h3, em) {
   body:has(.room-mobile-call) .contact-dock {
     bottom: 92px;
   }
+  /* Above the cookie notice while it shows (its height: analytics.tsx). */
+  body:has(.consent-bar) .contact-dock {
+    bottom: calc(12px + var(--consent-h, 150px) + 12px);
+  }
+  body:has(.consent-bar):has(.room-mobile-call) .contact-dock {
+    bottom: calc(88px + var(--consent-h, 150px) + 12px);
+  }
   .dock-bubble > button:first-child {
     padding: 10px 16px;
     font-size: 13px;

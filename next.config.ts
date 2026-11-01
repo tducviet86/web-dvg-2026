@@ -13,6 +13,12 @@ const mediaHosts = (process.env.MEDIA_REMOTE_PATTERNS || "")
   .map((value) => new URL(value));
 
 const config: NextConfig = {
+  // The same hosts, readable in browser code (lib/banners canOptimizeImage).
+  env: {
+    NEXT_PUBLIC_IMAGE_HOSTS: mediaHosts
+      .map((url) => `${url.origin}${url.pathname.replace(/\/$/, "")}/`)
+      .join(","),
+  },
   // Docker images use the standalone server (see Dockerfile).
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   experimental: {

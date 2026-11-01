@@ -109,6 +109,8 @@ export function RentalGallery({
                           fill
                           sizes="(max-width: 800px) 100vw, 80vw"
                           loading={index === 0 ? "eager" : "lazy"}
+                          // The first photo is the page's main picture.
+                          fetchPriority={index === 0 ? "high" : "auto"}
                           draggable={false}
                         />
                         <span className="gallery-enlarge">
@@ -161,7 +163,14 @@ export function RentalGallery({
               onClick={() => api?.scrollTo(index)}
             >
               {item.type === "image" ? (
-                <Image src={item.src} alt="" fill sizes="160px" />
+                <Image
+                  src={item.src}
+                  alt=""
+                  fill
+                  sizes="160px"
+                  // The thumbnails shown beside the photo load with it.
+                  loading={index < 4 ? "eager" : "lazy"}
+                />
               ) : (
                 <span>
                   <Play size={26} /> Video

@@ -1,6 +1,6 @@
 "use client";
 import Script from "next/script";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { track, type TrackingIds } from "@/lib/analytics";
@@ -53,6 +53,23 @@ export function Analytics({ ids }: { ids: TrackingIds }) {
   useEffect(() => {
     if (ids.googleAdsLead) window.__dvgLeadConversion = ids.googleAdsLead;
   }, [ids.googleAdsLead]);
+  // While the notice shows, its height is published (--consent-h) so the
+  // floating call buttons on phones sit above it instead of covering it.
+  const bar = useRef<HTMLDivElement>(null);
+  const showNotice = !choice && !!(google || pixel);
+  useEffect(() => {
+    const el = bar.current;
+    const root = document.documentElement;
+    if (!showNotice || !el) return;
+    const sizer = new ResizeObserver(() =>
+      root.style.setProperty("--consent-h", `${el.offsetHeight}px`),
+    );
+    sizer.observe(el);
+    return () => {
+      sizer.disconnect();
+      root.style.removeProperty("--consent-h");
+    };
+  }, [showNotice]);
 
   function decide(next: Choice) {
     try {
@@ -97,8 +114,9 @@ fbq('init',${JSON.stringify(ids.metaPixel)});fbq('track','PageView');`}
         </Script>
       )}
       {/* The server renders "denied" (no notice); the browser its own choice. */}
-      {!choice && (google || pixel) && (
+      {showNotice && (
         <div
+          ref={bar}
           className="consent-bar"
           role="region"
           aria-label={t("Thông báo cookie")}

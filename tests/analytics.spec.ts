@@ -66,3 +66,29 @@ test("GA4 waits for consent, then counts calls and Zalo as leads; local copies a
     '"consent","default",{"ad_storage":"granted"',
   );
 });
+
+test("on a phone the floating call buttons sit above the cookie notice", async ({
+  page,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await asLiveSite(page, baseURL!);
+  for (const path of ["/", "/cho-thue/can-ho-sun-panoma-demo-02"]) {
+    await page.goto(`${LIVE}${path}`);
+    const notice = page.getByRole("region", { name: "Thông báo cookie" });
+    await expect(notice).toBeVisible();
+    const dock = page.locator(".contact-dock");
+    await expect(dock).toBeVisible();
+    await expect
+      .poll(
+        async () => {
+          const [d, n] = [await dock.boundingBox(), await notice.boundingBox()];
+          return d && n ? d.y + d.height <= n.y : false;
+        },
+        { message: path },
+      )
+      .toBe(true);
+  }
+  // Requests still on their way would otherwise outlive the test.
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});

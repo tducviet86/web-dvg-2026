@@ -1078,6 +1078,13 @@
 }
 
 /* ═══ Rental experience refresh: entrance motion, stats, quick filters, inquiry popups ═══ */
+/* Above the fold: a slide only, never invisible, so the title, photos and
+   price count as shown at once (fast first paint for search engines). */
+@keyframes rental-lift {
+  from {
+    transform: translateY(14px);
+  }
+}
 @keyframes rental-rise {
   from {
     opacity: 0;
@@ -1112,7 +1119,7 @@
   }
 }
 .rental-intro-copy > * {
-  animation: rental-rise 0.7s cubic-bezier(0.2, 0.65, 0.3, 1) both;
+  animation: rental-lift 0.7s cubic-bezier(0.2, 0.65, 0.3, 1) both;
 }
 .rental-intro-copy > :nth-child(2) {
   animation-delay: 0.05s;
@@ -1127,7 +1134,7 @@
   animation-delay: 0.28s;
 }
 .rental-intro-visual {
-  animation: rental-rise 0.9s 0.1s cubic-bezier(0.2, 0.65, 0.3, 1) both;
+  animation: rental-lift 0.9s 0.1s cubic-bezier(0.2, 0.65, 0.3, 1) both;
   border-radius: 4px;
 }
 .rental-intro-visual img {
@@ -1524,7 +1531,7 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 20px;
-  animation: rental-rise 0.6s both;
+  animation: rental-lift 0.6s both;
 }
 /* The long unit name must never squeeze the buttons onto two lines. */
 .room-heading > div:first-child {
@@ -1563,7 +1570,7 @@
   align-items: center;
   gap: 10px;
   margin: -8px 0 22px;
-  animation: rental-rise 0.6s 0.08s both;
+  animation: rental-lift 0.6s 0.08s both;
 }
 .room-quick-facts > span {
   display: inline-flex;
@@ -1581,22 +1588,15 @@
   border: 0;
   font-weight: 600;
 }
-@keyframes rental-fade {
-  from {
-    opacity: 0;
-  }
-}
-/* Fade only: the gallery keeps its position while images load. */
-.rental-gallery {
-  animation: rental-fade 0.7s 0.12s both;
-}
+
+/* The gallery shows at once: it is the first thing a visitor looks for. */
 .room-description section {
   animation: rental-rise 0.6s both;
   animation-timeline: view();
   animation-range: entry 0% entry 30%;
 }
 .room-contact-panel {
-  animation: rental-rise 0.7s 0.2s both;
+  animation: rental-lift 0.7s 0.2s both;
 }
 .room-contact-panel .signature-kicker {
   display: inline-flex;
