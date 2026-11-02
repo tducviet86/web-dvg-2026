@@ -140,7 +140,6 @@ export function LanguageSwitcher({
               {code === lang && <Check size={15} aria-hidden="true" />}
             </a>
           ))}
-          <p lang={HTML_LANG[lang]}>{NOTE[lang]}</p>
         </div>
       )}
     </div>
