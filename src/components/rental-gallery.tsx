@@ -107,7 +107,9 @@ export function RentalGallery({
                           src={item.src}
                           alt={item.alt}
                           fill
-                          sizes="(max-width: 800px) 100vw, 80vw"
+                          // Phones: the 270px-high frame crops the sides of
+                          // a 16:9 photo, so it is drawn ~1.3× the screen.
+                          sizes="(max-width: 560px) 130vw, (max-width: 800px) 100vw, 80vw"
                           loading={index === 0 ? "eager" : "lazy"}
                           // The first photo is the page's main picture.
                           fetchPriority={index === 0 ? "high" : "auto"}
