@@ -34,6 +34,11 @@ test("GA4 waits for consent, then counts calls and Zalo as leads; local copies a
 
   await asLiveSite(page, baseURL!);
   await page.goto(`${LIVE}/lien-he`);
+  // gtag.js waits for a sign of a person (scroll, tap, key) so speed tests
+  // do not pay for it; the queued page view is kept.
+  await expect(page.locator("main h1")).toBeVisible();
+  expect(await page.locator('script[src*="googletagmanager"]').count()).toBe(0);
+  await page.mouse.wheel(0, 200);
   await expect(
     page.locator('script[src*="gtag/js?id=G-DNXPDKR1NX"]'),
   ).toHaveCount(1);
@@ -60,7 +65,10 @@ test("GA4 waits for consent, then counts calls and Zalo as leads; local copies a
   expect(events).toEqual(expect.arrayContaining(["click_call", "click_zalo"]));
   // The choice is remembered.
   await page.reload();
-  await expect(page.locator('script[src*="gtag/js"]')).toHaveCount(1);
+  // Readers who never scroll are still counted, a few seconds after load.
+  await expect(page.locator('script[src*="gtag/js"]')).toHaveCount(1, {
+    timeout: 10_000,
+  });
   await expect(notice).toHaveCount(0);
   expect(JSON.stringify(await layer(page))).toContain(
     '"consent","default",{"ad_storage":"granted"',

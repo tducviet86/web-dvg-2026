@@ -1,6 +1,6 @@
 "use client";
 import Script from "next/script";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { track, type TrackingIds } from "@/lib/analytics";
@@ -19,6 +19,10 @@ function readChoice(): Choice | null {
 /** Only the real site is measured: not local copies, tests or previews. */
 const onLiveSite = () => /(^|\.)datvanggroup\.vn$/.test(location.hostname);
 const noSubscribe = () => () => {};
+/** First sign of a person on the page (not a speed test robot). */
+const WAKE_EVENTS = ["pointerdown", "keydown", "scroll", "touchstart"] as const;
+/** Visitors who only read still get counted after this long. */
+const IDLE_LOAD_MS = 5000;
 const subscribe = (onChange: () => void) => {
   addEventListener("dvg-consent", onChange);
   return () => removeEventListener("dvg-consent", onChange);
@@ -35,6 +39,25 @@ export function Analytics({ ids }: { ids: TrackingIds }) {
   const live = useSyncExternalStore(noSubscribe, onLiveSite, () => false);
   const google = live && (ids.ga4 || ids.googleAds);
   const pixel = live && ids.metaPixel;
+  // gtag.js (~190 KB) is the heaviest script on the page: it loads at the
+  // visitor's first scroll, tap or key, or 5 s after the page has loaded.
+  // Events sent before then wait in dataLayer and are kept.
+  const [wake, setWake] = useState(false);
+  useEffect(() => {
+    if (!google || wake) return;
+    let timer = 0;
+    const go = () => setWake(true);
+    const startTimer = () => (timer = window.setTimeout(go, IDLE_LOAD_MS));
+    for (const type of WAKE_EVENTS)
+      addEventListener(type, go, { once: true, passive: true });
+    if (document.readyState === "complete") startTimer();
+    else addEventListener("load", startTimer, { once: true });
+    return () => {
+      window.clearTimeout(timer);
+      removeEventListener("load", startTimer);
+      for (const type of WAKE_EVENTS) removeEventListener(type, go);
+    };
+  }, [google, wake]);
 
   // Calls, Zalo and WhatsApp anywhere on the site count as leads.
   useEffect(() => {
@@ -100,13 +123,13 @@ gtag("js",new Date());
 ${ids.ga4 ? `gtag("config",${JSON.stringify(ids.ga4)});` : ""}
 ${ids.googleAds ? `gtag("config",${JSON.stringify(ids.googleAds)});` : ""}`}
           </Script>
-          {/* The library itself waits until the page has loaded: events
-              sent earlier wait in dataLayer (gtag-consent) and are kept. */}
-          <Script
-            id="gtag-lib"
-            strategy="lazyOnload"
-            src={`https://www.googletagmanager.com/gtag/js?id=${google}`}
-          />
+          {wake && (
+            <Script
+              id="gtag-lib"
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${google}`}
+            />
+          )}
         </>
       )}
       {pixel && choice === "granted" && (
