@@ -25,8 +25,8 @@ export function unitBadges(p: { highlight?: string; trending?: boolean }) {
   const badges: { key: string; label: string }[] = [];
   const label = highlightLabel(p.highlight);
   if (label) badges.push({ key: p.highlight!, label });
-  // "HOT" already says it: no second badge.
-  if (p.trending && p.highlight !== "hot")
+  // Shown beside any editor badge, HOT included, as in Admin.
+  if (p.trending)
     badges.push({ key: "trending", label: TRENDING_LABEL });
   return badges;
 }
