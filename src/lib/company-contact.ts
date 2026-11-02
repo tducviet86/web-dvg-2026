@@ -25,3 +25,12 @@ export function whatsappHref(phone = companyWhatsApp) {
   const normalized = digits(phone).replace(/^\+/, "").replace(/^0/, "84");
   return /^\d{10,15}$/.test(normalized) ? `https://wa.me/${normalized}` : null;
 }
+/** The WhatsApp number in international form: "+84 911 29 69 79". */
+export function whatsappDisplay(phone = companyWhatsApp) {
+  const chat = whatsappHref(phone);
+  if (!chat) return phone;
+  const n = chat.slice("https://wa.me/".length);
+  return n.startsWith("84") && n.length === 11
+    ? `+84 ${n.slice(2, 5)} ${n.slice(5, 7)} ${n.slice(7, 9)} ${n.slice(9)}`
+    : `+${n}`;
+}

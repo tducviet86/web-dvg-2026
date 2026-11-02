@@ -21,9 +21,12 @@ import {
   companyFacebook,
   companyHotline,
   telephoneHref,
+  whatsappDisplay,
+  whatsappHref,
   zaloHref,
 } from "@/lib/company-contact";
-import { href } from "@/i18n/server";
+import { getRequestLocale, href } from "@/i18n/server";
+import { WhatsAppIcon } from "./whatsapp-icon";
 import { BackButton } from "./layout/back-button";
 import { RichText } from "./rich-text";
 import { PhotoHero } from "./search-hero";
@@ -81,6 +84,9 @@ export function ContactPage({
   const hotline = settings["company.hotline"]?.trim() || companyHotline;
   const call = telephoneHref(hotline);
   const zalo = settings["social.zalo"]?.trim() || zaloHref();
+  const whatsapp = whatsappHref();
+  // Visitors reading in another language are offered WhatsApp first.
+  const foreign = getRequestLocale() !== "vi";
   const facebook = settings["social.facebook"]?.trim() || companyFacebook;
   const email = settings["company.email"]?.trim();
   const address = settings["company.address"]?.trim();
@@ -105,6 +111,14 @@ export function ContactPage({
       action: "Mở Zalo",
       external: true,
     },
+    whatsapp && {
+      icon: WhatsAppIcon,
+      label: "WhatsApp",
+      value: whatsappDisplay(),
+      href: whatsapp,
+      action: "Mở WhatsApp",
+      external: true,
+    },
     email && {
       icon: Mail,
       label: "Email",
@@ -122,7 +136,7 @@ export function ContactPage({
     },
     hours && { icon: Clock, label: "Giờ làm việc", value: hours },
   ].filter(Boolean) as {
-    icon: typeof Phone;
+    icon: typeof Phone | typeof WhatsAppIcon;
     label: string;
     value: string;
     href?: string | null;
@@ -153,16 +167,28 @@ export function ContactPage({
               Gọi {hotline}
             </a>
           )}
-          {zalo && (
+          {foreign && whatsapp ? (
             <a
-              href={zalo}
+              href={whatsapp}
               className="about-hero-ghost"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <MessageCircle size={17} aria-hidden="true" />
-              Chat Zalo
+              <WhatsAppIcon size={17} />
+              Chat WhatsApp
             </a>
+          ) : (
+            zalo && (
+              <a
+                href={zalo}
+                className="about-hero-ghost"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle size={17} aria-hidden="true" />
+                Chat Zalo
+              </a>
+            )
           )}
           <a href="#gui-yeu-cau" className="about-hero-ghost">
             Gửi yêu cầu tư vấn

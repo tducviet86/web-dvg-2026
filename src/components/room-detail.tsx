@@ -24,11 +24,11 @@ import { propertyMedia } from "@/lib/property-media";
 import { ProjectMap } from "./project-map";
 import { LuxuryBadges, SaleCard } from "./cards";
 import { ViewBeacon } from "./view-beacon";
-import { CallContact } from "./call-contact";
+import { CallContact, WhatsAppContact } from "./call-contact";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { groupAmenities } from "@/lib/amenities";
 import { apartmentSchema, jsonLd } from "@/lib/structured-data";
-import { href, t } from "@/i18n/server";
+import { getRequestLocale, href, t, tf } from "@/i18n/server";
 import { ShareButton } from "./rental-inquiry";
 import { Reveal } from "./client-basics";
 import { RentalMini, rentalScore } from "./home-rentals";
@@ -56,6 +56,12 @@ export function RoomDetail({
   );
   const available = r.status === "Còn trống";
   const code = unitRef(r);
+  // Visitors reading in another language chat on WhatsApp rather than call.
+  const foreign = getRequestLocale() !== "vi";
+  const whatsappMessage = tf(
+    "Xin chào Đất Vàng Group, tôi quan tâm căn {code} tại {project}.",
+    { code, project: project.name },
+  );
   const amenities = groupAmenities(r.amenityKeys ?? []);
   const amenityCount = amenities.reduce((n, g) => n + g.items.length, 0);
   const projectPage = `/du-an/${portfolio?.slug || project.slug}`;
@@ -438,6 +444,13 @@ export function RoomDetail({
               phone={r.contactPhone || undefined}
               className="button-outline-call"
             />
+            {foreign && (
+              <WhatsAppContact
+                label="Chat WhatsApp"
+                message={whatsappMessage}
+                className="room-whatsapp"
+              />
+            )}
             <div className="room-call-context">
               <span>Mã căn khi trao đổi</span>
               <strong>
@@ -524,12 +537,16 @@ export function RoomDetail({
             <span>/ tháng{r.isDemo ? " · Giá mẫu" : ""}</span>
           </div>
         )}
-        <CallContact
-          label={
-            available ? (sale ? "Gọi tư vấn" : "Gọi hẹn xem") : "Gọi tư vấn"
-          }
-          phone={r.contactPhone || undefined}
-        />
+        {foreign ? (
+          <WhatsAppContact label="WhatsApp" message={whatsappMessage} />
+        ) : (
+          <CallContact
+            label={
+              available ? (sale ? "Gọi tư vấn" : "Gọi hẹn xem") : "Gọi tư vấn"
+            }
+            phone={r.contactPhone || undefined}
+          />
+        )}
       </div>
     </main>
   );

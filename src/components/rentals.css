@@ -3072,3 +3072,34 @@
 .property-bottom strong {
   white-space: nowrap;
 }
+
+/* WhatsApp chat (pages in English, Korean, Chinese): WhatsApp green with
+   white text (#0f7a41 keeps 5:1 contrast). */
+.whatsapp-button {
+  border-color: #0f7a41;
+  background: #0f7a41;
+  color: #fff;
+}
+.whatsapp-button:hover {
+  background: #0b5e32;
+  border-color: #0b5e32;
+  color: #fff;
+}
+.room-contact-panel .whatsapp-button {
+  min-height: 64px;
+  padding: 12px 18px;
+}
+.room-contact-panel .whatsapp-button small,
+.room-page .room-mobile-call .whatsapp-button small {
+  color: #fff;
+  font-size: 17px;
+}
+.room-contact-panel .whatsapp-button > svg:first-child {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  border-radius: 50%;
+  background: #fff;
+  color: #0f7a41;
+}
