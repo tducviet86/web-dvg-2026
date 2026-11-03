@@ -5273,3 +5273,94 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* "Loại hình": one row of pills per group (Căn hộ / Nhà phố / Mặt bằng). */
+.admin-editor .field-cards > .field-pill-groups {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  gap: 0;
+  border: 1px solid #dbe4de;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.field-pill-group {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.field-pill-group + .field-pill-group {
+  border-top: 1px solid #e8eee9;
+}
+.field-pill-group > span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #6b5a2e;
+}
+.admin-editor .field-pill-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-editor .field-pill {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid #cbd8cf;
+  border-radius: 999px;
+  background: #f8faf8;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: #263d35;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+}
+.admin-editor .field-pill input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.admin-editor .field-pill > span {
+  display: block;
+  margin: 0;
+  line-height: 1.2;
+}
+.admin-editor .field-pill:hover {
+  border-color: #24553f;
+}
+.admin-editor .field-pill:has(input:checked) {
+  border-color: #24553f;
+  background: #24553f;
+  color: #fff;
+}
+.admin-editor .field-pill:has(input:focus-visible) {
+  outline: 2px solid #95b5a1;
+  outline-offset: 2px;
+}
+.field-cards.has-error .field-pill-groups {
+  border-color: #c2412b;
+}
+@media (max-width: 560px) {
+  .field-pill-group {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

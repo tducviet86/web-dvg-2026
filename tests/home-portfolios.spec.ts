@@ -218,7 +218,7 @@ test("featured rentals: much-viewed units rise above HOT without a badge", () =>
       unit("moi"),
       unit("hot", { highlight: "hot" }),
       unit("it-xem", { interestScore: 12 }),
-      unit("dong-xem", { interestScore: 25, trending: true }),
+      unit("dong-xem", { interestScore: 35, trending: true }),
       unit("rat-dong-xem", { interestScore: 180, trending: true }),
       unit("hot-het-phong", { highlight: "hot", status: "Đã thuê" }),
     ],

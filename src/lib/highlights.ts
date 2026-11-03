@@ -11,7 +11,7 @@ export const HIGHLIGHTS = {
 export type Highlight = keyof typeof HIGHLIGHTS;
 export const TRENDING_LABEL = "Đang được quan tâm";
 /** Same rule as the server (properties.service.ts): views + 5 × enquiries. */
-export const TRENDING_SCORE = 20;
+export const TRENDING_SCORE = 30;
 export const highlightOptions = Object.entries(HIGHLIGHTS) as [
   string,
   string,

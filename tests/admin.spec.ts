@@ -258,16 +258,38 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await expect(form.locator("[name=price]")).toHaveValue("12.500.000");
   await expect(form.locator("[name=salePrice]")).toBeHidden();
   await form.locator("[name=depositMonths]").selectOption("2");
-  // Unit types listed under Căn hộ / Nhà phố / Mặt bằng.
-  const kinds = form.locator("[name=type] optgroup");
-  await expect(kinds).toHaveCount(3);
-  expect(
-    await kinds.evaluateAll((g) => g.map((x) => x.getAttribute("label"))),
-  ).toEqual(["Căn hộ", "Nhà phố", "Mặt bằng"]);
-  await expect(
-    kinds.first().locator("option", { hasText: "Shophouse" }),
-  ).toHaveCount(1);
-  await expect(kinds.nth(1).locator("option")).toHaveText(["Nhà phố"]);
+  // Unit types: pills under Căn hộ / Nhà phố / Mặt bằng.
+  const kinds = form.locator(".field-pill-group");
+  await expect(kinds.locator("> span")).toHaveText([
+    "Căn hộ",
+    "Nhà phố",
+    "Mặt bằng",
+  ]);
+  await expect(kinds.first().getByLabel("Shophouse")).toHaveCount(1);
+  await expect(kinds.nth(1).locator(".field-pill")).toHaveText(["Nhà phố"]);
+  // New units start as 1PN; picking a type fills bedrooms / bathrooms.
+  await expect(form.getByLabel("1 phòng ngủ")).toBeChecked();
+  for (const [type, rooms] of [
+    ["Studio", ["0", "1"]],
+    ["3 phòng ngủ", ["3", "2"]],
+    ["2 phòng ngủ", ["2", "2"]],
+  ] as const) {
+    await form.getByLabel(type, { exact: true }).check();
+    await expect(form.locator("[name=bedrooms]")).toHaveValue(rooms[0]);
+    await expect(form.locator("[name=bathrooms]")).toHaveValue(rooms[1]);
+  }
+  // Still editable, and the mouse wheel does not change the number.
+  await form.locator("[name=bathrooms]").fill("3");
+  await form.locator("[name=bathrooms]").hover();
+  await page.mouse.wheel(0, 200);
+  await expect(form.locator("[name=bathrooms]")).toHaveValue("3");
+  // Minimum lease: 3, 6 or 12 months.
+  await expect(form.locator("[name=minimumLease] option")).toHaveText([
+    "Không yêu cầu",
+    "3 tháng",
+    "6 tháng",
+    "12 tháng",
+  ]);
   // No link inputs: media only comes from uploads.
   await expect(form.locator("[name=videoUrl]")).toHaveCount(0);
   const png = readFileSync("public/images/img1.png");

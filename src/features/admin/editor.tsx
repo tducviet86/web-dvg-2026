@@ -65,6 +65,14 @@ import {
 } from "./model";
 import { ProjectBannerSection, type ProjectBannerDraft } from "./banners";
 
+/** Picking one of these types fills [bedrooms, bathrooms]. */
+const ROOMS_BY_TYPE: Record<string, [number, number]> = {
+  studio: [0, 1],
+  "1pn": [1, 1],
+  "2pn": [2, 2],
+  "3pn": [3, 2],
+};
+
 // ───────────────────────────── field model ─────────────────────────────
 
 type Field = {
@@ -489,11 +497,13 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
         icon: ClipboardList,
         fields: [
           f("type", "Loại hình", {
-            type: "select",
+            type: "choice",
             required: true,
+            wide: true,
+            default: "1pn",
             options: lookups.propertyTypes,
             optionGroups: lookups.propertyTypeGroups,
-            hint: "Căn hộ: Studio, 1–3 phòng ngủ, Shophouse… · Nhà phố: Euro Village 1, 2, Phúc Lộc Viên… (chọn dự án ở trên) · Mặt bằng kinh doanh.",
+            hint: "Chọn Studio, 1PN, 2PN hoặc 3PN sẽ tự điền số phòng ngủ và phòng tắm (sửa lại được).",
           }),
           f("area", "Diện tích", {
             type: "number",
@@ -511,7 +521,6 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             max: 50,
             integer: true,
             default: 1,
-            hint: "Nhập 0 cho căn studio.",
           }),
           f("bathrooms", "Phòng tắm", {
             type: "number",
@@ -570,7 +579,6 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             type: "select",
             required: true,
             options: availabilityOptions,
-            hint: "Đã cho thuê hoặc Đã bán: căn tự ẩn khỏi website sau 5 ngày. Chọn lại “Còn trống” để căn hiện lại ngay.",
           }),
           f("forRent", "Cho thuê", { type: "checkbox", default: true }),
           f("forSale", "Mua bán", { type: "checkbox" }),
@@ -615,10 +623,13 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             showWhen: "forRent",
           }),
           f("minimumLease", "Thuê tối thiểu", {
-            type: "number",
-            min: 1,
-            max: 120,
-            integer: true,
+            type: "select",
+            options: [
+              ["", "Không yêu cầu"],
+              ["3", "3 tháng"],
+              ["6", "6 tháng"],
+              ["12", "12 tháng"],
+            ],
             unit: "tháng",
             showWhen: "forRent",
           }),
@@ -1464,6 +1475,20 @@ export function Editor({
    */
   const placeOf = (id: string) => lookups.projectPlaces?.[id];
   const lastProject = useRef(str(live.projectId));
+  /** Studio / 1–3PN: bedrooms and bathrooms (still editable). */
+  function fillRooms(type: string) {
+    const rooms = ROOMS_BY_TYPE[type];
+    const form = formRef.current;
+    if (!rooms || !form) return;
+    const [bedrooms, bathrooms] = rooms;
+    for (const [name, n] of [
+      ["bedrooms", bedrooms],
+      ["bathrooms", bathrooms],
+    ] as const) {
+      const input = form.elements.namedItem(name) as HTMLInputElement | null;
+      if (input) input.value = String(n);
+    }
+  }
   function fillFromProject(projectId: string) {
     const form = formRef.current;
     const next = placeOf(projectId);
@@ -1827,28 +1852,55 @@ export function Editor({
           <legend>
             {item.label} {tag}
           </legend>
-          <div>
-            {item.options!.map(([key, label]) => (
-              <label key={key} className="field-card">
-                <input
-                  type={item.type === "choice" ? "radio" : "checkbox"}
-                  name={item.key}
-                  value={key}
-                  defaultChecked={
-                    Array.isArray(value)
-                      ? value.includes(key)
-                      : String(value) === key
-                  }
-                />
-                <span>
-                  <strong>{label}</strong>
-                  {item.optionHints?.[key] && (
-                    <small>{item.optionHints[key]}</small>
-                  )}
-                </span>
-              </label>
-            ))}
-          </div>
+          {item.optionGroups ? (
+            <div className="field-pill-groups">
+              {[
+                ...new Set(item.options!.map(([k]) => item.optionGroups![k])),
+              ].map((group) => (
+                <div key={group ?? ""} className="field-pill-group">
+                  <span>{group ?? "Khác"}</span>
+                  <div>
+                    {item
+                      .options!.filter(([k]) => item.optionGroups![k] === group)
+                      .map(([key, label]) => (
+                        <label key={key} className="field-pill">
+                          <input
+                            type="radio"
+                            name={item.key}
+                            value={key}
+                            defaultChecked={String(value) === key}
+                          />
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>
+              {item.options!.map(([key, label]) => (
+                <label key={key} className="field-card">
+                  <input
+                    type={item.type === "choice" ? "radio" : "checkbox"}
+                    name={item.key}
+                    value={key}
+                    defaultChecked={
+                      Array.isArray(value)
+                        ? value.includes(key)
+                        : String(value) === key
+                    }
+                  />
+                  <span>
+                    <strong>{label}</strong>
+                    {item.optionHints?.[key] && (
+                      <small>{item.optionHints[key]}</small>
+                    )}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
           {item.hint && <small id={`${id}-hint`}>{item.hint}</small>}
           {errorText}
         </fieldset>
@@ -1921,6 +1973,15 @@ export function Editor({
             {!item.options?.length && (
               <option value="">Chưa có dữ liệu — hãy tạo trước</option>
             )}
+            {/* A saved value outside the list (e.g. 24 months) is kept. */}
+            {value != null &&
+              String(value) !== "" &&
+              !item.options?.some(([k]) => k === String(value)) && (
+                <option value={String(value)}>
+                  {String(value)}
+                  {item.unit ? ` ${item.unit}` : ""}
+                </option>
+              )}
             {item.optionGroups
               ? [
                   ...new Set(item.options?.map(([k]) => item.optionGroups![k])),
@@ -1984,6 +2045,12 @@ export function Editor({
               min={item.min}
               max={item.max}
               step={item.step ?? (item.integer ? "1" : undefined)}
+              // The wheel scrolls the page; it never changes the number.
+              onWheel={
+                item.type === "number"
+                  ? (event) => event.currentTarget.blur()
+                  : undefined
+              }
             />
             {item.unit && <span aria-hidden="true">{item.unit}</span>}
           </div>
@@ -2055,6 +2122,8 @@ export function Editor({
         }}
         onChange={(event) => {
           const target = event.target as unknown as HTMLInputElement;
+          if (kind === "properties" && target.name === "type")
+            fillRooms(target.value);
           if (kind === "properties" && target.name === "projectId")
             fillFromProject(target.value);
           if (target.name === "slug") {
