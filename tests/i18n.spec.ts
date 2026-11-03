@@ -167,3 +167,44 @@ test("editors correct a translation in Admin and the website shows it", async ({
     async () => (await contact.innerText()) === "Contact us",
   );
 });
+
+test("a new unit is translated, prices kept apart from the words", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; status: string }[];
+  };
+  const projectId = projects.data.find((p) => p.status === "PUBLISHED")!.id;
+  const created = await api.send("post", "/admin/properties", {
+    name: "Căn dịch giá QA",
+    unitCode: "I18N-QA",
+    projectId,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn hộ kiểm tra dịch giá thuê.",
+    rentPriceVnd: "27300000",
+    depositVnd: "27300000",
+    status: "PUBLISHED",
+  });
+  expect(created.ok()).toBeTruthy();
+  const { slug, id } = (await created.json()).data as {
+    slug: string;
+    id: string;
+  };
+  await page.goto(`/ko/cho-thue/${slug}`);
+  // "1 tháng tiền nhà · 27.300.000 đ": the words are translated on their
+  // own (once for every price), the amount stays as it is.
+  const deposit = page.locator("dd", { hasText: "27.300.000" }).filter({
+    hasText: "1 thang tien nha",
+  });
+  await reloadUntil(page, async () => (await deposit.count()) > 0);
+  await expect(deposit.first()).toContainText("KO: 1 thang tien nha");
+  await expect(
+    page.locator("main").getByText("KO: Can ho kiem tra dich gia thue."),
+  ).toBeVisible();
+  await api.send("delete", `/admin/properties/${id}`);
+});

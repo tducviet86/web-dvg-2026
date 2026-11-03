@@ -1,5 +1,6 @@
 import { revalidateTag } from "next/cache";
 import { timingSafeEqual } from "node:crypto";
+import { reloadDictionaries } from "@/i18n/dictionary";
 
 const TAGS = new Set([
   "projects",
@@ -10,6 +11,8 @@ const TAGS = new Set([
   "jobs",
   "reviews",
   "settings",
+  // Translations: not a data cache tag, the dictionaries are reloaded.
+  "i18n",
 ]);
 
 /**
@@ -31,6 +34,8 @@ export async function POST(request: Request) {
   const tags = Array.isArray(body?.tags)
     ? body.tags.filter((t): t is string => typeof t === "string" && TAGS.has(t))
     : [];
-  for (const tag of tags) revalidateTag(tag, { expire: 0 });
+  for (const tag of tags)
+    if (tag === "i18n") await reloadDictionaries();
+    else revalidateTag(tag, { expire: 0 });
   return Response.json({ revalidated: tags });
 }

@@ -69,6 +69,21 @@ export async function getDictionary(
   return dict.entries;
 }
 
+/**
+ * New translations are ready (BE-DVG calls /api/revalidate with "i18n"):
+ * reload every language now instead of at the next minute's refresh.
+ */
+export async function reloadDictionaries() {
+  await Promise.all(
+    [...dictionaries].map(([locale, dict]) => {
+      dict.loading = load(locale, dict).finally(
+        () => (dict.loading = undefined),
+      );
+      return dict.loading;
+    }),
+  );
+}
+
 /* ── Strings rendered without a translation ─────────────────────────────── */
 const pending = new Map<Locale, Set<string>>();
 let timer: ReturnType<typeof setTimeout> | null = null;

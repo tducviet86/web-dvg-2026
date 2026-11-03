@@ -36,6 +36,14 @@ import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";
 import { floorLabel, groupLabel, hasRooms } from "@/lib/property-groups";
 
+/**
+ * "1 tháng tiền nhà · 25.000.000 đ" → ["1 tháng tiền nhà · ", "25.000.000",
+ * " đ"]: each piece is translated on its own, so the words are translated
+ * once for every price instead of once per amount.
+ */
+const splitAmounts = (text: string) =>
+  text.split(/(\d{1,3}(?:\.\d{3})+)/).filter(Boolean);
+
 export function RoomDetail({
   room: r,
   content,
@@ -306,7 +314,7 @@ export function RoomDetail({
                   ].map(([k, v]) => (
                     <div key={k}>
                       <dt>{k}</dt>
-                      <dd>{v}</dd>
+                      <dd>{splitAmounts(v)}</dd>
                     </div>
                   ))}
                 </dl>
@@ -356,7 +364,7 @@ export function RoomDetail({
                 ).map(([k, v]) => (
                   <div key={k}>
                     <dt>{k}</dt>
-                    <dd>{v}</dd>
+                    <dd>{splitAmounts(v)}</dd>
                   </div>
                 ))}
               </dl>
@@ -437,7 +445,7 @@ export function RoomDetail({
               <dl className="room-price-breakdown">
                 <div>
                   <dt>Đặt cọc</dt>
-                  <dd>{r.deposit || "Theo thỏa thuận"}</dd>
+                  <dd>{splitAmounts(r.deposit || "Theo thỏa thuận")}</dd>
                 </div>
                 <div>
                   <dt>Phí quản lý</dt>
