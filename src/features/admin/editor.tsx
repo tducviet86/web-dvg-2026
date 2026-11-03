@@ -564,6 +564,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             type: "select",
             required: true,
             options: availabilityOptions,
+            hint: "Đã cho thuê hoặc Đã bán: căn tự ẩn khỏi website sau 5 ngày. Chọn lại “Còn trống” để căn hiện lại ngay.",
           }),
           f("forRent", "Cho thuê", { type: "checkbox", default: true }),
           f("forSale", "Mua bán", { type: "checkbox" }),

@@ -85,6 +85,8 @@ export type Property = AdminDetails & {
   trending?: boolean;
   /** Views + 5 × enquiries over the last 14 days (server). */
   interestScore?: number;
+  /** Rented / sold a few days ago: off the lists, page not indexed. */
+  delisted?: boolean;
 };
 export type Post = AdminDetails & {
   isDemo?: boolean;

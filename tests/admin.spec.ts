@@ -576,6 +576,10 @@ test("the unit list filters, sorts, pages and changes units in bulk", async ({
   await first.getByLabel(`Tình trạng ${name}`).selectOption("RENTED");
   await expect(page.getByText("Đã cập nhật.")).toBeVisible();
   await expect(first.getByLabel(`Tình trạng ${name}`)).toHaveValue("RENTED");
+  // Rented: it leaves the website a few days later.
+  await expect(first.locator(".units-site-note")).toHaveText(
+    "Tự ẩn khỏi website sau 5 ngày",
+  );
   await page
     .getByRole("checkbox", { name: "Chọn tất cả căn trên trang" })
     .check();

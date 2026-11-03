@@ -209,7 +209,8 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
         room.seoDescription ||
         `${room.name} tại ${project.name}, ${room.area}m², ${room.furniture.toLowerCase()}. Xem ảnh, thông số, vị trí và liên hệ ${sale ? "tư vấn mua bán" : "hẹn xem"}.${room.isDemo ? " Nội dung minh họa." : ""}`,
       image: room.image,
-      noindex: room.isDemo,
+      // Units rented / sold a while ago only stay reachable from old links.
+      noindex: room.isDemo || !!room.delisted,
       parents: sale
         ? [{ name: project.name, path: projectPath }]
         : [
@@ -235,9 +236,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     );
     if (!portfolio) notFound();
     return {
-      title:
-        project.seo.title ||
-        `${project.name} Đà Nẵng: căn hộ & tiện ích`,
+      title: project.seo.title || `${project.name} Đà Nẵng: căn hộ & tiện ích`,
       description:
         project.seo.description ||
         withContext(

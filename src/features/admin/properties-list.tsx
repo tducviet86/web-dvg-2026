@@ -30,6 +30,9 @@ type Stats = {
   availability: Record<string, number>;
   highlighted: number;
   demo: number;
+  /** Rented / sold over `hideDays` days ago: off the site. */
+  delisted?: number;
+  hideDays?: number;
 };
 type Filters = {
   q: string;
@@ -71,6 +74,17 @@ const SORTS: [string, string][] = [
 ];
 const availabilityLabel = (value: string) =>
   availabilityOptions.find(([key]) => key === value)?.[1] ?? value;
+/** Under a rented / sold unit: when it leaves the website, or that it has. */
+function siteNote(u: AdminDto, days: number) {
+  if (u.availability !== "RENTED" && u.availability !== "SOLD") return "";
+  if (u.delisted) return "Đã ẩn khỏi website";
+  const since = Date.parse(String(u.availabilityChangedAt ?? ""));
+  if (!since) return "";
+  const left = Math.ceil((since + days * 86_400_000 - Date.now()) / 86_400_000);
+  return left > 0
+    ? `Tự ẩn khỏi website sau ${left} ngày`
+    : "Đã ẩn khỏi website";
+}
 const vnd = (value: unknown) =>
   value ? `${Number(value).toLocaleString("vi-VN")} đ` : "";
 const saleText = (value: unknown) => {
@@ -291,6 +305,15 @@ export function PropertiesList({
           </button>
         ))}
       </div>
+      {!filters.availability && !filters.q && !!stats?.delisted && (
+        <p className="units-delisted-note">
+          {stats.delisted} căn đã cho thuê hoặc đã bán quá {stats.hideDays} ngày
+          đã tự ẩn khỏi website và không hiện trong danh sách này.{" "}
+          <button type="button" onClick={() => set({ availability: "RENTED" })}>
+            Xem mục Đã cho thuê
+          </button>
+        </p>
+      )}
 
       <section className="admin-panel units-panel">
         <div className="units-toolbar">
@@ -588,6 +611,11 @@ export function PropertiesList({
                         </select>
                       ) : (
                         availabilityLabel(u.availability)
+                      )}
+                      {siteNote(u, stats?.hideDays ?? 5) && (
+                        <small className="units-site-note">
+                          {siteNote(u, stats?.hideDays ?? 5)}
+                        </small>
                       )}
                       <button
                         type="button"

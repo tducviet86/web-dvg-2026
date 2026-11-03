@@ -80,6 +80,8 @@ export type ApiProperty = {
   forSale: boolean;
   isConsignment: boolean;
   availability: Availability;
+  /** Rented / sold a few days ago: off the lists, page not indexed. */
+  delisted?: boolean;
   isDemo: boolean;
   location: string;
   address: string | null;

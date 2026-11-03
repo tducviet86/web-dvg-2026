@@ -116,6 +116,7 @@ const isVideoMedia = (m: { url: string; mimeType?: string | null }) =>
 export function toProperty(p: ApiProperty): Property {
   return {
     isDemo: p.isDemo,
+    delisted: !!p.delisted,
     id: p.id,
     slug: p.slug,
     name: p.name,
@@ -347,13 +348,14 @@ export type Review = {
   project: { id: string; name: string; slug: string } | null;
 };
 /** Published reviews (about one project and general ones); none if the API fails. */
-export const getReviews = cache(async (project = "") =>
-  (
-    await apiGet<{ data: Review[] }>(
-      `/reviews${project ? `?project=${encodeURIComponent(project)}` : ""}`,
-      ["reviews"],
-    ).catch(() => ({ data: [] as Review[] }))
-  ).data,
+export const getReviews = cache(
+  async (project = "") =>
+    (
+      await apiGet<{ data: Review[] }>(
+        `/reviews${project ? `?project=${encodeURIComponent(project)}` : ""}`,
+        ["reviews"],
+      ).catch(() => ({ data: [] as Review[] }))
+    ).data,
 );
 export const getPublicSettings = cache(
   async () =>

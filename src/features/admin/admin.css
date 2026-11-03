@@ -5246,3 +5246,30 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Rented / sold units leave the website after a few days. */
+.units-state > .units-site-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b5a2e;
+}
+.units-delisted-note {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border: 1px solid #e7dcbf;
+  border-radius: 10px;
+  background: #fbf6e8;
+  font-size: 13.5px;
+  color: #4d4223;
+}
+.units-delisted-note button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--c-green-700, #1d4d3f);
+  text-decoration: underline;
+  cursor: pointer;
+}
