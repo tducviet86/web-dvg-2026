@@ -131,4 +131,20 @@ test("AI drafts a unit title and description from the form, with undo", async ({
   };
   expect(seoAsked.listing).toBe("sale");
   expect(seoAsked.context).not.toContain("Giá thuê");
+  // A shophouse: AI gets the type, never "studio", rooms or amenities.
+  await page
+    .locator(".admin-editor-page")
+    .getByLabel("Shophouse", { exact: true })
+    .check();
+  const shop = page.waitForRequest(/\/admin\/ai\/unit-description/);
+  await ai.click();
+  const shopFacts = ((await shop).postDataJSON() as { facts: string }).facts;
+  expect(shopFacts).toContain("Loại hình: Shophouse");
+  expect(shopFacts).not.toMatch(/Studio|Phòng ngủ|Phòng tắm|Tiện nghi|Tầng/);
+  const shopSeo = page.waitForRequest(/\/admin\/ai\/seo-suggest/);
+  await page.getByRole("button", { name: /Tạo gợi ý|Gợi ý lại/ }).click();
+  const shopContext = ((await shopSeo).postDataJSON() as { context: string })
+    .context;
+  expect(shopContext).toContain("Shophouse");
+  expect(shopContext).not.toMatch(/Studio|phòng ngủ/);
 });

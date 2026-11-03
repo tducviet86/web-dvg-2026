@@ -72,6 +72,7 @@ const ROOMS_BY_TYPE: Record<string, [number, number]> = {
   "1pn": [1, 1],
   "2pn": [2, 2],
   "3pn": [3, 2],
+  "nha-pho": [3, 3],
   // No rooms: the fields are hidden and saved as 0.
   shophouse: [0, 0],
   "mat-bang": [0, 0],
@@ -136,6 +137,8 @@ type Field = {
   showWhen?: string;
   /** Hidden while the unit type is one of these (shophouse: no bedrooms). */
   hideForTypes?: string[];
+  /** A select with these choices while the unit type is the key (nhà phố: 2–4 PN). */
+  choicesForTypes?: Record<string, [string, string][]>;
   /** Starts a new block inside the section, with this small heading. */
   subhead?: string;
 };
@@ -529,6 +532,14 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             integer: true,
             default: 1,
             hideForTypes: NO_ROOM_TYPES,
+            // Townhouses have no studio: 2, 3 or 4 bedrooms.
+            choicesForTypes: {
+              "nha-pho": [
+                ["2", "2 phòng ngủ"],
+                ["3", "3 phòng ngủ"],
+                ["4", "4 phòng ngủ"],
+              ],
+            },
           }),
           f("bathrooms", "Phòng tắm", {
             type: "number",
@@ -1703,7 +1714,12 @@ export function Editor({
         project && `Dự án: ${project}`,
         str(v.location),
         str(v.area) && `${str(v.area)} m²`,
-        `${str(v.bedrooms)} phòng ngủ`,
+        // Shophouse / mặt bằng: the type, never "0 phòng ngủ".
+        NO_ROOM_TYPES.includes(str(v.type))
+          ? lookups.propertyTypes.find(([k]) => k === str(v.type))?.[1]
+          : str(v.bedrooms) === "0"
+            ? "Studio"
+            : `${str(v.bedrooms)} phòng ngủ`,
         v.forRent && str(v.price) && `Giá thuê: ${str(v.price)} đ/tháng`,
         v.forSale && str(v.salePrice) && `Giá bán: ${str(v.salePrice)} đ`,
       ]
@@ -1749,7 +1765,12 @@ export function Editor({
           "Hãy chọn loại căn hộ và nhập diện tích trước khi nhờ AI viết mô tả.",
       };
     const bedrooms = str(v.bedrooms);
-    const amenities = ((v.amenities as string[] | undefined) ?? [])
+    // Shophouse / mặt bằng: no bedrooms, bathrooms or amenities (and no
+    // floor for a shophouse), so the AI never calls it a studio.
+    const rooms = !NO_ROOM_TYPES.includes(str(v.type));
+    const amenities = (
+      (rooms ? (v.amenities as string[] | undefined) : []) ?? []
+    )
       .map((key) => amenityOf(key)?.label ?? key)
       .join(", ");
     const rent = v.forRent && str(v.price) ? `${str(v.price)} đ/tháng` : "";
@@ -1760,9 +1781,9 @@ export function Editor({
       ["Loại hình", label(lookups.propertyTypes, v.type)],
       ["Khu vực", str(v.location)],
       ["Diện tích", `${area} m²`],
-      ["Phòng ngủ", bedrooms === "0" ? "Studio" : bedrooms],
-      ["Phòng tắm", str(v.bathrooms)],
-      ["Tầng", str(v.floor)],
+      ["Phòng ngủ", !rooms ? "" : bedrooms === "0" ? "Studio" : bedrooms],
+      ["Phòng tắm", rooms ? str(v.bathrooms) : ""],
+      ["Tầng", str(v.type) === "shophouse" ? "" : str(v.floor)],
       ["Hướng", str(v.direction)],
       ["Nội thất", label(furnishingOptions, v.furniture)],
       ["Tiện nghi", amenities],
@@ -1950,10 +1971,14 @@ export function Editor({
           </span>
         </label>
       );
+    // Fields that change shape with the unit type start from the live value.
+    const byType = item.choicesForTypes?.[str(live.type)];
     const shared = {
       id,
       name: item.key,
-      defaultValue: String(value ?? ""),
+      defaultValue: item.choicesForTypes
+        ? str(live[item.key])
+        : String(value ?? ""),
       readOnly: locked || undefined,
       placeholder: item.placeholder,
       "aria-describedby": describedBy,
@@ -1993,6 +2018,20 @@ export function Editor({
               />
             )}
           </>
+        ) : byType ? (
+          <select {...shared} key="by-type">
+            {!byType.some(([k]) => k === str(live[item.key])) &&
+              str(live[item.key]) !== "" && (
+                <option value={str(live[item.key])}>
+                  {str(live[item.key])} {item.label.toLowerCase()}
+                </option>
+              )}
+            {byType.map(([key, label]) => (
+              <option value={key} key={key}>
+                {label}
+              </option>
+            ))}
+          </select>
         ) : item.type === "select" ? (
           <select {...shared} disabled={locked || undefined}>
             {!item.options?.length && (

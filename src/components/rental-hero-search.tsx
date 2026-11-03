@@ -26,6 +26,14 @@ const BEDROOMS: Options = [
   ["2", "2 phòng ngủ"],
   ["3", "3 phòng ngủ"],
 ];
+/** Townhouses have no studio: 2–4 bedrooms. */
+const TOWNHOUSE_BEDROOMS: Options = [
+  ["2", "2 phòng ngủ"],
+  ["3", "3 phòng ngủ"],
+  ["4", "4 phòng ngủ"],
+];
+/** All types together: studio to 4 bedrooms. */
+const ALL_BEDROOMS: Options = [...BEDROOMS, ["4", "4 phòng ngủ"]];
 const AREA: Options = [
   ["40", "Từ 40 m²"],
   ["60", "Từ 60 m²"],
@@ -220,7 +228,16 @@ export function RentalHeroSearch({
               field("project", "Dự án", projects, "Tất cả dự án")}
             {/* Mặt bằng has no bedrooms. */}
             {kind !== "premises" &&
-              field("bedrooms", "Phòng ngủ", BEDROOMS, "Mọi loại")}
+              field(
+                "bedrooms",
+                "Phòng ngủ",
+                kind === "townhouse"
+                  ? TOWNHOUSE_BEDROOMS
+                  : kind === "apartment"
+                    ? BEDROOMS
+                    : ALL_BEDROOMS,
+                "Mọi loại",
+              )}
             {mode === "mua" ? (
               <PriceRange
                 label="Giá bán"

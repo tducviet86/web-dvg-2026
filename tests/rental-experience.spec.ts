@@ -459,6 +459,14 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
   // Mặt bằng has no bedrooms: the field goes away.
   await hero.getByLabel("Mặt bằng", { exact: true }).check();
   await expect(hero.getByLabel("Phòng ngủ")).toHaveCount(0);
+  // Nhà phố: 2–4 bedrooms, no studio.
+  await hero.getByLabel("Nhà phố", { exact: true }).check();
+  await expect(hero.getByLabel("Phòng ngủ").locator("option")).toHaveText([
+    "Mọi loại",
+    "2 phòng ngủ",
+    "3 phòng ngủ",
+    "4 phòng ngủ",
+  ]);
   await hero.getByLabel("Căn hộ", { exact: true }).check();
   await expect(hero.getByLabel("Phòng ngủ")).toBeVisible();
   await hero.getByRole("button", { name: "Tìm căn thuê" }).click();

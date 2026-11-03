@@ -295,8 +295,19 @@ test("properties upload images and videos, choose the cover, delete and keep ord
     // Nor apartment amenities.
     await expect(page.locator("#editor-section-amenities")).toBeHidden();
   }
+  // Nhà phố: 2, 3 or 4 bedrooms to choose from, no studio.
+  await form.getByLabel("Nhà phố", { exact: true }).check();
+  await expect(form.locator("[name=bedrooms] option")).toHaveText([
+    "2 phòng ngủ",
+    "3 phòng ngủ",
+    "4 phòng ngủ",
+  ]);
+  await expect(form.locator("[name=bedrooms]")).toHaveValue("3");
+  await form.locator("[name=bedrooms]").selectOption("4");
+  await expect(form.locator("[name=bedrooms]")).toHaveValue("4");
   await form.getByLabel("2 phòng ngủ", { exact: true }).check();
   await expect(form.locator("[name=bedrooms]")).toBeVisible();
+  await expect(form.locator("[name=bedrooms]")).toHaveValue("2");
   await expect(page.locator("#editor-section-amenities")).toBeVisible();
   // Still editable, and the mouse wheel does not change the number.
   await form.locator("[name=bathrooms]").fill("3");
