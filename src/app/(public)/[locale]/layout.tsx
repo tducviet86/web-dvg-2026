@@ -11,6 +11,8 @@ import "@/components/contact.css";
 // Design system last: it settles the page stylesheets on shared tokens.
 import "@/components/design-system.css";
 import "@/components/reader.css";
+// Unit cards: one block that settles the layers above.
+import "@/components/unit-card.css";
 import { notFound } from "next/navigation";
 import { PageNavigation, PageSurface } from "@/components/page-navigation";
 import { SiteHeader } from "@/components/layout/header";

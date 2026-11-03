@@ -15,7 +15,12 @@ import type { SiteContent } from "@/lib/api/content";
 import { HomeProjects } from "./home-projects";
 import { PhotoHero, SearchHero } from "./search-hero";
 import type { HeroMode } from "./rental-hero-search";
-import { isSaleSearch, searchUnits, type Filters } from "@/lib/filter";
+import {
+  isSaleSearch,
+  saleRange,
+  searchUnits,
+  type Filters,
+} from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { FaqSection } from "./faq-section";
@@ -92,6 +97,7 @@ export function ProjectDirectory({
             .map((p) => [p.slug, p.name] as [string, string])}
           locations={[...new Set(units.map((r) => r.location))]}
           count={found.length}
+          saleRange={saleRange(units)}
           stats={
             <>
               <div>
@@ -336,6 +342,7 @@ export function PortfolioDetail({
           values={filters}
           project={{ slug: p.slug, name: p.name }}
           count={found.length}
+          saleRange={saleRange(rooms)}
           stats={
             <>
               <div>

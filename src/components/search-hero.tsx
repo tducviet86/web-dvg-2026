@@ -94,6 +94,7 @@ export function SearchHero({
   project,
   stats,
   count,
+  saleRange,
 }: {
   slides: Slide[];
   crumbs: React.ReactNode;
@@ -109,6 +110,8 @@ export function SearchHero({
   project?: { slug: string; name: string };
   stats?: React.ReactNode;
   count: number;
+  /** Sale slider bounds in tỷ (see saleRange in lib/filter). */
+  saleRange?: [number, number];
 }) {
   return (
     <PhotoHero
@@ -129,6 +132,7 @@ export function SearchHero({
         projectName={project?.name}
         hotline={companyHotline}
         callHref={telephoneHref() || href("/lien-he")}
+        saleRange={saleRange}
       />
     </PhotoHero>
   );

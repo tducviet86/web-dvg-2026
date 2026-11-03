@@ -168,27 +168,43 @@ export function PropertyCard({
         <h3>
           <Link href={detail}>{property.name}</Link>
         </h3>
-        <p className="location">
-          <MapPin size={14} />
-          {property.location}
-        </p>
-        <div className="property-specs">
-          <span>
-            <Expand size={16} />
-            {property.area} m²
-          </span>
-          <span>
-            <BedDouble size={16} />
-            {property.bedrooms || "Studio"}
-            {property.bedrooms > 0 ? " PN" : ""}
-          </span>
-          <span>
-            <Bath size={16} />
-            {property.bathrooms} WC
-          </span>
+        {/* Shown on hover / focus (always on touch screens). */}
+        <div className="property-reveal">
+          <div>
+            <p className="location">
+              <MapPin size={14} aria-hidden="true" />
+              {property.location}
+            </p>
+            <div className="property-specs">
+              <span>
+                <Expand size={16} aria-hidden="true" />
+                <b>{property.area} m²</b>
+              </span>
+              <span>
+                <BedDouble size={16} aria-hidden="true" />
+                <b>
+                  {property.bedrooms || "Studio"}
+                  {property.bedrooms > 0 ? " PN" : ""}
+                </b>
+              </span>
+              <span>
+                <Bath size={16} aria-hidden="true" />
+                <b>{property.bathrooms} WC</b>
+              </span>
+              <span>
+                <Layers size={16} aria-hidden="true" />
+                <b>Tầng {property.floor}</b>
+              </span>
+            </div>
+            <p className="property-furniture">
+              <Sofa size={14} aria-hidden="true" />
+              {property.furniture}
+            </p>
+          </div>
         </div>
         <div className="property-bottom">
           <p>
+            <small>Giá thuê</small>
             <strong>
               {vndFull(property.rentVnd ?? Math.round(property.price * 1e6))}{" "}
               vnđ
@@ -197,18 +213,8 @@ export function PropertyCard({
           </p>
           <Link href={detail} aria-label={`Xem ${property.name}`}>
             <span className="property-detail-label">Xem căn</span>
-            <ArrowUpRight size={20} />
+            <ArrowUpRight size={18} aria-hidden="true" />
           </Link>
-        </div>
-        <div className="property-extra">
-          <span>
-            <Sofa size={14} />
-            {property.furniture}
-          </span>
-          <span>
-            <Layers size={14} />
-            Tầng {property.floor}
-          </span>
         </div>
       </div>
     </article>

@@ -3103,3 +3103,88 @@
   background: #fff;
   color: #0f7a41;
 }
+
+/* Price slider in the hero search: the chosen range over a two-handle
+   track, in the same 50px white box as the selects. */
+.price-range-box {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-height: 50px;
+  padding: 4px 14px 2px;
+  border: 1px solid #d9dfd8;
+  border-radius: 11px;
+  background: #fff;
+  transition:
+    border-color var(--dur-2),
+    box-shadow var(--dur-2);
+}
+.price-range-box:focus-within {
+  border-color: var(--c-gold-500);
+  box-shadow: 0 0 0 4px #c6a76b33;
+}
+.price-range-box output {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--c-green-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.price-range-track {
+  position: relative;
+  height: 24px;
+  cursor: pointer;
+  touch-action: none;
+}
+.price-range-track::before,
+.price-range-track::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  height: 4px;
+  border-radius: 4px;
+}
+.price-range-track::before {
+  left: 12px;
+  right: 12px;
+  background: #e4e6df;
+}
+/* Between the handle centres (a handle is 24px wide). */
+.price-range-track::after {
+  left: calc(12px + (100% - 24px) * var(--from));
+  right: calc(12px + (100% - 24px) * (1 - var(--to)));
+  background: var(--c-green-700);
+}
+.price-range-thumb {
+  position: absolute;
+  top: 0;
+  left: calc((100% - 24px) * var(--at));
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--c-green-700);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px #0b1f1933;
+  cursor: grab;
+  transition: box-shadow var(--dur-2);
+}
+.price-range-thumb:active {
+  cursor: grabbing;
+}
+.price-range-thumb:focus-visible {
+  outline: 3px solid var(--c-gold-400);
+  outline-offset: 1px;
+}
+.price-range-thumb:focus {
+  z-index: 2;
+}
+@media (max-width: 640px) {
+  /* Phones: the slider takes a full row, so "Phòng ngủ" does too. */
+  .hero-form .price-range,
+  .hero-form .hero-field:has(select[name="bedrooms"]) {
+    grid-column: 1 / -1;
+  }
+}

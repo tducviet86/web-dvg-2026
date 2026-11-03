@@ -20,6 +20,7 @@ import { Reviews } from "./reviews-section";
 import {
   filterProperties,
   isSaleSearch,
+  saleRange,
   searchUnits,
   type Filters,
 } from "@/lib/filter";
@@ -141,6 +142,7 @@ export function RentalPage({
             : "Bất động sản cho thuê & mua bán tại Đà Nẵng"
         }
         count={result.length}
+        saleRange={saleRange(scope)}
         crumbs={
           <>
             <BackButton />
@@ -264,15 +266,19 @@ export function RentalPage({
                       ? "Đang bán"
                       : k === "gia-ban"
                         ? `Đến ${v} tỷ`
-                        : k === "price"
-                          ? `Đến ${v} triệu`
-                          : k === "area"
-                            ? `Từ ${v} m²`
-                            : k === "bedrooms"
-                              ? v === "0"
-                                ? "Studio"
-                                : `${v} phòng ngủ`
-                              : v}{" "}
+                        : k === "gia-ban-tu"
+                          ? `Từ ${v} tỷ`
+                          : k === "price"
+                            ? `Đến ${v} triệu`
+                            : k === "gia-tu"
+                              ? `Từ ${v} triệu`
+                              : k === "area"
+                                ? `Từ ${v} m²`
+                                : k === "bedrooms"
+                                  ? v === "0"
+                                    ? "Studio"
+                                    : `${v} phòng ngủ`
+                                  : v}{" "}
                   <span aria-hidden>×</span>
                 </Link>
               ))}

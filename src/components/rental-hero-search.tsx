@@ -13,6 +13,8 @@ import {
 import { useT } from "@/i18n/client";
 import { usePageNavigation } from "./page-navigation";
 import { InquiryDialog } from "./rental-inquiry";
+import { PriceRange } from "./price-range";
+import { RENT_RANGE } from "@/lib/filter";
 
 export type HeroMode = "thue" | "mua" | "ky-gui";
 type Options = [value: string, label: string][];
@@ -22,19 +24,6 @@ const BEDROOMS: Options = [
   ["1", "1 phòng ngủ"],
   ["2", "2 phòng ngủ"],
   ["3", "3 phòng ngủ"],
-];
-const RENT_BUDGET: Options = [
-  ["10", "Đến 10 triệu"],
-  ["15", "Đến 15 triệu"],
-  ["20", "Đến 20 triệu"],
-  ["30", "Đến 30 triệu"],
-];
-const SALE_BUDGET: Options = [
-  ["2", "Đến 2 tỷ"],
-  ["3", "Đến 3 tỷ"],
-  ["5", "Đến 5 tỷ"],
-  ["8", "Đến 8 tỷ"],
-  ["12", "Đến 12 tỷ"],
 ];
 const AREA: Options = [
   ["40", "Từ 40 m²"],
@@ -72,6 +61,7 @@ export function RentalHeroSearch({
   projectName,
   hotline,
   callHref,
+  saleRange = [0, 20],
 }: {
   action: string;
   mode: HeroMode;
@@ -85,6 +75,8 @@ export function RentalHeroSearch({
   projectName?: string;
   hotline: string;
   callHref: string;
+  /** Sale slider bounds in tỷ, from the units for sale. */
+  saleRange?: [number, number];
 }) {
   const t = useT();
   const id = useId();
@@ -207,9 +199,26 @@ export function RentalHeroSearch({
             {!projectSlug &&
               field("project", "Dự án", projects, "Tất cả dự án")}
             {field("bedrooms", "Phòng ngủ", BEDROOMS, "Mọi loại")}
-            {mode === "mua"
-              ? field("gia-ban", "Giá bán", SALE_BUDGET, "Mọi mức giá")
-              : field("price", "Giá thuê / tháng", RENT_BUDGET, "Mọi mức giá")}
+            {mode === "mua" ? (
+              <PriceRange
+                label="Giá bán"
+                unit="tỷ"
+                bounds={saleRange}
+                step={saleRange[1] - saleRange[0] > 5 ? 0.5 : 0.1}
+                names={["gia-ban-tu", "gia-ban"]}
+                values={values}
+              />
+            ) : (
+              <PriceRange
+                label="Giá thuê / tháng"
+                unit="triệu"
+                bounds={RENT_RANGE}
+                step={1}
+                names={["gia-tu", "price"]}
+                values={values}
+                openEnded
+              />
+            )}
             <button type="submit" className="hero-submit">
               <Search size={18} aria-hidden="true" />
               {t(mode === "mua" ? "Tìm căn bán" : "Tìm căn thuê")}

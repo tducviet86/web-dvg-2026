@@ -399,6 +399,50 @@ test("detailed filters live in the hero search and the owner popup opens", async
   ).toBeVisible();
 });
 
+test("price sliders: rent 0–100 triệu, sale from the units for sale", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  const hero = page.locator(".hero-search");
+  const rent = hero.getByRole("group", { name: "Giá thuê / tháng" });
+  await expect(rent.locator("output")).toHaveText("Mọi mức giá");
+  const low = rent.getByRole("slider", { name: /thấp nhất/ });
+  const high = rent.getByRole("slider", { name: /cao nhất/ });
+  await expect(low).toHaveAttribute("aria-valuemin", "0");
+  await expect(high).toHaveAttribute("aria-valuemax", "100");
+  await low.focus();
+  for (let i = 0; i < 10; i++) await page.keyboard.press("ArrowRight");
+  await high.focus();
+  for (let i = 0; i < 80; i++) await page.keyboard.press("ArrowLeft");
+  await expect(rent.locator("output")).toHaveText("10 – 20 triệu");
+  await hero.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await expect(page).toHaveURL(/\?gia-tu=10&price=20#can-ho$/);
+  const prices = (
+    await page
+      .locator(".rental-card-grid .property-bottom strong")
+      .allTextContents()
+  ).map((v) => Number(v.replace(/\D/g, "")) / 1e6);
+  expect(prices.length).toBeGreaterThan(0);
+  expect(prices.every((v) => v >= 10 && v <= 20)).toBeTruthy();
+  await expect(page.locator(".filter-chips")).toContainText("Từ 10 triệu");
+  // Arriving with a range keeps the handles where they were.
+  await expect(rent.locator("output")).toHaveText("10 – 20 triệu");
+
+  await hero.getByRole("tab", { name: "Mua" }).click();
+  const sale = hero.getByRole("group", { name: "Giá bán" });
+  const bottom = Number(
+    await sale
+      .getByRole("slider", { name: /thấp nhất/ })
+      .getAttribute("aria-valuemin"),
+  );
+  const top = Number(
+    await sale
+      .getByRole("slider", { name: /cao nhất/ })
+      .getAttribute("aria-valuemax"),
+  );
+  expect(top).toBeGreaterThan(bottom);
+});
+
 test("full-screen search: rent, buy and consign from the rental page", async ({
   page,
 }) => {
@@ -422,7 +466,7 @@ test("full-screen search: rent, buy and consign from the rental page", async ({
   // Buy: the list switches to units for sale.
   await page.goto("/cho-thue");
   await hero.getByRole("tab", { name: "Mua" }).click();
-  await expect(hero.getByLabel("Giá bán")).toBeVisible();
+  await expect(hero.getByRole("group", { name: "Giá bán" })).toBeVisible();
   await hero.getByRole("button", { name: "Tìm căn bán" }).click();
   await expect(page).toHaveURL(/nhu-cau=mua/);
   await expect(page.locator(".rental-results-heading h2")).toHaveText(

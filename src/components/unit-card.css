@@ -1,0 +1,313 @@
+/* Unit card (PropertyCard): the photo fills the rounded card; name and
+   price sit on it, and the facts (area, rooms, floor, address, furniture)
+   slide up on hover or keyboard focus. Touch screens and phones show them
+   at once. `article.property-card` wins over the older card rules in
+   globals, rentals and design-system. */
+article.property-card {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: var(--c-green-900);
+  box-shadow: 0 10px 30px #10271914;
+  isolation: isolate;
+}
+article.property-card:hover {
+  box-shadow: 0 24px 48px #10271929;
+}
+/* Photo and text share one grid cell: a long text makes the card taller
+   and the photo still fills it. */
+article.property-card > .image-wrap,
+article.property-card > .property-body {
+  grid-area: 1 / 1;
+}
+article.property-card .image-wrap {
+  aspect-ratio: 4 / 5;
+  height: 100%;
+  border-radius: 0;
+}
+article.property-card .image-wrap::after {
+  background: linear-gradient(180deg, #061b1633 0%, transparent 26%);
+}
+article.property-card .image-badge {
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #ffffffe8;
+  color: var(--c-green-900);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(6px);
+}
+article.property-card .image-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9aa59e;
+}
+article.property-card .image-badge.available {
+  background: #0f2a22d9;
+  color: #f3e6c4;
+}
+article.property-card .image-badge.available::before {
+  background: #5fd08a;
+  box-shadow: 0 0 0 3px #5fd08a33;
+}
+article.property-card .lux-badges {
+  top: 52px;
+  left: 14px;
+}
+article.property-card .favorite {
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  background: #ffffffe8;
+  box-shadow: 0 4px 12px #0b1f1926;
+}
+article.property-card .card-media-count {
+  top: 60px;
+  right: 14px;
+  bottom: auto;
+  left: auto;
+}
+
+/* Text over the photo. */
+article.property-card .property-body {
+  position: relative;
+  z-index: 2;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 18px 16px;
+  color: #fff;
+  pointer-events: none;
+}
+/* Shade behind the text, as tall as the text (so also when it opens). */
+article.property-card .property-body::before {
+  content: "";
+  position: absolute;
+  inset: -70px 0 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    #061b16a6 70px,
+    #061b16eb 100%
+  );
+}
+article.property-card .property-body a {
+  pointer-events: auto;
+}
+article.property-card .card-meta {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 1.3px;
+  color: #e9d39f;
+}
+article.property-card .card-meta span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+article.property-card .card-meta > span:last-child {
+  flex: none;
+  color: #ffffffbf;
+  font-variant-numeric: tabular-nums;
+}
+article.property-card h3 {
+  display: -webkit-box;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 19px;
+  line-height: 1.3;
+  color: #fff;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+article.property-card h3 a {
+  padding-block: 0;
+  color: inherit;
+}
+
+/* The facts: height 0 → auto with a grid row, then a fade-up. */
+.property-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    grid-template-rows var(--dur-3) var(--ease-out),
+    opacity var(--dur-3) var(--ease-out),
+    transform var(--dur-3) var(--ease-out);
+}
+.property-reveal > div {
+  min-height: 0;
+  overflow: hidden;
+}
+article.property-card:hover .property-reveal,
+article.property-card:focus-within .property-reveal {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: none;
+}
+article.property-card .location {
+  min-width: 0;
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #ffffffd9;
+}
+article.property-card .location svg {
+  flex: none;
+  color: #e9d39f;
+}
+article.property-card .property-specs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 12px 0 8px;
+  padding: 10px 4px;
+  border: 1px solid #ffffff2e;
+  border-radius: 12px;
+  background: #ffffff1f;
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+article.property-card .property-specs span {
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  text-align: center;
+}
+article.property-card .property-specs span + span {
+  border-left: 1px solid #ffffff2e;
+}
+article.property-card .property-specs svg {
+  color: #e9d39f;
+}
+article.property-card .property-specs b {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.property-furniture {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  color: #ffffffd9;
+}
+
+/* Price and the round "Xem căn" arrow (the link keeps its full name). */
+article.property-card .property-bottom {
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ffffff2e;
+}
+article.property-card .property-bottom p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 4px;
+  margin: 0;
+}
+article.property-card .property-bottom small {
+  flex-basis: 100%;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ffffffbf;
+}
+article.property-card .property-bottom strong {
+  font-size: 21px;
+  font-weight: 600;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+article.property-card .property-bottom p > span {
+  font-size: 13px;
+  color: #ffffffd9;
+}
+article.property-card .property-bottom > a {
+  flex: none;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--c-gold-400);
+  color: var(--c-green-900);
+  transition: background var(--dur-2);
+}
+article.property-card:hover .property-bottom > a {
+  background: #f3e6c4;
+}
+article.property-card .property-bottom > a:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+article.property-card .property-detail-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* List view: the same cards, two per row. */
+.rental-card-grid.list-view article.property-card {
+  grid-template-columns: none;
+}
+.rental-card-grid.list-view article.property-card .image-wrap {
+  aspect-ratio: 4 / 3;
+  min-height: 0;
+}
+.rental-card-grid.list-view article.property-card .property-body {
+  padding: 18px 18px 16px;
+}
+
+/* Touch screens and phones: no hover, so the facts are always shown. */
+@media (hover: none), (max-width: 640px) {
+  .property-reveal {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 640px) {
+  /* Taller on phones so the photo still shows above the open facts. */
+  article.property-card .image-wrap {
+    aspect-ratio: 2 / 3;
+  }
+  article.property-card h3 {
+    font-size: 18px;
+  }
+  article.property-card .property-bottom strong {
+    font-size: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .property-reveal {
+    transition: opacity var(--dur-2);
+    transform: none;
+  }
+}
