@@ -316,23 +316,33 @@
   padding: 0;
   list-style: none;
 }
+/* Unit card: the photo fills the rounded card; project, name and rent sit
+   on it and the facts slide up on hover or focus (always shown on touch
+   screens). Photo and text share one grid cell, so a long text makes the
+   card taller and the photo still fills it. */
 .rent-mini a {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: grid;
   height: 100%;
   overflow: hidden;
-  border: 1px solid #e3e1d6;
-  border-radius: 14px;
-  background: #fff;
+  border-radius: 18px;
+  background: var(--c-green-900);
+  color: #fff;
+  box-shadow: 0 10px 28px #10271914;
+  isolation: isolate;
   transition:
-    border-color var(--dur-2) var(--ease-out),
     box-shadow var(--dur-3) var(--ease-out),
     transform var(--dur-3) var(--ease-out);
+}
+.rent-mini-photo,
+.rent-mini-body {
+  grid-area: 1 / 1;
 }
 .rent-mini-photo {
   position: relative;
   display: block;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 5;
+  height: 100%;
   overflow: hidden;
   background: var(--c-green-800);
 }
@@ -340,10 +350,17 @@
   object-fit: cover;
   transition: transform 0.9s var(--ease-out);
 }
+.rent-mini-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #061b1633 0%, transparent 26%);
+  pointer-events: none;
+}
 .rent-mini-photo .lux-badges {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 12px;
+  left: 12px;
   z-index: 1;
 }
 .rent-mini-photo .lux-badge {
@@ -352,13 +369,14 @@
 }
 .rent-mini-status {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
+  top: 12px;
+  right: 12px;
   z-index: 1;
-  padding: 4px 9px;
+  padding: 5px 10px;
   border-radius: 999px;
-  background: #ffffffe6;
-  font-size: 11px;
+  background: #ffffffe8;
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--c-green-800);
 }
 .rent-mini-status::before {
@@ -372,11 +390,26 @@
   vertical-align: 1px;
 }
 .rent-mini-body {
+  position: relative;
+  z-index: 1;
+  align-self: end;
   display: flex;
-  flex: 1;
   flex-direction: column;
   gap: 6px;
-  padding: 14px 16px 16px;
+  padding: 16px 16px 14px;
+}
+/* Shade behind the text, as tall as the text (so also when it opens). */
+.rent-mini-body::before {
+  content: "";
+  position: absolute;
+  inset: -60px 0 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    #061b16a6 60px,
+    #061b16eb 100%
+  );
 }
 .rent-mini-body small {
   display: inline-flex;
@@ -385,70 +418,115 @@
   font-size: 11px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: var(--c-gold-700);
+  color: #e9d39f;
 }
 .rent-mini-body strong {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font: 400 17px / 1.3 var(--font-heading);
-  color: var(--c-green-800);
+  font: 400 18px / 1.3 var(--font-heading);
+  color: #fff;
+}
+/* The facts: height 0 → auto with a grid row, then a fade-up. */
+.rent-mini-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    grid-template-rows var(--dur-3) var(--ease-out),
+    opacity var(--dur-3) var(--ease-out),
+    transform var(--dur-3) var(--ease-out);
+}
+.rent-mini-reveal > span {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+.rent-mini a:hover .rent-mini-reveal,
+.rent-mini a:focus-visible .rent-mini-reveal {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: none;
 }
 .rent-mini-specs {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
   font-size: 12.5px;
-  color: #5f6b62;
+  color: #fff;
 }
 .rent-mini-specs > span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid #ffffff2e;
+  border-radius: 999px;
+  background: #ffffff1f;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+.rent-mini-specs svg,
+.rent-mini-note svg {
+  color: #e9d39f;
+}
+.rent-mini-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #ffffffd9;
 }
 .rent-mini-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: auto;
+  margin-top: 6px;
   padding-top: 10px;
-  border-top: 1px solid #c6a76b55;
+  border-top: 1px solid #ffffff2e;
 }
 .rent-mini-price {
   font-size: 12.5px;
-  color: #5f6b62;
+  color: #ffffffd9;
 }
 .rent-mini-price b {
-  font: 500 17px/1 var(--font-heading);
-  color: var(--c-green-800);
+  font: 500 18px/1 var(--font-heading);
+  color: #fff;
 }
 .rent-mini-open {
   display: grid;
+  flex: none;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid #d9d5c6;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  color: var(--c-green-700);
-  transition:
-    background var(--dur-2),
-    border-color var(--dur-2),
-    color var(--dur-2);
+  background: var(--c-gold-400);
+  color: var(--c-green-900);
+  transition: background var(--dur-2);
 }
 @media (hover: hover) {
   .rent-mini a:hover {
-    border-color: #c6a76b99;
-    box-shadow: 0 14px 34px #0b1f1914;
+    box-shadow: 0 22px 44px #0b1f1929;
     transform: translateY(-3px);
   }
   .rent-mini a:hover .rent-mini-photo img {
     transform: scale(1.05);
   }
   .rent-mini a:hover .rent-mini-open {
-    background: var(--c-green-800);
-    border-color: var(--c-green-800);
-    color: #fff;
+    background: #f3e6c4;
+  }
+}
+/* Touch screens: no hover, so the facts are always shown. */
+@media (hover: none) {
+  .rent-mini-reveal {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transform: none;
   }
 }
 .rent-mini a:focus-visible {
@@ -461,7 +539,8 @@
   }
 }
 @media (max-width: 760px) {
-  /* Phones: one row that scrolls sideways, like the project rows. */
+  /* Phones: one row that scrolls sideways, like the project rows; the
+     facts are shown at once. */
   .rent-mini-row {
     display: flex;
     gap: 12px;
@@ -476,14 +555,27 @@
     display: none;
   }
   .rent-mini {
-    flex: 0 0 70%;
+    flex: 0 0 78%;
     scroll-snap-align: start;
+  }
+  /* Taller, so the photo still shows above the open facts. */
+  .rent-mini-row .rent-mini-photo {
+    aspect-ratio: 2 / 3;
+  }
+  .rent-mini-reveal {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transform: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .rent-mini a,
   .rent-mini-photo img {
     transition: none;
+  }
+  .rent-mini-reveal {
+    transition: opacity var(--dur-2);
+    transform: none;
   }
 }
 

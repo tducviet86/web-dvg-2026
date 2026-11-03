@@ -2035,7 +2035,13 @@
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(to bottom, #04150fb3 0%, #04150f26 30%, #04150f33 60%, #04150fd9 100%),
+    linear-gradient(
+      to bottom,
+      #04150fb3 0%,
+      #04150f26 30%,
+      #04150f33 60%,
+      #04150fd9 100%
+    ),
     radial-gradient(ellipse at 50% 55%, #04150f00 0%, #04150f59 100%);
 }
 .rental-hero-inner {
@@ -3014,6 +3020,23 @@
 }
 .room-strip .rent-mini-body strong {
   font-size: 16px;
+}
+@media (max-width: 760px) {
+  /* Two narrow cards a row: name and rent only (the card opens the unit). */
+  .room-strip .rent-mini .rent-mini-reveal {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  .room-strip .rent-mini-body {
+    padding: 12px;
+  }
+  .room-strip .rent-mini-price b {
+    font-size: 15px;
+  }
+  /* No room for two badges side by side: the editor badge stays. */
+  .room-strip .rent-mini-photo:has(.lux-badges) .rent-mini-status {
+    display: none;
+  }
 }
 @media (max-width: 800px) {
   /* Bottom call bar: the number stands out too. */

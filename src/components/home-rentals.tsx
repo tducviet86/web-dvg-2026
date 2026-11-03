@@ -4,9 +4,12 @@ import Link from "@/components/page-navigation";
 import {
   ArrowRight,
   ArrowUpRight,
+  Bath,
   BedDouble,
   Expand,
+  Layers,
   MapPin,
+  Sofa,
 } from "lucide-react";
 import type { Property } from "@/types";
 import { vndFull } from "@/lib/utils";
@@ -50,9 +53,9 @@ export function pickFeaturedRentals(units: Property[], count = 4) {
 }
 
 /**
- * Home: "Căn hộ cho thuê tiêu biểu", a row of compact unit cards (photo,
- * name, key facts, rent; a sideways row on phones). Every card opens the
- * unit page.
+ * Home: "Căn hộ cho thuê tiêu biểu", a row of unit cards: the photo fills
+ * the card with the name and rent on it, the facts slide up on hover (a
+ * sideways row on phones). Every card opens the unit page.
  */
 export function HomeRentals({ units }: { units: Property[] }) {
   if (!units.length) return null;
@@ -110,14 +113,35 @@ export function RentalMini({ unit }: { unit: Property }) {
             {unit.projectName || unit.location}
           </small>
           <strong>{unit.name}</strong>
-          <span className="rent-mini-specs">
+          {/* Shown on hover / focus (always on touch screens). */}
+          <span className="rent-mini-reveal">
             <span>
-              <Expand size={13} aria-hidden="true" />
-              {unit.area} m²
-            </span>
-            <span>
-              <BedDouble size={13} aria-hidden="true" />
-              {unit.bedrooms > 0 ? `${unit.bedrooms} PN` : "Studio"}
+              <span className="rent-mini-specs">
+                <span>
+                  <Expand size={13} aria-hidden="true" />
+                  {unit.area} m²
+                </span>
+                <span>
+                  <BedDouble size={13} aria-hidden="true" />
+                  {unit.bedrooms > 0 ? `${unit.bedrooms} PN` : "Studio"}
+                </span>
+                <span>
+                  <Bath size={13} aria-hidden="true" />
+                  {unit.bathrooms} WC
+                </span>
+                {unit.floor ? (
+                  <span>
+                    <Layers size={13} aria-hidden="true" />
+                    Tầng {unit.floor}
+                  </span>
+                ) : null}
+              </span>
+              {unit.furniture && (
+                <span className="rent-mini-note">
+                  <Sofa size={13} aria-hidden="true" />
+                  {unit.furniture}
+                </span>
+              )}
             </span>
           </span>
           <span className="rent-mini-foot">
