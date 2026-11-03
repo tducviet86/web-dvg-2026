@@ -30,6 +30,7 @@ import { complexSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
 import { money } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
+import { kindCount, kindNoun, listingKind } from "@/lib/property-groups";
 
 const directoryCrumbs = (current: string) => (
   <>
@@ -76,6 +77,7 @@ export function ProjectDirectory({
     const units = content.properties.filter((r) => ids.has(r.projectId));
     const sale = isSaleSearch(filters);
     const found = searchUnits(units, filters);
+    const kind = listingKind(filters.loai, found);
     const rentals = units.filter((r) => r.forRent !== false && r.price > 0);
     return (
       <main
@@ -127,10 +129,10 @@ export function ProjectDirectory({
                 <span className="signature-kicker">
                   {sale ? "MUA BÁN" : "KHÁM PHÁ KHÔNG GIAN SỐNG"}
                 </span>
-                <h2>{sale ? "Căn hộ đang bán" : "Căn hộ cho thuê"}</h2>
+                <h2>{`${kindNoun(kind)} ${sale ? "đang bán" : "cho thuê"}`}</h2>
               </div>
               <span className="rental-result-count">
-                {found.length} căn phù hợp
+                {kindCount(found.length, kind)}
               </span>
             </div>
             {found.length ? (
@@ -580,13 +582,14 @@ export function PortfolioDetail({
                           : "KHÁM PHÁ KHÔNG GIAN SỐNG"}
                       </span>
                       <h2>
-                        {active === "mua"
-                          ? `Căn hộ đang bán tại ${p.name}`
-                          : `Căn hộ cho thuê tại ${p.name}`}
+                        {`${kindNoun(listingKind(filters.loai, found))} ${active === "mua" ? "đang bán" : "cho thuê"} tại ${p.name}`}
                       </h2>
                     </div>
                     <span className="rental-result-count">
-                      {found.length} căn phù hợp
+                      {kindCount(
+                        found.length,
+                        listingKind(filters.loai, found),
+                      )}
                     </span>
                   </div>
                   {found.some((r) => r.isDemo) && (

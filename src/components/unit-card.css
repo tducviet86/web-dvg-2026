@@ -313,3 +313,30 @@ article.property-card .property-detail-label {
     transform: none;
   }
 }
+
+/* Status and, for shophouse / nhà phố / mặt bằng, the type on the photo. */
+article.property-card .card-tags {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 70px);
+}
+article.property-card .card-tags .image-badge {
+  position: static;
+}
+.card-type-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--c-gold-400);
+  color: var(--c-green-900);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}

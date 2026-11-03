@@ -425,7 +425,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 30px;
-  padding:  0 30px;
+  padding: 0 30px;
 }
 .room-heading h1 {
   font-size: clamp(30px, 3.5vw, 48px);

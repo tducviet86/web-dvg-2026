@@ -145,6 +145,8 @@ type Group = {
   description: string;
   icon: LucideIcon;
   fields: Field[];
+  /** Hidden while the unit type is one of these (shophouse: no amenities). */
+  hideForTypes?: string[];
 };
 export type Lookups = {
   projects: [string, string][];
@@ -542,6 +544,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             min: -10,
             max: 200,
             integer: true,
+            hideForTypes: ["shophouse"],
           }),
           f("direction", "Hướng căn hộ", {
             type: "select",
@@ -572,6 +575,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
         description:
           "Tích những gì căn hộ có. Trang chi tiết căn hộ hiển thị theo nhóm kèm biểu tượng.",
         icon: Sparkles,
+        hideForTypes: NO_ROOM_TYPES,
         fields: [
           f("amenities", "Tiện nghi", { type: "amenities", wide: true }),
         ],
@@ -1484,6 +1488,16 @@ export function Editor({
   const lastProject = useRef(str(live.projectId));
   /** Studio / 1–3PN: bedrooms and bathrooms (still editable). */
   function fillRooms(type: string) {
+    // A shophouse has no floor: the hidden field is emptied.
+    const floor = formRef.current?.elements.namedItem("floor") as
+      HTMLInputElement | null | undefined;
+    if (type === "shophouse" && floor) floor.value = "";
+    // Shophouse / mặt bằng: no amenities either (the section is hidden).
+    if (NO_ROOM_TYPES.includes(type))
+      for (const box of formRef.current?.querySelectorAll<HTMLInputElement>(
+        'input[name="amenities"]',
+      ) ?? [])
+        box.checked = false;
     const rooms = ROOMS_BY_TYPE[type];
     const form = formRef.current;
     if (!rooms || !form) return;
@@ -2204,6 +2218,9 @@ export function Editor({
                 className="admin-panel editor-section"
                 key={group.id}
                 id={`editor-section-${group.id}`}
+                hidden={
+                  group.hideForTypes?.includes(str(live.type)) || undefined
+                }
               >
                 <header>
                   <span className="editor-section-number" aria-hidden="true">
@@ -2410,7 +2427,13 @@ export function Editor({
               )}
               <nav aria-label="Các phần biểu mẫu">
                 {sections.map((group, index) => (
-                  <a key={group.id} href={`#editor-section-${group.id}`}>
+                  <a
+                    key={group.id}
+                    href={`#editor-section-${group.id}`}
+                    hidden={
+                      group.hideForTypes?.includes(str(live.type)) || undefined
+                    }
+                  >
                     {String(index + 1).padStart(2, "0")} · {group.title}
                   </a>
                 ))}

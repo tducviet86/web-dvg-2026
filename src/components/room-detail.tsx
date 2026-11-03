@@ -34,7 +34,7 @@ import { Reveal } from "./client-basics";
 import { RentalMini, rentalScore } from "./home-rentals";
 import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";
-import { groupLabel, hasRooms } from "@/lib/property-groups";
+import { floorLabel, groupLabel, hasRooms } from "@/lib/property-groups";
 
 export function RoomDetail({
   room: r,
@@ -63,7 +63,8 @@ export function RoomDetail({
     "Xin chào Đất Vàng Group, tôi quan tâm căn {code} tại {project}.",
     { code, project: project.name },
   );
-  const amenities = groupAmenities(r.amenityKeys ?? []);
+  // Shophouse / mặt bằng: no apartment amenities shown.
+  const amenities = hasRooms(r) ? groupAmenities(r.amenityKeys ?? []) : [];
   const amenityCount = amenities.reduce((n, g) => n + g.items.length, 0);
   const projectPage = `/du-an/${portfolio?.slug || project.slug}`;
   const salePriceText = r.saleVnd ? salePrice(r.saleVnd) : "Liên hệ";
@@ -107,7 +108,9 @@ export function RoomDetail({
           { icon: Bath, value: `${r.bathrooms} phòng`, label: "Phòng tắm" },
         ]
       : []),
-    { icon: Layers, value: `Tầng ${r.floor}`, label: "Vị trí tầng" },
+    ...(floorLabel(r)
+      ? [{ icon: Layers, value: floorLabel(r)!, label: "Vị trí tầng" }]
+      : []),
   ];
   return (
     <main
@@ -293,7 +296,7 @@ export function RoomDetail({
                           ["Phòng tắm", String(r.bathrooms)],
                         ]
                       : []),
-                    ["Tầng", String(r.floor)],
+                    ...(floorLabel(r) ? [["Tầng", String(r.floor)]] : []),
                     ["Nội thất", r.furniture],
                     [r.isDemo ? "Tình trạng mẫu" : "Tình trạng", status],
                     [

@@ -3211,3 +3211,67 @@
     grid-column: 1 / -1;
   }
 }
+
+/* "Loại hình" above the search fields: Tất cả · Căn hộ · Nhà phố · Mặt bằng. */
+.hero-kinds {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.hero-kinds label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid #d9dfd8;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-green-900);
+  cursor: pointer;
+  transition:
+    background var(--dur-2),
+    border-color var(--dur-2),
+    color var(--dur-2);
+}
+.hero-kinds input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.hero-kinds label:hover {
+  border-color: var(--c-green-700);
+}
+.hero-kinds label:has(input:checked) {
+  border-color: var(--c-green-800);
+  background: var(--c-green-800);
+  color: #f3e6c4;
+}
+.hero-kinds label:has(input:focus-visible) {
+  outline: 3px solid var(--c-gold-400);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  /* Phones: the four pills share the row. */
+  .hero-kinds {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .hero-kinds label {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}

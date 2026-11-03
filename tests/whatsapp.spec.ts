@@ -26,13 +26,19 @@ test("foreign-language unit pages offer WhatsApp with the unit in the message", 
 
   // Phones: the bottom bar chats on WhatsApp instead of calling abroad.
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".room-mobile-call a.whatsapp-button")).toBeVisible();
+  await expect(
+    page.locator(".room-mobile-call a.whatsapp-button"),
+  ).toBeVisible();
 });
 
 test("Vietnamese unit pages keep the call button only", async ({ page }) => {
   await page.goto(room);
-  await expect(page.locator(".room-contact-panel a[href^='tel:']")).toBeVisible();
-  await expect(page.locator(".room-contact-panel .whatsapp-button")).toHaveCount(0);
+  await expect(
+    page.locator(".room-contact-panel a[href^='tel:']"),
+  ).toBeVisible();
+  await expect(
+    page.locator(".room-contact-panel .whatsapp-button"),
+  ).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".room-mobile-call a[href^='tel:']")).toBeVisible();
 });

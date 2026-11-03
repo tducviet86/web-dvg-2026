@@ -26,7 +26,12 @@ import {
 } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { SearchHero } from "./search-hero";
-import { groupLabel } from "@/lib/property-groups";
+import {
+  groupLabel,
+  kindCount,
+  kindNoun,
+  listingKind,
+} from "@/lib/property-groups";
 import { ProjectMap } from "./project-map";
 import { money, siteUrl } from "@/lib/utils";
 import { InquiryDialog } from "./rental-inquiry";
@@ -52,6 +57,9 @@ export function RentalPage({
   // Hero search: "Thuê" lists rentals, "Mua" lists units for sale.
   const sale = isSaleSearch(filters);
   const result = searchUnits(content.properties, effective);
+  // Heading: "Mặt bằng cho thuê", "Nhà phố…"; "Bất động sản" when mixed.
+  const kind = listingKind(filters.loai, result);
+  const noun = kindNoun(kind);
   const visible = Math.min(100, Math.max(9, Number(filters.limit) || 9));
   const guide = project ? content.rentalGuides[project.slug] : null;
   const scope = filterProperties(
@@ -215,15 +223,15 @@ export function RentalPage({
               <h2>
                 {sale
                   ? project
-                    ? `Căn hộ đang bán tại ${project.name}`
-                    : "Căn hộ đang bán"
+                    ? `${noun} đang bán tại ${project.name}`
+                    : `${noun} đang bán`
                   : project
-                    ? `Căn hộ tại ${project.name}`
-                    : "Khám phá căn hộ cho thuê"}
+                    ? `${noun} tại ${project.name}`
+                    : `Khám phá ${noun.toLowerCase()} cho thuê`}
               </h2>
             </div>
             <span className="rental-result-count">
-              {result.length} căn phù hợp
+              {kindCount(result.length, kind)}
             </span>
           </div>
           <div className="rental-results-meta">

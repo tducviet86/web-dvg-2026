@@ -356,7 +356,9 @@ main.reader-page {
   transform: translateY(-2px);
 }
 .reader-zalo {
-  font: 700 11px/1 Arial, sans-serif;
+  font:
+    700 11px/1 Arial,
+    sans-serif;
   letter-spacing: -0.2px;
   color: #0068ff;
 }
@@ -447,8 +449,7 @@ main.reader-page {
   padding: 26px;
   border-radius: 16px;
   background:
-    radial-gradient(ellipse at 100% 0%, #1f5a47 0%, transparent 60%),
-    #0e2c23;
+    radial-gradient(ellipse at 100% 0%, #1f5a47 0%, transparent 60%), #0e2c23;
   color: #fff;
 }
 .reader-cta strong {

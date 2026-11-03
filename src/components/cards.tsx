@@ -17,7 +17,12 @@ import type { Project, Property, Post } from "@/types";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
-import { hasRooms, roomsLabel } from "@/lib/property-groups";
+import {
+  floorLabel,
+  hasRooms,
+  roomsLabel,
+  typeTag,
+} from "@/lib/property-groups";
 import { Favorite } from "./client-basics";
 export function SectionHeading({
   eyebrow,
@@ -140,10 +145,15 @@ export function PropertyCard({
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </Link>
-        <span
-          className={`image-badge ${property.status === "Còn trống" ? "available" : ""}`}
-        >
-          {property.status}
+        <span className="card-tags">
+          <span
+            className={`image-badge ${property.status === "Còn trống" ? "available" : ""}`}
+          >
+            {property.status}
+          </span>
+          {typeTag(property) && (
+            <span className="card-type-tag">{typeTag(property)}</span>
+          )}
         </span>
         <LuxuryBadges property={property} />
         <Favorite id={property.id} />
@@ -199,10 +209,12 @@ export function PropertyCard({
                   <b>{property.type}</b>
                 </span>
               )}
-              <span>
-                <Layers size={16} aria-hidden="true" />
-                <b>Tầng {property.floor}</b>
-              </span>
+              {floorLabel(property) && (
+                <span>
+                  <Layers size={16} aria-hidden="true" />
+                  <b>{floorLabel(property)}</b>
+                </span>
+              )}
             </div>
             <p className="property-furniture">
               <Sofa size={14} aria-hidden="true" />
@@ -245,7 +257,9 @@ export function SaleCard({ property: p }: { property: Property }) {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </span>
-        <span className="sale-card-badge">Đang bán</span>
+        <span className="sale-card-badge">
+          Đang bán{typeTag(p) ? ` · ${typeTag(p)}` : ""}
+        </span>
         <span className="sale-card-open" aria-hidden="true">
           <ArrowUpRight size={20} />
         </span>
@@ -257,8 +271,13 @@ export function SaleCard({ property: p }: { property: Property }) {
               {p.saleVnd ? salePrice(p.saleVnd) : "Liên hệ"}
             </span>
             <span className="sale-card-specs">
-              {p.area} m² · {hasRooms(p) ? roomsLabel(p) : p.type} · Tầng{" "}
-              {p.floor}
+              {[
+                `${p.area} m²`,
+                hasRooms(p) ? roomsLabel(p) : p.type,
+                floorLabel(p),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </span>
         </span>

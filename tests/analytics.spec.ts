@@ -6,8 +6,13 @@ const LIVE = "https://datvanggroup.vn";
 async function asLiveSite(page: Page, baseURL: string) {
   await page.route(`${LIVE}/**`, async (route) => {
     const url = route.request().url().replace(LIVE, baseURL);
-    const response = await route.fetch({ url });
-    await route.fulfill({ response });
+    try {
+      const response = await route.fetch({ url });
+      await route.fulfill({ response });
+    } catch {
+      // The page moved on (navigation, test end) before the answer came.
+      await route.abort().catch(() => {});
+    }
   });
   await page.route("https://www.googletagmanager.com/**", (route) =>
     route.fulfill({ contentType: "text/javascript", body: "" }),

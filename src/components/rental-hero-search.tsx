@@ -45,7 +45,7 @@ const SORT: Options = [
   ["area", "Diện tích lớn nhất"],
 ];
 /** Filters behind "Bộ lọc chi tiết" (opened when one is in use). */
-const MORE = ["loai", "location", "area", "furniture", "status", "sort"];
+const MORE = ["location", "area", "furniture", "status", "sort"];
 
 /**
  * The search box over the full-screen photo: rent or buy (results open in the
@@ -84,6 +84,8 @@ export function RentalHeroSearch({
   const navigate = usePageNavigation();
   const [mode, setMode] = useState<HeroMode>(initialMode);
   const [more, setMore] = useState(() => MORE.some((k) => !!values[k]));
+  // Loại hình: Căn hộ / Nhà phố / Mặt bằng ("" = all).
+  const [kind, setKind] = useState(values.loai ?? "");
   const tabs: { key: HeroMode; label: string; icon: typeof KeyRound }[] = [
     { key: "thue", label: "Thuê", icon: KeyRound },
     { key: "mua", label: "Mua", icon: HandCoins },
@@ -184,6 +186,23 @@ export function RentalHeroSearch({
             {mode === "mua" && (
               <input type="hidden" name="nhu-cau" value="mua" />
             )}
+            <fieldset className="hero-kinds">
+              <legend className="sr-only">{t("Loại hình")}</legend>
+              {[["", "Tất cả"] as const, ...groupOptions].map(
+                ([value, label]) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="loai"
+                      value={value}
+                      checked={kind === value}
+                      onChange={() => setKind(value)}
+                    />
+                    <span>{t(label)}</span>
+                  </label>
+                ),
+              )}
+            </fieldset>
             <div className="hero-field hero-field-wide">
               <label htmlFor={`${id}-q`}>{t("Từ khóa")}</label>
               <span className="hero-input">
@@ -199,7 +218,9 @@ export function RentalHeroSearch({
             </div>
             {!projectSlug &&
               field("project", "Dự án", projects, "Tất cả dự án")}
-            {field("bedrooms", "Phòng ngủ", BEDROOMS, "Mọi loại")}
+            {/* Mặt bằng has no bedrooms. */}
+            {kind !== "premises" &&
+              field("bedrooms", "Phòng ngủ", BEDROOMS, "Mọi loại")}
             {mode === "mua" ? (
               <PriceRange
                 label="Giá bán"
@@ -236,7 +257,6 @@ export function RentalHeroSearch({
               <span aria-hidden="true">{more ? "−" : "+"}</span>
             </button>
             <div id={`${id}-more`} className="hero-more" hidden={!more}>
-              {field("loai", "Loại hình", groupOptions, "Tất cả loại hình")}
               {locations.length > 1 &&
                 field(
                   "location",

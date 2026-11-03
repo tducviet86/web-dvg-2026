@@ -408,6 +408,8 @@ test("shophouse units show the area, no bedrooms or bathrooms", async ({
   };
   const projectId = projects.data.find((p) => p.status === "PUBLISHED")!.id;
   const created = await api.send("post", "/admin/properties", {
+    // Amenities saved by mistake are not shown for a shophouse.
+    amenities: ["washer", "hot-water"],
     name: "Shophouse mặt tiền QA",
     unitCode: "SH-QA",
     projectId,
@@ -421,12 +423,16 @@ test("shophouse units show the area, no bedrooms or bathrooms", async ({
     status: "PUBLISHED",
   });
   expect(created.ok()).toBeTruthy();
-  const { slug } = (await created.json()).data as { slug: string };
+  const { slug, id } = (await created.json()).data as {
+    slug: string;
+    id: string;
+  };
   await page.goto(`/cho-thue/${slug}`);
   const facts = page.locator(".room-quick-facts");
   await expect(facts).toContainText("120 m²");
   await expect(facts).not.toContainText("phòng");
   await expect(page.locator("dt", { hasText: "Diện tích" })).toHaveCount(1);
+  await expect(page.locator("#tien-nghi")).toHaveCount(0);
   await expect(page.locator("dt", { hasText: /Phòng (ngủ|tắm)/ })).toHaveCount(
     0,
   );
@@ -435,30 +441,47 @@ test("shophouse units show the area, no bedrooms or bathrooms", async ({
   await expect(card.locator(".property-specs")).toContainText("120 m²");
   await expect(card.locator(".property-specs")).toContainText("Shophouse");
   await expect(card.locator(".property-specs")).not.toContainText("WC");
+  await expect(card.locator(".property-specs")).not.toContainText("Tầng");
+  // The photo says what it is.
+  await expect(card.locator(".card-type-tag")).toHaveText("Shophouse");
+  // Archived again so later lists stay apartments only.
+  await api.send("delete", `/admin/properties/${id}`);
 });
 
-test("“Loại hình” filter: Căn hộ, Nhà phố, Mặt bằng", async ({ page }) => {
+test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings follow", async ({
+  page,
+}) => {
   await page.goto("/cho-thue");
   const hero = page.locator(".hero-search");
-  await hero.getByRole("button", { name: /Bộ lọc chi tiết/ }).click();
-  const kind = hero.getByLabel("Loại hình");
-  await expect(kind.locator("option")).toHaveText([
-    "Tất cả loại hình",
-    "Căn hộ",
-    "Nhà phố",
-    "Mặt bằng",
-  ]);
-  await kind.selectOption("apartment");
+  const kinds = hero.locator(".hero-kinds label");
+  await expect(kinds).toHaveText(["Tất cả", "Căn hộ", "Nhà phố", "Mặt bằng"]);
+  await expect(hero.getByLabel("Tất cả", { exact: true })).toBeChecked();
+  // Mặt bằng has no bedrooms: the field goes away.
+  await hero.getByLabel("Mặt bằng", { exact: true }).check();
+  await expect(hero.getByLabel("Phòng ngủ")).toHaveCount(0);
+  await hero.getByLabel("Căn hộ", { exact: true }).check();
+  await expect(hero.getByLabel("Phòng ngủ")).toBeVisible();
   await hero.getByRole("button", { name: "Tìm căn thuê" }).click();
   await expect(page).toHaveURL(/loai=apartment/);
   await expect(page.locator(".filter-chips")).toContainText("Căn hộ");
+  await expect(page.locator(".rental-results-heading h2")).toHaveText(
+    "Khám phá căn hộ cho thuê",
+  );
   expect(
     await page.locator(".rental-card-grid .property-card").count(),
   ).toBeGreaterThan(0);
-  // No premises in the sample data yet: the empty state.
+  await expect(hero.getByLabel("Căn hộ", { exact: true })).toBeChecked();
+  // Searching premises: the heading and the count say so.
   await page.goto("/cho-thue?loai=premises");
   await expect(page.locator(".rental-card-grid .property-card")).toHaveCount(0);
-  await expect(page.locator(".filter-chips")).toContainText("Mặt bằng");
+  await expect(page.locator(".rental-results-heading h2")).toHaveText(
+    "Khám phá mặt bằng cho thuê",
+  );
+  await expect(page.locator(".rental-results-heading")).toContainText(
+    "0 mặt bằng phù hợp",
+  );
+  await page.goto("/du-an/van-hanh?loai=townhouse");
+  await expect(page.locator("#can-ho h2")).toHaveText("Nhà phố cho thuê");
 });
 
 test("price sliders: rent 0–100 triệu, sale from the units for sale", async ({

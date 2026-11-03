@@ -367,11 +367,22 @@
   padding: 4px 9px 4px 8px;
   letter-spacing: 1.2px;
 }
-.rent-mini-status {
+/* Type (shophouse / nhà phố / mặt bằng) and status, top right. */
+.rent-mini-tags {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.rent-mini-tags .card-type-tag {
+  padding: 5px 10px;
+  font-size: 11.5px;
+}
+.rent-mini-status {
   padding: 5px 10px;
   border-radius: 999px;
   background: #ffffffe8;

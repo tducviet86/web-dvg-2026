@@ -16,7 +16,12 @@ import type { Property } from "@/types";
 import { vndFull } from "@/lib/utils";
 import { LuxuryBadges } from "./cards";
 import { TRENDING_SCORE } from "@/lib/highlights";
-import { hasRooms, roomsLabel } from "@/lib/property-groups";
+import {
+  floorLabel,
+  hasRooms,
+  roomsLabel,
+  typeTag,
+} from "@/lib/property-groups";
 
 /** Weight of the badge an editor picks in Admin. */
 const BADGE_RANK: Record<string, number> = {
@@ -105,9 +110,14 @@ export function RentalMini({ unit }: { unit: Property }) {
             sizes="(max-width: 760px) 70vw, (max-width: 1080px) 45vw, 22vw"
           />
           <LuxuryBadges property={unit} />
-          {unit.status === "Còn trống" && (
-            <span className="rent-mini-status">Còn trống</span>
-          )}
+          <span className="rent-mini-tags">
+            {typeTag(unit) && (
+              <span className="card-type-tag">{typeTag(unit)}</span>
+            )}
+            {unit.status === "Còn trống" && (
+              <span className="rent-mini-status">Còn trống</span>
+            )}
+          </span>
         </span>
         <span className="rent-mini-body">
           <small>
@@ -140,12 +150,12 @@ export function RentalMini({ unit }: { unit: Property }) {
                     {unit.type}
                   </span>
                 )}
-                {unit.floor ? (
+                {floorLabel(unit) && (
                   <span>
                     <Layers size={13} aria-hidden="true" />
-                    Tầng {unit.floor}
+                    {floorLabel(unit)}
                   </span>
-                ) : null}
+                )}
               </span>
               {unit.furniture && (
                 <span className="rent-mini-note">
