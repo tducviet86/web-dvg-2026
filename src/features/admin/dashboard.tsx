@@ -567,13 +567,23 @@ function Workspace() {
         <div className="admin-sidebar-bottom">
           <span className="demo-mode">● {session.roles.join(", ")}</span>
           <p>{session.name}</p>
+          <small className="admin-sidebar-email">{session.email}</small>
           <Link href="/">
             Xem website
             <ArrowUpRight size={17} />
           </Link>
+          <button
+            type="button"
+            className="admin-sidebar-logout"
+            onClick={logout}
+          >
+            Đăng xuất
+            <LogOut size={16} />
+          </button>
         </div>
       </aside>
       <div className="admin-content">
+        {/* Phones: the sidebar footer is hidden, so sign-out stays up here. */}
         <div className="admin-userbar">
           <span>{session.email}</span>
           <button type="button" onClick={logout}>

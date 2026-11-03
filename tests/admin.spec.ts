@@ -32,7 +32,21 @@ test("login is required and failures are reported", async ({ page }) => {
     await page.evaluate(() => localStorage.getItem("dvg:admin-session")),
   ).toBeNull();
   await login(page);
-  await page.getByRole("button", { name: "Đăng xuất" }).click();
+  // Desktop: sign-out sits under "Xem website" in the sidebar; phones keep
+  // it at the top (the sidebar footer is hidden there).
+  const sidebarLogout = page
+    .locator(".admin-sidebar")
+    .getByRole("button", { name: "Đăng xuất" });
+  await expect(sidebarLogout).toBeVisible();
+  await expect(
+    page.locator(".admin-userbar").getByRole("button", { name: "Đăng xuất" }),
+  ).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    page.locator(".admin-userbar").getByRole("button", { name: "Đăng xuất" }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await sidebarLogout.click();
   await expect(page).toHaveURL(/\/admin\/login/);
   expect(
     await page.evaluate(() => localStorage.getItem("dvg:admin-session")),

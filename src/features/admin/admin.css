@@ -113,6 +113,40 @@
   line-height: 1.8;
   font-size: 11px;
 }
+.admin-sidebar-email {
+  display: block;
+  margin-bottom: 4px;
+  overflow: hidden;
+  font-size: 10.5px;
+  color: #8fa499;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* "Đăng xuất" under "Xem website", same row style. */
+.admin-sidebar-logout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid #ffffff1f;
+  background: none;
+  /* Same type as the "Xem website" link above it. */
+  font: inherit;
+  font-size: 10px;
+  color: #c4d4c9;
+  cursor: pointer;
+}
+.admin-sidebar-logout:hover {
+  color: #ffd9cb;
+}
+.admin-sidebar-logout:focus-visible {
+  outline: 2px solid #f0dba4;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
 .admin-sidebar .demo-mode {
   background: #334c35;
   color: #f0dba4;
@@ -5362,5 +5396,12 @@
   .field-pill-group {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+}
+
+/* Desktop: sign-out lives in the sidebar footer. */
+@media (min-width: 769px) {
+  .admin-userbar {
+    display: none;
   }
 }
