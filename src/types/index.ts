@@ -67,6 +67,8 @@ export type Property = AdminDetails & {
   projectId: string;
   location: string;
   type: string;
+  /** apartment | townhouse | premises (lib/property-groups.ts). */
+  typeGroup?: string;
   price: number;
   area: number;
   bedrooms: number;

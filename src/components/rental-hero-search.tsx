@@ -15,6 +15,7 @@ import { usePageNavigation } from "./page-navigation";
 import { InquiryDialog } from "./rental-inquiry";
 import { PriceRange } from "./price-range";
 import { RENT_RANGE } from "@/lib/filter";
+import { groupOptions } from "@/lib/property-groups";
 
 export type HeroMode = "thue" | "mua" | "ky-gui";
 type Options = [value: string, label: string][];
@@ -44,7 +45,7 @@ const SORT: Options = [
   ["area", "Diện tích lớn nhất"],
 ];
 /** Filters behind "Bộ lọc chi tiết" (opened when one is in use). */
-const MORE = ["location", "area", "furniture", "status", "sort"];
+const MORE = ["loai", "location", "area", "furniture", "status", "sort"];
 
 /**
  * The search box over the full-screen photo: rent or buy (results open in the
@@ -235,6 +236,7 @@ export function RentalHeroSearch({
               <span aria-hidden="true">{more ? "−" : "+"}</span>
             </button>
             <div id={`${id}-more`} className="hero-more" hidden={!more}>
+              {field("loai", "Loại hình", groupOptions, "Tất cả loại hình")}
               {locations.length > 1 &&
                 field(
                   "location",

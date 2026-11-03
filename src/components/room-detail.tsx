@@ -34,6 +34,7 @@ import { Reveal } from "./client-basics";
 import { RentalMini, rentalScore } from "./home-rentals";
 import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";
+import { groupLabel } from "@/lib/property-groups";
 
 export function RoomDetail({
   room: r,
@@ -96,7 +97,7 @@ export function RoomDetail({
     { icon: Expand, value: `${r.area} m²`, label: "Diện tích" },
     {
       icon: BedDouble,
-      value: r.bedrooms ? `${r.bedrooms} phòng` : "Studio",
+      value: r.bedrooms ? `${r.bedrooms} phòng` : r.type,
       label: "Phòng ngủ",
     },
     { icon: Bath, value: `${r.bathrooms} phòng`, label: "Phòng tắm" },
@@ -275,9 +276,9 @@ export function RoomDetail({
                   {[
                     ["Mã căn", code],
                     ["Dự án", project.name],
-                    ["Loại căn hộ", r.type],
+                    ["Loại hình", `${groupLabel(r.typeGroup)} · ${r.type}`],
                     ["Diện tích", `${r.area} m²`],
-                    ["Phòng ngủ", r.bedrooms ? String(r.bedrooms) : "Studio"],
+                    ["Phòng ngủ", r.bedrooms ? String(r.bedrooms) : r.type],
                     ["Phòng tắm", String(r.bathrooms)],
                     ["Tầng", String(r.floor)],
                     ["Nội thất", r.furniture],
@@ -520,6 +521,7 @@ export function RoomDetail({
               project: project.name,
               area: r.area,
               bedrooms: r.bedrooms,
+              type: r.type,
               rent: vndFull(rentVnd),
             }}
           />

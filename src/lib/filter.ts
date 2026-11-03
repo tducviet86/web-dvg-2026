@@ -8,33 +8,39 @@ const searchable = (value: string) =>
     .toLowerCase()
     .trim();
 export function filterProperties(items: Property[], f: Filters) {
-  return items
-    .filter(
-      (p) =>
-        (!f.q ||
-          searchable(
-            `${p.name} ${p.location} ${p.unitCode || p.id} ${p.projectName || ""}`,
-          ).includes(searchable(f.q))) &&
-        (!f.location || p.location === f.location) &&
-        (!f.project || p.projectSlug === f.project || p.projectId === f.project) &&
-        (!f.type || p.type === f.type) &&
-        (!f.price || p.price <= Number(f.price)) &&
-        (!f["gia-tu"] || p.price >= Number(f["gia-tu"])) &&
-        (!f.bedrooms || p.bedrooms === Number(f.bedrooms)) &&
-        (!f.area || p.area >= Number(f.area)) &&
-        (!f.furniture || p.furniture === f.furniture) &&
-        (!f.status || p.status === f.status),
-    )
-    // Without an explicit sort the API order (publication order) is kept.
-    .sort((a, b) =>
-      f.sort === "price-asc"
-        ? a.price - b.price
-        : f.sort === "price-desc"
-          ? b.price - a.price
-          : f.sort === "area"
-            ? b.area - a.area
-            : 0,
-    );
+  return (
+    items
+      .filter(
+        (p) =>
+          (!f.q ||
+            searchable(
+              `${p.name} ${p.location} ${p.unitCode || p.id} ${p.projectName || ""}`,
+            ).includes(searchable(f.q))) &&
+          (!f.location || p.location === f.location) &&
+          (!f.project ||
+            p.projectSlug === f.project ||
+            p.projectId === f.project) &&
+          (!f.type || p.type === f.type) &&
+          // "loai": Căn hộ / Nhà phố / Mặt bằng (lib/property-groups.ts).
+          (!f.loai || (p.typeGroup ?? "apartment") === f.loai) &&
+          (!f.price || p.price <= Number(f.price)) &&
+          (!f["gia-tu"] || p.price >= Number(f["gia-tu"])) &&
+          (!f.bedrooms || p.bedrooms === Number(f.bedrooms)) &&
+          (!f.area || p.area >= Number(f.area)) &&
+          (!f.furniture || p.furniture === f.furniture) &&
+          (!f.status || p.status === f.status),
+      )
+      // Without an explicit sort the API order (publication order) is kept.
+      .sort((a, b) =>
+        f.sort === "price-asc"
+          ? a.price - b.price
+          : f.sort === "price-desc"
+            ? b.price - a.price
+            : f.sort === "area"
+              ? b.area - a.area
+              : 0,
+      )
+  );
 }
 
 /** "?nhu-cau=mua" (also the older "mua-ban") lists units for sale. */

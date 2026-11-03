@@ -72,6 +72,7 @@ import {
   type FormValues,
   type Kind,
 } from "./model";
+import { groupLabel } from "@/lib/property-groups";
 
 type Tab =
   | "dashboard"
@@ -296,7 +297,7 @@ function Workspace() {
               latitude: number | null;
             }[];
           }>("GET", "/admin/projects?pageSize=100"),
-          api<{ data: { code: string; name: string }[] }>(
+          api<{ data: { code: string; name: string; group?: string }[] }>(
             "GET",
             "/property-types",
           ),
@@ -314,6 +315,9 @@ function Workspace() {
           ]),
         );
         next.propertyTypes = types.data.map((t) => [t.code, t.name]);
+        next.propertyTypeGroups = Object.fromEntries(
+          types.data.map((t) => [t.code, groupLabel(t.group)]),
+        );
       }
       if (forKind === "posts") {
         const categories = await api<{

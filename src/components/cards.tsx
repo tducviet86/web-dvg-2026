@@ -16,6 +16,7 @@ import type { Project, Property, Post } from "@/types";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
+import { roomsLabel } from "@/lib/property-groups";
 import { Favorite } from "./client-basics";
 export function SectionHeading({
   eyebrow,
@@ -183,8 +184,7 @@ export function PropertyCard({
               <span>
                 <BedDouble size={16} aria-hidden="true" />
                 <b>
-                  {property.bedrooms || "Studio"}
-                  {property.bedrooms > 0 ? " PN" : ""}
+                  {roomsLabel(property)}
                 </b>
               </span>
               <span>
@@ -249,7 +249,7 @@ export function SaleCard({ property: p }: { property: Property }) {
               {p.saleVnd ? salePrice(p.saleVnd) : "Liên hệ"}
             </span>
             <span className="sale-card-specs">
-              {p.area} m² · {p.bedrooms ? `${p.bedrooms} PN` : "Studio"} · Tầng{" "}
+              {p.area} m² · {roomsLabel(p)} · Tầng{" "}
               {p.floor}
             </span>
           </span>

@@ -125,6 +125,7 @@ export function toProperty(p: ApiProperty): Property {
     projectSlug: p.project.slug,
     location: p.location,
     type: p.propertyType.name,
+    typeGroup: p.propertyType.group ?? "apartment",
     price: millions(p.rentPriceVnd),
     rentVnd: p.rentPriceVnd ? Number(p.rentPriceVnd) : undefined,
     saleVnd: p.salePriceVnd ? Number(p.salePriceVnd) : undefined,

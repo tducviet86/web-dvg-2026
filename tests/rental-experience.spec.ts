@@ -399,6 +399,30 @@ test("detailed filters live in the hero search and the owner popup opens", async
   ).toBeVisible();
 });
 
+test("“Loại hình” filter: Căn hộ, Nhà phố, Mặt bằng", async ({ page }) => {
+  await page.goto("/cho-thue");
+  const hero = page.locator(".hero-search");
+  await hero.getByRole("button", { name: /Bộ lọc chi tiết/ }).click();
+  const kind = hero.getByLabel("Loại hình");
+  await expect(kind.locator("option")).toHaveText([
+    "Tất cả loại hình",
+    "Căn hộ",
+    "Nhà phố",
+    "Mặt bằng",
+  ]);
+  await kind.selectOption("apartment");
+  await hero.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await expect(page).toHaveURL(/loai=apartment/);
+  await expect(page.locator(".filter-chips")).toContainText("Căn hộ");
+  expect(
+    await page.locator(".rental-card-grid .property-card").count(),
+  ).toBeGreaterThan(0);
+  // No premises in the sample data yet: the empty state.
+  await page.goto("/cho-thue?loai=premises");
+  await expect(page.locator(".rental-card-grid .property-card")).toHaveCount(0);
+  await expect(page.locator(".filter-chips")).toContainText("Mặt bằng");
+});
+
 test("price sliders: rent 0–100 triệu, sale from the units for sale", async ({
   page,
 }) => {

@@ -5,6 +5,7 @@ import { ArrowUpRight, BedDouble, Expand, MapPin } from "lucide-react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { writeStore } from "@/lib/storage";
+import { roomsLabel } from "@/lib/property-groups";
 
 /** What a "Căn hộ vừa xem" card needs, saved when a unit page opens. */
 export type RecentUnit = {
@@ -14,6 +15,8 @@ export type RecentUnit = {
   project: string;
   area: number;
   bedrooms: number;
+  /** Type name, shown when there are no bedrooms ("Shophouse"). */
+  type?: string;
   /** Rent already formatted ("25.000.000"). */
   rent: string;
 };
@@ -118,7 +121,7 @@ export function RecentUnits({ current }: { current: RecentUnit }) {
                   </span>
                   <span>
                     <BedDouble size={13} aria-hidden="true" />
-                    {u.bedrooms > 0 ? `${u.bedrooms} PN` : "Studio"}
+                    {roomsLabel(u)}
                   </span>
                 </span>
                 <span className="rent-mini-foot">

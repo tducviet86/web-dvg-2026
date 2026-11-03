@@ -15,6 +15,7 @@ import type { Property } from "@/types";
 import { vndFull } from "@/lib/utils";
 import { LuxuryBadges } from "./cards";
 import { TRENDING_SCORE } from "@/lib/highlights";
+import { roomsLabel } from "@/lib/property-groups";
 
 /** Weight of the badge an editor picks in Admin. */
 const BADGE_RANK: Record<string, number> = {
@@ -123,7 +124,7 @@ export function RentalMini({ unit }: { unit: Property }) {
                 </span>
                 <span>
                   <BedDouble size={13} aria-hidden="true" />
-                  {unit.bedrooms > 0 ? `${unit.bedrooms} PN` : "Studio"}
+                  {roomsLabel(unit)}
                 </span>
                 <span>
                   <Bath size={13} aria-hidden="true" />

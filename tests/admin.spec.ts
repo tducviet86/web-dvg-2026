@@ -258,6 +258,16 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await expect(form.locator("[name=price]")).toHaveValue("12.500.000");
   await expect(form.locator("[name=salePrice]")).toBeHidden();
   await form.locator("[name=depositMonths]").selectOption("2");
+  // Unit types listed under Căn hộ / Nhà phố / Mặt bằng.
+  const kinds = form.locator("[name=type] optgroup");
+  await expect(kinds).toHaveCount(3);
+  expect(
+    await kinds.evaluateAll((g) => g.map((x) => x.getAttribute("label"))),
+  ).toEqual(["Căn hộ", "Nhà phố", "Mặt bằng"]);
+  await expect(
+    kinds.first().locator("option", { hasText: "Shophouse" }),
+  ).toHaveCount(1);
+  await expect(kinds.nth(1).locator("option")).toHaveText(["Nhà phố"]);
   // No link inputs: media only comes from uploads.
   await expect(form.locator("[name=videoUrl]")).toHaveCount(0);
   const png = readFileSync("public/images/img1.png");

@@ -26,6 +26,7 @@ import {
 } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { SearchHero } from "./search-hero";
+import { groupLabel } from "@/lib/property-groups";
 import { ProjectMap } from "./project-map";
 import { money, siteUrl } from "@/lib/utils";
 import { InquiryDialog } from "./rental-inquiry";
@@ -265,21 +266,23 @@ export function RentalPage({
                     ? locations.find((p) => p.slug === v)?.name
                     : k === "nhu-cau"
                       ? "Đang bán"
-                      : k === "gia-ban"
-                        ? `Đến ${v} tỷ`
-                        : k === "gia-ban-tu"
-                          ? `Từ ${v} tỷ`
-                          : k === "price"
-                            ? `Đến ${v} triệu`
-                            : k === "gia-tu"
-                              ? `Từ ${v} triệu`
-                              : k === "area"
-                                ? `Từ ${v} m²`
-                                : k === "bedrooms"
-                                  ? v === "0"
-                                    ? "Studio"
-                                    : `${v} phòng ngủ`
-                                  : v}{" "}
+                      : k === "loai"
+                        ? groupLabel(v)
+                        : k === "gia-ban"
+                          ? `Đến ${v} tỷ`
+                          : k === "gia-ban-tu"
+                            ? `Từ ${v} tỷ`
+                            : k === "price"
+                              ? `Đến ${v} triệu`
+                              : k === "gia-tu"
+                                ? `Từ ${v} triệu`
+                                : k === "area"
+                                  ? `Từ ${v} m²`
+                                  : k === "bedrooms"
+                                    ? v === "0"
+                                      ? "Studio"
+                                      : `${v} phòng ngủ`
+                                    : v}{" "}
                   <span aria-hidden>×</span>
                 </Link>
               ))}

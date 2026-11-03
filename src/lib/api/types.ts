@@ -74,7 +74,7 @@ export type ApiProperty = {
   slug: string;
   name: string;
   project: { id: string; slug: string; name: string };
-  propertyType: { code: string; name: string };
+  propertyType: { code: string; name: string; group?: string };
   unitCode: string | null;
   forRent: boolean;
   forSale: boolean;

@@ -92,6 +92,8 @@ type Field = {
   required?: boolean;
   default?: string | number | boolean;
   options?: [string, string][];
+  /** Select: the heading each option is listed under (<optgroup>). */
+  optionGroups?: Record<string, string>;
   /** Description of each choice card (type "choice"). */
   optionHints?: Record<string, string>;
   hint?: string;
@@ -133,6 +135,8 @@ type Group = {
 export type Lookups = {
   projects: [string, string][];
   propertyTypes: [string, string][];
+  /** Type code → "Căn hộ" / "Nhà phố" / "Mặt bằng". */
+  propertyTypeGroups?: Record<string, string>;
   blogCategories: [string, string][];
   users: [string, string][];
   /** Project address and map, used to pre-fill a unit's location. */
@@ -484,10 +488,12 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
         description: "Loại căn, diện tích và nội thất.",
         icon: ClipboardList,
         fields: [
-          f("type", "Loại căn hộ", {
+          f("type", "Loại hình", {
             type: "select",
             required: true,
             options: lookups.propertyTypes,
+            optionGroups: lookups.propertyTypeGroups,
+            hint: "Căn hộ: Studio, 1–3 phòng ngủ, Shophouse… · Nhà phố: Euro Village 1, 2, Phúc Lộc Viên… (chọn dự án ở trên) · Mặt bằng kinh doanh.",
           }),
           f("area", "Diện tích", {
             type: "number",
@@ -1705,7 +1711,7 @@ export function Editor({
     const lines = [
       ["Tên căn", str(v.name)],
       ["Dự án", label(lookups.projects, v.projectId)],
-      ["Loại căn hộ", label(lookups.propertyTypes, v.type)],
+      ["Loại hình", label(lookups.propertyTypes, v.type)],
       ["Khu vực", str(v.location)],
       ["Diện tích", `${area} m²`],
       ["Phòng ngủ", bedrooms === "0" ? "Studio" : bedrooms],
@@ -1915,11 +1921,25 @@ export function Editor({
             {!item.options?.length && (
               <option value="">Chưa có dữ liệu — hãy tạo trước</option>
             )}
-            {item.options?.map(([key, label]) => (
-              <option value={key} key={key}>
-                {label}
-              </option>
-            ))}
+            {item.optionGroups
+              ? [
+                  ...new Set(item.options?.map(([k]) => item.optionGroups![k])),
+                ].map((group) => (
+                  <optgroup key={group ?? ""} label={group ?? "Khác"}>
+                    {item.options
+                      ?.filter(([k]) => item.optionGroups![k] === group)
+                      .map(([key, label]) => (
+                        <option value={key} key={key}>
+                          {label}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))
+              : item.options?.map(([key, label]) => (
+                  <option value={key} key={key}>
+                    {label}
+                  </option>
+                ))}
           </select>
         ) : item.type === "date" ? (
           <DatePicker

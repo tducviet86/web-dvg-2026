@@ -571,7 +571,10 @@ export function PropertiesList({
                     <td className="units-project">
                       {project?.name}
                       <small>
-                        {Number(u.bedrooms) > 0 ? `${u.bedrooms} PN` : "Studio"}{" "}
+                        {Number(u.bedrooms) > 0
+                          ? `${u.bedrooms} PN`
+                          : ((u.propertyType as { name?: string } | undefined)
+                              ?.name ?? "Studio")}{" "}
                         · {Number(u.areaM2)} m²
                       </small>
                     </td>
