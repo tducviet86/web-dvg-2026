@@ -10,12 +10,13 @@ import {
   Layers,
   MapPin,
   Sofa,
+  Store,
 } from "lucide-react";
 import type { Property } from "@/types";
 import { vndFull } from "@/lib/utils";
 import { LuxuryBadges } from "./cards";
 import { TRENDING_SCORE } from "@/lib/highlights";
-import { roomsLabel } from "@/lib/property-groups";
+import { hasRooms, roomsLabel } from "@/lib/property-groups";
 
 /** Weight of the badge an editor picks in Admin. */
 const BADGE_RANK: Record<string, number> = {
@@ -122,14 +123,23 @@ export function RentalMini({ unit }: { unit: Property }) {
                   <Expand size={13} aria-hidden="true" />
                   {unit.area} m²
                 </span>
-                <span>
-                  <BedDouble size={13} aria-hidden="true" />
-                  {roomsLabel(unit)}
-                </span>
-                <span>
-                  <Bath size={13} aria-hidden="true" />
-                  {unit.bathrooms} WC
-                </span>
+                {hasRooms(unit) ? (
+                  <>
+                    <span>
+                      <BedDouble size={13} aria-hidden="true" />
+                      {roomsLabel(unit)}
+                    </span>
+                    <span>
+                      <Bath size={13} aria-hidden="true" />
+                      {unit.bathrooms} WC
+                    </span>
+                  </>
+                ) : (
+                  <span>
+                    <Store size={13} aria-hidden="true" />
+                    {unit.type}
+                  </span>
+                )}
                 {unit.floor ? (
                   <span>
                     <Layers size={13} aria-hidden="true" />

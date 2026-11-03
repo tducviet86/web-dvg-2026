@@ -278,6 +278,16 @@ test("properties upload images and videos, choose the cover, delete and keep ord
     await expect(form.locator("[name=bedrooms]")).toHaveValue(rooms[0]);
     await expect(form.locator("[name=bathrooms]")).toHaveValue(rooms[1]);
   }
+  // Shophouse / mặt bằng: no bedrooms or bathrooms, only the area.
+  for (const type of ["Shophouse", "Mặt bằng"]) {
+    await form.getByLabel(type, { exact: true }).check();
+    await expect(form.locator("[name=bedrooms]")).toBeHidden();
+    await expect(form.locator("[name=bathrooms]")).toBeHidden();
+    await expect(form.locator("[name=bedrooms]")).toHaveValue("0");
+    await expect(form.locator("[name=area]")).toBeVisible();
+  }
+  await form.getByLabel("2 phòng ngủ", { exact: true }).check();
+  await expect(form.locator("[name=bedrooms]")).toBeVisible();
   // Still editable, and the mouse wheel does not change the number.
   await form.locator("[name=bathrooms]").fill("3");
   await form.locator("[name=bathrooms]").hover();

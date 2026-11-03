@@ -176,7 +176,9 @@ article.property-card .location svg {
 }
 article.property-card .property-specs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* 4 facts, or 3 for a shophouse / mặt bằng (no rooms). */
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   gap: 0;
   margin: 12px 0 8px;
   padding: 10px 4px;

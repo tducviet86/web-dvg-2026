@@ -34,7 +34,7 @@ import { Reveal } from "./client-basics";
 import { RentalMini, rentalScore } from "./home-rentals";
 import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";
-import { groupLabel } from "@/lib/property-groups";
+import { groupLabel, hasRooms } from "@/lib/property-groups";
 
 export function RoomDetail({
   room: r,
@@ -93,14 +93,20 @@ export function RoomDetail({
     for (const list of byProject.values()) if (list[i]) explore.push(list[i]);
   // A few suggestions; "Xem tất cả" opens the full list.
   explore.splice(5);
+  // Shophouse / mặt bằng: no bedrooms or bathrooms, just the area.
+  const rooms = hasRooms(r);
   const facts = [
     { icon: Expand, value: `${r.area} m²`, label: "Diện tích" },
-    {
-      icon: BedDouble,
-      value: r.bedrooms ? `${r.bedrooms} phòng` : r.type,
-      label: "Phòng ngủ",
-    },
-    { icon: Bath, value: `${r.bathrooms} phòng`, label: "Phòng tắm" },
+    ...(rooms
+      ? [
+          {
+            icon: BedDouble,
+            value: r.bedrooms ? `${r.bedrooms} phòng` : r.type,
+            label: "Phòng ngủ",
+          },
+          { icon: Bath, value: `${r.bathrooms} phòng`, label: "Phòng tắm" },
+        ]
+      : []),
     { icon: Layers, value: `Tầng ${r.floor}`, label: "Vị trí tầng" },
   ];
   return (
@@ -278,8 +284,15 @@ export function RoomDetail({
                     ["Dự án", project.name],
                     ["Loại hình", `${groupLabel(r.typeGroup)} · ${r.type}`],
                     ["Diện tích", `${r.area} m²`],
-                    ["Phòng ngủ", r.bedrooms ? String(r.bedrooms) : r.type],
-                    ["Phòng tắm", String(r.bathrooms)],
+                    ...(rooms
+                      ? [
+                          [
+                            "Phòng ngủ",
+                            r.bedrooms ? String(r.bedrooms) : r.type,
+                          ],
+                          ["Phòng tắm", String(r.bathrooms)],
+                        ]
+                      : []),
                     ["Tầng", String(r.floor)],
                     ["Nội thất", r.furniture],
                     [r.isDemo ? "Tình trạng mẫu" : "Tình trạng", status],

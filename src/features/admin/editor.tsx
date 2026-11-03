@@ -64,6 +64,7 @@ import {
   type Kind,
 } from "./model";
 import { ProjectBannerSection, type ProjectBannerDraft } from "./banners";
+import { NO_ROOM_TYPES } from "@/lib/property-groups";
 
 /** Picking one of these types fills [bedrooms, bathrooms]. */
 const ROOMS_BY_TYPE: Record<string, [number, number]> = {
@@ -71,6 +72,9 @@ const ROOMS_BY_TYPE: Record<string, [number, number]> = {
   "1pn": [1, 1],
   "2pn": [2, 2],
   "3pn": [3, 2],
+  // No rooms: the fields are hidden and saved as 0.
+  shophouse: [0, 0],
+  "mat-bang": [0, 0],
 };
 
 // ───────────────────────────── field model ─────────────────────────────
@@ -130,6 +134,8 @@ type Field = {
   newOnly?: boolean;
   /** Only shown while this checkbox field is on (e.g. rent price ↔ "Cho thuê"). */
   showWhen?: string;
+  /** Hidden while the unit type is one of these (shophouse: no bedrooms). */
+  hideForTypes?: string[];
   /** Starts a new block inside the section, with this small heading. */
   subhead?: string;
 };
@@ -503,7 +509,6 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             default: "1pn",
             options: lookups.propertyTypes,
             optionGroups: lookups.propertyTypeGroups,
-            hint: "Chọn Studio, 1PN, 2PN hoặc 3PN sẽ tự điền số phòng ngủ và phòng tắm (sửa lại được).",
           }),
           f("area", "Diện tích", {
             type: "number",
@@ -521,6 +526,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             max: 50,
             integer: true,
             default: 1,
+            hideForTypes: NO_ROOM_TYPES,
           }),
           f("bathrooms", "Phòng tắm", {
             type: "number",
@@ -529,6 +535,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             max: 50,
             integer: true,
             default: 1,
+            hideForTypes: NO_ROOM_TYPES,
           }),
           f("floor", "Tầng", {
             type: "number",
@@ -1944,7 +1951,11 @@ export function Editor({
       <div
         key={item.key}
         className={`field${item.wide ? " full" : ""}${error ? " has-error" : ""}`}
-        hidden={item.showWhen ? !live[item.showWhen] : undefined}
+        hidden={
+          (item.showWhen ? !live[item.showWhen] : false) ||
+          !!item.hideForTypes?.includes(str(live.type)) ||
+          undefined
+        }
       >
         <label htmlFor={id}>
           {item.label} {tag}

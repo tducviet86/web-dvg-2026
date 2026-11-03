@@ -399,6 +399,44 @@ test("detailed filters live in the hero search and the owner popup opens", async
   ).toBeVisible();
 });
 
+test("shophouse units show the area, no bedrooms or bathrooms", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; status: string }[];
+  };
+  const projectId = projects.data.find((p) => p.status === "PUBLISHED")!.id;
+  const created = await api.send("post", "/admin/properties", {
+    name: "Shophouse mặt tiền QA",
+    unitCode: "SH-QA",
+    projectId,
+    propertyType: "shophouse",
+    location: "Đà Nẵng",
+    areaM2: 120,
+    bedrooms: 0,
+    bathrooms: 0,
+    description: "Shophouse kinh doanh mặt tiền, kiểm tra hiển thị.",
+    rentPriceVnd: "45000000",
+    status: "PUBLISHED",
+  });
+  expect(created.ok()).toBeTruthy();
+  const { slug } = (await created.json()).data as { slug: string };
+  await page.goto(`/cho-thue/${slug}`);
+  const facts = page.locator(".room-quick-facts");
+  await expect(facts).toContainText("120 m²");
+  await expect(facts).not.toContainText("phòng");
+  await expect(page.locator("dt", { hasText: "Diện tích" })).toHaveCount(1);
+  await expect(page.locator("dt", { hasText: /Phòng (ngủ|tắm)/ })).toHaveCount(
+    0,
+  );
+  await page.goto("/cho-thue?q=shophouse+mat+tien+qa");
+  const card = page.locator(".rental-card-grid .property-card").first();
+  await expect(card.locator(".property-specs")).toContainText("120 m²");
+  await expect(card.locator(".property-specs")).toContainText("Shophouse");
+  await expect(card.locator(".property-specs")).not.toContainText("WC");
+});
+
 test("“Loại hình” filter: Căn hộ, Nhà phố, Mặt bằng", async ({ page }) => {
   await page.goto("/cho-thue");
   const hero = page.locator(".hero-search");

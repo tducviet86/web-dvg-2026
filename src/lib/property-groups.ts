@@ -16,6 +16,11 @@ export const groupOptions = Object.entries(PROPERTY_GROUPS) as [
 export const groupLabel = (group?: string) =>
   PROPERTY_GROUPS[group as PropertyGroup] ?? PROPERTY_GROUPS.apartment;
 
+/** Types without bedrooms or bathrooms: only the area is shown. */
+export const NO_ROOM_TYPES = ["shophouse", "mat-bang"];
+export const hasRooms = (p: { typeCode?: string; typeGroup?: string }) =>
+  !NO_ROOM_TYPES.includes(p.typeCode ?? "") && p.typeGroup !== "premises";
+
 /** "2 PN", or the type ("Studio", "Shophouse", "Mặt bằng") without bedrooms. */
 export const roomsLabel = (p: { bedrooms: number; type?: string }) =>
   p.bedrooms > 0 ? `${p.bedrooms} PN` : p.type || "Studio";

@@ -11,12 +11,13 @@ import {
   Layers,
   Camera,
   PlayCircle,
+  Store,
 } from "lucide-react";
 import type { Project, Property, Post } from "@/types";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
-import { roomsLabel } from "@/lib/property-groups";
+import { hasRooms, roomsLabel } from "@/lib/property-groups";
 import { Favorite } from "./client-basics";
 export function SectionHeading({
   eyebrow,
@@ -181,16 +182,23 @@ export function PropertyCard({
                 <Expand size={16} aria-hidden="true" />
                 <b>{property.area} m²</b>
               </span>
-              <span>
-                <BedDouble size={16} aria-hidden="true" />
-                <b>
-                  {roomsLabel(property)}
-                </b>
-              </span>
-              <span>
-                <Bath size={16} aria-hidden="true" />
-                <b>{property.bathrooms} WC</b>
-              </span>
+              {hasRooms(property) ? (
+                <>
+                  <span>
+                    <BedDouble size={16} aria-hidden="true" />
+                    <b>{roomsLabel(property)}</b>
+                  </span>
+                  <span>
+                    <Bath size={16} aria-hidden="true" />
+                    <b>{property.bathrooms} WC</b>
+                  </span>
+                </>
+              ) : (
+                <span>
+                  <Store size={16} aria-hidden="true" />
+                  <b>{property.type}</b>
+                </span>
+              )}
               <span>
                 <Layers size={16} aria-hidden="true" />
                 <b>Tầng {property.floor}</b>
@@ -249,7 +257,7 @@ export function SaleCard({ property: p }: { property: Property }) {
               {p.saleVnd ? salePrice(p.saleVnd) : "Liên hệ"}
             </span>
             <span className="sale-card-specs">
-              {p.area} m² · {roomsLabel(p)} · Tầng{" "}
+              {p.area} m² · {hasRooms(p) ? roomsLabel(p) : p.type} · Tầng{" "}
               {p.floor}
             </span>
           </span>
