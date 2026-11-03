@@ -597,88 +597,53 @@ textarea {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.navigation-skeleton {
+/* Slow page change: a spinning ring over the dimmed current page (after a
+   beat, so prefetched pages swap without a flash). */
+.navigation-spinner {
   position: fixed;
   inset: var(--header-h) 0 0;
   z-index: 40;
-  overflow: hidden;
-  background: var(--c-ivory-50);
-  animation: nav-sk-in var(--dur-2) var(--ease-out) 180ms backwards;
+  display: grid;
+  place-items: center;
+  background: #f7f5ef8c;
+  backdrop-filter: blur(2px);
+  cursor: progress;
+  animation: nav-spinner-in var(--dur-2) var(--ease-out) 150ms backwards;
 }
-@keyframes nav-sk-in {
+@keyframes nav-spinner-in {
   from {
     opacity: 0;
   }
 }
-.nav-sk-hero {
-  display: flex;
-  align-items: center;
-  height: min(62vh, 560px);
-  background: linear-gradient(100deg, #0d3128 0%, #174b3d 55%, #2a5d4c 100%);
-}
-.nav-sk-hero .container {
+.navigation-spinner-box {
   display: grid;
   justify-items: center;
-  gap: 16px;
-  width: 100%;
-}
-.nav-sk-line,
-.nav-sk-box,
-.nav-sk-cards > span {
-  display: block;
-  border-radius: 10px;
-  background: linear-gradient(
-    90deg,
-    #ffffff14 25%,
-    #ffffff2e 50%,
-    #ffffff14 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
-}
-.nav-sk-line {
-  width: min(520px, 80%);
-  height: 38px;
-}
-.nav-sk-short {
-  width: min(340px, 60%);
-  height: 18px;
-}
-.nav-sk-box {
-  width: min(920px, 100%);
-  height: 120px;
-  margin-top: 18px;
+  gap: 12px;
+  padding: 22px 28px;
+  border: 1px solid #c6a76b55;
   border-radius: 18px;
+  background: #0d3128f0;
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.3px;
+  color: #f3e6c4;
 }
-.nav-sk-cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  padding-block: 40px;
+.navigation-spinner-ring {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #c6a76b40;
+  border-top-color: var(--c-gold-400);
+  border-radius: 50%;
+  animation: nav-spin 0.8s linear infinite;
 }
-.nav-sk-cards > span {
-  aspect-ratio: 4 / 3;
-  border-radius: 16px;
-  background-image: linear-gradient(
-    90deg,
-    #e7e9df 25%,
-    #f2f3ed 50%,
-    #e7e9df 75%
-  );
-}
-@media (max-width: 760px) {
-  .nav-sk-cards {
-    grid-template-columns: 1fr;
-  }
-  .nav-sk-cards > span + span {
-    display: none;
+@keyframes nav-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .nav-sk-line,
-  .nav-sk-box,
-  .nav-sk-cards > span {
-    animation: none;
+  .navigation-spinner-ring {
+    animation-duration: 2.4s;
   }
 }
 /* Scroll reveal (components/interactive.tsx › Reveal). */

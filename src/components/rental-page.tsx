@@ -87,6 +87,7 @@ export function RentalPage({
   const heroProjects = locations
     .filter((p) => content.properties.some((r) => r.projectId === p.projectId))
     .map((p) => [p.slug, p.name] as [string, string]);
+  /** This page with other filters, opened at the results (#can-ho). */
   const nextUrl = (changes: Record<string, string | undefined>) => {
     const q = new URLSearchParams(
       Object.entries({ ...filters, ...changes }).filter(
@@ -329,8 +330,13 @@ export function RentalPage({
           )}
           {result.length > visible && (
             <div className="load-more">
+              {/* More cards below the ones already read: no jump. */}
               <Link
-                href={nextUrl({ limit: String(visible + 9) })}
+                href={nextUrl({ limit: String(visible + 9) }).replace(
+                  /#can-ho$/,
+                  "",
+                )}
+                scroll={false}
                 className="button button-outline"
               >
                 Xem thêm căn hộ

@@ -53,7 +53,7 @@ export function PageNavigation({ children }: { children: ReactNode }) {
           {pending && (
             <>
               <div className="navigation-progress" aria-hidden="true" />
-              <PageSkeleton />
+              <PageSpinner />
             </>
           )}
           <div className="navigation-status" role="status" aria-live="polite">
@@ -66,25 +66,18 @@ export function PageNavigation({ children }: { children: ReactNode }) {
 }
 
 /**
- * Drawn over the old page while the next one loads (only when it takes more
- * than a moment; prefetched pages swap before it shows): a photo band and a
- * row of cards, the shape most pages open with.
+ * While the next page loads (only when it takes more than a moment;
+ * prefetched pages swap before it shows): the current page stays where it
+ * is, dimmed, with a spinning ring in the middle of the screen.
  */
-function PageSkeleton() {
+function PageSpinner() {
+  const t = useT();
   return (
-    <div className="navigation-skeleton" aria-hidden="true">
-      <div className="nav-sk-hero">
-        <div className="container">
-          <span className="nav-sk-line" />
-          <span className="nav-sk-line nav-sk-short" />
-          <span className="nav-sk-box" />
-        </div>
-      </div>
-      <div className="nav-sk-cards container">
-        <span />
-        <span />
-        <span />
-      </div>
+    <div className="navigation-spinner" aria-hidden="true">
+      <span className="navigation-spinner-box">
+        <span className="navigation-spinner-ring" />
+        <span>{t("Đang tải…")}</span>
+      </span>
     </div>
   );
 }
@@ -158,10 +151,15 @@ export default function Link(props: ComponentProps<typeof NextLink>) {
         )
           return;
         event.preventDefault();
+        // Same page, other filters ("Xem thêm", filter chips, list view):
+        // the visitor stays where they are.
+        const samePage =
+          destination.pathname === window.location.pathname &&
+          !destination.hash;
         navigate(
           destination.pathname + destination.search + destination.hash,
           props.replace,
-          props.scroll,
+          props.scroll ?? !samePage,
         );
       }}
     />
