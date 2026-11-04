@@ -16,6 +16,7 @@ import type { Property } from "@/types";
 import { vndFull } from "@/lib/utils";
 import { LuxuryBadges } from "./cards";
 import { TRENDING_SCORE } from "@/lib/highlights";
+import { availabilityRank, statusLabel } from "@/lib/availability";
 import {
   floorLabel,
   hasRooms,
@@ -39,9 +40,9 @@ const interestRank = (score = 0) =>
   score >= TRENDING_SCORE
     ? 35 + Math.min(score, 500) / 10
     : (score / TRENDING_SCORE) * 14;
-/** Available units first, then badge and real interest together. */
+/** Free units first, soon free next, then badge and real interest together. */
 export const rentalScore = (p: Property) =>
-  (p.status === "Còn trống" ? 1000 : 0) +
+  (2 - availabilityRank(p)) * 500 +
   (BADGE_RANK[p.highlight ?? ""] ?? 0) +
   interestRank(p.interestScore ?? (p.trending ? TRENDING_SCORE : 0));
 
@@ -114,8 +115,8 @@ export function RentalMini({ unit }: { unit: Property }) {
             {typeTag(unit) && (
               <span className="card-type-tag">{typeTag(unit)}</span>
             )}
-            {unit.status === "Còn trống" && (
-              <span className="rent-mini-status">Còn trống</span>
+            {availabilityRank(unit) < 2 && (
+              <span className="rent-mini-status">{statusLabel(unit)}</span>
             )}
           </span>
         </span>

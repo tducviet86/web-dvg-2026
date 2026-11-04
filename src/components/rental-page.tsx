@@ -20,22 +20,15 @@ import { Reviews } from "./reviews-section";
 import {
   filterProperties,
   isSaleSearch,
-  saleRange,
   searchUnits,
   type Filters,
 } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { SearchHero } from "./search-hero";
-import {
-  groupLabel,
-  kindCount,
-  kindNoun,
-  listingKind,
-} from "@/lib/property-groups";
+import { kindLabel, kindNoun, listingKind } from "@/lib/property-groups";
 import { ProjectMap } from "./project-map";
-import { money, siteUrl } from "@/lib/utils";
+import { siteUrl } from "@/lib/utils";
 import { InquiryDialog } from "./rental-inquiry";
-import { Counter } from "./counter";
 
 export function RentalPage({
   filters,
@@ -66,11 +59,6 @@ export function RentalPage({
     content.properties,
     project ? { project: project.slug } : {},
   );
-  const stats = {
-    available: scope.filter((p) => p.status === "Còn trống").length,
-    projects: project ? 1 : new Set(scope.map((p) => p.projectId)).size,
-    from: scope.length ? Math.min(...scope.map((p) => p.price)) : 0,
-  };
   const showsDemo = result.some((p) => p.isDemo);
   // Full-screen photos: the project (and its units) or every rental project.
   const slides = (
@@ -151,8 +139,7 @@ export function RentalPage({
             ? `Căn hộ tại ${project.name}`
             : "Bất động sản cho thuê & mua bán tại Đà Nẵng"
         }
-        count={result.length}
-        saleRange={saleRange(scope)}
+        units={scope}
         crumbs={
           <>
             <BackButton />
@@ -166,47 +153,6 @@ export function RentalPage({
               </>
             ) : (
               <span aria-current="page">Cho thuê căn hộ</span>
-            )}
-          </>
-        }
-        stats={
-          <>
-            <div>
-              <dt>Căn đang trống</dt>
-              <dd>
-                <Counter value={stats.available} />
-              </dd>
-            </div>
-            <div>
-              <dt>{project ? "Dự án" : "Dự án cho thuê"}</dt>
-              <dd>
-                <Counter value={stats.projects} />
-              </dd>
-            </div>
-            {stats.from > 0 && (
-              <div>
-                <dt>Giá thuê từ</dt>
-                <dd>
-                  {money(stats.from)}
-                  <small> triệu/tháng</small>
-                </dd>
-              </div>
-            )}
-            {project?.facebook && (
-              <div>
-                <dt>Fanpage</dt>
-                <dd>
-                  <a
-                    className="rental-hero-fanpage"
-                    href={project.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Facebook size={15} aria-hidden="true" />
-                    {project.name}
-                  </a>
-                </dd>
-              </div>
             )}
           </>
         }
@@ -230,9 +176,6 @@ export function RentalPage({
                     : `Khám phá ${noun.toLowerCase()} cho thuê`}
               </h2>
             </div>
-            <span className="rental-result-count">
-              {kindCount(result.length, kind)}
-            </span>
           </div>
           <div className="rental-results-meta">
             <div className="view-toggle">
@@ -275,7 +218,7 @@ export function RentalPage({
                     : k === "nhu-cau"
                       ? "Đang bán"
                       : k === "loai"
-                        ? groupLabel(v)
+                        ? kindLabel(v)
                         : k === "gia-ban"
                           ? `Đến ${v} tỷ`
                           : k === "gia-ban-tu"

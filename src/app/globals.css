@@ -4913,8 +4913,7 @@ select {
   background: #d4b97a1f;
 }
 .lang-trigger:focus-visible,
-.lang-menu a:focus-visible,
-.lang-row button:focus-visible {
+.lang-menu a:focus-visible {
   outline: 2px solid var(--lux-gold);
   outline-offset: 2px;
 }
@@ -4956,24 +4955,6 @@ select {
   line-height: 1.5;
   color: #56655d;
 }
-.lang-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 18px 0;
-}
-.lang-row button {
-  padding: 10px;
-  font-size: 13px;
-  border: 1px solid #c5cdc6;
-  border-radius: 4px;
-  color: #123c32;
-}
-.lang-row button[aria-pressed="true"] {
-  background: #123c32;
-  border-color: #123c32;
-  color: #fff;
-}
 /* Be Vietnam Pro / Playfair have no Hangul or Han glyphs. */
 html[lang="ko"] body {
   font-family:
@@ -4989,11 +4970,6 @@ html[lang="ko"] :is(h1, h2, h3, em),
 html[lang="zh-Hans"] :is(h1, h2, h3, em) {
   letter-spacing: 0;
   word-break: keep-all;
-}
-@media (max-width: 1080px) {
-  .site-header .lang-switcher {
-    display: none;
-  }
 }
 
 /* ── Floating contact dock (contact-dock.tsx) ── */
@@ -5417,4 +5393,18 @@ body :is(input, select, textarea, button) {
 .crumb-back:focus-visible {
   outline: 2px solid #d4b97a;
   outline-offset: 3px;
+}
+
+/* Phones and tablets: language beside the menu button, always in reach. */
+@media (max-width: 1080px) {
+  .site-header .header-actions {
+    gap: 4px;
+  }
+  .site-header .lang-trigger {
+    min-height: 40px;
+    padding: 0 10px;
+  }
+  .site-header .lang-menu {
+    width: min(210px, calc(100vw - 32px));
+  }
 }

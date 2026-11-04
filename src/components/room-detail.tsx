@@ -5,13 +5,10 @@ import {
   MapPin,
   Expand,
   BedDouble,
-  Bath,
   Layers,
   Check,
   ArrowUpRight,
   Sofa,
-  KeyRound,
-  ShieldCheck,
 } from "lucide-react";
 import type { Property } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
@@ -35,6 +32,8 @@ import { RentalMini, rentalScore } from "./home-rentals";
 import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";
 import { floorLabel, groupLabel, hasRooms } from "@/lib/property-groups";
+import { moveInLabel, statusLabel } from "@/lib/availability";
+import { RENT_FEES } from "@/lib/included-fees";
 
 /**
  * "1 tháng tiền nhà · 25.000.000 đ" → ["1 tháng tiền nhà · ", "25.000.000",
@@ -54,7 +53,13 @@ export function RoomDetail({
   /** Sale view of the unit (price, terms and calls for buyers). */
   sale?: boolean;
 }) {
-  const project = content.projects.find((p) => p.id === r.projectId)!;
+  // The unit comes fresh from the API while the project list may be up to a
+  // few minutes old (a project just published): the page must still open.
+  const project = content.projects.find((p) => p.id === r.projectId) ?? {
+    slug: r.projectSlug ?? "",
+    name: r.projectName ?? "",
+    description: "",
+  };
   const portfolio = content.portfolio.find((p) => p.projectId === r.projectId);
   const media = propertyMedia(r).filter(
     (m) =>
@@ -79,7 +84,12 @@ export function RoomDetail({
   // Rent in full đồng ("25.000.000"); `price` is in triệu.
   const rentVnd = r.rentVnd ?? Math.round(r.price * 1e6);
   // "Còn trống" is rental wording; buyers see "Đang bán".
-  const status = sale && available ? "Đang bán" : r.status;
+  const status = sale && available ? "Đang bán" : statusLabel(r);
+  const fees = RENT_FEES.filter(([key]) => r.includedFees?.includes(key));
+  const feesOut = RENT_FEES.filter(([key]) => !r.includedFees?.includes(key));
+  /** Each name is its own text, translated once: "Nước", ", ", "Điện"… */
+  const feeNames = (list: [string, string][]) =>
+    list.flatMap(([, label], i) => (i ? [", ", label] : [label]));
   const others = content.properties.filter(
     (x) =>
       x.id !== r.id &&
@@ -110,15 +120,25 @@ export function RoomDetail({
       ? [
           {
             icon: BedDouble,
-            value: r.bedrooms ? `${r.bedrooms} phòng` : r.type,
+            value: r.bedrooms ? String(r.bedrooms) : r.type,
             label: "Phòng ngủ",
           },
-          { icon: Bath, value: `${r.bathrooms} phòng`, label: "Phòng tắm" },
         ]
       : []),
     ...(floorLabel(r)
-      ? [{ icon: Layers, value: floorLabel(r)!, label: "Vị trí tầng" }]
+      ? [{ icon: Layers, value: String(r.floor), label: "Tầng" }]
       : []),
+    // Short: the label already says "Nội thất", and it all fits one row.
+    {
+      icon: Sofa,
+      value:
+        {
+          "Đầy đủ nội thất": "Đầy đủ",
+          "Nội thất cơ bản": "Cơ bản",
+          "Không nội thất": "Không có",
+        }[r.furniture] ?? r.furniture,
+      label: "Nội thất",
+    },
   ];
   return (
     <main
@@ -166,43 +186,8 @@ export function RoomDetail({
           <span aria-current="page">Chi tiết căn hộ</span>
         </nav>
         {!r.isDemo && <ViewBeacon slug={r.slug} />}
-        <header className="room-heading">
-          <div>
-            <h1>{r.name}</h1>
-            <p className="location">
-              <MapPin size={16} />
-              {r.location}
-            </p>
-          </div>
-          <div className="room-heading-tools">
-            <ShareButton title={r.name} />
-            <div className="room-save">
-              <Favorite id={r.id} />
-              <span>Lưu căn hộ</span>
-            </div>
-          </div>
-        </header>
-        <div className="room-quick-facts" aria-label="Thông tin nhanh">
-          <span
-            className={`room-availability ${available ? "" : "unavailable"}`}
-          >
-            {r.isDemo ? "Căn mẫu · " : ""}
-            {status}
-          </span>
-          <LuxuryBadges property={r} className="lux-inline" />
-          {facts.map((f) => (
-            <span key={f.label}>
-              <f.icon size={16} aria-hidden="true" />
-              {f.value}
-            </span>
-          ))}
-          <span>
-            <Sofa size={16} aria-hidden="true" />
-            {r.furniture}
-          </span>
-        </div>
         <RentalGallery media={media} title={r.name} demo={r.isDemo} />
-        <p className="room-image-note">
+        <p className="room-image-note" data-demo={r.isDemo || undefined}>
           {r.isDemo
             ? "Thông số, giá và ảnh nội thất là dữ liệu mẫu, chưa phải tin chào thuê thực tế."
             : sale
@@ -214,79 +199,116 @@ export function RoomDetail({
         </p>
         <div className="room-layout">
           <article className="room-description">
-            <div className="room-facts">
+            <header className="room-heading">
+              <div>
+                <div className="room-tags">
+                  <span
+                    className={`room-availability ${available ? "" : "unavailable"}`}
+                  >
+                    {r.isDemo ? "Căn mẫu · " : ""}
+                    {status}
+                  </span>
+                  <LuxuryBadges property={r} className="lux-inline" />
+                </div>
+                <h1>{r.name}</h1>
+                <p className="location">
+                  <MapPin size={16} />
+                  {r.location}
+                </p>
+              </div>
+              <div className="room-heading-tools">
+                <ShareButton title={r.name} />
+                <div className="room-save">
+                  <Favorite id={r.id} />
+                  <span>Lưu căn hộ</span>
+                </div>
+              </div>
+            </header>
+            <div className="room-quick-facts" aria-label="Thông tin nhanh">
               {facts.map((f) => (
                 <div key={f.label}>
-                  <f.icon size={24} />
-                  <strong>{f.value}</strong>
-                  <span>{f.label}</span>
+                  <f.icon size={20} aria-hidden="true" />
+                  <span>
+                    <small>{f.label}</small>
+                    <strong>{f.value}</strong>
+                  </span>
                 </div>
               ))}
             </div>
             <nav className="room-anchor-nav" aria-label="Thông tin căn hộ">
               <a href="#khong-gian">Không gian</a>
-              {amenityCount > 0 && <a href="#tien-nghi">Tiện nghi</a>}
-              <a href="#thong-tin">Thông số</a>
               <a href="#dieu-kien">
                 {sale ? "Giá & giao dịch" : "Chi phí & điều kiện"}
               </a>
+              <a href="#thong-tin">Thông số</a>
+              {amenityCount > 0 && <a href="#tien-nghi">Tiện nghi</a>}
               <a href="#khu-vuc">Vị trí & bản đồ</a>
             </nav>
             <section id="khong-gian">
               <span className="signature-kicker">01 / KHÔNG GIAN SỐNG</span>
               <h2>Tổng quan căn hộ</h2>
               <RichText text={r.description} className="room-overview-text" />
+            </section>
+            <section id="dieu-kien">
+              <span className="signature-kicker">
+                {sale ? "02 / GIÁ & GIAO DỊCH" : "02 / CHI PHÍ & ĐIỀU KIỆN"}
+              </span>
+              <h2>
+                {sale ? "Giá bán & giao dịch" : "Chi phí & điều kiện thuê"}
+              </h2>
+              <dl className="room-spec-table">
+                {(sale
+                  ? [
+                      ["Giá bán", salePriceText],
+                      [
+                        "Hình thức",
+                        r.forRent !== false ? "Bán · có thể cho thuê" : "Bán",
+                      ],
+                      ["Phí quản lý", r.managementFee || "Xác nhận khi xem"],
+                      [
+                        "Ngày bàn giao",
+                        moveInLabel(r) || "Trao đổi theo từng căn",
+                      ],
+                      ["Thanh toán", "Thống nhất với chủ sở hữu"],
+                    ]
+                  : [
+                      [
+                        r.isDemo ? "Giá thuê minh họa" : "Giá thuê",
+                        `${vndFull(rentVnd)} đồng / tháng`,
+                      ],
+                      ["Tiền đặt cọc", r.deposit || "Trao đổi theo từng căn"],
+                      ...(r.managementFee
+                        ? [["Phí quản lý", r.managementFee]]
+                        : []),
+                      [
+                        "Thời hạn thuê",
+                        r.minimumLease || "Thống nhất với chủ sở hữu",
+                      ],
+                      [
+                        "Ngày nhận nhà",
+                        moveInLabel(r) || "Xác nhận khi hẹn xem",
+                      ],
+                    ]
+                ).map(([k, v]) => (
+                  <div key={k}>
+                    <dt>{k}</dt>
+                    <dd>{splitAmounts(v)}</dd>
+                  </div>
+                ))}
+              </dl>
               {!sale && (
-                <div className="room-space-grid">
-                  <div>
-                    <Sofa size={24} />
-                    <h3>Không gian sinh hoạt</h3>
-                    <p>
-                      Khu sinh hoạt chung kết nối khu bếp. Khi xem phòng, bạn có
-                      thể kiểm tra ánh sáng, độ thoáng và cách bố trí thực tế.
-                    </p>
-                  </div>
-                  <div>
-                    <KeyRound size={24} />
-                    <h3>Nội thất bàn giao</h3>
-                    <p>
-                      {r.furniture}. Danh sách thiết bị, tình trạng sử dụng và
-                      hạng mục bàn giao cần được xác nhận theo từng căn.
-                    </p>
-                  </div>
+                <div className="room-check-note">
+                  <Check size={20} />
+                  <p>
+                    {sale
+                      ? "Trước khi đặt cọc, hãy đối chiếu giấy tờ pháp lý, tình trạng thanh toán với chủ đầu tư và danh mục bàn giao."
+                      : "Khi xem căn hộ, hãy trao đổi thêm về điện nước, chỗ đỗ xe, danh mục nội thất và biên bản bàn giao."}
+                  </p>
                 </div>
               )}
             </section>
-            {amenityCount > 0 && (
-              <section id="tien-nghi" className="room-amenities">
-                <span className="signature-kicker">TIỆN NGHI</span>
-                <h2>Tiện ích căn hộ</h2>
-                <p className="room-amenities-count">{amenityCount} tiện nghi</p>
-                <ShowMore height={330}>
-                  <div className="room-amenity-groups">
-                    {amenities.map((group) => (
-                      <div key={group.title} className="room-amenity-group">
-                        <h3>{group.title}</h3>
-                        <ul>
-                          {group.items.map((a) => (
-                            <li key={a.key}>
-                              <a.icon
-                                size={22}
-                                strokeWidth={1.6}
-                                aria-hidden="true"
-                              />
-                              <span>{a.label}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                </ShowMore>
-              </section>
-            )}
             <section id="thong-tin">
-              <span className="signature-kicker">02 / THÔNG SỐ CĂN HỘ</span>
+              <span className="signature-kicker">03 / THÔNG SỐ CĂN HỘ</span>
               <h2>Thông số & nội thất</h2>
               <ShowMore height={300}>
                 <dl className="room-spec-table">
@@ -320,65 +342,34 @@ export function RoomDetail({
                 </dl>
               </ShowMore>
             </section>
-            <section id="dieu-kien">
-              <span className="signature-kicker">
-                {sale ? "03 / GIÁ & GIAO DỊCH" : "03 / CHI PHÍ & ĐIỀU KIỆN"}
-              </span>
-              <h2>
-                {sale ? "Giá bán & giao dịch" : "Chi phí & điều kiện thuê"}
-              </h2>
-              <dl className="room-spec-table">
-                {(sale
-                  ? [
-                      ["Giá bán", salePriceText],
-                      [
-                        "Hình thức",
-                        r.forRent !== false ? "Bán · có thể cho thuê" : "Bán",
-                      ],
-                      ["Phí quản lý", r.managementFee || "Xác nhận khi xem"],
-                      [
-                        "Ngày bàn giao",
-                        r.availableFrom || "Trao đổi theo từng căn",
-                      ],
-                      ["Thanh toán", "Thống nhất với chủ sở hữu"],
-                    ]
-                  : [
-                      [
-                        r.isDemo ? "Giá thuê minh họa" : "Giá thuê",
-                        `${vndFull(rentVnd)} đồng / tháng`,
-                      ],
-                      ["Tiền đặt cọc", r.deposit || "Trao đổi theo từng căn"],
-                      [
-                        "Phí quản lý",
-                        r.managementFee || "Liên hệ để biết chi tiết",
-                      ],
-                      [
-                        "Thời hạn thuê",
-                        r.minimumLease || "Thống nhất với chủ sở hữu",
-                      ],
-                      [
-                        "Ngày nhận nhà",
-                        r.availableFrom || "Xác nhận khi hẹn xem",
-                      ],
-                    ]
-                ).map(([k, v]) => (
-                  <div key={k}>
-                    <dt>{k}</dt>
-                    <dd>{splitAmounts(v)}</dd>
+            {amenityCount > 0 && (
+              <section id="tien-nghi" className="room-amenities">
+                <span className="signature-kicker">TIỆN NGHI</span>
+                <h2>Tiện ích căn hộ</h2>
+                <p className="room-amenities-count">{amenityCount} tiện nghi</p>
+                <ShowMore height={330}>
+                  <div className="room-amenity-groups">
+                    {amenities.map((group) => (
+                      <div key={group.title} className="room-amenity-group">
+                        <h3>{group.title}</h3>
+                        <ul>
+                          {group.items.map((a) => (
+                            <li key={a.key}>
+                              <a.icon
+                                size={22}
+                                strokeWidth={1.6}
+                                aria-hidden="true"
+                              />
+                              <span>{a.label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </dl>
-              {!sale && (
-                <div className="room-check-note">
-                  <Check size={20} />
-                  <p>
-                    {sale
-                      ? "Trước khi đặt cọc, hãy đối chiếu giấy tờ pháp lý, tình trạng thanh toán với chủ đầu tư và danh mục bàn giao."
-                      : "Khi xem căn hộ, hãy trao đổi thêm về điện nước, chỗ đỗ xe, danh mục nội thất và biên bản bàn giao."}
-                  </p>
-                </div>
-              )}
-            </section>
+                </ShowMore>
+              </section>
+            )}
             <section id="khu-vuc" className="room-project-block">
               <span className="signature-kicker">
                 04 / KHÔNG GIAN THUỘC VỀ DỰ ÁN
@@ -396,9 +387,24 @@ export function RoomDetail({
             </section>
           </article>
           <aside className="room-contact-panel">
-            <span className="signature-kicker">
-              <ShieldCheck size={14} aria-hidden="true" /> ĐẤT VÀNG GROUP
-            </span>
+            <CallContact
+              label={
+                !available
+                  ? "Gọi tìm căn tương tự"
+                  : sale
+                    ? "Gọi tư vấn mua bán"
+                    : "Gọi hẹn xem/đặt phòng"
+              }
+              phone={r.contactPhone || undefined}
+              className="button-outline-call"
+            />
+            {foreign && (
+              <WhatsAppContact
+                label="Chat WhatsApp"
+                message={whatsappMessage}
+                className="room-whatsapp"
+              />
+            )}
             {sale ? (
               <>
                 <p className="room-price-label">Giá bán</p>
@@ -421,75 +427,64 @@ export function RoomDetail({
                 ) : null}
               </>
             )}
-            <span
-              className={`room-availability ${available ? "" : "unavailable"}`}
-            >
-              {r.isDemo ? "Tình trạng mẫu: " : ""}
-              {status}
-            </span>
-            <h2>
-              {!available
-                ? "Tìm căn hộ tương tự."
-                : sale
-                  ? "Trao đổi giá, pháp lý và lịch xem."
-                  : "Trao đổi nhanh, hẹn xem thuận tiện."}
-            </h2>
-            <p>
-              {!available
-                ? "Liên hệ để kiểm tra tình trạng mới nhất hoặc tìm lựa chọn khác trong cùng dự án."
-                : sale
-                  ? "Gọi trực tiếp để xác nhận giá bán, giấy tờ và lịch xem căn hộ."
-                  : "Gọi trực tiếp để xác nhận giá, hiện trạng và lịch xem căn hộ."}
-            </p>
+            <dl className="room-price-breakdown">
+              <div>
+                <dt>Tình trạng</dt>
+                <dd
+                  className={`room-availability ${available ? "" : "unavailable"}`}
+                >
+                  {r.isDemo ? "Mẫu: " : ""}
+                  {status}
+                </dd>
+              </div>
+              {!sale && moveInLabel(r) && (
+                <div>
+                  <dt>Nhận nhà</dt>
+                  <dd>{moveInLabel(r)}</dd>
+                </div>
+              )}
+              {!sale && (
+                <>
+                  <div>
+                    <dt>Đặt cọc</dt>
+                    <dd>{splitAmounts(r.deposit || "Theo thỏa thuận")}</dd>
+                  </div>
+                  <div>
+                    <dt>Thuê tối thiểu</dt>
+                    <dd>{r.minimumLease || "Linh hoạt"}</dd>
+                  </div>
+                </>
+              )}
+              <div>
+                <dt>Mã căn</dt>
+                <dd>
+                  <b>{code}</b>
+                </dd>
+              </div>
+            </dl>
             {!sale && (
-              <dl className="room-price-breakdown">
-                <div>
-                  <dt>Đặt cọc</dt>
-                  <dd>{splitAmounts(r.deposit || "Theo thỏa thuận")}</dd>
-                </div>
-                <div>
-                  <dt>Phí quản lý</dt>
-                  <dd>{r.managementFee || "Xác nhận khi xem"}</dd>
-                </div>
-                <div>
-                  <dt>Thuê tối thiểu</dt>
-                  <dd>{r.minimumLease || "Linh hoạt"}</dd>
-                </div>
-              </dl>
+              <div className="room-included-fees">
+                {feesOut.length > 0 && (
+                  <p className="room-fees-out">
+                    <span>Giá thuê chưa bao gồm</span>
+                    {feeNames(feesOut)}
+                  </p>
+                )}
+                {fees.length > 0 && (
+                  <>
+                    <p>Giá thuê đã bao gồm</p>
+                    <ul>
+                      {fees.map(([key, label]) => (
+                        <li key={key}>
+                          <Check size={15} aria-hidden="true" />
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
             )}
-
-            <CallContact
-              label={
-                !available
-                  ? "Gọi tìm căn tương tự"
-                  : sale
-                    ? "Gọi tư vấn mua bán"
-                    : "Gọi hẹn xem phòng"
-              }
-              phone={r.contactPhone || undefined}
-              className="button-outline-call"
-            />
-            {foreign && (
-              <WhatsAppContact
-                label="Chat WhatsApp"
-                message={whatsappMessage}
-                className="room-whatsapp"
-              />
-            )}
-            <div className="room-call-context">
-              <span>Mã căn khi trao đổi</span>
-              <strong>
-                {project.name} · <b>{code}</b>
-              </strong>
-            </div>
-            <Link
-              href={`/du-an/${project.slug}?nhu-cau=ky-gui#nhu-cau`}
-              className="room-consign-link"
-            >
-              <KeyRound size={17} aria-hidden="true" />
-              Bạn có căn hộ cần ký gửi?
-              <ArrowUpRight size={16} aria-hidden="true" />
-            </Link>
           </aside>
         </div>
         {sale

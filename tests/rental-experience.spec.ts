@@ -120,9 +120,7 @@ test("rental search, project landing, real map links and filter removal", async 
   await expect(page.locator("main form")).toHaveCount(1);
   const search = page.locator(".hero-search");
   await search.locator('[name="q"]').fill("monarchy");
-  await search
-    .getByRole("button", { name: "Tìm căn thuê", exact: true })
-    .click();
+  await search.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
   await expect(page.locator(".property-card")).toHaveCount(5);
   await expect(page.locator("html")).toHaveAttribute(
     "data-search-probe",
@@ -384,13 +382,16 @@ test("detailed filters live in the hero search and the owner popup opens", async
   await page.goto("/cho-thue");
   const search = page.locator(".hero-search");
   await search.getByRole("button", { name: /Bộ lọc chi tiết/ }).click();
-  await search.getByLabel("Diện tích").selectOption("60");
-  await search.getByLabel("Sắp xếp").selectOption("price-asc");
-  await search.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await search.getByLabel("Diện tích").click();
+  await search.getByRole("option", { name: "Từ 60 m²" }).click();
+  await search.getByLabel("Sắp xếp").click();
+  await search.getByRole("option", { name: "Giá tăng dần" }).click();
+  await search.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(page).toHaveURL(/area=60/);
   await expect(page).toHaveURL(/sort=price-asc/);
   // Opened again on arrival, showing the filters in use.
-  await expect(search.getByLabel("Diện tích")).toHaveValue("60");
+  await expect(search.getByLabel("Diện tích")).toHaveText("Từ 60 m²");
+  await expect(search.locator('[name="area"]')).toHaveValue("60");
   await page.locator(".filter-chips a", { hasText: "Từ 60 m²" }).click();
   await expect(page).not.toHaveURL(/area=/);
   await page.getByRole("button", { name: "Gửi thông tin ký gửi" }).click();
@@ -430,6 +431,7 @@ test("shophouse units show the area, no bedrooms or bathrooms", async ({
   await page.goto(`/cho-thue/${slug}`);
   const facts = page.locator(".room-quick-facts");
   await expect(facts).toContainText("120 m²");
+  await expect(facts).toContainText("Diện tích");
   await expect(facts).not.toContainText("phòng");
   await expect(page.locator("dt", { hasText: "Diện tích" })).toHaveCount(1);
   await expect(page.locator("#tien-nghi")).toHaveCount(0);
@@ -452,24 +454,112 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
   page,
 }) => {
   await page.goto("/cho-thue");
+  // The list says what it holds, not how many.
+  await expect(page.locator(".rental-results-heading")).not.toContainText(
+    "phù hợp",
+  );
   const hero = page.locator(".hero-search");
-  const kinds = hero.locator(".hero-kinds label");
-  await expect(kinds).toHaveText(["Tất cả", "Căn hộ", "Nhà phố", "Mặt bằng"]);
+  // Only what exists can be chosen: no townhouses or premises yet.
   await expect(hero.getByLabel("Tất cả", { exact: true })).toBeChecked();
-  // Mặt bằng has no bedrooms: the field goes away.
+  await expect(hero.getByLabel("Nhà phố", { exact: true })).toBeDisabled();
+  await expect(hero.getByLabel("Mặt bằng", { exact: true })).toBeDisabled();
+  await expect(hero.getByLabel("Shophouse", { exact: true })).toBeDisabled();
+  await expect(hero.locator(".hero-kinds label").nth(3)).toHaveText("Nhà phố");
+  await expect(hero.locator(".hero-kinds label").nth(1)).toHaveText("Căn hộ");
+
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: {
+      id: string;
+      name: string;
+      status: string;
+      categories: string[];
+    }[];
+  };
+  // The "Dự án" list on this page holds the projects offered for rent.
+  const project = projects.data.find(
+    (p) => p.status === "PUBLISHED" && p.categories.includes("rent"),
+  )!;
+  const ids: string[] = [];
+  for (const [code, propertyType, bedrooms] of [
+    ["NP-3", "nha-pho", 3],
+    ["NP-4", "nha-pho", 4],
+    ["MB-1", "mat-bang", 0],
+    ["SH-1", "shophouse", 0],
+  ] as const) {
+    const created = await api.send("post", "/admin/properties", {
+      name: `Kiểm tra loại hình ${code}`,
+      unitCode: code,
+      projectId: project.id,
+      propertyType,
+      location: "Đà Nẵng",
+      areaM2: 100,
+      bedrooms,
+      bathrooms: bedrooms,
+      description: "Kiểm tra lựa chọn trong ô tìm kiếm.",
+      rentPriceVnd: "30000000",
+      status: "PUBLISHED",
+    });
+    expect(created.ok()).toBeTruthy();
+    ids.push(((await created.json()).data as { id: string }).id);
+  }
+  // Saved one right after another: wait for the list holding all of them.
+  await expect(async () => {
+    await page.goto("/cho-thue");
+    await expect(hero.getByLabel("Mặt bằng", { exact: true })).toBeEnabled({
+      timeout: 1000,
+    });
+    await expect(hero.getByLabel("Shophouse", { exact: true })).toBeEnabled({
+      timeout: 1000,
+    });
+    await expect(hero.getByLabel("Nhà phố", { exact: true })).toBeEnabled({
+      timeout: 1000,
+    });
+  }).toPass({ timeout: 30_000 });
+  // Shophouse and mặt bằng have no bedrooms: the field goes away.
+  await hero.getByLabel("Shophouse", { exact: true }).check();
+  await expect(hero.getByLabel("Phòng ngủ")).toHaveCount(0);
   await hero.getByLabel("Mặt bằng", { exact: true }).check();
   await expect(hero.getByLabel("Phòng ngủ")).toHaveCount(0);
-  // Nhà phố: 2–4 bedrooms, no studio.
+  // Nhà phố: the bedrooms and the one project that really have them.
   await hero.getByLabel("Nhà phố", { exact: true }).check();
-  await expect(hero.getByLabel("Phòng ngủ").locator("option")).toHaveText([
-    "Mọi loại",
-    "2 phòng ngủ",
+  // Picking a kind loads its results by itself, no jump.
+  await expect(page).toHaveURL(/\?loai=townhouse$/);
+  await expect(page.locator(".rental-results-heading h2")).toHaveText(
+    "Khám phá nhà phố cho thuê",
+  );
+  await hero.getByLabel("Phòng ngủ").click();
+  await expect(hero.getByRole("option")).toHaveText([
+    "Tất cả",
     "3 phòng ngủ",
     "4 phòng ngủ",
   ]);
+  await page.keyboard.press("Escape");
+  await hero.getByLabel("Dự án").click();
+  await expect(hero.getByRole("option")).toHaveText([
+    "Tất cả dự án",
+    project.name,
+  ]);
+  await page.keyboard.press("Escape");
+  // Searching shophouses: only them, and the heading says so.
+  await page.goto("/cho-thue?loai=shophouse");
+  await expect(page.locator(".rental-results-heading h2")).toHaveText(
+    "Khám phá shophouse cho thuê",
+  );
+  await expect(page.locator(".rental-card-grid .property-card")).toHaveCount(1);
+  for (const id of ids) await api.send("delete", `/admin/properties/${id}`);
+  await expect(async () => {
+    await page.goto("/cho-thue");
+    await expect(hero.getByLabel("Nhà phố", { exact: true })).toBeDisabled({
+      timeout: 1000,
+    });
+    await expect(hero.getByLabel("Mặt bằng", { exact: true })).toBeDisabled({
+      timeout: 1000,
+    });
+  }).toPass({ timeout: 30_000 });
   await hero.getByLabel("Căn hộ", { exact: true }).check();
   await expect(hero.getByLabel("Phòng ngủ")).toBeVisible();
-  await hero.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await hero.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(page).toHaveURL(/loai=apartment/);
   await expect(page.locator(".filter-chips")).toContainText("Căn hộ");
   await expect(page.locator(".rental-results-heading h2")).toHaveText(
@@ -485,11 +575,276 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
   await expect(page.locator(".rental-results-heading h2")).toHaveText(
     "Khám phá mặt bằng cho thuê",
   );
-  await expect(page.locator(".rental-results-heading")).toContainText(
-    "0 mặt bằng phù hợp",
-  );
   await page.goto("/du-an/van-hanh?loai=townhouse");
   await expect(page.locator("#can-ho h2")).toHaveText("Nhà phố cho thuê");
+});
+
+test("free units come first, soon-free next; on the date they count as free", async ({
+  page,
+}) => {
+  const unit = (slug: string, status: string, availableFrom?: string) =>
+    ({
+      id: slug,
+      slug,
+      name: slug,
+      location: "",
+      status,
+      availableFrom,
+    }) as Property;
+  const later = "2999-01-15";
+  const order = filterProperties(
+    [
+      unit("da-thue", "Đã cho thuê"),
+      unit("sap-trong", "Còn trống", later),
+      unit("trong", "Còn trống"),
+      unit("den-ngay", "Còn trống", "2020-01-01"),
+    ],
+    {},
+  ).map((p) => p.slug);
+  expect(order).toEqual(["trong", "den-ngay", "sap-trong", "da-thue"]);
+
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; status: string }[];
+  };
+  const projectId = projects.data.find((p) => p.status === "PUBLISHED")!.id;
+  const make = async (code: string, availableFrom: string) => {
+    const res = await api.send("post", "/admin/properties", {
+      name: `Căn ${code}`,
+      unitCode: code,
+      projectId,
+      propertyType: "2pn",
+      location: "Đà Nẵng",
+      areaM2: 70,
+      bedrooms: 2,
+      bathrooms: 2,
+      description: "Kiểm tra căn sắp trống và nhận nhà ngay.",
+      rentPriceVnd: "20000000",
+      availableFrom,
+      includedFees: ["water", "internet"],
+      status: "PUBLISHED",
+    });
+    expect(res.ok()).toBeTruthy();
+    return (await res.json()).data as { id: string; slug: string };
+  };
+  const soon = await make("SOON-1", later);
+  const now = await make("NOW-1", "2020-01-01");
+  await page.goto(`/cho-thue/${soon.slug}`);
+  const panel = page.locator(".room-contact-panel");
+  await expect(panel).toContainText("Trống từ 15/01/2999");
+  await expect(panel).toContainText("Từ 15/01/2999");
+  // The call comes first; only the costs ticked in Admin are listed.
+  await expect(panel.locator("> *").first()).toHaveAttribute("href", /^tel:/);
+  // Covered ones are listed; the rest stay on the tenant.
+  await expect(panel.locator(".room-included-fees li")).toHaveText([
+    "Nước",
+    "Internet",
+  ]);
+  await expect(panel.locator(".room-fees-out")).toHaveText(
+    "Giá thuê chưa bao gồmĐiện, Phí quản lý, Phí gửi xe máy, Phí gửi ô tô",
+  );
+  await page.goto(`/cho-thue/${now.slug}`);
+  await expect(page.locator(".room-contact-panel")).toContainText(
+    "Nhận nhà ngay",
+  );
+  // Every unit by default: the tenant pays them all.
+  await api.send("patch", `/admin/properties/${now.id}`, { includedFees: [] });
+  await page.goto(`/cho-thue/${now.slug}`);
+  await expect(page.locator(".room-fees-out")).toHaveText(
+    "Giá thuê chưa bao gồmNước, Điện, Internet, Phí quản lý, Phí gửi xe máy, Phí gửi ô tô",
+  );
+  await expect(page.locator(".room-included-fees li")).toHaveCount(0);
+  await page.goto("/cho-thue?q=SOON-1");
+  await expect(page.locator(".property-card .image-badge")).toHaveText(
+    "Trống từ 15/01/2999",
+  );
+  for (const u of [soon, now])
+    await api.send("delete", `/admin/properties/${u.id}`);
+});
+
+test("search dropdowns open past the photo; a kind reloads only the results", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 760 });
+  await page.goto("/cho-thue");
+  const hero = page.locator(".hero-search");
+  await hero.getByLabel("Dự án").click();
+  const last = hero.getByRole("option").last();
+  await last.scrollIntoViewIfNeeded();
+  // Not cut off or covered: the point in its middle belongs to it.
+  expect(
+    await last.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        box.x + box.width / 2,
+        box.y + box.height / 2,
+      );
+      return el.contains(hit);
+    }),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  // Picking a kind: spinner over the results, none over the page.
+  let release!: () => void;
+  const gate = new Promise<void>((done) => (release = done));
+  await page.route("**/cho-thue?loai=apartment*", async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await hero.getByLabel("Căn hộ", { exact: true }).check();
+  await expect(page.locator("[data-results-loading]")).toHaveCount(1);
+  await expect(page.locator(".navigation-spinner")).toHaveCount(0);
+  await expect(hero).toBeInViewport();
+  release();
+  await expect(page).toHaveURL(/loai=apartment/);
+  await expect(page.locator("[data-results-loading]")).toHaveCount(0);
+});
+
+test("Thuê / Mua tabs load their units by themselves, keeping the kind", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; status: string; categories: string[] }[];
+  };
+  const projectId = projects.data.find(
+    (p) => p.status === "PUBLISHED" && p.categories.includes("operation"),
+  )!.id;
+  const created = await api.send("post", "/admin/properties", {
+    name: "Căn bán theo tab QA",
+    unitCode: "TAB-1",
+    projectId,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Kiểm tra bấm tab Mua là thấy căn bán.",
+    forRent: false,
+    forSale: true,
+    salePriceVnd: "5000000000",
+    status: "PUBLISHED",
+  });
+  expect(created.ok()).toBeTruthy();
+  const { id } = (await created.json()).data as { id: string };
+  await page.goto("/du-an/van-hanh");
+  const hero = page.locator(".hero-search");
+  await hero.getByLabel("Căn hộ", { exact: true }).check();
+  await expect(page).toHaveURL(/loai=apartment/);
+  // No "Tìm kiếm": the tab alone brings the units for sale.
+  await hero.getByRole("tab", { name: "Mua" }).click();
+  await expect(page).toHaveURL(/nhu-cau=mua/);
+  await expect(page).toHaveURL(/loai=apartment/);
+  await expect(page.locator("#can-ho .sale-card")).not.toHaveCount(0);
+  await expect(page.locator("#can-ho h2")).toHaveText("Căn hộ đang bán");
+  // And back, the Back button too.
+  await hero.getByRole("tab", { name: "Thuê" }).click();
+  await expect(page).not.toHaveURL(/nhu-cau/);
+  await expect(page.locator("#can-ho .property-card")).not.toHaveCount(0);
+  await page.goBack();
+  await expect(page).toHaveURL(/nhu-cau=mua/);
+  await expect(hero.getByRole("tab", { name: "Mua" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  // "Ký gửi" is a form: the list stays as it is.
+  const url = page.url();
+  await hero.getByRole("tab", { name: "Ký gửi" }).click();
+  await expect(hero.locator(".hero-consign")).toBeVisible();
+  expect(page.url()).toBe(url);
+  await api.send("delete", `/admin/properties/${id}`);
+});
+
+test("keyword suggestions: words that find units, picked with one click", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  const hero = page.locator(".hero-search");
+  const input = hero.getByRole("combobox", { name: "Từ khóa" });
+  const list = hero.getByRole("listbox", { includeHidden: false });
+  await expect(hero.locator(".hero-suggest")).toBeHidden();
+  await input.focus();
+  await expect(hero.locator(".hero-suggest")).toBeVisible();
+  const chips = hero.locator(".hero-suggest li");
+  expect(await chips.count()).toBeGreaterThan(0);
+  // Each word shows how many units it finds: the same as the search gives.
+  const first = (await chips.first().innerText()).split("\n");
+  // Narrowed while typing, accents do not matter.
+  await input.fill("phong");
+  await expect(hero.locator(".hero-suggest")).toBeHidden();
+  await input.fill("");
+  await page.keyboard.press("Escape");
+  await expect(hero.locator(".hero-suggest")).toBeHidden();
+  await page.keyboard.press("ArrowDown");
+  await expect(list).toBeVisible();
+  await chips.first().click();
+  await expect(page).toHaveURL(/\?q=.+#can-ho$/);
+  await expect(input).toHaveValue(first[0]);
+  await expect(page.locator(".rental-card-grid .property-card")).toHaveCount(
+    Math.min(Number(first[1]), 9),
+  );
+  // Other words still search as before.
+  await input.fill("sun panoma");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/q=sun\+panoma/);
+});
+
+test("unit page opens with the photos, then name and facts beside the price", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(room);
+  const gallery = (await page.locator(".rental-gallery").boundingBox())!;
+  const title = (await page.locator(".room-heading h1").boundingBox())!;
+  const panel = (await page.locator(".room-contact-panel").boundingBox())!;
+  expect(title.y).toBeGreaterThanOrEqual(gallery.y + gallery.height);
+  // The price panel starts level with the name, on its right.
+  expect(panel.x).toBeGreaterThan(title.x + title.width - 1);
+  expect(Math.abs(panel.y - title.y)).toBeLessThan(120);
+  // Sections: overview, costs, specs, then amenities and the project.
+  const order = await page
+    .locator(".room-description section")
+    .evaluateAll((all) => all.map((x) => x.id).filter(Boolean));
+  expect(order.indexOf("dieu-kien")).toBe(order.indexOf("khong-gian") + 1);
+  expect(order.indexOf("thong-tin")).toBe(order.indexOf("dieu-kien") + 1);
+  // At most four photos beside the main one; "see all" opens every one.
+  const tiles = page.locator(".rental-gallery-thumbs > button:visible");
+  expect(await tiles.count()).toBeLessThanOrEqual(4);
+  await page.locator(".rental-gallery-all").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+});
+
+test("phones: facts in one row, price right after them, no sideways scroll", async ({
+  page,
+}) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto(room);
+    const facts = page.locator(".room-quick-facts > div");
+    const tops = await facts.evaluateAll((all) =>
+      all.map((x) => Math.round(x.getBoundingClientRect().top)),
+    );
+    expect(new Set(tops).size).toBe(1);
+    await expect(page.locator(".room-quick-facts")).not.toContainText(
+      "Phòng tắm",
+    );
+    const strip = (await page.locator(".room-quick-facts").boundingBox())!;
+    const panel = (await page.locator(".room-contact-panel").boundingBox())!;
+    const overview = (await page.locator("#khong-gian").boundingBox())!;
+    // Both use the whole width, each fact on one line.
+    expect(strip.width).toBeGreaterThan(width * 0.85);
+    expect(panel.width).toBeGreaterThan(width * 0.85);
+    expect(strip.height).toBeLessThan(90);
+    expect(panel.y).toBeGreaterThanOrEqual(strip.y + strip.height);
+    expect(overview.y).toBeGreaterThanOrEqual(panel.y + panel.height);
+    // The call stays in the fixed bottom bar, not twice on screen.
+    await expect(
+      page.locator(".room-mobile-call a[href^='tel:']"),
+    ).toBeVisible();
+    await expect(page.locator(".room-contact-panel .call-button")).toBeHidden();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  }
 });
 
 test("price sliders: rent 0–100 triệu, sale from the units for sale", async ({
@@ -508,7 +863,7 @@ test("price sliders: rent 0–100 triệu, sale from the units for sale", async 
   await high.focus();
   for (let i = 0; i < 80; i++) await page.keyboard.press("ArrowLeft");
   await expect(rent.locator("output")).toHaveText("10 – 20 triệu");
-  await hero.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await hero.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(page).toHaveURL(/\?gia-tu=10&price=20#can-ho$/);
   const prices = (
     await page
@@ -548,8 +903,9 @@ test("full-screen search: rent, buy and consign from the rental page", async ({
   expect(box.height).toBeGreaterThan(700);
 
   // Rent: results below, filtered, scrolled into view.
-  await hero.getByLabel("Phòng ngủ").selectOption("1");
-  await hero.getByRole("button", { name: "Tìm căn thuê" }).click();
+  await hero.getByLabel("Phòng ngủ").click();
+  await hero.getByRole("option", { name: "1 phòng ngủ" }).click();
+  await hero.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(page).toHaveURL(/\/cho-thue\?bedrooms=1#can-ho$/);
   await expect(page.locator(".rental-results-heading h2")).toHaveText(
     "Khám phá căn hộ cho thuê",
@@ -560,7 +916,7 @@ test("full-screen search: rent, buy and consign from the rental page", async ({
   await page.goto("/cho-thue");
   await hero.getByRole("tab", { name: "Mua" }).click();
   await expect(hero.getByRole("group", { name: "Giá bán" })).toBeVisible();
-  await hero.getByRole("button", { name: "Tìm căn bán" }).click();
+  await hero.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(page).toHaveURL(/nhu-cau=mua/);
   await expect(page.locator(".rental-results-heading h2")).toHaveText(
     "Căn hộ đang bán",

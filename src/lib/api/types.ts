@@ -97,6 +97,7 @@ export type ApiProperty = {
   managementFeeVnd: string | null;
   minimumLeaseMonths: number | null;
   availableFrom: string | null;
+  includedFees?: string[];
   contactName: string | null;
   contactPhone: string | null;
   rentalPolicy: string | null;

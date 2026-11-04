@@ -599,17 +599,24 @@
   color: #5e715b;
   margin-top: 5px;
 }
+/* Photos first: the main photo with the next four beside it. */
 .rental-gallery {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 158px;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 8px;
+}
+.rental-gallery[data-thumbs="0"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.rental-gallery[data-thumbs="0"] .rental-gallery-thumbs {
+  display: none;
 }
 .rental-gallery-main {
   position: relative;
-  height: clamp(350px, 37vw, 535px);
+  height: clamp(340px, 38vw, 540px);
   background: #e6e8df;
   overflow: hidden;
-  border-radius: 5px;
+  border-radius: 16px;
   min-width: 0;
 }
 .rental-gallery-viewport {
@@ -644,7 +651,10 @@
   background: #0b211c;
   object-fit: contain;
 }
+/* Shown on hover: the whole photo opens it. */
 .rental-gallery .gallery-enlarge {
+  opacity: 0;
+  transition: opacity var(--dur-2);
   position: absolute;
   bottom: auto;
   top: 20px;
@@ -657,6 +667,29 @@
   padding: 11px 13px;
   background: #17372ce6;
   border-radius: 4px;
+}
+.gallery-image:hover .gallery-enlarge,
+.gallery-image:focus-visible .gallery-enlarge {
+  opacity: 1;
+}
+.rental-gallery-all {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 3px 12px #0b1f1933;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-green-900);
+}
+.rental-gallery-all:hover {
+  background: #f3f1e8;
 }
 .rental-gallery-arrows {
   position: absolute;
@@ -681,44 +714,53 @@
 }
 .rental-gallery-counter {
   position: absolute;
-  left: 22px;
-  top: 22px;
-  background: #123328df;
+  left: 16px;
+  bottom: 16px;
+  background: #123328cc;
   color: #fff;
-  padding: 8px 14px;
-  border-radius: 3px;
+  padding: 6px 12px;
+  border-radius: 999px;
   font-size: var(--fs-xs);
   pointer-events: none;
 }
 .rental-gallery-thumbs {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 535px;
-  height: clamp(350px, 37vw, 535px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 8px;
+  height: clamp(340px, 38vw, 540px);
+}
+.rental-gallery[data-thumbs="1"] .rental-gallery-thumbs,
+.rental-gallery[data-thumbs="2"] .rental-gallery-thumbs {
+  grid-template-columns: minmax(0, 1fr);
+}
+.rental-gallery[data-thumbs="3"] .rental-gallery-thumbs > button:first-child {
+  grid-column: 1 / -1;
 }
 .rental-gallery-thumbs > button {
-  height: 111px;
-  flex-shrink: 0;
   position: relative;
-  border-radius: 4px;
+  min-height: 0;
+  border-radius: 12px;
   overflow: hidden;
   background: #153d32;
   color: #fff;
-  opacity: 1;
   outline: 2px solid transparent;
   outline-offset: 0;
+  transition: outline-color var(--dur-2);
+}
+.rental-gallery-thumbs > button.thumb-more {
+  display: none;
 }
 .rental-gallery-thumbs > button.selected {
-  opacity: 1;
   outline-color: #a58947;
   outline-offset: 1px;
 }
 .rental-gallery-thumbs > button img {
   object-fit: cover;
+  transition: transform var(--dur-4) var(--ease-out);
+}
+.rental-gallery-thumbs > button:hover img {
+  transform: scale(1.04);
 }
 .rental-gallery-thumbs > button > span {
   display: flex;
@@ -726,30 +768,6 @@
   align-items: center;
   gap: 10px;
   font-size: var(--fs-xs);
-}
-.rental-gallery-thumbs small {
-  position: absolute;
-  bottom: 7px;
-  left: 9px;
-  font-size: var(--fs-2xs);
-  color: #fff;
-  background: #123328df;
-  padding: 2px 5px;
-}
-.rental-gallery-footer {
-  grid-column: 1/-1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 8px 0;
-  font-size: var(--fs-xs);
-  color: #51634e;
-}
-.rental-gallery-footer > span:first-child {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 .media-error {
   display: grid;
@@ -815,12 +833,6 @@
   .rental-guide,
   .rental-faq {
     gap: 40px;
-  }
-  .rental-gallery {
-    grid-template-columns: minmax(0, 1fr) 120px;
-  }
-  .rental-gallery-thumbs > button {
-    height: 98px;
   }
 }
 @media (max-width: 800px) {
@@ -909,25 +921,25 @@
     font-size: 32px;
   }
   .rental-gallery {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
   .rental-gallery-main {
     height: 390px;
   }
+  /* Phones: one row of every photo, swiped sideways. */
   .rental-gallery-thumbs {
+    display: flex;
     height: auto;
-    flex-direction: row;
     overflow: auto;
     padding: 3px;
   }
-  .rental-gallery-thumbs > button {
+  .rental-gallery-thumbs > button,
+  .rental-gallery-thumbs > button.thumb-more {
+    display: block;
+    flex: none;
     width: 112px;
     height: 78px;
-  }
-  .rental-gallery-footer {
-    font-size: var(--fs-2xs);
-    padding: 3px 0;
   }
   .rental-gallery-thumbs > button > span {
     flex-direction: row;
@@ -1010,10 +1022,6 @@
     width: 92px;
     height: 66px;
   }
-  .rental-gallery-footer {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
   .rental-gallery .gallery-enlarge {
     font-size: 0;
     padding: 9px;
@@ -1025,8 +1033,15 @@
     height: 17px;
   }
   .rental-gallery-counter {
-    top: 13px;
-    left: 13px;
+    bottom: 12px;
+    left: 12px;
+  }
+  .rental-gallery-all {
+    right: 12px;
+    bottom: 12px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 12px;
   }
   .rental-gallery-arrows {
     inset-inline: 12px;
@@ -1526,12 +1541,36 @@
 }
 
 /* ── Property detail ── */
-.room-heading {
+.room-page .room-heading {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 20px;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 0 0 18px;
   animation: rental-lift 0.6s both;
+}
+.room-page .room-heading h1 {
+  max-width: 860px;
+  margin: 12px 0 8px;
+  font-size: clamp(27px, 2.7vw, 38px);
+  line-height: 1.25;
+  text-wrap: pretty;
+}
+/* Status and editor badge, above the name. */
+.room-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.room-tags > .room-availability {
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid #e0e4d9;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
 }
 /* The long unit name must never squeeze the buttons onto two lines. */
 .room-heading > div:first-child {
@@ -1564,29 +1603,62 @@
   border-color: #a78d50;
   transform: translateY(-1px);
 }
+/* "Lưu căn hộ" in the same pill as "Chia sẻ". */
+.room-heading-tools .room-save {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  height: 44px;
+  margin: 0;
+  padding: 0 18px 0 4px;
+  border: 1px solid #d3d9cf;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  color: #234a3f;
+}
+.room-heading-tools .room-save .favorite {
+  border: 0;
+  box-shadow: none;
+}
+/* The facts in one strip, each named ("Phòng ngủ 2", "Phòng tắm 2"), ending
+   with the price. Thin lines come from the gap; a short row stretches. */
 .room-quick-facts {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin: -8px 0 22px;
+  gap: 1px;
+  margin: 0 0 22px;
+  overflow: hidden;
+  border: 1px solid #e0e4d9;
+  border-radius: 16px;
+  background: #e0e4d9;
   animation: rental-lift 0.6s 0.08s both;
 }
-.room-quick-facts > span {
-  display: inline-flex;
+.room-quick-facts > div {
+  display: flex;
+  flex: 1 1 130px;
   align-items: center;
-  gap: 7px;
-  padding: 7px 13px;
-  font-size: 12px;
-  color: #2c4a40;
+  gap: 10px;
+  min-width: 0;
+  padding: 13px 16px;
   background: #fff;
-  border: 1px solid #e0e4d9;
-  border-radius: 999px;
 }
-.room-quick-facts > .room-availability {
-  margin: 0;
-  border: 0;
+.room-quick-facts svg {
+  flex: none;
+  color: #a88a4f;
+}
+.room-quick-facts small,
+.room-quick-facts strong {
+  display: block;
+}
+.room-quick-facts small {
+  font-size: 12px;
+  color: #5f6d64;
+}
+.room-quick-facts strong {
+  font-size: 15px;
   font-weight: 600;
+  color: var(--c-green-900);
 }
 
 /* The gallery shows at once: it is the first thing a visitor looks for. */
@@ -1715,14 +1787,6 @@
     transform: none;
   }
 }
-@media (max-width: 800px) {
-  .room-heading-tools .room-save {
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-  }
-}
 
 /* ── Unit description (rich-text.tsx) ── */
 .rich-text {
@@ -1843,7 +1907,7 @@
   font-weight: 500;
   letter-spacing: 1.2px;
 }
-.room-quick-facts > .lux-inline {
+.room-tags > .lux-inline {
   flex-direction: row;
   flex-wrap: wrap;
   padding: 0;
@@ -1851,7 +1915,7 @@
   background: none;
 }
 .lux-inline .lux-badge {
-  padding: 9px 14px 9px 12px;
+  padding: 6px 12px 6px 10px;
   border-radius: 999px;
   font-size: var(--fs-xs);
 }
@@ -1941,9 +2005,10 @@
 }
 .rental-hero {
   position: relative;
+  /* Above the next section: the search dropdowns may open past the photo. */
+  z-index: 2;
   display: flex;
   min-height: calc(100svh - var(--header-h));
-  overflow: hidden;
   color: #fff;
   background: var(--c-green-800);
   isolation: isolate;
@@ -1952,6 +2017,7 @@
   position: absolute;
   inset: 0;
   z-index: -2;
+  overflow: hidden;
 }
 .rental-hero-media img {
   object-fit: cover;
@@ -2088,7 +2154,7 @@
   animation: rental-hero-in 0.6s var(--ease-out) both;
 }
 .hero-search {
-  width: min(980px, 100%);
+  width: min(1080px, 100%);
   animation: rental-hero-in 0.6s 0.08s var(--ease-out) both;
 }
 /* Movement only: the search box is never hidden, even if animations stall. */
@@ -2136,6 +2202,8 @@
   outline-offset: 2px;
 }
 .hero-panel {
+  position: relative;
+  z-index: 2;
   padding: 16px;
   border-radius: 0 16px 16px 16px;
   background: #fbfaf6f2;
@@ -2145,9 +2213,9 @@
 }
 .hero-form {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)) auto;
-  align-items: end;
-  gap: 10px;
+  /* Never wider than the box, whatever the row of kinds wants. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   animation: rental-hero-in var(--dur-3) var(--ease-out);
 }
 .hero-field {
@@ -2319,7 +2387,8 @@
 }
 .rental-hero-scroll {
   position: absolute;
-  right: var(--gutter);
+  left: 50%;
+  transform: translateX(-50%);
   bottom: 28px;
   display: inline-flex;
   align-items: center;
@@ -2339,15 +2408,6 @@
   margin-top: var(--page-gap);
 }
 @media (max-width: 1080px) {
-  .hero-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .hero-field-wide {
-    grid-column: 1 / -1;
-  }
-  .hero-submit {
-    grid-column: 1 / -1;
-  }
   .rental-hero-scroll {
     display: none;
   }
@@ -2380,13 +2440,6 @@
   .hero-panel {
     padding: 12px;
     border-radius: 0 0 16px 16px;
-  }
-  .hero-form {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .hero-form .hero-field:has(select[name="project"]) {
-    grid-column: 1 / -1;
   }
   .hero-consign {
     flex-direction: column;
@@ -2451,12 +2504,11 @@
   color: #f3ecdc;
 }
 .hero-more-toggle {
-  grid-column: 1 / -1;
-  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 4px 0;
+  min-height: 36px;
+  padding: 0 4px;
   border: 0;
   background: none;
   color: #2c4a40;
@@ -2895,42 +2947,6 @@
 }
 
 /* Contact panel: the unit code as a tag, consign link as a quiet button. */
-.room-contact-panel .room-call-context {
-  margin: 20px 0 16px;
-  padding: 14px 16px;
-  border: 1px dashed #c6a76b;
-  border-radius: 6px;
-  background: #fbf7ec;
-  gap: 4px;
-}
-.room-contact-panel .room-call-context span {
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #7b6533;
-}
-.room-contact-panel .room-call-context b {
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.room-consign-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid #dce1d8;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #2c4a40;
-  transition:
-    border-color var(--dur-2),
-    background var(--dur-2);
-}
-.room-consign-link:hover {
-  border-color: #153d32;
-  background: #f3f5f0;
-}
 
 /* Call button: the phone number large and bold. */
 .room-contact-panel .call-button.button-outline-call {
@@ -3127,33 +3143,216 @@
   color: #0f7a41;
 }
 
-/* Price slider in the hero search: the chosen range over a two-handle
-   track, in the same 50px white box as the selects. */
-.price-range-box {
-  display: grid;
+/* Search bar: the fields in one white box, label above value, split by thin
+   lines; the button closes the row. */
+.hero-bar {
+  display: flex;
+  align-items: stretch;
+  padding: 6px;
+  border: 1px solid #dcdfd6;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px #0b1f190f;
+}
+.hero-bar .hero-field {
+  flex: 1 1 0;
   align-content: center;
   gap: 2px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: background var(--dur-2);
+}
+.hero-bar .hero-field-wide {
+  flex-grow: 1.35;
+}
+.hero-bar .price-range {
+  flex-grow: 1.6;
+  padding-block: 6px;
+}
+.hero-bar .hero-field + .hero-field {
+  border-left: 1px solid #e8eae3;
+  border-radius: 0 10px 10px 0;
+}
+.hero-bar .hero-field:focus-within {
+  background: #f6f4ec;
+}
+.hero-bar .hero-field > label,
+.price-range-head > span {
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: #5a6c63;
+}
+.hero-bar .hero-input input {
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 500;
+}
+.hero-bar .hero-input input:focus {
+  box-shadow: none;
+}
+/* Dropdowns of the search box (hero-select.tsx). */
+.hero-select {
+  position: relative;
+}
+.hero-select > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
   min-height: 50px;
-  padding: 4px 14px 2px;
+  padding: 0 12px;
   border: 1px solid #d9dfd8;
   border-radius: 11px;
   background: #fff;
-  transition:
-    border-color var(--dur-2),
-    box-shadow var(--dur-2);
-}
-.price-range-box:focus-within {
-  border-color: var(--c-gold-500);
-  box-shadow: 0 0 0 4px #c6a76b33;
-}
-.price-range-box output {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.2;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
   color: var(--c-green-900);
-  white-space: nowrap;
+  cursor: pointer;
+}
+.hero-bar .hero-select > button {
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-weight: 500;
+}
+.hero-select > button > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hero-select > button svg {
+  flex: none;
+  color: #7f8f86;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.hero-select > button[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.hero-select > button:focus-visible {
+  outline: 2px solid var(--c-gold-500);
+  outline-offset: 2px;
+}
+.hero-select > ul {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: -6px;
+  z-index: 20;
+  width: max-content;
+  min-width: calc(100% + 12px);
+  max-width: min(320px, calc(100vw - 56px));
+  max-height: 280px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #e3e4dc;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-lg);
+  animation: hero-pop var(--dur-2) var(--ease-out);
+}
+.hero-select > ul[hidden] {
+  display: none;
+}
+@keyframes hero-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.hero-select li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: 14px;
+  color: var(--c-green-900);
+  cursor: pointer;
+}
+.hero-select li[data-active] {
+  background: #f3f1e8;
+}
+.hero-select li[aria-selected="true"] {
+  font-weight: 600;
+}
+.hero-select li svg {
+  flex: none;
+  color: var(--c-gold-700);
+}
+.hero-bar .hero-input svg {
+  left: 0;
+}
+.hero-bar .hero-input input {
+  padding-left: 25px;
+}
+.hero-bar .hero-submit {
+  flex: none;
+  align-self: center;
+  min-height: 44px;
+  margin-left: 8px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+@media (max-width: 1080px) {
+  .hero-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hero-bar .hero-field,
+  .hero-bar .hero-field + .hero-field {
+    border-left: 0;
+    border-bottom: 1px solid #e8eae3;
+    border-radius: 10px 10px 0 0;
+  }
+  .hero-bar .hero-field-wide,
+  .hero-bar .price-range,
+  .hero-bar .hero-submit {
+    grid-column: 1 / -1;
+  }
+  .hero-bar .hero-submit {
+    margin: 6px 0 0;
+  }
+}
+@media (max-width: 640px) {
+  .hero-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Price: label and chosen range on one line, the handles under them. */
+.price-range-box {
+  display: grid;
+  gap: 2px;
+}
+.price-range-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.price-range-box output {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--c-green-900);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .price-range-track {
   position: relative;
@@ -3165,21 +3364,24 @@
 .price-range-track::after {
   content: "";
   position: absolute;
-  top: 10px;
-  height: 4px;
-  border-radius: 4px;
+  top: 11px;
+  height: 2px;
+  border-radius: 2px;
 }
 .price-range-track::before {
   left: 12px;
   right: 12px;
-  background: #e4e6df;
+  background: #d9dcd2;
 }
-/* Between the handle centres (a handle is 24px wide). */
+/* Between the handle centres (a handle's touch area is 24px wide). */
 .price-range-track::after {
   left: calc(12px + (100% - 24px) * var(--from));
   right: calc(12px + (100% - 24px) * (1 - var(--to)));
-  background: var(--c-green-700);
+  height: 3px;
+  top: 10.5px;
+  background: var(--c-gold-500);
 }
+/* A 16px dot inside the 24px touch area. */
 .price-range-thumb {
   position: absolute;
   top: 0;
@@ -3187,58 +3389,71 @@
   z-index: 1;
   width: 24px;
   height: 24px;
-  border: 2px solid var(--c-green-700);
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 2px 6px #0b1f1933;
   cursor: grab;
-  transition: box-shadow var(--dur-2);
+}
+.price-range-thumb::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--c-green-800);
+  box-shadow:
+    0 0 0 1px #0f2a2233,
+    0 2px 6px #0b1f1940;
+  transition: transform var(--dur-2);
+}
+.price-range-thumb:hover::before,
+.price-range-thumb:active::before {
+  transform: scale(1.15);
 }
 .price-range-thumb:active {
   cursor: grabbing;
 }
 .price-range-thumb:focus-visible {
-  outline: 3px solid var(--c-gold-400);
-  outline-offset: 1px;
+  outline: 2px solid var(--c-gold-500);
+  outline-offset: -1px;
 }
 .price-range-thumb:focus {
   z-index: 2;
 }
-@media (max-width: 640px) {
-  /* Phones: the slider takes a full row, so "Phòng ngủ" does too. */
-  .hero-form .price-range,
-  .hero-form .hero-field:has(select[name="bedrooms"]) {
-    grid-column: 1 / -1;
-  }
-}
 
-/* "Loại hình" above the search fields: Tất cả · Căn hộ · Nhà phố · Mặt bằng. */
-.hero-kinds {
-  grid-column: 1 / -1;
+/* Top row of the search: "Loại hình" with how many units each has (a type
+   without units is dimmed), and the detailed filters on the right. */
+.hero-form-top {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  border: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.hero-kinds {
+  display: flex;
+  gap: 2px;
   min-width: 0;
+  margin: 0;
+  padding: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: #e9e8e0;
 }
 .hero-kinds label {
   position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 38px;
-  padding: 0 16px;
-  border: 1px solid #d9dfd8;
-  border-radius: 999px;
-  background: #fff;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 9px;
   font-size: 14px;
   font-weight: 500;
   color: var(--c-green-900);
+  white-space: nowrap;
   cursor: pointer;
   transition:
     background var(--dur-2),
-    border-color var(--dur-2),
     color var(--dur-2);
 }
 .hero-kinds input {
@@ -3249,29 +3464,300 @@
   cursor: pointer;
 }
 .hero-kinds label:hover {
-  border-color: var(--c-green-700);
+  background: #ffffff99;
 }
 .hero-kinds label:has(input:checked) {
-  border-color: var(--c-green-800);
   background: var(--c-green-800);
   color: #f3e6c4;
+}
+.hero-kinds label:has(input:disabled) {
+  background: none;
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.hero-kinds input:disabled {
+  cursor: not-allowed;
 }
 .hero-kinds label:has(input:focus-visible) {
   outline: 3px solid var(--c-gold-400);
   outline-offset: 2px;
 }
 @media (max-width: 640px) {
-  /* Phones: the four pills share the row. */
+  /* Phones: the kinds share the row. */
   .hero-kinds {
-    flex-wrap: nowrap;
-    gap: 6px;
+    flex: 1 1 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
   .hero-kinds label {
-    flex: 1 1 auto;
-    justify-content: center;
-    min-height: 36px;
-    padding: 0 8px;
+    flex: 1 0 auto;
+    padding: 0 7px;
     font-size: 13px;
+  }
+}
+
+/* Keyword suggestions: chips under the "Từ khóa" field. */
+.hero-keyword {
+  position: relative;
+}
+.hero-suggest {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 20;
+  width: min(400px, calc(100vw - 56px));
+  padding: 14px;
+  border: 1px solid #e3e4dc;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-lg);
+  animation: hero-pop var(--dur-2) var(--ease-out);
+}
+.hero-suggest[hidden] {
+  display: none;
+}
+.hero-suggest p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: #5a6c63;
+}
+.hero-suggest ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hero-suggest li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #e6e3d6;
+  border-radius: 999px;
+  background: #f8f6ee;
+  font-size: 13px;
+  color: var(--c-green-900);
+  cursor: pointer;
+  transition:
+    background var(--dur-2),
+    border-color var(--dur-2);
+}
+.hero-suggest li:hover,
+.hero-suggest li[aria-selected="true"] {
+  border-color: var(--c-gold-500);
+  background: #f1ead6;
+}
+.hero-suggest small {
+  font-size: 11.5px;
+  color: #5f6d64;
+}
+
+/* Price panel of a unit: short and pinned while reading, the call first. */
+.room-page .room-contact-panel {
+  top: calc(var(--header-h) + 16px);
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid #e0e4d9;
+  box-shadow: 0 12px 30px #153d320f;
+}
+.room-page .room-contact-panel .call-button {
+  margin-top: 0;
+}
+.room-page .room-contact-panel .call-button.button-outline-call {
+  min-height: 60px;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+.room-page .room-contact-panel .room-whatsapp {
+  margin-top: 8px;
+}
+.room-page .room-price-label {
+  margin: 16px 0 2px;
+}
+.room-page .room-price {
+  font-size: 30px;
+  line-height: 1.2;
+}
+.room-page .room-price span {
+  font-size: 13px;
+}
+.room-page .room-contact-panel .room-sale-price {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+.room-page .room-price-breakdown {
+  margin: 12px 0 0;
+  padding: 0;
+  border-top: 1px solid #e3e6de;
+}
+.room-page .room-price-breakdown > div {
+  align-items: center;
+  padding: 8px 0;
+}
+.room-page .room-price-breakdown dd.room-availability {
+  margin: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.room-included-fees {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e6de;
+}
+.room-included-fees p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-green-900);
+}
+.room-included-fees ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.room-included-fees li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #3c5148;
+}
+.room-included-fees .room-fees-out {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #5f6d64;
+}
+.room-fees-out span {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+  color: var(--c-green-900);
+}
+.room-included-fees svg {
+  flex: none;
+  color: #2f9e6a;
+}
+
+/* Unit facts: always one row. */
+.room-quick-facts {
+  flex-wrap: nowrap;
+}
+.room-quick-facts > div {
+  flex: 1 1 0;
+}
+/* Phones and small tablets: less air above the fold, and the price right
+   after the facts (the fixed bottom bar already holds the call). */
+@media (max-width: 800px) {
+  .room-page .room-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  .room-page .room-description {
+    display: contents;
+  }
+  .room-page .room-description > * {
+    order: 4;
+  }
+  .room-page .room-description > .room-heading {
+    order: 1;
+    margin-bottom: -8px;
+  }
+  .room-page .room-description > .room-quick-facts {
+    order: 2;
+    margin: 0;
+  }
+  .room-page .room-contact-panel {
+    order: 3;
+    padding: 14px 16px 6px;
+  }
+  .room-page .room-contact-panel .call-button,
+  .room-page .room-contact-panel .whatsapp-button {
+    display: none;
+  }
+  .room-page .room-price-label {
+    margin-top: 0;
+  }
+  .room-image-note:not([data-demo]) {
+    display: none;
+  }
+  .rental-gallery-thumbs {
+    padding: 2px;
+    scrollbar-width: none;
+  }
+  .rental-gallery-thumbs::-webkit-scrollbar {
+    display: none;
+  }
+  .rental-gallery-thumbs > button,
+  .rental-gallery-thumbs > button.thumb-more {
+    width: 84px;
+    height: 56px;
+    border-radius: 9px;
+  }
+  .room-page .room-heading {
+    position: relative;
+    display: block;
+    padding: 0;
+  }
+  .room-page .room-heading h1 {
+    margin: 8px 0 4px;
+    font-size: 24px;
+  }
+  /* Share and save: round icons beside the status. */
+  .room-tags {
+    min-height: 40px;
+    padding-right: 92px;
+  }
+  .room-heading-tools {
+    position: absolute;
+    top: 0;
+    right: 0;
+    gap: 8px;
+  }
+  .room-share,
+  .room-heading-tools .room-save {
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+  .room-share > span,
+  .room-heading-tools .room-save > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
     white-space: nowrap;
+  }
+  .room-quick-facts > div {
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 4px;
+    text-align: center;
+  }
+  .room-quick-facts small {
+    font-size: 11.5px;
+  }
+  .room-quick-facts strong {
+    font-size: 14px;
+  }
+}
+@media (max-width: 560px) {
+  .rental-gallery-main {
+    height: 230px;
   }
 }

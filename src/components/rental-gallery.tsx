@@ -75,14 +75,30 @@ export function RentalGallery({
       api.off("select", select);
     };
   }, [api]);
-  const photoCount = media.filter((x) => x.type === "image").length;
-  const videoCount = media.length - photoCount;
+  // Beside the main photo: the next four (never the one showing), a video
+  // always among them.
+  const beside = new Set(
+    Array.from(
+      { length: Math.min(4, media.length - 1) },
+      (_, i) => (active + i + 1) % media.length,
+    ),
+  );
+  const video = media.findIndex((x) => x.type === "video");
+  if (video >= 0 && video !== active && !beside.has(video)) {
+    beside.delete([...beside].pop()!);
+    beside.add(video);
+  }
+  const hasVideo = video >= 0;
   function next(delta: number) {
     setExpanded((value) => (value + delta + media.length) % media.length);
   }
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <div className="rental-gallery" aria-label={t("Ảnh và video căn hộ")}>
+      <div
+        className="rental-gallery"
+        data-thumbs={beside.size}
+        aria-label={t("Ảnh và video căn hộ")}
+      >
         <div className="rental-gallery-main">
           <div className="rental-gallery-viewport" ref={viewport}>
             <div className="rental-gallery-track">
@@ -109,7 +125,7 @@ export function RentalGallery({
                           fill
                           // Phones: the 270px-high frame crops the sides of
                           // a 16:9 photo, so it is drawn ~1.3× the screen.
-                          sizes="(max-width: 560px) 130vw, (max-width: 800px) 100vw, 80vw"
+                          sizes="(max-width: 560px) 130vw, (max-width: 800px) 100vw, 62vw"
                           loading={index === 0 ? "eager" : "lazy"}
                           // The first photo is the page's main picture.
                           fetchPriority={index === 0 ? "high" : "auto"}
@@ -144,9 +160,24 @@ export function RentalGallery({
             </div>
           )}
           <span className="rental-gallery-counter">
-            {String(active + 1).padStart(2, "0")} /{" "}
-            {String(media.length).padStart(2, "0")}
+            {active + 1} / {media.length}
           </span>
+          {media.length > 1 && (
+            <Dialog.Trigger asChild>
+              <button
+                className="rental-gallery-all"
+                onClick={() => setExpanded(active)}
+              >
+                <Images size={16} aria-hidden="true" />
+                {t(
+                  hasVideo
+                    ? "Xem tất cả {n} ảnh và video"
+                    : "Xem tất cả {n} ảnh",
+                  { n: media.length },
+                )}
+              </button>
+            </Dialog.Trigger>
+          )}
         </div>
         <div
           className="rental-gallery-thumbs"
@@ -155,7 +186,7 @@ export function RentalGallery({
           {media.map((item, index) => (
             <button
               key={item.src}
-              className={index === active ? "selected" : ""}
+              className={`${index === active ? "selected" : ""} ${beside.has(index) ? "" : "thumb-more"}`}
               aria-pressed={index === active}
               aria-label={
                 item.type === "video"
@@ -169,7 +200,7 @@ export function RentalGallery({
                   src={item.src}
                   alt=""
                   fill
-                  sizes="160px"
+                  sizes="(max-width: 800px) 120px, 20vw"
                   // The thumbnails shown beside the photo load with it.
                   loading={index < 4 ? "eager" : "lazy"}
                 />
@@ -178,19 +209,8 @@ export function RentalGallery({
                   <Play size={26} /> Video
                 </span>
               )}
-              <small>{item.type === "image" ? `0${index + 1}` : "VIDEO"}</small>
             </button>
           ))}
-        </div>
-        <div className="rental-gallery-footer">
-          <span>
-            <Images size={16} /> {t("{n} ảnh", { n: photoCount })}
-            {videoCount ? ` · ${t("{n} video", { n: videoCount })}` : ""}
-          </span>
-          <span>
-            {t(demo ? "Ảnh nội thất minh họa" : "Hình ảnh căn hộ")} ·{" "}
-            {t("Kéo để xem thêm")}
-          </span>
         </div>
       </div>
       <Dialog.Portal>

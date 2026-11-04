@@ -328,6 +328,11 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await form.locator("[name=bathrooms]").hover();
   await page.mouse.wheel(0, 200);
   await expect(form.locator("[name=bathrooms]")).toHaveValue("3");
+  // Costs on top of the rent: all ticked by default, untick what it covers.
+  const fees = form.locator("[name=feesNotIncluded]");
+  await expect(fees).toHaveCount(6);
+  for (const box of await fees.all()) await expect(box).toBeChecked();
+  await form.getByLabel("Internet", { exact: true }).uncheck();
   // Minimum lease: 3, 6 or 12 months.
   await expect(form.locator("[name=minimumLease] option")).toHaveText([
     "Không yêu cầu",
@@ -379,6 +384,10 @@ test("properties upload images and videos, choose the cover, delete and keep ord
     data: { id: string; slug: string; coverImage: { mimeType: string } }[];
   };
   expect(units.data[0].coverImage.mimeType).toBe("image/webp");
+  // Unticked in the form: the rent covers it.
+  expect(
+    (units.data[0] as unknown as { includedFees: string[] }).includedFees,
+  ).toEqual(["internet"]);
   await api.send("patch", `/admin/properties/${units.data[0].id}`, {
     status: "PUBLISHED",
   });

@@ -65,6 +65,7 @@ import {
 } from "./model";
 import { ProjectBannerSection, type ProjectBannerDraft } from "./banners";
 import { NO_ROOM_TYPES } from "@/lib/property-groups";
+import { ALL_RENT_FEES, RENT_FEES } from "@/lib/included-fees";
 
 /** Picking one of these types fills [bedrooms, bathrooms]. */
 const ROOMS_BY_TYPE: Record<string, [number, number]> = {
@@ -103,7 +104,7 @@ type Field = {
     /** Page content blocks: heading + text, reorderable (JSON). */
     | "sections";
   required?: boolean;
-  default?: string | number | boolean;
+  default?: string | number | boolean | string[];
   options?: [string, string][];
   /** Select: the heading each option is listed under (<optgroup>). */
   optionGroups?: Record<string, string>;
@@ -657,6 +658,14 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           }),
           f("availableFrom", "Ngày có thể nhận căn", {
             type: "date",
+            showWhen: "forRent",
+          }),
+          f("feesNotIncluded", "Giá thuê chưa bao gồm", {
+            type: "checkboxes",
+            wide: true,
+            default: ALL_RENT_FEES,
+            options: RENT_FEES,
+            hint: "Bỏ tích phí nào giá thuê đã gồm phí đó.",
             showWhen: "forRent",
           }),
           f("salePrice", "Giá bán", {
@@ -1890,6 +1899,7 @@ export function Editor({
           tabIndex={-1}
           className={`field-cards full${error ? " has-error" : ""}`}
           aria-describedby={describedBy}
+          hidden={item.showWhen ? !live[item.showWhen] : undefined}
         >
           <legend>
             {item.label} {tag}

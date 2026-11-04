@@ -37,7 +37,7 @@ test("a badge picked in Admin shows on the unit card and page; no “Mới đăn
   await card.screenshot({ path: `${SHOTS}/highlight-card.png` });
 
   await page.goto(`/cho-thue/${unit.slug}`);
-  await expect(page.locator(".room-quick-facts .lux-badge")).toHaveText([
+  await expect(page.locator(".room-tags .lux-badge")).toHaveText([
     "✦Độc quyền",
   ]);
 

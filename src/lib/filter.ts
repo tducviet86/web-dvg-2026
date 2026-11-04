@@ -1,36 +1,40 @@
 import type { Property } from "../types/index";
+import { unitKind } from "./property-groups";
+import { availabilityRank, liveStatus } from "./availability";
 export type Filters = Record<string, string | undefined>;
-const searchable = (value: string) =>
+export const searchable = (value: string) =>
   value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[đĐ]/g, "d")
     .toLowerCase()
     .trim();
+const unitWords = (p: Property) =>
+  searchable(
+    `${p.name} ${p.location} ${p.unitCode || p.id} ${p.projectName || ""}`,
+  );
 export function filterProperties(items: Property[], f: Filters) {
   return (
     items
       .filter(
         (p) =>
-          (!f.q ||
-            searchable(
-              `${p.name} ${p.location} ${p.unitCode || p.id} ${p.projectName || ""}`,
-            ).includes(searchable(f.q))) &&
+          (!f.q || unitWords(p).includes(searchable(f.q))) &&
           (!f.location || p.location === f.location) &&
           (!f.project ||
             p.projectSlug === f.project ||
             p.projectId === f.project) &&
           (!f.type || p.type === f.type) &&
-          // "loai": Căn hộ / Nhà phố / Mặt bằng (lib/property-groups.ts).
-          (!f.loai || (p.typeGroup ?? "apartment") === f.loai) &&
+          // "loai": Căn hộ / Shophouse / Nhà phố / Mặt bằng.
+          (!f.loai || unitKind(p) === f.loai) &&
           (!f.price || p.price <= Number(f.price)) &&
           (!f["gia-tu"] || p.price >= Number(f["gia-tu"])) &&
           (!f.bedrooms || p.bedrooms === Number(f.bedrooms)) &&
           (!f.area || p.area >= Number(f.area)) &&
           (!f.furniture || p.furniture === f.furniture) &&
-          (!f.status || p.status === f.status),
+          (!f.status || liveStatus(p) === f.status),
       )
-      // Without an explicit sort the API order (publication order) is kept.
+      // Without an explicit sort: free units first, soon free next, each in
+      // API (publication) order.
       .sort((a, b) =>
         f.sort === "price-asc"
           ? a.price - b.price
@@ -38,7 +42,7 @@ export function filterProperties(items: Property[], f: Filters) {
             ? b.price - a.price
             : f.sort === "area"
               ? b.area - a.area
-              : 0,
+              : availabilityRank(a) - availabilityRank(b),
       )
   );
 }
@@ -66,6 +70,28 @@ export function searchUnits(items: Property[], f: Filters) {
         (!from || (!!p.saleVnd && p.saleVnd >= from * 1e9))),
   );
 }
+
+/** What the search box needs from each unit to offer only real choices. */
+export type SearchFacet = {
+  typeCode?: string;
+  typeGroup?: string;
+  bedrooms: number;
+  project?: string;
+  rent: boolean;
+  sale: boolean;
+  /** The text a keyword search looks in. */
+  words: string;
+};
+export const searchFacets = (items: Property[]): SearchFacet[] =>
+  items.map((p) => ({
+    typeCode: p.typeCode,
+    typeGroup: p.typeGroup,
+    bedrooms: p.bedrooms,
+    project: p.projectSlug,
+    rent: p.forRent !== false,
+    sale: !!p.forSale,
+    words: unitWords(p),
+  }));
 
 /** Rent slider: 0–100 triệu a month ("100" means no upper limit). */
 export const RENT_RANGE: [number, number] = [0, 100];

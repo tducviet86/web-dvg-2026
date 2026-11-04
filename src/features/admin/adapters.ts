@@ -1,5 +1,6 @@
 import type { FormValues, Kind, MediaRef } from "./model";
 import { isVideo } from "./model";
+import { ALL_RENT_FEES } from "@/lib/included-fees";
 
 /** Admin DTOs as returned by BE-DVG (only the fields the screens use). */
 type Image = { id: string; url: string } | null;
@@ -168,6 +169,10 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       depositMonths: depositMonths(d.depositVnd, d.rentPriceVnd),
       minimumLease: str(d.minimumLeaseMonths),
       availableFrom: str(d.availableFrom),
+      // Ticked in the form = not covered by the rent.
+      feesNotIncluded: ALL_RENT_FEES.filter(
+        (key) => !(d.includedFees as string[] | undefined)?.includes(key),
+      ),
       contactName: str(d.contactName),
       contactPhone: str(d.contactPhone),
       description: str(d.description),
@@ -378,6 +383,11 @@ export function payload(
       managementFeeVnd: null,
       minimumLeaseMonths: v.forRent ? numOrNull(v.minimumLease) : null,
       availableFrom: orNull(v.availableFrom),
+      includedFees: v.forRent
+        ? ALL_RENT_FEES.filter(
+            (key) => !(v.feesNotIncluded as string[]).includes(key),
+          )
+        : [],
       contactName: orNull(v.contactName),
       contactPhone: orNull(v.contactPhone),
       description: str(v.description).trim(),

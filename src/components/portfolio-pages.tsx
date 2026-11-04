@@ -15,12 +15,7 @@ import type { SiteContent } from "@/lib/api/content";
 import { HomeProjects } from "./home-projects";
 import { PhotoHero, SearchHero } from "./search-hero";
 import type { HeroMode } from "./rental-hero-search";
-import {
-  isSaleSearch,
-  saleRange,
-  searchUnits,
-  type Filters,
-} from "@/lib/filter";
+import { isSaleSearch, searchUnits, type Filters } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { FaqSection } from "./faq-section";
@@ -28,9 +23,9 @@ import { listingFaqs } from "@/lib/faq";
 import { ProjectMap } from "./project-map";
 import { complexSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
-import { money } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
-import { kindCount, kindNoun, listingKind } from "@/lib/property-groups";
+import { kindNoun, listingKind } from "@/lib/property-groups";
+import { vacantNow } from "@/lib/availability";
 
 const directoryCrumbs = (current: string) => (
   <>
@@ -78,7 +73,6 @@ export function ProjectDirectory({
     const sale = isSaleSearch(filters);
     const found = searchUnits(units, filters);
     const kind = listingKind(filters.loai, found);
-    const rentals = units.filter((r) => r.forRent !== false && r.price > 0);
     return (
       <main
         id="main"
@@ -88,7 +82,7 @@ export function ProjectDirectory({
           slides={photosOf(operation)}
           crumbs={directoryCrumbs("Dự án đang vận hành")}
           title="Dự án đang vận hành"
-          subtitle={`${operation.length} dự án · thuê, mua và ký gửi căn hộ`}
+          subtitle={`${operation.length} dự án · thuê, mua và ký gửi bất động sản`}
           action="/du-an/van-hanh"
           mode={
             sale ? "mua" : filters["nhu-cau"] === "ky-gui" ? "ky-gui" : "thue"
@@ -98,29 +92,7 @@ export function ProjectDirectory({
             .filter((p) => units.some((r) => r.projectId === p.projectId))
             .map((p) => [p.slug, p.name] as [string, string])}
           locations={[...new Set(units.map((r) => r.location))]}
-          count={found.length}
-          saleRange={saleRange(units)}
-          stats={
-            <>
-              <div>
-                <dt>Căn đang trống</dt>
-                <dd>{units.filter((r) => r.status === "Còn trống").length}</dd>
-              </div>
-              <div>
-                <dt>Dự án vận hành</dt>
-                <dd>{String(operation.length).padStart(2, "0")}</dd>
-              </div>
-              {rentals.length > 0 && (
-                <div>
-                  <dt>Giá thuê từ</dt>
-                  <dd>
-                    {money(Math.min(...rentals.map((r) => r.price)))}
-                    <small> triệu/tháng</small>
-                  </dd>
-                </div>
-              )}
-            </>
-          }
+          units={units}
         />
         <div className="container">
           <section id="can-ho" className="operation-content">
@@ -131,9 +103,6 @@ export function ProjectDirectory({
                 </span>
                 <h2>{`${kindNoun(kind)} ${sale ? "đang bán" : "cho thuê"}`}</h2>
               </div>
-              <span className="rental-result-count">
-                {kindCount(found.length, kind)}
-              </span>
             </div>
             {found.length ? (
               <div className={sale ? "sale-grid" : "grid grid-3"}>
@@ -319,8 +288,7 @@ export function PortfolioDetail({
                 complexSchema(
                   api,
                   href(`/du-an/${p.slug}`),
-                  rooms.filter((r) => !r.isDemo && r.status === "Còn trống")
-                    .length,
+                  rooms.filter((r) => !r.isDemo && vacantNow(r)).length,
                   t,
                 ),
               ),
@@ -343,37 +311,7 @@ export function PortfolioDetail({
           mode={active}
           values={filters}
           project={{ slug: p.slug, name: p.name }}
-          count={found.length}
-          saleRange={saleRange(rooms)}
-          stats={
-            <>
-              <div>
-                <dt>Căn đang trống</dt>
-                <dd>{rooms.filter((r) => r.status === "Còn trống").length}</dd>
-              </div>
-              {rooms.some((r) => r.forRent !== false && r.price > 0) && (
-                <div>
-                  <dt>Giá thuê từ</dt>
-                  <dd>
-                    {money(
-                      Math.min(
-                        ...rooms
-                          .filter((r) => r.forRent !== false && r.price > 0)
-                          .map((r) => r.price),
-                      ),
-                    )}
-                    <small> triệu/tháng</small>
-                  </dd>
-                </div>
-              )}
-              {rooms.some((r) => r.forSale) && (
-                <div>
-                  <dt>Căn đang bán</dt>
-                  <dd>{rooms.filter((r) => r.forSale).length}</dd>
-                </div>
-              )}
-            </>
-          }
+          units={rooms}
         />
       )}
       <div className="container">
@@ -585,12 +523,6 @@ export function PortfolioDetail({
                         {`${kindNoun(listingKind(filters.loai, found))} ${active === "mua" ? "đang bán" : "cho thuê"} tại ${p.name}`}
                       </h2>
                     </div>
-                    <span className="rental-result-count">
-                      {kindCount(
-                        found.length,
-                        listingKind(filters.loai, found),
-                      )}
-                    </span>
                   </div>
                   {found.some((r) => r.isDemo) && (
                     <p className="portfolio-data-note">

@@ -126,17 +126,26 @@ test.describe("first visit from a Korean browser", () => {
   });
 });
 
-test("mobile drawer lists the four languages; Admin stays Vietnamese", async ({
+test("phones pick the language in the top bar; Admin stays Vietnamese", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await page.getByRole("button", { name: "Mở menu", exact: true }).click();
-  await expect(
-    page
-      .getByRole("group", { name: "Ngôn ngữ / Language" })
-      .getByRole("button"),
-  ).toHaveText(["Tiếng Việt", "English", "한국어", "中文"]);
+  await page.locator(".site-header .lang-trigger").click();
+  await expect(page.locator(".lang-menu a")).toHaveText([
+    "Tiếng Việt",
+    "English",
+    "한국어",
+    "中文",
+  ]);
+  await page.locator(".lang-menu a", { hasText: "English" }).click();
+  await expect(page).toHaveURL(/\/en$/);
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 640 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  }
   expect((await page.request.get("/en/admin")).status()).toBe(404);
   await page.goto("/admin");
   await expect(page.locator("html")).toHaveAttribute("lang", "vi");
@@ -166,6 +175,18 @@ test("editors correct a translation in Admin and the website shows it", async ({
     page,
     async () => (await contact.innerText()) === "Contact us",
   );
+});
+
+test("the search box labels and slider are translated too", async ({
+  page,
+}) => {
+  await page.goto("/en/cho-thue");
+  const kinds = page.locator(".hero-kinds");
+  await reloadUntil(page, async () =>
+    (await kinds.innerText()).includes("EN: Can ho"),
+  );
+  await expect(page.locator(".hero-submit")).toContainText("EN: Tim kiem");
+  await expect(page.locator(".price-range output")).toContainText("EN: ");
 });
 
 test("a new unit is translated, prices kept apart from the words", async ({

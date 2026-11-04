@@ -1,3 +1,4 @@
+import { vacantNow } from "./availability";
 /**
  * Questions and answers for rental pages, written from the live listings so
  * every answer is a fact the site can stand behind (prices, free units,
@@ -40,7 +41,7 @@ export function listingFaqs(
     (u) => !project || u.projectId === project.projectId,
   );
   const where = project ? project.name : "Đà Nẵng";
-  const free = scope.filter((u) => u.status === "Còn trống");
+  const free = scope.filter(vacantNow);
   const faqs: Faq[] = [];
 
   if (project?.location)

@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowRight,
   Building2,
@@ -14,26 +14,30 @@ import { useT } from "@/i18n/client";
 import { usePageNavigation } from "./page-navigation";
 import { InquiryDialog } from "./rental-inquiry";
 import { PriceRange } from "./price-range";
-import { RENT_RANGE } from "@/lib/filter";
-import { groupOptions } from "@/lib/property-groups";
+import { RENT_RANGE, type SearchFacet } from "@/lib/filter";
+import { hasRooms, unitKind } from "@/lib/property-groups";
+import { HeroKeyword } from "./hero-keyword";
+import { HeroSelect } from "./hero-select";
 
 export type HeroMode = "thue" | "mua" | "ky-gui";
 type Options = [value: string, label: string][];
 
-const BEDROOMS: Options = [
-  ["0", "Studio"],
-  ["1", "1 phòng ngủ"],
-  ["2", "2 phòng ngủ"],
-  ["3", "3 phòng ngủ"],
+/** Loại hình; written here so the labels are listed for translation. */
+const KINDS: Options = [
+  ["", "Tất cả"],
+  ["apartment", "Căn hộ"],
+  ["shophouse", "Shophouse"],
+  ["townhouse", "Nhà phố"],
+  ["premises", "Mặt bằng"],
 ];
-/** Townhouses have no studio: 2–4 bedrooms. */
-const TOWNHOUSE_BEDROOMS: Options = [
-  ["2", "2 phòng ngủ"],
-  ["3", "3 phòng ngủ"],
-  ["4", "4 phòng ngủ"],
-];
-/** All types together: studio to 4 bedrooms. */
-const ALL_BEDROOMS: Options = [...BEDROOMS, ["4", "4 phòng ngủ"]];
+const BEDROOM_LABELS: Record<number, string> = {
+  0: "Studio",
+  1: "1 phòng ngủ",
+  2: "2 phòng ngủ",
+  3: "3 phòng ngủ",
+  4: "4 phòng ngủ",
+  5: "5 phòng ngủ",
+};
 const AREA: Options = [
   ["40", "Từ 40 m²"],
   ["60", "Từ 60 m²"],
@@ -45,6 +49,7 @@ const FURNITURE: Options = [
 ];
 const STATUS: Options = [
   ["Còn trống", "Còn trống"],
+  ["Sắp trống", "Sắp trống"],
   ["Đã cho thuê", "Đã cho thuê"],
 ];
 const SORT: Options = [
@@ -71,6 +76,7 @@ export function RentalHeroSearch({
   hotline,
   callHref,
   saleRange = [0, 20],
+  facets,
 }: {
   action: string;
   mode: HeroMode;
@@ -86,10 +92,13 @@ export function RentalHeroSearch({
   callHref: string;
   /** Sale slider bounds in tỷ, from the units for sale. */
   saleRange?: [number, number];
+  /** The units searched: only choices they can match are offered. */
+  facets: SearchFacet[];
 }) {
   const t = useT();
   const id = useId();
   const navigate = usePageNavigation();
+  const form = useRef<HTMLFormElement>(null);
   const [mode, setMode] = useState<HeroMode>(initialMode);
   const [more, setMore] = useState(() => MORE.some((k) => !!values[k]));
   // Loại hình: Căn hộ / Nhà phố / Mặt bằng ("" = all).
@@ -102,17 +111,66 @@ export function RentalHeroSearch({
   const target = projectSlug
     ? { projectSlug, label: projectName ?? projectSlug }
     : {};
+  // Only what this search can find: units of this mode, then of this kind.
+  const listed = facets.filter((f) => (mode === "mua" ? f.sale : f.rent));
+  const ofKind = (group: string) =>
+    listed.filter((f) => !group || unitKind(f) === group);
+  const matching = ofKind(kind);
+  const bedrooms: Options = [
+    ...new Set([
+      ...matching.filter((f) => hasRooms(f)).map((f) => f.bedrooms),
+      ...(values.bedrooms ? [Number(values.bedrooms)] : []),
+    ]),
+  ]
+    .sort((a, b) => a - b)
+    .map((n) => [String(n), BEDROOM_LABELS[n] ?? `${n} phòng ngủ`]);
+  const kindProjects = projects.filter(
+    ([slug]) =>
+      slug === values.project || matching.some((f) => f.project === slug),
+  );
 
+  function search(box: HTMLFormElement, stay = false) {
+    const query = new URLSearchParams();
+    for (const [key, value] of new FormData(box))
+      if (typeof value === "string" && value.trim())
+        query.set(key, value.trim());
+    const url = `${action}${query.size ? `?${query}` : ""}`;
+    // "stay": the results below refresh where the visitor is looking.
+    if (stay) navigate?.(url, false, false, true);
+    else navigate?.(`${url}#can-ho`);
+  }
   function submit(event: React.FormEvent<HTMLFormElement>) {
     if (!navigate) return; // native GET submit
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const query = new URLSearchParams();
-    for (const [key, value] of data)
-      if (typeof value === "string" && value.trim())
-        query.set(key, value.trim());
-    navigate(`${action}${query.size ? `?${query}` : ""}#can-ho`);
+    search(event.currentTarget);
   }
+  /** A suggested word; its input has not re-rendered with it yet. */
+  function pick(word: string) {
+    const box = form.current;
+    if (!box) return;
+    (box.elements.namedItem("q") as HTMLInputElement).value = word;
+    search(box);
+  }
+  // The Back button changes the URL: the tabs and kind buttons follow it.
+  const urlKind = values.loai ?? "";
+  const urlMode: HeroMode = ["mua", "mua-ban"].includes(values["nhu-cau"] ?? "")
+    ? "mua"
+    : values["nhu-cau"] === "ky-gui"
+      ? "ky-gui"
+      : "thue";
+  const [seen, setSeen] = useState({ kind: urlKind, mode: urlMode });
+  if (seen.kind !== urlKind || seen.mode !== urlMode) {
+    setSeen({ kind: urlKind, mode: urlMode });
+    setKind(urlKind);
+    setMode(urlMode);
+  }
+  // Clicking a kind or Thuê / Mua loads its results, once the fields have
+  // followed it. "Ký gửi" is a request form: nothing to load.
+  useEffect(() => {
+    if (mode === "ky-gui" || !form.current) return;
+    if (kind !== urlKind || mode !== urlMode) search(form.current, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, mode]);
 
   const field = (
     name: string,
@@ -122,18 +180,13 @@ export function RentalHeroSearch({
   ) => (
     <div className="hero-field">
       <label htmlFor={`${id}-${name}`}>{t(label)}</label>
-      <select
+      <HeroSelect
         id={`${id}-${name}`}
         name={name}
         defaultValue={values[name] ?? ""}
-      >
-        <option value="">{t(placeholder)}</option>
-        {options.map(([value, text]) => (
-          <option key={value} value={value}>
-            {t(text)}
-          </option>
-        ))}
-      </select>
+        placeholder={t(placeholder)}
+        options={options.map(([value, text]) => [value, t(text)])}
+      />
     </div>
   );
 
@@ -148,7 +201,19 @@ export function RentalHeroSearch({
             id={`${id}-${tab.key}`}
             aria-selected={mode === tab.key}
             aria-controls={`${id}-panel`}
-            onClick={() => setMode(tab.key)}
+            onClick={() => {
+              setMode(tab.key);
+              // A kind this tab has no units of would only list nothing.
+              const sale = tab.key === "mua";
+              if (
+                tab.key !== "ky-gui" &&
+                !facets.some(
+                  (f) =>
+                    (sale ? f.sale : f.rent) && (!kind || unitKind(f) === kind),
+                )
+              )
+                setKind("");
+            }}
           >
             <tab.icon size={16} aria-hidden="true" />
             {t(tab.label)}
@@ -184,6 +249,7 @@ export function RentalHeroSearch({
           </div>
         ) : (
           <form
+            ref={form}
             key={mode}
             className="hero-form"
             action={action}
@@ -194,85 +260,73 @@ export function RentalHeroSearch({
             {mode === "mua" && (
               <input type="hidden" name="nhu-cau" value="mua" />
             )}
-            <fieldset className="hero-kinds">
-              <legend className="sr-only">{t("Loại hình")}</legend>
-              {[["", "Tất cả"] as const, ...groupOptions].map(
-                ([value, label]) => (
-                  <label key={value}>
-                    <input
-                      type="radio"
-                      name="loai"
-                      value={value}
-                      checked={kind === value}
-                      onChange={() => setKind(value)}
-                    />
-                    <span>{t(label)}</span>
-                  </label>
-                ),
-              )}
-            </fieldset>
-            <div className="hero-field hero-field-wide">
-              <label htmlFor={`${id}-q`}>{t("Từ khóa")}</label>
-              <span className="hero-input">
-                <Search size={17} aria-hidden="true" />
-                <input
-                  id={`${id}-q`}
-                  name="q"
-                  defaultValue={values.q}
-                  maxLength={100}
-                  placeholder={t("Tên căn, mã căn, dự án…")}
-                />
-              </span>
+            <div className="hero-form-top">
+              <fieldset className="hero-kinds">
+                <legend className="sr-only">{t("Loại hình")}</legend>
+                {KINDS.map(([value, label]) => {
+                  return (
+                    <label key={value}>
+                      <input
+                        type="radio"
+                        name="loai"
+                        value={value}
+                        aria-label={t(label)}
+                        checked={kind === value}
+                        disabled={!ofKind(value).length && kind !== value}
+                        onChange={() => setKind(value)}
+                      />
+                      <span>{t(label)}</span>
+                    </label>
+                  );
+                })}
+              </fieldset>
+              <button
+                type="button"
+                className="hero-more-toggle"
+                aria-expanded={more}
+                aria-controls={`${id}-more`}
+                onClick={() => setMore((v) => !v)}
+              >
+                <SlidersHorizontal size={15} aria-hidden="true" />
+                {t("Bộ lọc chi tiết")}
+                <span aria-hidden="true">{more ? "−" : "+"}</span>
+              </button>
             </div>
-            {!projectSlug &&
-              field("project", "Dự án", projects, "Tất cả dự án")}
-            {/* Mặt bằng has no bedrooms. */}
-            {kind !== "premises" &&
-              field(
-                "bedrooms",
-                "Phòng ngủ",
-                kind === "townhouse"
-                  ? TOWNHOUSE_BEDROOMS
-                  : kind === "apartment"
-                    ? BEDROOMS
-                    : ALL_BEDROOMS,
-                "Mọi loại",
+            <div className="hero-bar">
+              <HeroKeyword
+                units={matching}
+                defaultValue={values.q}
+                onPick={pick}
+              />
+              {!projectSlug &&
+                field("project", "Dự án", kindProjects, "Tất cả dự án")}
+              {bedrooms.length > 0 &&
+                field("bedrooms", "Phòng ngủ", bedrooms, "Tất cả")}
+              {mode === "mua" ? (
+                <PriceRange
+                  label="Giá bán"
+                  amountText="{n} tỷ"
+                  bounds={saleRange}
+                  step={saleRange[1] - saleRange[0] > 5 ? 0.5 : 0.1}
+                  names={["gia-ban-tu", "gia-ban"]}
+                  values={values}
+                />
+              ) : (
+                <PriceRange
+                  label="Giá thuê / tháng"
+                  amountText="{n} triệu"
+                  bounds={RENT_RANGE}
+                  step={1}
+                  names={["gia-tu", "price"]}
+                  values={values}
+                  openEnded
+                />
               )}
-            {mode === "mua" ? (
-              <PriceRange
-                label="Giá bán"
-                unit="tỷ"
-                bounds={saleRange}
-                step={saleRange[1] - saleRange[0] > 5 ? 0.5 : 0.1}
-                names={["gia-ban-tu", "gia-ban"]}
-                values={values}
-              />
-            ) : (
-              <PriceRange
-                label="Giá thuê / tháng"
-                unit="triệu"
-                bounds={RENT_RANGE}
-                step={1}
-                names={["gia-tu", "price"]}
-                values={values}
-                openEnded
-              />
-            )}
-            <button type="submit" className="hero-submit">
-              <Search size={18} aria-hidden="true" />
-              {t(mode === "mua" ? "Tìm căn bán" : "Tìm căn thuê")}
-            </button>
-            <button
-              type="button"
-              className="hero-more-toggle"
-              aria-expanded={more}
-              aria-controls={`${id}-more`}
-              onClick={() => setMore((v) => !v)}
-            >
-              <SlidersHorizontal size={15} aria-hidden="true" />
-              {t("Bộ lọc chi tiết")}
-              <span aria-hidden="true">{more ? "−" : "+"}</span>
-            </button>
+              <button type="submit" className="hero-submit">
+                <Search size={18} aria-hidden="true" />
+                {t("Tìm kiếm")}
+              </button>
+            </div>
             <div id={`${id}-more`} className="hero-more" hidden={!more}>
               {locations.length > 1 &&
                 field(

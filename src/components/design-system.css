@@ -359,7 +359,8 @@ textarea {
 }
 .mobile-drawer {
   inset: 0 0 0 auto;
-  width: min(440px, 100%);
+  /* 75% of a phone screen; no wider than 480px on tablets. */
+  width: clamp(260px, 75%, 480px);
   display: flex;
   flex-direction: column;
   padding: 0 var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
@@ -406,6 +407,23 @@ textarea {
 }
 .mobile-drawer nav {
   margin: var(--space-4) 0 var(--space-5);
+}
+@media (max-width: 640px) {
+  .mobile-drawer {
+    padding-inline: var(--space-4);
+  }
+  .drawer-head {
+    margin-inline: calc(-1 * var(--space-4));
+    padding-inline: var(--space-4) var(--space-2);
+  }
+  .drawer-head h2 {
+    font-size: var(--fs-sm);
+    letter-spacing: 0.1em;
+  }
+  .drawer-actions .button {
+    padding-inline: 12px;
+    font-size: 13px;
+  }
 }
 .mobile-drawer nav > a,
 .mobile-drawer summary {
@@ -465,12 +483,6 @@ textarea {
   margin-top: auto;
   display: grid;
   gap: var(--space-4);
-}
-.drawer-foot .lang-row {
-  margin: 0;
-}
-.drawer-foot .lang-row button {
-  min-height: var(--tap);
 }
 .drawer-actions {
   display: grid;
@@ -645,6 +657,26 @@ textarea {
   .navigation-spinner-ring {
     animation-duration: 2.4s;
   }
+}
+/* A kind picked in the search: only the results below reload. */
+[data-results-loading] #can-ho {
+  position: relative;
+}
+[data-results-loading] #can-ho > * {
+  opacity: 0.4;
+  transition: opacity var(--dur-2) var(--ease-out) 120ms;
+}
+[data-results-loading] #can-ho::after {
+  content: "";
+  position: absolute;
+  top: 110px;
+  left: calc(50% - 20px);
+  width: 40px;
+  height: 40px;
+  border: 3px solid #c6a76b40;
+  border-top-color: var(--c-gold-500);
+  border-radius: 50%;
+  animation: nav-spin 0.8s linear infinite;
 }
 /* Scroll reveal (components/interactive.tsx › Reveal). */
 .reveal[data-reveal="pending"] {

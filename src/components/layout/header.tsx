@@ -353,7 +353,6 @@ export function SiteHeader({ services = [] }: { services?: NavLink[] }) {
                     })}
                   </nav>
                   <div className="drawer-foot">
-                    <LanguageSwitcher variant="row" />
                     <div className="drawer-actions">
                       <Link
                         className="button button-primary"

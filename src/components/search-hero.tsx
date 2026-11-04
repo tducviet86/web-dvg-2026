@@ -4,6 +4,8 @@ import { ArrowDown } from "lucide-react";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { href } from "@/i18n/server";
 import { RentalHeroSearch, type HeroMode } from "./rental-hero-search";
+import { saleRange, searchFacets } from "@/lib/filter";
+import type { Property } from "@/types";
 
 type Slide = { src: string; alt: string };
 
@@ -28,7 +30,7 @@ export function PhotoHero({
   subtitle?: React.ReactNode;
   children?: React.ReactNode;
   stats?: React.ReactNode;
-  /** "Xem … căn phù hợp ↓" link to the list below. */
+  /** "Xem căn hộ phù hợp ↓" link to the list below. */
   scroll?: { label: string; target: string };
   /** Extra class, e.g. a shorter hero. */
   className?: string;
@@ -92,9 +94,7 @@ export function SearchHero({
   projects = [],
   locations = [],
   project,
-  stats,
-  count,
-  saleRange,
+  units,
 }: {
   slides: Slide[];
   crumbs: React.ReactNode;
@@ -108,10 +108,8 @@ export function SearchHero({
   locations?: string[];
   /** On a project page the project is fixed. */
   project?: { slug: string; name: string };
-  stats?: React.ReactNode;
-  count: number;
-  /** Sale slider bounds in tỷ (see saleRange in lib/filter). */
-  saleRange?: [number, number];
+  /** The units this page searches: the box offers only what they have. */
+  units: Property[];
 }) {
   return (
     <PhotoHero
@@ -119,8 +117,7 @@ export function SearchHero({
       crumbs={crumbs}
       title={title}
       subtitle={subtitle}
-      stats={stats}
-      scroll={{ label: `Xem ${count} căn phù hợp`, target: "#can-ho" }}
+      scroll={{ label: "Xem căn hộ phù hợp", target: "#can-ho" }}
     >
       <RentalHeroSearch
         action={href(action)}
@@ -132,7 +129,8 @@ export function SearchHero({
         projectName={project?.name}
         hotline={companyHotline}
         callHref={telephoneHref() || href("/lien-he")}
-        saleRange={saleRange}
+        saleRange={saleRange(units)}
+        facets={searchFacets(units)}
       />
     </PhotoHero>
   );

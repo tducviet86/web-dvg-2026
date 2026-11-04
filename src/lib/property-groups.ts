@@ -9,10 +9,21 @@ export const PROPERTY_GROUPS = {
   premises: "Mặt bằng",
 } as const;
 export type PropertyGroup = keyof typeof PROPERTY_GROUPS;
-export const groupOptions = Object.entries(PROPERTY_GROUPS) as [
-  PropertyGroup,
-  string,
-][];
+/**
+ * Kinds a visitor searches by: the groups, with shophouse on its own (in
+ * Admin it stays among the Căn hộ types).
+ */
+export const SEARCH_KINDS = {
+  apartment: "Căn hộ",
+  shophouse: "Shophouse",
+  townhouse: "Nhà phố",
+  premises: "Mặt bằng",
+} as const;
+export type SearchKind = keyof typeof SEARCH_KINDS;
+export const unitKind = (p: { typeCode?: string; typeGroup?: string }) =>
+  p.typeCode === "shophouse" ? "shophouse" : (p.typeGroup ?? "apartment");
+export const kindLabel = (kind?: string) =>
+  SEARCH_KINDS[kind as SearchKind] ?? kind;
 export const groupLabel = (group?: string) =>
   PROPERTY_GROUPS[group as PropertyGroup] ?? PROPERTY_GROUPS.apartment;
 
@@ -43,21 +54,18 @@ export const roomsLabel = (p: { bedrooms: number; type?: string }) =>
   p.bedrooms > 0 ? `${p.bedrooms} PN` : p.type || "Studio";
 
 /**
- * What a list holds, for its heading: the group searched for ("loai"), else
- * the one group all units share; undefined when they are mixed.
+ * What a list holds, for its heading: the kind searched for ("loai"), else
+ * the one kind all units share; undefined when they are mixed.
  */
 export function listingKind(
   loai: string | undefined,
-  items: { typeGroup?: string }[],
-): PropertyGroup | undefined {
-  if (loai && loai in PROPERTY_GROUPS) return loai as PropertyGroup;
-  const groups = new Set(items.map((p) => p.typeGroup ?? "apartment"));
-  if (groups.size > 1) return undefined;
-  return ([...groups][0] as PropertyGroup | undefined) ?? "apartment";
+  items: { typeCode?: string; typeGroup?: string }[],
+): SearchKind | undefined {
+  if (loai && loai in SEARCH_KINDS) return loai as SearchKind;
+  const kinds = new Set(items.map(unitKind));
+  if (kinds.size > 1) return undefined;
+  return ([...kinds][0] as SearchKind | undefined) ?? "apartment";
 }
-/** "Căn hộ", "Nhà phố", "Mặt bằng"; "Bất động sản" for a mixed list. */
-export const kindNoun = (kind?: PropertyGroup) =>
-  kind ? PROPERTY_GROUPS[kind] : "Bất động sản";
-/** "12 căn phù hợp", "5 nhà phố phù hợp", "3 mặt bằng phù hợp". */
-export const kindCount = (n: number, kind?: PropertyGroup) =>
-  `${n} ${kind === "townhouse" ? "nhà phố" : kind === "premises" ? "mặt bằng" : "căn"} phù hợp`;
+/** "Căn hộ", "Shophouse", "Nhà phố", "Mặt bằng"; "Bất động sản" when mixed. */
+export const kindNoun = (kind?: SearchKind) =>
+  kind ? SEARCH_KINDS[kind] : "Bất động sản";

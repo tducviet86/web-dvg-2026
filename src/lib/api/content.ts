@@ -163,6 +163,7 @@ export function toProperty(p: ApiProperty): Property {
       ? `${p.minimumLeaseMonths} tháng`
       : undefined,
     availableFrom: p.availableFrom ?? undefined,
+    includedFees: p.includedFees ?? [],
     contactName: p.contactName ?? undefined,
     contactPhone: p.contactPhone ?? undefined,
     rentalPolicy: p.rentalPolicy ?? undefined,

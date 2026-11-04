@@ -14,7 +14,14 @@ import {
 import { useLocalizeHref, useT } from "@/i18n/client";
 
 const NavigationContext = createContext<
-  ((href: string, replace?: boolean, scroll?: boolean) => void) | null
+  | ((
+      href: string,
+      replace?: boolean,
+      scroll?: boolean,
+      /** Only the results (#can-ho) reload: no full-page spinner. */
+      resultsOnly?: boolean,
+    ) => void)
+  | null
 >(null);
 
 /** Loads a page in full ahead of the click (pointer over / touch / focus). */
@@ -32,14 +39,21 @@ export function PageNavigation({ children }: { children: ReactNode }) {
   const localize = useLocalizeHref();
   const [pending, startTransition] = useTransition();
   const [prefetched] = useState(() => new Map<string, number>());
+  const [resultsOnly, setResultsOnly] = useState(false);
   function prefetch(href: string) {
     const last = prefetched.get(href);
     if (last && Date.now() - last < PREFETCH_REUSE_MS) return;
     prefetched.set(href, Date.now());
     router.prefetch(href, { kind: "full" as PrefetchKind });
   }
-  function navigate(target: string, replace = false, scroll = true) {
+  function navigate(
+    target: string,
+    replace = false,
+    scroll = true,
+    onlyResults = false,
+  ) {
     const href = localize(target);
+    setResultsOnly(onlyResults);
     startTransition(() => {
       if (replace) router.replace(href, { scroll });
       else router.push(href, { scroll });
@@ -48,9 +62,13 @@ export function PageNavigation({ children }: { children: ReactNode }) {
   return (
     <NavigationContext.Provider value={navigate}>
       <PrefetchContext.Provider value={prefetch}>
-        <div className="navigation-shell" data-navigating={pending}>
+        <div
+          className="navigation-shell"
+          data-navigating={pending && !resultsOnly}
+          data-results-loading={(pending && resultsOnly) || undefined}
+        >
           {children}
-          {pending && (
+          {pending && !resultsOnly && (
             <>
               <div className="navigation-progress" aria-hidden="true" />
               <PageSpinner />

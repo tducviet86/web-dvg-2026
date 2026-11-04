@@ -37,7 +37,7 @@ test("project entry points separate introductions from operations", async ({
     page.getByRole("heading", { name: "Thông số & nội thất" }),
   ).toBeVisible();
   await expect(page.locator(".room-contact-panel")).toBeVisible();
-  await page.getByRole("link", { name: /Bạn có căn hộ cần ký gửi/ }).click();
+  await page.goto("/du-an/sun-panoma?nhu-cau=ky-gui#nhu-cau");
   await expect(page).toHaveURL(/nhu-cau=ky-gui/);
   await expect(page.locator(".consign-checklist")).toBeVisible();
   await expect(page.locator(".service-steps li")).toHaveCount(3);
@@ -47,7 +47,7 @@ test("project entry points separate introductions from operations", async ({
     "true",
   );
   await hero.getByRole("tab", { name: "Mua" }).click();
-  await hero.getByRole("button", { name: "Tìm căn bán" }).click();
+  await hero.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(page).toHaveURL(/nhu-cau=mua/);
   await expect(page.locator(".inventory-empty")).toContainText(
     "Chưa có căn bán",
@@ -136,7 +136,7 @@ test("project directories open on full-screen photos with their own shortcuts", 
   await expect(page.locator("#can-ho .property-card")).not.toHaveCount(0);
   const search = page.locator(".hero-search");
   await search.getByRole("tab", { name: "Mua" }).click();
-  await search.getByRole("button", { name: "Tìm căn bán" }).click();
+  await search.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(page).toHaveURL(/\/du-an\/van-hanh\?nhu-cau=mua/);
   await expect(page.locator("#can-ho h2")).toHaveText("Căn hộ đang bán");
   // Triển khai: shortcuts to each project, no search.

@@ -17,6 +17,7 @@ import type { Project, Property, Post } from "@/types";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
+import { statusLabel, vacantNow } from "@/lib/availability";
 import {
   floorLabel,
   hasRooms,
@@ -147,9 +148,9 @@ export function PropertyCard({
         </Link>
         <span className="card-tags">
           <span
-            className={`image-badge ${property.status === "Còn trống" ? "available" : ""}`}
+            className={`image-badge ${vacantNow(property) ? "available" : ""}`}
           >
-            {property.status}
+            {statusLabel(property)}
           </span>
           {typeTag(property) && (
             <span className="card-type-tag">{typeTag(property)}</span>

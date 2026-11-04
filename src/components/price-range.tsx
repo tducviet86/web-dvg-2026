@@ -15,7 +15,7 @@ type Handle = "low" | "high";
  */
 export function PriceRange({
   label,
-  unit,
+  amountText,
   bounds: [min, max],
   step,
   names: [minName, maxName],
@@ -23,8 +23,8 @@ export function PriceRange({
   openEnded = false,
 }: {
   label: string;
-  /** "triệu" or "tỷ". */
-  unit: string;
+  /** "{n} triệu" or "{n} tỷ". */
+  amountText: string;
   bounds: [number, number];
   step: number;
   names: [min: string, max: string];
@@ -44,7 +44,7 @@ export function PriceRange({
   const [high, setHigh] = useState(() => start(maxName, max));
 
   const amount = (n: number) =>
-    t(`{n} ${unit}`, { n: n.toLocaleString("vi-VN") }) +
+    t(amountText, { n: n.toLocaleString("vi-VN") }) +
     (openEnded && n === max ? "+" : "");
   const text =
     low === min && high === max
@@ -107,11 +107,13 @@ export function PriceRange({
       role="group"
       aria-labelledby={`${id}-label`}
     >
-      <span id={`${id}-label`}>{t(label)}</span>
       <div className="price-range-box">
-        <output htmlFor={`${id}-low ${id}-high`} aria-live="polite">
-          {text}
-        </output>
+        <div className="price-range-head">
+          <span id={`${id}-label`}>{t(label)}</span>
+          <output htmlFor={`${id}-low ${id}-high`} aria-live="polite">
+            {text}
+          </output>
+        </div>
         <div
           ref={track}
           className="price-range-track"

@@ -67,6 +67,8 @@ export type Property = AdminDetails & {
   projectId: string;
   location: string;
   type: string;
+  /** Costs the rent covers: keys of lib/included-fees.ts. */
+  includedFees?: string[];
   /** Property type code ("2pn", "shophouse", "mat-bang"…). */
   typeCode?: string;
   /** apartment | townhouse | premises (lib/property-groups.ts). */

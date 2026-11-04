@@ -58,11 +58,7 @@ function useSwitchTo() {
 }
 
 /** Navbar control: current language and a menu of the four languages. */
-export function LanguageSwitcher({
-  variant = "menu",
-}: {
-  variant?: "menu" | "row";
-}) {
+export function LanguageSwitcher() {
   const lang = useLocale();
   const switchTo = useSwitchTo();
   const [open, setOpen] = useState(false);
@@ -75,27 +71,6 @@ export function LanguageSwitcher({
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [open]);
-  // The phone menu lists every language: load them as soon as it opens.
-  useEffect(() => {
-    if (variant === "row") switchTo.prefetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [variant]);
-  if (variant === "row")
-    return (
-      <div className="lang-row" role="group" aria-label="Ngôn ngữ / Language">
-        {LOCALES.map((code) => (
-          <button
-            key={code}
-            type="button"
-            lang={HTML_LANG[code]}
-            aria-pressed={code === lang}
-            onClick={() => code !== lang && switchTo.go(code)}
-          >
-            {LANGUAGE_NAMES[code]}
-          </button>
-        ))}
-      </div>
-    );
   return (
     <div
       ref={ref}
