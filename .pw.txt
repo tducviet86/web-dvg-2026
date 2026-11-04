@@ -82,3 +82,7 @@ Running 104 tests using 1 worker
 [76/104] tests/rental-experience.spec.ts:149:5 › room gallery loads supplied MP4, opens photos, and keeps call CTAs without a form
 [77/104] tests/rental-experience.spec.ts:214:5 › rental SEO distinguishes project pages, filters and unpublished sample units
 [78/104] tests/rental-experience.spec.ts:260:5 › rental layouts fit desktop/mobile and remain accessible
+[79/104] tests/rental-experience.spec.ts:301:5 › advice request popup validates, reaches the API with the project, and reports errors
+[80/104] tests/rental-experience.spec.ts:379:5 › detailed filters live in the hero search and the owner popup opens
+[81/104] tests/rental-experience.spec.ts:403:5 › shophouse units show the area, no bedrooms or bathrooms
+[82/104] tests/rental-experience.spec.ts:453:5 › “Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings follow
