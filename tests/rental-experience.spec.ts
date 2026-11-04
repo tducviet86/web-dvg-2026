@@ -998,3 +998,47 @@ test("unit page folds long lists, offers other rentals and remembers viewed unit
   await page.keyboard.press("Escape");
   await expect(viewer).toHaveCount(0);
 });
+
+test("list view: photo on the left, facts on the right, one unit per row", async ({
+  page,
+}) => {
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/cho-thue?view=list");
+    const cards = page.locator(".list-view article.property-card");
+    await expect(cards.first()).toBeVisible();
+    const [a, b] = [
+      (await cards.nth(0).boundingBox())!,
+      (await cards.nth(1).boundingBox())!,
+    ];
+    expect(b.y).toBeGreaterThanOrEqual(a.y + a.height);
+    const photo = (await cards.first().locator(".image-wrap").boundingBox())!;
+    const body = (await cards.first().locator(".property-body").boundingBox())!;
+    expect(body.x).toBeGreaterThanOrEqual(photo.x + photo.width - 1);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+});
+
+test("hovering a card fades through the unit's other photos, on a mouse only", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  const card = page
+    .locator("article.property-card")
+    // A unit with more than one photo.
+    .filter({ has: page.locator(".card-media-count", { hasText: /^[2-9]/ }) })
+    .first();
+  const photos = card.locator(".card-photos img");
+  await expect(photos).toHaveCount(0);
+  await card.hover();
+  await expect(photos).not.toHaveCount(0);
+  await expect(card.locator(".card-photos img[data-shown]")).toHaveCount(1, {
+    timeout: 6000,
+  });
+  await page.mouse.move(0, 0);
+  await expect(card.locator(".card-photos img[data-shown]")).toHaveCount(0);
+});

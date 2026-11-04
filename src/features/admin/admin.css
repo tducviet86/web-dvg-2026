@@ -5405,3 +5405,6 @@
     display: none;
   }
 }
+.section-item .banner-image-field {
+  margin-top: 12px;
+}

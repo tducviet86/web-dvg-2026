@@ -1,6 +1,7 @@
 import type { FormValues, Kind, MediaRef } from "./model";
 import { isVideo } from "./model";
 import { ALL_RENT_FEES } from "@/lib/included-fees";
+import type { Section } from "./sections-field";
 
 /** Admin DTOs as returned by BE-DVG (only the fields the screens use). */
 type Image = { id: string; url: string } | null;
@@ -213,7 +214,7 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       description: str(d.intro),
       summary: str(d.summary),
       sections: JSON.stringify(
-        (d.sections as { heading: string; body: string }[] | undefined) ?? [],
+        (d.sections as Section[] | undefined) ?? [],
       ),
       sortOrder: str(d.sortOrder),
       inMenu: !!d.inMenu,
@@ -424,14 +425,11 @@ export function payload(
     const path = str(v.path)
       .trim()
       .replace(/^\/+|\/+$/g, "");
-    let sections: { heading: string; body: string }[] = [];
+    let sections: Section[] = [];
     try {
-      sections = (
-        JSON.parse(str(v.sections) || "[]") as {
-          heading: string;
-          body: string;
-        }[]
-      ).filter((s) => s.heading.trim() && s.body.trim());
+      sections = (JSON.parse(str(v.sections) || "[]") as Section[]).filter(
+        (s) => s.heading.trim() && s.body.trim(),
+      );
     } catch {
       /* keep empty */
     }
@@ -445,6 +443,7 @@ export function payload(
       sections: sections.map((s) => ({
         heading: s.heading.trim(),
         body: s.body.trim(),
+        image: s.image,
       })),
       coverImageId: media.cover?.id ?? null,
       sortOrder: numOrNull(v.sortOrder) ?? 0,

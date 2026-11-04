@@ -275,18 +275,6 @@ article.property-card .property-detail-label {
   white-space: nowrap;
 }
 
-/* List view: the same cards, two per row. */
-.rental-card-grid.list-view article.property-card {
-  grid-template-columns: none;
-}
-.rental-card-grid.list-view article.property-card .image-wrap {
-  aspect-ratio: 4 / 3;
-  min-height: 0;
-}
-.rental-card-grid.list-view article.property-card .property-body {
-  padding: 18px 18px 16px;
-}
-
 /* Touch screens and phones: no hover, so the facts are always shown. */
 @media (hover: none), (max-width: 640px) {
   .property-reveal {
@@ -339,4 +327,209 @@ article.property-card .card-tags .image-badge {
   font-weight: 700;
   letter-spacing: 0.2px;
   white-space: nowrap;
+}
+
+/* Hover: the unit's other photos fade over the card photo. */
+.card-photos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.card-photos img {
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.8s var(--ease-out);
+}
+.card-photos img[data-shown] {
+  opacity: 1;
+}
+
+/* List view: one unit per row, photo on the left, facts on the right. */
+.rental-card-grid.list-view {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+.list-view article.property-card {
+  grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
+  border: 1px solid #e0e4d9;
+  background: #fff;
+  box-shadow: 0 6px 18px #10271910;
+}
+.list-view article.property-card > .image-wrap {
+  grid-area: 1 / 1;
+  aspect-ratio: auto;
+  min-height: 300px;
+}
+.list-view article.property-card > .property-body {
+  grid-area: 1 / 2;
+  align-self: stretch;
+  padding: 24px 28px;
+  color: var(--c-green-900);
+  pointer-events: auto;
+}
+.list-view article.property-card .property-body::before {
+  display: none;
+}
+.list-view article.property-card .card-meta {
+  color: var(--c-gold-700);
+}
+.list-view article.property-card .card-meta > span:last-child {
+  color: #5f6f66;
+}
+.list-view article.property-card h3 {
+  font-size: 23px;
+  color: var(--c-green-900);
+}
+.list-view .property-reveal {
+  grid-template-rows: 1fr;
+  margin-bottom: 12px;
+  opacity: 1;
+  transform: none;
+}
+.list-view article.property-card .location,
+.list-view .property-furniture {
+  color: #3c5148;
+}
+.list-view article.property-card .location svg,
+.list-view article.property-card .property-specs svg {
+  color: var(--c-gold-700);
+}
+.list-view article.property-card .property-specs {
+  max-width: 480px;
+  border-color: #e0e4d9;
+  background: #f6f7f2;
+  color: var(--c-green-900);
+  backdrop-filter: none;
+}
+.list-view article.property-card .property-specs span + span {
+  border-left-color: #e0e4d9;
+}
+.list-view article.property-card .property-bottom {
+  margin-top: auto;
+  border-top-color: #e0e4d9;
+}
+.list-view article.property-card .property-bottom small,
+.list-view article.property-card .property-bottom p > span {
+  color: #5f6f66;
+}
+.list-view article.property-card .property-bottom strong {
+  color: var(--c-green-900);
+}
+.list-view .sale-card-link {
+  display: grid;
+  grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
+  aspect-ratio: auto;
+  min-height: 260px;
+  border: 1px solid #e0e4d9;
+  background: #fff;
+  color: var(--c-green-900);
+}
+.list-view .sale-card-link::after {
+  display: none;
+}
+.list-view .sale-card-photo {
+  position: relative;
+  z-index: 0;
+}
+.list-view .sale-card-body {
+  position: static;
+  align-content: center;
+  padding: 24px 28px;
+}
+.list-view .sale-card-project {
+  color: var(--c-gold-700);
+}
+.list-view .sale-card-name {
+  color: var(--c-green-900);
+}
+.list-view .sale-card-meta {
+  border-top-color: #e0e4d9;
+}
+.list-view .sale-card-price {
+  color: var(--c-gold-700);
+}
+.list-view .sale-card-specs {
+  color: #3c5148;
+}
+@media (max-width: 640px) {
+  .rental-card-grid.list-view {
+    gap: 14px;
+  }
+  .list-view article.property-card,
+  .list-view .sale-card-link {
+    grid-template-columns: minmax(0, 36%) minmax(0, 1fr);
+    min-height: 0;
+    border-radius: 16px;
+  }
+  .list-view article.property-card > .image-wrap {
+    min-height: 190px;
+  }
+  .list-view .property-reveal {
+    margin-bottom: 0;
+  }
+  .list-view article.property-card > .property-body,
+  .list-view .sale-card-body {
+    padding: 12px;
+  }
+  .list-view article.property-card .card-meta {
+    letter-spacing: 0.6px;
+  }
+  .list-view article.property-card .card-meta > span:last-child,
+  .list-view article.property-card .location,
+  .list-view .property-furniture,
+  .list-view article.property-card .card-media-count,
+  .list-view article.property-card .favorite,
+  .list-view .sale-card-open {
+    display: none;
+  }
+  .list-view article.property-card h3,
+  .list-view .sale-card-name {
+    font-size: 15px;
+  }
+  .list-view article.property-card .property-specs {
+    margin: 8px 0 0;
+    padding: 6px 0;
+  }
+  .list-view article.property-card .property-specs b {
+    font-size: 11.5px;
+  }
+  .list-view article.property-card .property-bottom {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .list-view article.property-card .property-bottom small {
+    display: none;
+  }
+  .list-view article.property-card .property-bottom strong {
+    font-size: 15px;
+  }
+  .list-view article.property-card .property-bottom p > span {
+    font-size: 11.5px;
+  }
+  .list-view article.property-card .property-bottom > a {
+    width: 34px;
+    height: 34px;
+  }
+  .list-view article.property-card .card-tags {
+    top: 8px;
+    left: 8px;
+    max-width: calc(100% - 16px);
+  }
+  .list-view article.property-card .image-badge,
+  .list-view article.property-card .card-type-tag {
+    padding: 4px 8px;
+    font-size: 10.5px;
+  }
+  .list-view .sale-card-badge {
+    top: 8px;
+    left: 8px;
+    padding: 4px 8px;
+    font-size: 9.5px;
+  }
+}
+/* Very narrow phones: three facts fit; bathrooms give way. */
+@media (max-width: 360px) {
+  .list-view article.property-card .property-specs span:nth-child(3):not(:last-child) {
+    display: none;
+  }
 }

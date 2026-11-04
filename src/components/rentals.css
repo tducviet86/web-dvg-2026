@@ -328,16 +328,6 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 26px;
 }
-.rental-card-grid.list-view {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.rental-card-grid.list-view .property-card {
-  grid-template-columns: 40% minmax(0, 1fr);
-}
-.rental-card-grid.list-view .property-card .image-wrap {
-  height: 100%;
-  min-height: 260px;
-}
 .property-card {
   border-radius: 6px;
   overflow: hidden;
@@ -416,19 +406,6 @@
   gap: 6px;
   align-items: center;
 }
-.rental-card-grid.list-view .property-extra {
-  flex-wrap: wrap;
-}
-.rental-card-grid.list-view .property-bottom {
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.rental-card-grid.list-view .property-body {
-  padding: 5px 20px 18px;
-}
-.rental-card-grid.list-view .property-bottom strong {
-  font-size: 20px;
-}
 .rental-page .filter-chips:empty {
   display: none;
 }
@@ -441,7 +418,7 @@
   align-items: center;
   gap: 14px;
 }
-.rental-page .load-more {
+.load-more {
   margin: 34px 0 0;
   text-align: center;
 }
@@ -827,9 +804,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px;
   }
-  .rental-card-grid.list-view {
-    grid-template-columns: 1fr;
-  }
   .rental-guide,
   .rental-faq {
     gap: 40px;
@@ -970,14 +944,6 @@
   .rental-card-grid {
     grid-template-columns: 1fr;
     gap: 24px;
-  }
-  .rental-card-grid.list-view .property-card {
-    display: block;
-  }
-  .rental-card-grid.list-view .property-card .image-wrap {
-    height: auto;
-    min-height: 0;
-    aspect-ratio: 1.5;
   }
   .rental-results-heading {
     flex-wrap: wrap;
@@ -2560,9 +2526,6 @@
 }
 .portfolio-directory .operation-content {
   padding-top: var(--page-gap);
-}
-.directory-more {
-  margin-top: 26px;
 }
 /* Triển khai: pick a project, or ask/call. */
 .hero-shortcuts {

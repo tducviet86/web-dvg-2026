@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { MediaPicker } from "./media";
 
-export type Section = { heading: string; body: string };
+export type Section = { heading: string; body: string; image?: string };
 
 /**
  * The content blocks of a page ("Tầm nhìn", "Giá trị cốt lõi"…): each has a
@@ -105,6 +106,11 @@ export function SectionsField({
               maxLength={6000}
               value={s.body}
               onChange={(e) => update(i, { body: e.target.value })}
+            />
+            <MediaPicker
+              label={`Ảnh của mục ${i + 1} (tùy chọn)`}
+              value={s.image ? { id: s.image, url: s.image } : null}
+              onChange={(img) => update(i, { image: img?.url })}
             />
           </li>
         ))}

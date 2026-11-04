@@ -71,3 +71,30 @@ test("“Xem thêm căn hộ” and filter links keep the visitor where they are
   // Not sent back to the top of the page.
   expect(await page.evaluate(() => scrollY)).toBeGreaterThan(before - 200);
 });
+
+test("the project directory shows the other units in place, with a ring in the button", async ({
+  page,
+}) => {
+  await page.goto("/du-an/van-hanh");
+  const more = page.getByRole("link", { name: /Xem tất cả \d+ căn/ });
+  await expect(more.locator("..")).toHaveClass(/load-more/);
+  // In the middle of the page.
+  const box = (await more.boundingBox())!;
+  const middle = page.viewportSize()!.width / 2;
+  expect(Math.abs(box.x + box.width / 2 - middle)).toBeLessThan(10);
+  await more.scrollIntoViewIfNeeded();
+  const before = await page.evaluate(() => scrollY);
+  await page.route(/limit=/, async (route) => {
+    await new Promise((r) => setTimeout(r, 900));
+    await route.continue();
+  });
+  const cards = page.locator("#can-ho .property-card");
+  const shown = await cards.count();
+  await more.click();
+  await expect(page.locator("[data-results-loading]")).toHaveCount(1);
+  await expect(page.locator("[data-navigating=true]")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/du-an\/van-hanh\?limit=\d+/);
+  await expect.poll(() => cards.count()).toBeGreaterThan(shown);
+  await expect(more).toHaveCount(0);
+  expect(await page.evaluate(() => scrollY)).toBeGreaterThan(before - 200);
+});

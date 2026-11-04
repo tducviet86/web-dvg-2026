@@ -67,3 +67,10 @@ export function propertyMedia(room: Property): RentalMedia[] {
   );
   return media;
 }
+
+/** The photos a card can fade through on hover, besides its own. */
+export const hoverPhotos = (property: Property, count = 4) =>
+  propertyMedia(property)
+    .flatMap((m) => (m.type === "image" ? [m.src] : []))
+    .filter((src) => src !== property.image)
+    .slice(0, count);

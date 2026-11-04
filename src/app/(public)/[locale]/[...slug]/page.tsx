@@ -32,6 +32,7 @@ import {
   getPropertyLookup,
   getServices,
   getSiteContent,
+  type SiteContent,
   toPost,
   toProperty,
   withProject,
@@ -50,6 +51,8 @@ import {
 } from "@/i18n/metadata";
 import { href, setRequestLocale, t } from "@/i18n/server";
 import type { PortfolioProject, Post, Property } from "@/types";
+import { ProjectProductPage } from "@/components/project-product-page";
+import { productPath } from "@/lib/project-products";
 
 type Props = {
   params: Promise<{ locale: string; slug: string[] }>;
@@ -117,6 +120,19 @@ const toEditorial = (
   seoTitle: page.seo.title,
   seoDescription: page.seo.description,
 });
+
+/** The project's product rows that have a detail page: name → link. */
+async function productLinksOf(project: PortfolioProject, content: SiteContent) {
+  const products = content.stories[project.id]?.products ?? [];
+  const pages = await Promise.all(
+    products.map((name) => getPage(productPath(project.slug, name))),
+  );
+  return Object.fromEntries(
+    products.flatMap((name, i) =>
+      pages[i] ? [[name, `/${pages[i].path}`]] : [],
+    ),
+  );
+}
 
 /**
  * Resolves a URL to its data once per request (shared by generateMetadata
@@ -223,6 +239,30 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       render: () => <RoomDetail room={room} content={content} sale={sale} />,
     };
   }
+  if (slug[0] === "du-an" && slug.length === 3) {
+    const [page, content] = await Promise.all([
+      getPage(path),
+      getSiteContent(),
+    ]);
+    const project = content.portfolio.find((p) => p.slug === slug[1]);
+    if (!page || !project) return null;
+    const links = await productLinksOf(project, content);
+    return {
+      title: page.seo.title || `${page.title} | ${project.name}`,
+      description: page.seo.description || page.intro,
+      image: page.coverImage?.url || project.image,
+      parents: [{ name: project.name, path: `/du-an/${project.slug}` }],
+      render: () => (
+        <ProjectProductPage
+          project={project}
+          page={page}
+          others={Object.entries(links)
+            .filter(([, href]) => href !== `/${path}`)
+            .map(([name, href]) => ({ name, href }))}
+        />
+      ),
+    };
+  }
   if (slug[0] === "du-an" && slug.length === 2) {
     // Draft Mode: signed-in editors see the project even when unpublished.
     const draft = (await isPreview()) ? await previewProject(slug[1]) : null;
@@ -258,8 +298,13 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
               : "/du-an/van-hanh",
         },
       ],
-      render: (filters) => (
+      render: async (filters) => (
         <PortfolioDetail
+          productLinks={
+            portfolio.group === "development"
+              ? await productLinksOf(portfolio, content)
+              : undefined
+          }
           project={portfolio}
           content={content}
           filters={filters}

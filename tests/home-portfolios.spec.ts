@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { productPath } from "../src/lib/project-products";
+import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { API_URL } from "../playwright.config";
 import { apiAs } from "./helpers";
@@ -208,6 +209,75 @@ test("home features a few rental units under the operated projects", async ({
   await page.goBack();
   await page.locator("#can-ho-tieu-bieu .rent-mini a").first().click();
   await expect(page).toHaveURL(/\/cho-thue\/[^/]+$/);
+});
+
+/** The photo starts right under the header (once the entrance has ended). */
+const heroTouchesHeader = (page: Page) =>
+  expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.querySelector(".rental-hero")!.getBoundingClientRect().top -
+          document.querySelector(".site-header")!.getBoundingClientRect()
+            .bottom,
+      ),
+    )
+    .toBeLessThanOrEqual(1);
+
+test("a development project page opens on a photo right under the header", async ({
+  page,
+}) => {
+  await page.goto("/du-an/capital-square");
+  await expect(page.locator(".rental-hero h1")).toHaveText("Capital Square");
+  await heroTouchesHeader(page);
+  await expect(page.locator("main")).not.toContainText("Nguồn thông tin");
+});
+
+test("a product row of a project opens its own page when it has one", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { slug: string; name: string; stage: string; products: string[] }[];
+  };
+  const project = projects.data.find(
+    (p) => p.stage === "UNDER_DEVELOPMENT" && p.products.length > 1,
+  )!;
+  const path = productPath(project.slug, project.products[0]);
+  const created = await api.send("post", "/admin/pages", {
+    path,
+    title: "Trang chi tiết sản phẩm QA",
+    intro: "Giới thiệu sản phẩm để kiểm tra trang chi tiết.",
+    sections: [
+      { heading: "Các loại căn", body: "- Căn 1 phòng ngủ\n- Căn 2 phòng ngủ" },
+    ],
+    status: "PUBLISHED",
+  });
+  expect(created.ok()).toBeTruthy();
+  const { id } = (await created.json()).data as { id: string };
+  await page.goto(`/du-an/${project.slug}`);
+  const rows = page.locator("#san-pham li");
+  // Only the row with a page is a link.
+  await expect(rows.first().locator("a")).toHaveAttribute("href", `/${path}`);
+  await expect(rows.nth(1).locator("a")).toHaveCount(0);
+  await rows.first().locator("a").click();
+  await expect(page).toHaveURL(new RegExp(`/${path}$`));
+  await expect(page.locator("h1")).toHaveText("Trang chi tiết sản phẩm QA");
+  await expect(page.locator(".project-product-sections li")).toHaveCount(2);
+  await heroTouchesHeader(page);
+  await expect(page.locator("main")).toContainText(project.name);
+  await page
+    .locator(".project-product-aside")
+    .getByRole("link", { name: `Về trang ${project.name}` })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`/du-an/${project.slug}$`));
+  // Phones: nothing sideways.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/${path}`);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await api.send("delete", `/admin/pages/${id}`);
 });
 
 test("featured rentals: much-viewed units rise above HOT without a badge", () => {

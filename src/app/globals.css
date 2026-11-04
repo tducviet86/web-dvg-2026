@@ -1419,18 +1419,6 @@ textarea {
 .list-view {
   grid-template-columns: 1fr;
 }
-.list-view .property-card {
-  display: grid;
-  grid-template-columns: 42% 1fr;
-}
-.list-view .property-card .image-wrap {
-  height: 100%;
-  aspect-ratio: auto;
-  min-height: 230px;
-}
-.list-view .property-body {
-  padding-top: 8px;
-}
 .service-list article {
   display: grid;
   grid-template-columns: 50px 1.4fr 1fr;
@@ -3212,13 +3200,6 @@ td small {
   }
   .filter-form select {
     font-size: 10px;
-  }
-  .list-view .property-card {
-    display: block;
-  }
-  .list-view .property-card .image-wrap {
-    aspect-ratio: 1.5;
-    min-height: 0;
   }
   .gallery {
     grid-template-rows: 240px 115px;

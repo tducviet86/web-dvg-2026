@@ -163,7 +163,7 @@ export type ApiPage = {
   intro: string;
   /** Short line for cards and the header menu. */
   summary?: string | null;
-  sections: { heading: string; body: string }[];
+  sections: { heading: string; body: string; image?: string }[];
   coverImage?: ApiImage | null;
   sortOrder?: number;
   /** Services: shown in the header "Lĩnh vực hoạt động" dropdown. */

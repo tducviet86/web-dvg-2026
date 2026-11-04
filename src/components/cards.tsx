@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Project, Property, Post } from "@/types";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
-import { propertyMedia } from "@/lib/property-media";
+import { hoverPhotos, propertyMedia } from "@/lib/property-media";
 import { unitBadges } from "@/lib/highlights";
 import { statusLabel, vacantNow } from "@/lib/availability";
 import {
@@ -24,6 +24,7 @@ import {
   roomsLabel,
   typeTag,
 } from "@/lib/property-groups";
+import { CardPhotos } from "./card-photos";
 import { Favorite } from "./client-basics";
 export function SectionHeading({
   eyebrow,
@@ -146,6 +147,7 @@ export function PropertyCard({
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </Link>
+        <CardPhotos photos={hoverPhotos(property)} />
         <span className="card-tags">
           <span
             className={`image-badge ${vacantNow(property) ? "available" : ""}`}
@@ -257,6 +259,7 @@ export function SaleCard({ property: p }: { property: Property }) {
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
+          <CardPhotos photos={hoverPhotos(p)} />
         </span>
         <span className="sale-card-badge">
           Đang bán{typeTag(p) ? ` · ${typeTag(p)}` : ""}

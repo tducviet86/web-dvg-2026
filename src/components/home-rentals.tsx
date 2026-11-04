@@ -1,5 +1,7 @@
 /** @jsxImportSource @/i18n/jsx */
 import Image from "next/image";
+import { CardPhotos } from "./card-photos";
+import { hoverPhotos } from "@/lib/property-media";
 import Link from "@/components/page-navigation";
 import {
   ArrowRight,
@@ -110,6 +112,7 @@ export function RentalMini({ unit }: { unit: Property }) {
             fill
             sizes="(max-width: 760px) 70vw, (max-width: 1080px) 45vw, 22vw"
           />
+          <CardPhotos photos={hoverPhotos(unit)} />
           <LuxuryBadges property={unit} />
           <span className="rent-mini-tags">
             {typeTag(unit) && (

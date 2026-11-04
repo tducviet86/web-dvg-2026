@@ -178,6 +178,9 @@ export default function Link(props: ComponentProps<typeof NextLink>) {
           destination.pathname + destination.search + destination.hash,
           props.replace,
           props.scroll ?? !samePage,
+          // The page has a list: only that list shows it is loading.
+          destination.pathname === window.location.pathname &&
+            !!document.getElementById("can-ho"),
         );
       }}
     />

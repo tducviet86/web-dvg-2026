@@ -678,6 +678,25 @@ textarea {
   border-radius: 50%;
   animation: nav-spin 0.8s linear infinite;
 }
+/* "Xem thêm": the ring turns in the button the visitor just pressed. */
+[data-results-loading] #can-ho > .load-more {
+  opacity: 1;
+}
+[data-results-loading] .load-more .button {
+  pointer-events: none;
+}
+[data-results-loading] .load-more .button svg {
+  display: none;
+}
+[data-results-loading] .load-more .button::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  border: 2px solid #c6a76b40;
+  border-top-color: var(--c-gold-500);
+  border-radius: 50%;
+  animation: nav-spin 0.8s linear infinite;
+}
 /* Scroll reveal (components/interactive.tsx › Reveal). */
 .reveal[data-reveal="pending"] {
   opacity: 0;

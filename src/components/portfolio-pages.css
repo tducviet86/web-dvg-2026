@@ -68,54 +68,6 @@
   color: white;
   text-decoration: none;
 }
-.portfolio-detail-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 50px;
-  padding: 0px 0 35px;
-}
-.portfolio-detail-heading h1 {
-  font-size: clamp(38px, 4.6vw, 66px);
-  font-weight: 400;
-  letter-spacing: -0.035em;
-  line-height: 1.15;
-  margin: 20px 0;
-}
-.portfolio-detail-heading > p {
-  max-width: 330px;
-  font-size: 14px;
-  line-height: 1.9;
-}
-.portfolio-cover {
-  position: relative;
-  height: clamp(350px, 42vw, 590px);
-  margin: 0;
-  overflow: hidden;
-  background: #d9e0d6;
-}
-.portfolio-cover > img {
-  object-fit: cover;
-}
-.portfolio-cover figcaption {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  background: linear-gradient(transparent, #08251def);
-  padding: 60px 24px 22px;
-  color: white;
-  font-size: var(--fs-xs);
-}
-.portfolio-cover figcaption a {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
 .portfolio-anchor-nav {
   display: flex;
   border-bottom: 1px solid #153d3230;
@@ -186,6 +138,28 @@
   border-bottom: 1px solid #153d3230;
   padding: 25px 0;
   font-size: 18px;
+}
+.portfolio-products li > a {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 20px;
+  transition: color var(--dur-2);
+}
+.portfolio-products li > a:hover {
+  color: var(--c-gold-700);
+}
+.portfolio-products li > a > span {
+  font-size: var(--fs-xs);
+  color: #80683d;
+}
+.portfolio-products li > a > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform var(--dur-2);
+}
+.portfolio-products li > a:hover > svg {
+  transform: translate(3px, -3px);
 }
 .portfolio-products li > span {
   font-size: var(--fs-xs);
@@ -569,9 +543,6 @@
     grid-template-columns: minmax(0, 1fr) 310px;
     gap: 35px;
   }
-  .portfolio-detail-heading > p {
-    max-width: 290px;
-  }
   .portfolio-related > div:last-child {
     grid-template-columns: 1fr 1fr;
   }
@@ -585,16 +556,6 @@
 @media (max-width: 800px) {
   .portfolio-page {
     padding-top: 105px;
-  }
-  .portfolio-detail-heading {
-    display: block;
-    padding: 20px 0 25px;
-  }
-  .portfolio-detail-heading > p {
-    max-width: none;
-  }
-  .portfolio-cover {
-    height: 400px;
   }
   .portfolio-overview,
   .portfolio-products,
@@ -745,17 +706,6 @@
   .portfolio-tabs a svg {
     display: none;
   }
-  .portfolio-cover {
-    height: 310px;
-  }
-  .portfolio-cover figcaption {
-    font-size: var(--fs-2xs);
-    padding: 45px 15px 15px;
-    gap: 10px;
-  }
-  .portfolio-detail-heading h1 {
-    font-size: 38px;
-  }
   .portfolio-direct h2 {
     font-size: 32px;
   }
@@ -806,4 +756,93 @@
   .portfolio-page section[id] {
     scroll-margin-top: 100px;
   }
+}
+
+/* A project's product page: sections beside a pinned call and the other rows. */
+.project-product-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 56px;
+  align-items: start;
+  padding-block: 56px 72px;
+}
+.project-product-photo {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #e0e4d9;
+}
+.project-product-photo img {
+  object-fit: cover;
+}
+.project-product-sections section + section {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid #153d3226;
+}
+.project-product-sections h2 {
+  margin: 8px 0 14px;
+  font-size: clamp(24px, 2.4vw, 32px);
+}
+.project-product-sections .rich-text {
+  font-size: 15px;
+  line-height: 1.8;
+}
+.project-product-aside {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e0e4d9;
+  border-radius: 16px;
+  background: #fff;
+}
+.project-product-aside .call-button {
+  width: 100%;
+  margin: 0;
+}
+.project-product-aside nav p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-green-900);
+}
+.project-product-aside nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid #ece7da;
+  font-size: 14px;
+  color: var(--c-green-900);
+}
+.project-product-aside nav a:hover {
+  color: var(--c-gold-700);
+}
+.project-product-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 13px;
+  color: #3c5148;
+}
+@media (max-width: 900px) {
+  .project-product-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding-block: 36px 48px;
+  }
+  .project-product-aside {
+    position: static;
+  }
+}
+/* The photo starts right under the header, as on the other photo pages. */
+.page-surface > main.project-product,
+.page-surface > main.portfolio-development {
+  padding-top: var(--header-h);
 }

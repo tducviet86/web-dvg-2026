@@ -73,6 +73,7 @@ export function ProjectDirectory({
     const sale = isSaleSearch(filters);
     const found = searchUnits(units, filters);
     const kind = listingKind(filters.loai, found);
+    const visible = Math.max(12, Number(filters.limit) || 12);
     return (
       <main
         id="main"
@@ -107,7 +108,7 @@ export function ProjectDirectory({
             {found.length ? (
               <div className={sale ? "sale-grid" : "grid grid-3"}>
                 {found
-                  .slice(0, 12)
+                  .slice(0, visible)
                   .map((r) =>
                     sale ? (
                       <SaleCard key={r.id} property={r} />
@@ -126,13 +127,22 @@ export function ProjectDirectory({
                 <CallContact label="Gọi tư vấn" />
               </div>
             )}
-            {found.length > 12 && (
-              <Link
-                className="button button-outline directory-more"
-                href={`/cho-thue${sale ? "?nhu-cau=mua" : ""}#can-ho`}
-              >
-                Xem tất cả {found.length} căn <ArrowRight size={18} />
-              </Link>
+            {found.length > visible && (
+              <div className="load-more">
+                {/* The rest appears below the cards already read: no jump. */}
+                <Link
+                  className="button button-outline"
+                  scroll={false}
+                  href={`/du-an/van-hanh?${new URLSearchParams(
+                    Object.entries({
+                      ...filters,
+                      limit: String(found.length),
+                    }).filter((e): e is [string, string] => !!e[1]),
+                  )}`}
+                >
+                  Xem tất cả {found.length} căn <ArrowRight size={18} />
+                </Link>
+              </div>
             )}
           </section>
           <div className="operation-content-heading directory-projects-title">
@@ -237,10 +247,13 @@ export function PortfolioDetail({
   project: p,
   content,
   filters = {},
+  productLinks = {},
 }: {
   project: PortfolioProject;
   content: SiteContent;
   filters?: Filters;
+  /** Product rows that have a detail page: name → link. */
+  productLinks?: Record<string, string>;
 }) {
   const development = p.group === "development";
   const story = content.stories[p.id];
@@ -314,41 +327,21 @@ export function PortfolioDetail({
           units={rooms}
         />
       )}
+      {development && (
+        <PhotoHero
+          className="about-hero-compact"
+          slides={[{ src: p.image, alt: p.imageAlt }]}
+          crumbs={crumbs}
+          title={p.name}
+          subtitle={
+            <>
+              <MapPin size={16} aria-hidden="true" />
+              {p.location}
+            </>
+          }
+        />
+      )}
       <div className="container">
-        {development && (
-          <>
-            <nav className="breadcrumb" aria-label="Đường dẫn">
-              {crumbs}
-            </nav>
-            <header className="portfolio-detail-heading">
-              <div>
-                <h1>{p.name}</h1>
-                <p className="location">
-                  <MapPin size={16} />
-                  {p.location}
-                </p>
-              </div>
-              <p>{story.intro}</p>
-            </header>
-            <figure className="portfolio-cover">
-              <Image
-                src={p.image}
-                alt={p.imageAlt}
-                fill
-                sizes="100vw"
-                loading="eager"
-              />
-              <figcaption>
-                {p.imageType}
-                {p.source && (
-                  <a href={p.source} target="_blank" rel="noreferrer">
-                    Nguồn thông tin & hình ảnh <ArrowUpRight size={13} />
-                  </a>
-                )}
-              </figcaption>
-            </figure>
-          </>
-        )}
         {development ? (
           <>
             <nav className="portfolio-anchor-nav" aria-label="Nội dung dự án">
@@ -367,7 +360,7 @@ export function PortfolioDetail({
                 </h2>
               </div>
               <div>
-                {story.paragraphs.map((t) => (
+                {[...new Set([story.intro, ...story.paragraphs])].map((t) => (
                   <p key={t}>{t}</p>
                 ))}
               </div>
@@ -395,9 +388,18 @@ export function PortfolioDetail({
               <ul>
                 {story.products.map((t, i) => (
                   <li key={t}>
-                    <span>0{i + 1}</span>
-                    {t}
-                    <ArrowUpRight size={20} />
+                    {productLinks[t] ? (
+                      <Link href={productLinks[t]}>
+                        <span>0{i + 1}</span>
+                        {t}
+                        <ArrowUpRight size={20} aria-hidden="true" />
+                      </Link>
+                    ) : (
+                      <>
+                        <span>0{i + 1}</span>
+                        {t}
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>
