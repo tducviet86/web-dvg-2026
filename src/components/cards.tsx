@@ -269,7 +269,8 @@ export function SaleCard({
           <CardPhotos photos={hoverPhotos(p)} />
         </span>
         <span className="sale-card-badge">
-          Đang bán{typeTag(p) ? ` · ${typeTag(p)}` : ""}
+          {p.floorNote ? "Căn mẫu" : "Đang bán"}
+          {typeTag(p) ? ` · ${typeTag(p)}` : ""}
         </span>
         <span className="sale-card-open" aria-hidden="true">
           <ArrowUpRight size={20} />
@@ -279,7 +280,7 @@ export function SaleCard({
           <h3 className="sale-card-name">{p.name}</h3>
           <span className="sale-card-meta">
             <span className="sale-card-price">
-              {p.saleVnd ? salePrice(p.saleVnd) : "Liên hệ"}
+              {p.saleVnd ? salePrice(p.saleVnd) : "Xem căn mẫu"}
             </span>
             <span className="sale-card-specs">
               {[

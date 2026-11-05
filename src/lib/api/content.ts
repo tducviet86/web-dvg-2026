@@ -160,6 +160,7 @@ export function toProperty(p: ApiProperty): Property {
     viewNote: p.viewNote ?? undefined,
     quota: p.quota ?? undefined,
     priceExcludesFees: !!p.priceExcludesFees,
+    floorNote: p.floorNote ?? undefined,
     deposit: depositText(p.depositVnd, p.rentPriceVnd),
     managementFee: p.managementFeeVnd
       ? `${vndText(p.managementFeeVnd)} / tháng`

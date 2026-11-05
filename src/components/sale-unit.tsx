@@ -4,6 +4,7 @@ import { ArrowUpRight, MapPin, MessageCircle } from "lucide-react";
 import Link from "@/components/page-navigation";
 import type { ApiProject } from "@/lib/api/types";
 import { zaloHref } from "@/lib/company-contact";
+import { planSpots } from "@/lib/floor-plan-spots";
 import { roomsLabel, hasRooms } from "@/lib/property-groups";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { CallContact, WhatsAppContact } from "./call-contact";
@@ -14,6 +15,55 @@ import { ProjectDesk, ProjectLeadForm } from "./project-sale-desk";
 import { ProjectMap } from "./project-map";
 import { ShareButton } from "./rental-inquiry";
 import type { ProjectLocation, Property } from "@/types";
+
+/** The plan of a unit's floors, and the unit's place on it. */
+export function unitLayout(r: Property, api?: ApiProject) {
+  const number = r.unitCode?.split("-")[1];
+  const onPlan = (api?.floorPlans ?? []).filter(
+    (plan) =>
+      r.tower &&
+      plan.tower === r.tower &&
+      planSpots(plan.image)?.spots.some((spot) => spot.unit === number),
+  );
+  const plan =
+    onPlan.find((p) => r.floorNote && p.name.endsWith(r.floorNote)) ??
+    onPlan[0];
+  const map = plan && planSpots(plan.image);
+  const spot = map?.spots.find((x) => x.unit === number);
+  return plan && map && spot ? { plan, ratio: map.ratio, spot } : null;
+}
+
+/** The unit cut out of the floor plan, with its name label. */
+export function UnitLayoutCrop({
+  layout: { plan, ratio, spot },
+  alt,
+}: {
+  layout: NonNullable<ReturnType<typeof unitLayout>>;
+  alt: string;
+}) {
+  return (
+    <div
+      className="plan-zoom-view sale-unit-layout"
+      style={
+        {
+          aspectRatio: spot.cropRatio,
+          "--ratio": spot.cropRatio,
+        } as React.CSSProperties
+      }
+    >
+      <div
+        style={{
+          width: `${(100 / spot.crop.width) * 100}%`,
+          aspectRatio: ratio,
+          left: `${(-spot.crop.left / spot.crop.width) * 100}%`,
+          top: `${(-spot.crop.top / spot.crop.height) * 100}%`,
+        }}
+      >
+        <Image src={plan.image} alt={alt} fill sizes="1800px" />
+      </div>
+    </div>
+  );
+}
 
 /**
  * A unit for sale: what a buyer reads first (price, tower, floor, area), the
@@ -46,16 +96,7 @@ export function SaleUnitBody({
   amenities: React.ReactNode;
 }) {
   const steps = api?.paymentSchedule ?? [];
-  const towerPlans = (api?.floorPlans ?? []).filter(
-    (plan) => r.tower && plan.tower === r.tower,
-  );
-  // "Tòa C6 · Tầng 11-12, 14-27": the plan of this unit's floor, if named.
-  const coversFloor = (name: string) =>
-    [...name.matchAll(/(\d+)\s*-\s*(\d+)/g)].some(
-      ([, low, high]) => r.floor >= Number(low) && r.floor <= Number(high),
-    );
-  const floorPlans = towerPlans.filter((plan) => coversFloor(plan.name));
-  const plans = floorPlans.length ? floorPlans : towerPlans;
+  const layout = unitLayout(r, api);
   const zalo = zaloHref();
   const perSquareMetre = r.saleVnd
     ? (r.saleVnd / r.area / 1e6).toLocaleString("vi-VN", {
@@ -74,10 +115,8 @@ export function SaleUnitBody({
     ...(r.direction ? [["Hướng", r.direction] as [string, string]] : []),
     ...(r.viewNote ? [["View", r.viewNote] as [string, string]] : []),
     ...(r.quota ? [["Quỹ căn", r.quota] as [string, string]] : []),
-    [
-      "Nội thất bàn giao",
-      r.furniture === "Bàn giao thô" ? "Thô" : r.furniture,
-    ],
+    ...(r.floorNote ? [["Tầng áp dụng", r.floorNote] as [string, string]] : []),
+    ["Nội thất bàn giao", r.furniture === "Bàn giao thô" ? "Thô" : r.furniture],
     ...(api?.handoverNote
       ? [["Bàn giao nhà", api.handoverNote] as [string, string]]
       : []),
@@ -113,6 +152,21 @@ export function SaleUnitBody({
               </div>
             ))}
           </dl>
+          {layout && (
+            <section id="mat-bang">
+              <h2>Mặt bằng căn</h2>
+              <UnitLayoutCrop layout={layout} alt={`Mặt bằng ${r.name}`} />
+              <a
+                href={layout.plan.image}
+                target="_blank"
+                rel="noreferrer"
+                className="sale-unit-link"
+              >
+                {`Xem toàn bộ mặt bằng ${layout.plan.name}`}
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </a>
+            </section>
+          )}
           {r.saleVnd ? (
             <section id="gia-ban">
               <h2>Giá và thanh toán</h2>
@@ -149,28 +203,6 @@ export function SaleUnitBody({
               </Link>
             </section>
           ) : null}
-          {plans.length > 0 && (
-            <section id="mat-bang">
-              <h2>{`Mặt bằng tòa ${r.tower}`}</h2>
-              <ul className="sale-unit-plans">
-                {plans.map((plan) => (
-                  <li key={plan.image}>
-                    <a href={plan.image} target="_blank" rel="noreferrer">
-                      <span>
-                        <Image
-                          src={plan.image}
-                          alt={plan.name}
-                          fill
-                          sizes="(max-width: 900px) 100vw, 800px"
-                        />
-                      </span>
-                      {plan.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
           <section id="mo-ta">
             <h2>Về căn hộ này</h2>
             <RichText text={r.description} className="sale-unit-text" />
@@ -181,16 +213,25 @@ export function SaleUnitBody({
             <p className="sale-unit-text">{projectDescription}</p>
             <ProjectMap place={place} />
             <Link href={projectPage} className="sale-unit-link">
-              Xem toàn bộ dự án, bảng giá và mặt bằng
+              Xem toàn bộ dự án và mặt bằng
               <ArrowUpRight size={16} aria-hidden="true" />
             </Link>
           </section>
         </article>
         <aside className="sale-unit-panel">
-          <p className="sale-unit-price-label">Giá bán</p>
-          <p className="sale-unit-price">
-            {r.saleVnd ? salePrice(r.saleVnd) : "Liên hệ"}
-          </p>
+          {r.saleVnd ? (
+            <>
+              <p className="sale-unit-price-label">Giá bán</p>
+              <p className="sale-unit-price">{salePrice(r.saleVnd)}</p>
+            </>
+          ) : (
+            <>
+              <p className="sale-unit-price-label">Căn mẫu</p>
+              <p className="sale-unit-ask">
+                Gọi để nhận tư vấn và giá mới nhất
+              </p>
+            </>
+          )}
           {r.saleVnd ? (
             <p className="sale-unit-price-exact">
               {`${vndFull(r.saleVnd)} đồng`}

@@ -122,6 +122,7 @@ export type ApiProperty = {
   viewNote?: string | null;
   quota?: string | null;
   priceExcludesFees?: boolean;
+  floorNote?: string | null;
   furnishing: Furnishing;
   rentPriceVnd: string | null;
   salePriceVnd: string | null;

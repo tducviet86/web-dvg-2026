@@ -15,14 +15,10 @@ import { track } from "@/lib/analytics";
 import type { PaymentStep } from "@/lib/api/types";
 import { postPublic } from "@/lib/api/client";
 import { companyHotline, telephoneHref, zaloHref } from "@/lib/company-contact";
-import {
-  planCoversFloor,
-  planSpots,
-  unitOnFloor,
-} from "@/lib/floor-plan-spots";
+import { planSpots } from "@/lib/floor-plan-spots";
 import { loanFigures, paymentAmounts } from "@/lib/payment";
 import type { RentalMedia } from "@/lib/property-media";
-import { salePrice, vndFull } from "@/lib/utils";
+import { vndFull } from "@/lib/utils";
 import { RentalGallery } from "./rental-gallery";
 
 export type DeskUnit = {
@@ -39,6 +35,9 @@ export type DeskUnit = {
   view: string;
   quota: string;
   excludesFees: boolean;
+  floorNote: string;
+  /** The model apartment's 3D picture, when there is one. */
+  model3d: string;
   price: number | null;
   state: "available" | "reserved" | "sold";
 };
@@ -64,15 +63,6 @@ export function ProjectDesk({
   return <PickContext.Provider value={value}>{children}</PickContext.Provider>;
 }
 
-function useStateLabel() {
-  const t = useT();
-  return (state: DeskUnit["state"]) =>
-    state === "available"
-      ? t("Đang bán")
-      : state === "reserved"
-        ? t("Đang giữ chỗ")
-        : t("Đã bán");
-}
 const call = telephoneHref(companyHotline) ?? "#dang-ky";
 
 export function GalleryTabs({
@@ -104,26 +94,41 @@ export function GalleryTabs({
   );
 }
 
+/** "C4-06-T5" → "06": the unit's place on the floor plan. */
+const planNumber = (code: string) => code.split("-")[1] ?? "";
+/** "C4-06-T5" → "C4-06": the name visitors read. */
+const shownCode = (code: string) => code.replace(/-T5$/, "");
+
 /**
- * The floor plan with its units clickable: units on sale are marked; choosing
- * one lists its floors, each opening that unit.
+ * The floor plan with its units clickable: choosing one enlarges its layout
+ * on the right and offers its model-unit page.
  */
 function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
   const t = useT();
+  const { pick } = useContext(PickContext);
   const [chosen, setChosen] = useState<string | null>(null);
   // False while the enlarged unit slides away; `chosen` goes once it has.
   const [open, setOpen] = useState(false);
   const closing = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [show3d, setShow3d] = useState(false);
   const [seen, setSeen] = useState(plan.image);
   if (seen !== plan.image) {
     setSeen(plan.image);
     setChosen(null);
     setOpen(false);
   }
-  const choose = (unit: string) => {
+  const map = planSpots(plan.image);
+  const floors = plan.name.split("· ")[1] ?? "";
+  const unitAt = (spot: string) => {
+    const here = units.filter((u) => planNumber(u.code) === spot);
+    return here.find((u) => u.floorNote === floors) ?? here[0];
+  };
+  const choose = (spot: string) => {
     clearTimeout(closing.current);
-    setChosen(unit);
+    setChosen(spot);
     setOpen(true);
+    setShow3d(false);
+    pick(unitAt(spot) ?? null);
   };
   const close = () => {
     setOpen(false);
@@ -132,14 +137,6 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
       matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450,
     );
   };
-  const map = planSpots(plan.image);
-  const onSale = units.filter(
-    (u) => u.state !== "sold" && planCoversFloor(plan.name, u.floor),
-  );
-  const ofUnit = (unit: string) =>
-    onSale
-      .filter((u) => unitOnFloor(u.code, u.floor) === unit)
-      .sort((a, b) => a.floor - b.floor);
   const image = (
     <Image
       src={plan.image}
@@ -150,18 +147,20 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
   );
   if (!map)
     return (
-      <a
-        href={plan.image}
-        target="_blank"
-        rel="noreferrer"
-        className="plan-map"
-        aria-label={t("Mở ảnh mặt bằng")}
-      >
-        {image}
-      </a>
+      <div className="plan-stage">
+        <a
+          href={plan.image}
+          target="_blank"
+          rel="noreferrer"
+          className="plan-map"
+          aria-label={t("Mở ảnh mặt bằng")}
+        >
+          {image}
+        </a>
+      </div>
     );
-  const floors = chosen ? ofUnit(chosen) : [];
   const zoom = map.spots.find((spot) => spot.unit === chosen);
+  const unit = chosen ? unitAt(chosen) : undefined;
   return (
     <>
       <div
@@ -172,24 +171,17 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
           <div className="plan-map" style={{ aspectRatio: map.ratio }}>
             {image}
             {map.spots.map((spot) => {
-              const count = ofUnit(spot.unit).length;
+              const here = unitAt(spot.unit);
               return (
                 <button
                   key={spot.unit}
                   type="button"
                   className="plan-spot"
-                  disabled={!count}
+                  disabled={!here}
                   aria-pressed={open && chosen === spot.unit}
-                  aria-label={
-                    count
-                      ? t("Căn {unit}, còn {n} căn", {
-                          unit: spot.unit,
-                          n: count,
-                        })
-                      : t("Căn {unit}, chưa có căn đang bán", {
-                          unit: spot.unit,
-                        })
-                  }
+                  aria-label={t("Xem căn {unit}", {
+                    unit: here ? shownCode(here.code) : spot.unit,
+                  })}
                   style={{
                     left: `${spot.left}%`,
                     top: `${spot.top}%`,
@@ -197,9 +189,7 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
                     height: `${spot.height}%`,
                   }}
                   onClick={() => choose(spot.unit)}
-                >
-                  {count > 0 && <span>{count}</span>}
-                </button>
+                />
               );
             })}
           </div>
@@ -207,7 +197,7 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
         {zoom && (
           <div
             key={zoom.unit}
-            className={open ? "plan-zoom" : "plan-zoom closing"}
+            className={`${open ? "plan-zoom" : "plan-zoom closing"}${unit?.model3d ? " with-model" : ""}`}
           >
             <button
               type="button"
@@ -217,52 +207,81 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
             >
               <X size={16} aria-hidden="true" />
             </button>
-            <div
-              className="plan-zoom-view"
-              style={
-                {
-                  aspectRatio: zoom.cropRatio,
-                  "--ratio": zoom.cropRatio,
-                } as React.CSSProperties
-              }
-            >
-              <div
-                style={{
-                  width: `${(100 / zoom.crop.width) * 100}%`,
-                  aspectRatio: map.ratio,
-                  left: `${(-zoom.crop.left / zoom.crop.width) * 100}%`,
-                  top: `${(-zoom.crop.top / zoom.crop.height) * 100}%`,
-                }}
-              >
-                <Image
-                  src={plan.image}
-                  alt={t("Mặt bằng căn {unit}", { unit: zoom.unit })}
-                  fill
-                  sizes="1800px"
-                />
+            {unit?.model3d && (
+              <div className="plan-zoom-switch" role="group">
+                <button
+                  type="button"
+                  aria-pressed={!show3d}
+                  onClick={() => setShow3d(false)}
+                >
+                  {t("Mặt bằng")}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={show3d}
+                  onClick={() => setShow3d(true)}
+                >
+                  3D
+                </button>
               </div>
-            </div>
+            )}
+            {show3d && unit?.model3d ? (
+              <Image
+                className="plan-zoom-model"
+                src={unit.model3d}
+                alt={t("Căn mẫu 3D {unit}", { unit: shownCode(unit.code) })}
+                width={1600}
+                height={1192}
+                sizes="(max-width: 900px) 100vw, 500px"
+              />
+            ) : (
+              <div
+                className="plan-zoom-view"
+                style={
+                  {
+                    aspectRatio: zoom.cropRatio,
+                    "--ratio": zoom.cropRatio,
+                  } as React.CSSProperties
+                }
+              >
+                <div
+                  style={{
+                    width: `${(100 / zoom.crop.width) * 100}%`,
+                    aspectRatio: map.ratio,
+                    left: `${(-zoom.crop.left / zoom.crop.width) * 100}%`,
+                    top: `${(-zoom.crop.top / zoom.crop.height) * 100}%`,
+                  }}
+                >
+                  <Image
+                    src={plan.image}
+                    alt={t("Mặt bằng căn {unit}", { unit: zoom.unit })}
+                    fill
+                    sizes="1800px"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
       <div className={open ? "plan-floors-fold open" : "plan-floors-fold"}>
         <div>
-          {chosen && floors.length > 0 && (
+          {unit && (
             <div className="plan-floors" aria-live="polite">
               <div>
-                <small>{t("Căn {unit}", { unit: chosen })}</small>
+                <small>{shownCode(unit.code)}</small>
                 <h4>
-                  {floors[0].rooms} · {floors[0].area.toLocaleString("vi-VN")}{" "}
-                  m²
+                  {unit.rooms} · {unit.area.toLocaleString("vi-VN")} m²
                 </h4>
               </div>
-              <nav aria-label={t("Chọn tầng")}>
-                {floors.map((u) => (
-                  <Link key={u.id} href={`/mua-ban/${u.slug}`}>
-                    <b>{t("Tầng {n}", { n: u.floor })}</b>
-                    <small>{u.price ? salePrice(u.price) : t("Liên hệ")}</small>
-                  </Link>
-                ))}
+              <nav aria-label={unit.name}>
+                <Link href={`/mua-ban/${unit.slug}`} className="plan-open">
+                  {t("Xem chi tiết căn mẫu")}
+                </Link>
+                <a href={call}>
+                  <Phone size={15} aria-hidden="true" />
+                  {t("Gọi tư vấn")}
+                </a>
               </nav>
             </div>
           )}
@@ -272,19 +291,9 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
   );
 }
 
-const PRICES: [string, number, number][] = [
-  ["Dưới 6 tỷ", 0, 6e9],
-  ["6–8 tỷ", 6e9, 8e9],
-  ["8–10 tỷ", 8e9, 10e9],
-  ["Trên 10 tỷ", 10e9, Infinity],
-];
-const PAGE = 8;
-const NO_FILTER = { floor: "", rooms: "", price: "", quota: "" };
-
 /**
- * One list per tower: pick a tower, then narrow by floor, rooms or price. The
- * list opens with a few units and the floor plan stays folded, so a project
- * with hundreds of units still reads easily.
+ * One tower at a time: its floor plans with clickable units and its model
+ * units. Prices are not shown here: visitors call for them.
  */
 export function UnitBrowser({
   towers,
@@ -296,8 +305,6 @@ export function UnitBrowser({
   plans: DeskPlan[];
 }) {
   const t = useT();
-  const stateLabel = useStateLabel();
-  const { pick } = useContext(PickContext);
   // Units of a tower not listed in Admin still get a tab.
   const tabs = [
     ...towers,
@@ -309,104 +316,44 @@ export function UnitBrowser({
   const [tower, setTower] = useState(
     tabs.find((x) => count(x.name) > 0)?.name ?? tabs[0]?.name ?? "",
   );
-  const [filter, setFilter] = useState(NO_FILTER);
-  const [limit, setLimit] = useState(PAGE);
   const [plan, setPlan] = useState(0);
   const current = tabs.find((x) => x.name === tower);
-  const inTower = units.filter((u) => u.tower === tower);
+  const inTower = units
+    .filter((u) => u.tower === tower)
+    .sort((a, b) => a.code.localeCompare(b.code, "vi", { numeric: true }));
   const towerPlans = plans.filter((p) => p.tower === tower);
   const activePlan = towerPlans[plan] ?? towerPlans[0];
-  const priceRange = PRICES.find(([label]) => label === filter.price);
-  const found = inTower
-    .filter(
-      (u) =>
-        (!filter.floor || String(u.floor) === filter.floor) &&
-        (!filter.rooms || u.rooms === filter.rooms) &&
-        (!filter.quota || u.quota === filter.quota) &&
-        (!priceRange ||
-          (u.price !== null &&
-            u.price >= priceRange[1] &&
-            u.price < priceRange[2])),
-    )
-    .sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
-  const lowest = inTower.flatMap((u) => u.price ?? []);
-  const hasDirection = inTower.some((u) => u.direction);
-  const hasView = inTower.some((u) => u.view);
-  const filtered = Object.values(filter).some(Boolean);
-  const select = (
-    key: keyof typeof NO_FILTER,
-    label: string,
-    options: [value: string, text: string][],
-  ) => (
-    <label>
-      {label}
-      <select
-        value={filter[key]}
-        onChange={(e) => {
-          setFilter({ ...filter, [key]: e.target.value });
-          setLimit(PAGE);
-        }}
-      >
-        <option value="">{t("Tất cả")}</option>
-        {options.map(([value, text]) => (
-          <option key={value} value={value}>
-            {text}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-  const distinct = (values: string[]) =>
-    [...new Set(values.filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b))
-      .map((v): [string, string] => [v, v]);
   return (
     <div className="unit-browser">
       {tabs.length > 0 && (
-        <div
-          className="desk-tabs tower-tabs"
-          role="group"
-          aria-label={t("Chọn tòa")}
-        >
-          {tabs.map((x) => (
-            <button
-              key={x.name}
-              type="button"
-              aria-pressed={x.name === tower}
-              onClick={() => {
-                setTower(x.name);
-                setFilter(NO_FILTER);
-                setLimit(PAGE);
-                setPlan(0);
-              }}
-            >
-              <b>{x.name}</b>
-              <small>
-                {count(x.name)
-                  ? t("{n} căn", { n: count(x.name) })
-                  : x.status || t("Đang cập nhật")}
-              </small>
-            </button>
-          ))}
-        </div>
-      )}
-      {tabs.length > 0 && (
-        <div className="tower-head">
-          <div>
+        <>
+          <div
+            className="desk-tabs tower-tabs"
+            role="group"
+            aria-label={t("Chọn tòa")}
+          >
+            {tabs.map((x) => (
+              <button
+                key={x.name}
+                type="button"
+                aria-pressed={x.name === tower}
+                onClick={() => {
+                  setTower(x.name);
+                  setPlan(0);
+                }}
+              >
+                <b>{x.name}</b>
+                <small>{x.status || t("Đang cập nhật")}</small>
+              </button>
+            ))}
+          </div>
+          <div className="tower-head">
             <h3>
               {t("Tòa {tower}", { tower })}
               {current?.note && <span> · {current.note}</span>}
             </h3>
-            {lowest.length > 0 && (
-              <p>
-                {t("{n} căn · Giá từ {price}", {
-                  n: inTower.length,
-                  price: salePrice(Math.min(...lowest)),
-                })}
-              </p>
-            )}
           </div>
-        </div>
+        </>
       )}
       {activePlan && (
         <details className="tower-plan" open>
@@ -418,7 +365,7 @@ export function UnitBrowser({
             <ChevronDown size={20} aria-hidden="true" />
           </summary>
           <div className="tower-plan-bar">
-            <p>{t("Bấm vào căn có số để xem layout và chọn tầng")}</p>
+            <p>{t("Bấm vào một căn trên sơ đồ để xem layout")}</p>
             {towerPlans.length > 1 && (
               <div className="unit-plan-switch">
                 {towerPlans.map((p, i) => (
@@ -437,142 +384,14 @@ export function UnitBrowser({
           <FloorPlanMap plan={activePlan} units={inTower} />
         </details>
       )}
-      {inTower.length || !tabs.length ? (
-        <>
-          <div className="price-filters">
-            {select(
-              "floor",
-              t("Tầng"),
-              [...new Set(inTower.map((u) => u.floor))]
-                .filter(Boolean)
-                .sort((a, b) => a - b)
-                .map((f): [string, string] => [String(f), String(f)]),
-            )}
-            {select(
-              "rooms",
-              t("Phòng ngủ"),
-              distinct(inTower.map((u) => u.rooms)),
-            )}
-            {select(
-              "price",
-              t("Mức giá"),
-              PRICES.map(([label]) => [label, t(label)]),
-            )}
-            {inTower.some((u) => u.quota) &&
-              select(
-                "quota",
-                t("Quỹ căn"),
-                distinct(inTower.map((u) => u.quota)),
-              )}
-          </div>
-          <div className="price-count" role="status">
-            {t("{n} căn phù hợp", { n: found.length })}
-            {filtered && (
-              <button type="button" onClick={() => setFilter(NO_FILTER)}>
-                {t("Xóa bộ lọc")}
-              </button>
-            )}
-          </div>
-          {found.length > 0 && (
-            <div className="price-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">{t("Mã căn")}</th>
-                    <th scope="col">{t("Tầng")}</th>
-                    <th scope="col">{t("Phòng ngủ")}</th>
-                    <th scope="col">{t("Diện tích")}</th>
-                    {hasDirection && <th scope="col">{t("Hướng")}</th>}
-                    {hasView && <th scope="col">View</th>}
-                    <th scope="col">{t("Giá bán (đồng)")}</th>
-                    <th scope="col">
-                      <span className="sr-only">{t("Thao tác")}</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {found.slice(0, limit).map((u) => (
-                    <tr key={u.id}>
-                      <th scope="row">
-                        <Link href={`/mua-ban/${u.slug}`}>{u.code}</Link>
-                        {u.quota && (
-                          <small className="unit-quota">{u.quota}</small>
-                        )}
-                        {u.state !== "available" && (
-                          <span className={`state-pill ${u.state}`}>
-                            {stateLabel(u.state)}
-                          </span>
-                        )}
-                      </th>
-                      <td data-label={t("Tầng")}>{u.floor || "–"}</td>
-                      <td data-label={t("Phòng ngủ")}>{u.rooms}</td>
-                      <td data-label={t("Diện tích")}>
-                        {u.area.toLocaleString("vi-VN")} m²
-                      </td>
-                      {hasDirection && (
-                        <td data-label={t("Hướng")}>{u.direction || "–"}</td>
-                      )}
-                      {hasView && <td data-label="View">{u.view || "–"}</td>}
-                      <td data-label={t("Giá bán")} className="price-cell">
-                        {u.price ? (
-                          <>
-                            {vndFull(u.price)}
-                            <small>
-                              {t("{n} triệu/m²", {
-                                n: (u.price / u.area / 1e6).toLocaleString(
-                                  "vi-VN",
-                                  { maximumFractionDigits: 1 },
-                                ),
-                              })}
-                            </small>
-                            {u.excludesFees && (
-                              <small className="price-excludes">
-                                {t("Chưa gồm VAT, KPBT")}
-                              </small>
-                            )}
-                          </>
-                        ) : (
-                          t("Liên hệ")
-                        )}
-                      </td>
-                      <td className="price-action">
-                        <a
-                          href={call}
-                          className="button button-outline"
-                          onClick={() => pick(u)}
-                        >
-                          <Phone size={15} aria-hidden="true" />
-                          {t("Gọi tư vấn")}
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {found.length > limit && (
-            <div className="load-more">
-              <button
-                type="button"
-                className="button button-outline"
-                onClick={() => setLimit(limit + PAGE)}
-              >
-                {t("Xem thêm {n} căn", {
-                  n: Math.min(PAGE, found.length - limit),
-                })}
-              </button>
-            </div>
-          )}
-        </>
-      ) : (
+      {!activePlan && tabs.length > 0 && (
         <div className="unit-picker-empty">
           <p>
-            {t("Danh sách căn của tòa {tower} đang được cập nhật.", { tower })}
+            {t("Thông tin căn của tòa {tower} đang được cập nhật.", { tower })}
           </p>
           <a href={call} className="button button-primary">
             <Phone size={16} aria-hidden="true" />
-            {t("Gọi nhận danh sách căn")}
+            {t("Gọi tư vấn tòa này")}
           </a>
         </div>
       )}
@@ -851,7 +670,7 @@ export function ProjectLeadForm({
                     .filter((u) => u.tower === tower)
                     .map((u) => (
                       <option key={u.id} value={u.id}>
-                        {u.code}
+                        {shownCode(u.code)}
                       </option>
                     ))}
                 </optgroup>

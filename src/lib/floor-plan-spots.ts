@@ -136,16 +136,3 @@ export function planSpots(image: string) {
   );
   return { spots, ratio: plan.width / plan.height };
 }
-
-/** "Tòa C6 · Tầng 11-12, 14-27": does this plan cover the floor? */
-export const planCoversFloor = (planName: string, floor: number) =>
-  [...planName.matchAll(/(\d+)\s*-\s*(\d+)/g)].some(
-    ([, low, high]) => floor >= Number(low) && floor <= Number(high),
-  );
-
-/** "C6-2606" on floor 26 → "06"; "S4-0703A" on floor 7 → "03A". */
-export const unitOnFloor = (code: string, floor: number) =>
-  (code.split("-")[1] ?? "").replace(
-    new RegExp(`^${String(floor).padStart(2, "0")}`),
-    "",
-  );

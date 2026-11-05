@@ -1,14 +1,25 @@
 /** @jsxImportSource @/i18n/jsx */
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, MapPin, Phone } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Building2,
+  CalendarCheck,
+  House,
+  Layers,
+  MapPin,
+  Phone,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "@/components/page-navigation";
 import { t } from "@/i18n/server";
 import type { ApiProject, PaymentStep } from "@/lib/api/types";
 import { vacantNow } from "@/lib/availability";
 import { paymentAmounts } from "@/lib/payment";
 import { videoSource, type RentalMedia } from "@/lib/property-media";
+import { modelUnit } from "@/lib/model-units";
 import { roomsLabel, hasRooms } from "@/lib/property-groups";
-import { salePrice, unitRef, vndFull } from "@/lib/utils";
+import { unitRef, vndFull } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { CallContact } from "./call-contact";
 import { ProjectMap } from "./project-map";
@@ -21,7 +32,13 @@ import {
   type DeskUnit,
 } from "./project-sale-desk";
 import { PhotoHero } from "./search-hero";
-import type { PortfolioProject, ProjectLocation, ProjectStory, Property } from "@/types";
+import { TourShowcase } from "./tour-360";
+import type {
+  PortfolioProject,
+  ProjectLocation,
+  ProjectStory,
+  Property,
+} from "@/types";
 
 const percentText = (n: number) => `${n.toLocaleString("vi-VN")}%`;
 
@@ -86,6 +103,8 @@ export const toDeskUnit = (r: Property): DeskUnit => ({
   view: r.viewNote ? t(r.viewNote) : "",
   quota: r.quota ? t(r.quota) : "",
   excludesFees: !!r.priceExcludesFees,
+  floorNote: r.floorNote ?? "",
+  model3d: modelUnit(r)?.layout ?? "",
   price: r.saleVnd ?? null,
   state: vacantNow(r)
     ? "available"
@@ -136,8 +155,6 @@ export function ProjectSalePage({
   const connections = api?.connections ?? [];
   const progress = api?.progressPhotos ?? [];
   const amenities = api?.amenities ?? [];
-  const prices = units.flatMap((u) => u.price ?? []);
-  const lowest = prices.length ? Math.min(...prices) : 0;
   const open = towers.filter((x) => x.status === t("Đang mở bán"));
   const media = (group: string): RentalMedia[] =>
     (api?.photos ?? [])
@@ -157,13 +174,11 @@ export function ProjectSalePage({
     { label: t("Tiện ích"), media: media("Tiện ích") },
     {
       label: t("Mặt bằng"),
-      media: plans.map(
-        (plan): RentalMedia => ({
-          type: "image",
-          src: plan.image,
-          alt: plan.name,
-        }),
-      ),
+      media: plans.map((plan): RentalMedia => ({
+        type: "image",
+        src: plan.image,
+        alt: plan.name,
+      })),
     },
     {
       label: "Video",
@@ -179,25 +194,78 @@ export function ProjectSalePage({
     },
   ].filter((group) => group.media.length);
   const handover = api?.handoverDate?.split("-");
-  const facts: [string, string][] = [
-    ...(api?.developer ? [["Chủ đầu tư", api.developer] as [string, string]] : []),
-    ["Vị trí", api?.address || p.location],
-    ...(api?.scale ? [["Quy mô", api.scale] as [string, string]] : []),
-    ...(api?.totalUnits
-      ? [["Số căn", `Khoảng ${api.totalUnits.toLocaleString("vi-VN")} căn`] as [string, string]]
+  const facts: {
+    icon: typeof MapPin;
+    label: string;
+    values: string[];
+    wide?: boolean;
+  }[] = [
+    ...(api?.developer
+      ? [
+          {
+            icon: Building2,
+            label: "Chủ đầu tư",
+            values: api.developer.split(/\.\s+/),
+            wide: true,
+          },
+        ]
       : []),
-    ...(api?.legalStatus ? [["Pháp lý", api.legalStatus] as [string, string]] : []),
-    ...(api?.handoverNote
-      ? [["Bàn giao", `Dự kiến ${api.handoverNote}`] as [string, string]]
-      : handover
-        ? [["Bàn giao", `Dự kiến tháng ${Number(handover[1])}/${handover[0]}`] as [string, string]]
-        : []),
+    { icon: MapPin, label: "Vị trí", values: [api?.address || p.location] },
+    ...(api?.scale
+      ? [
+          {
+            icon: Layers,
+            label: "Quy mô",
+            values: api.scale.split(/,\s+/),
+            wide: true,
+          },
+        ]
+      : []),
+    ...(api?.totalUnits
+      ? [
+          {
+            icon: House,
+            label: "Số căn",
+            values: [`Khoảng ${api.totalUnits.toLocaleString("vi-VN")} căn`],
+          },
+        ]
+      : []),
+    ...(api?.legalStatus
+      ? [
+          {
+            icon: ShieldCheck,
+            label: "Pháp lý",
+            values: [api.legalStatus.split(/\.\s+/)[0].replace(/\.$/, "")],
+          },
+        ]
+      : []),
+    ...(api?.handoverNote || handover
+      ? [
+          {
+            icon: CalendarCheck,
+            label: "Bàn giao",
+            values: [
+              api?.handoverNote
+                ? `Dự kiến ${api.handoverNote}`
+                : `Dự kiến tháng ${Number(handover![1])}/${handover![0]}`,
+            ],
+          },
+        ]
+      : []),
   ];
+  // Short facts pair up; an odd one out takes the whole row, leaving no gap.
+  const short = facts.filter((f) => !f.wide);
+  if (short.length % 2) short[short.length - 1].wide = true;
   const nav: [string, string][] = [
-    ["tong-quan", "Tổng quan"],
     ...(groups.length ? [["hinh-anh", "Hình ảnh"] as [string, string]] : []),
-    ["bang-gia", "Bảng giá & chọn căn"],
-    ...(policies.length ? [["chinh-sach", "Chính sách"] as [string, string]] : []),
+    ["tong-quan", "Tổng quan"],
+    ...(p.slug === "capital-square"
+      ? [["tham-quan-360", "Tham quan 360°"] as [string, string]]
+      : []),
+    ["can-mau", "Căn mẫu & mặt bằng"],
+    ...(policies.length
+      ? [["chinh-sach", "Chính sách"] as [string, string]]
+      : []),
     ["thanh-toan", "Thanh toán"],
     ["vi-tri", "Vị trí & tiện ích"],
     ["dang-ky", "Đăng ký tư vấn"],
@@ -217,8 +285,8 @@ export function ProjectSalePage({
         }
       >
         <div className="project-hero-actions">
-          <a href="#bang-gia" className="button project-hero-cta">
-            Xem bảng giá <ArrowRight size={18} aria-hidden="true" />
+          <a href="#can-mau" className="button project-hero-cta">
+            Xem căn mẫu <ArrowRight size={18} aria-hidden="true" />
           </a>
           {call && (
             <a href={call} className="button project-hero-ghost">
@@ -248,10 +316,6 @@ export function ProjectSalePage({
               <dd>{`Khoảng ${api.totalUnits.toLocaleString("vi-VN")} căn`}</dd>
             </div>
           ) : null}
-          <div>
-            <dt>Giá bán</dt>
-            <dd>{lowest ? `Từ ${salePrice(lowest)}` : "Liên hệ"}</dd>
-          </div>
           {api?.handoverNote ? (
             <div>
               <dt>Bàn giao</dt>
@@ -270,6 +334,16 @@ export function ProjectSalePage({
         </div>
       </nav>
       <ProjectDesk>
+        {groups.length > 0 && (
+          <section id="hinh-anh" className="project-block project-block-tint">
+            <div className="container">
+              <span className="signature-kicker">BỘ SƯU TẬP</span>
+              <h2>{`Hình ảnh ${p.name}`}</h2>
+              <GalleryTabs title={p.name} groups={groups} />
+            </div>
+          </section>
+        )}
+
         <section id="tong-quan" className="project-block">
           <div className="container project-overview">
             <div>
@@ -280,10 +354,13 @@ export function ProjectSalePage({
               ))}
             </div>
             <dl className="project-facts">
-              {facts.map(([name, value]) => (
-                <div key={name}>
-                  <dt>{name}</dt>
-                  <dd>{value}</dd>
+              {facts.map(({ icon: Icon, label, values, wide }) => (
+                <div key={label} className={wide ? "is-wide" : undefined}>
+                  <Icon size={20} aria-hidden="true" />
+                  <dt>{label}</dt>
+                  {values.map((value) => (
+                    <dd key={value}>{value}</dd>
+                  ))}
                 </div>
               ))}
             </dl>
@@ -320,20 +397,20 @@ export function ProjectSalePage({
           </div>
         </section>
 
-        {groups.length > 0 && (
-          <section id="hinh-anh" className="project-block project-block-tint">
+        {p.slug === "capital-square" && (
+          <section id="tham-quan-360" className="project-block project-tour">
             <div className="container">
-              <span className="signature-kicker">BỘ SƯU TẬP</span>
-              <h2>{`Hình ảnh ${p.name}`}</h2>
-              <GalleryTabs title={p.name} groups={groups} />
+              <span className="signature-kicker">THAM QUAN 360°</span>
+              <h2>Tham Quan Ngôi Nhà</h2>
+              <TourShowcase title={p.name} />
             </div>
           </section>
         )}
 
-        <section id="bang-gia" className="project-block project-block-tint">
+        <section id="can-mau" className="project-block project-block-tint">
           <div className="container">
-            <span className="signature-kicker">BẢNG GIÁ & CHỌN CĂN</span>
-            <h2>Chọn căn theo tòa</h2>
+            <span className="signature-kicker">CĂN MẪU & MẶT BẰNG</span>
+            <h2>Chọn căn mẫu theo tòa</h2>
             {types.length > 0 && (
               <ul className="unit-types">
                 {types.map((type) => (
@@ -357,25 +434,17 @@ export function ProjectSalePage({
                     <h3>{type.name}</h3>
                     {type.area && <p>{type.area}</p>}
                     {type.note && <p>{type.note}</p>}
-                    <strong>{type.price || "Giá: Liên hệ"}</strong>
+                    {type.price && <strong>{type.price}</strong>}
                   </li>
                 ))}
               </ul>
             )}
             {units.length > 0 || towers.length > 0 ? (
-              <>
-                <UnitBrowser towers={towers} units={units} plans={plans} />
-                {units.length > 0 && api?.priceNote && (
-                  <p className="desk-note">{api.priceNote}</p>
-                )}
-              </>
+              <UnitBrowser towers={towers} units={units} plans={plans} />
             ) : (
               <div className="price-empty">
-                <p>
-                  Bảng giá từng căn đang được cập nhật. Gọi để nhận bảng giá mới
-                  nhất.
-                </p>
-                <CallContact label="Gọi nhận bảng giá" />
+                <p>Thông tin căn đang được cập nhật. Gọi để được tư vấn.</p>
+                <CallContact label="Gọi tư vấn" />
               </div>
             )}
           </div>
@@ -413,10 +482,8 @@ export function ProjectSalePage({
                 khoản vay bên dưới.
               </p>
             )}
-            <PaymentPlanner steps={steps} startPrice={lowest} />
-            {api?.paymentNote && (
-              <p className="desk-note">{api.paymentNote}</p>
-            )}
+            <PaymentPlanner steps={steps} startPrice={0} />
+            {api?.paymentNote && <p className="desk-note">{api.paymentNote}</p>}
           </div>
         </section>
 

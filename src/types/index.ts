@@ -24,6 +24,8 @@ export type AdminDetails = {
   quota?: string;
   /** The sale price leaves out VAT and the maintenance fund. */
   priceExcludesFees?: boolean;
+  /** Floors a model unit applies to. */
+  floorNote?: string;
   deposit?: string;
   managementFee?: string;
   minimumLease?: string;

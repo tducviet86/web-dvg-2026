@@ -1,7 +1,8 @@
 import { productPath } from "../src/lib/project-products";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { API_URL } from "../playwright.config";
+import { createRequire } from "node:module";
+import { API_URL, BE_DIR, E2E_DATABASE_URL } from "../playwright.config";
 import { apiAs } from "./helpers";
 import { telephoneHref } from "../src/lib/company-contact";
 import { pickFeaturedRentals } from "../src/components/home-rentals";
@@ -224,80 +225,7 @@ const heroTouchesHeader = (page: Page) =>
     )
     .toBeLessThanOrEqual(1);
 
-test("a development project sells: unit types, units, payment worked out per unit", async ({
-  page,
-}) => {
-  const api = await apiAs();
-  const projects = (await api.get("/admin/projects?pageSize=100")) as {
-    data: { id: string; slug: string; name: string; stage: string }[];
-  };
-  const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
-  const saved = await api.send("patch", `/admin/projects/${project.id}`, {
-    unitTypes: [{ name: "Căn QA 2 phòng ngủ", area: "Khoảng 70 m²", price: "Từ 3 tỷ" }],
-    paymentSchedule: [
-      { label: "Đợt QA 1", percent: 30, timing: "Khi ký" },
-      { label: "Đợt QA 2", percent: 70 },
-    ],
-  });
-  expect(saved.ok()).toBeTruthy();
-  const unit = await api.send("post", "/admin/properties", {
-    name: "Căn bán QA dự án",
-    projectId: project.id,
-    propertyType: "2pn",
-    location: "Đà Nẵng",
-    areaM2: 70,
-    bedrooms: 2,
-    bathrooms: 2,
-    description: "Căn hộ kiểm tra trang bán của dự án.",
-    forSale: true,
-    forRent: false,
-    salePriceVnd: "3000000000",
-    status: "PUBLISHED",
-  });
-  expect(unit.ok(), await unit.text()).toBeTruthy();
-  await expect
-    .poll(async () => {
-      await page.goto(`/du-an/${project.slug}`);
-      return page.locator("#bang-gia tbody tr").count();
-    })
-    .toBeGreaterThan(0);
-  await expect(page.locator("#bang-gia")).toContainText("Căn QA 2 phòng ngủ");
-  await expect(page.locator("#thanh-toan")).toContainText("Đợt QA 2");
-  // Calling comes first; the chosen unit still reaches the calculator and the form.
-  await page.evaluate(() =>
-    document.addEventListener("click", (e) => e.preventDefault()),
-  );
-  await page
-    .locator("#bang-gia tbody tr", { hasText: "3.000.000.000" })
-    .first()
-    .getByRole("link", { name: "Gọi tư vấn" })
-    .click();
-  await expect(page.locator("#dang-ky select")).not.toHaveValue("");
-  await expect(page.locator(".planner-price input")).toHaveValue(
-    "3.000.000.000",
-  );
-  await expect(page.locator("#thanh-toan table")).toContainText("900.000.000");
-  await page.locator("#bang-gia tbody th a").first().click();
-  await expect(page).toHaveURL(/\/mua-ban\//);
-  const table = page.locator(".room-payment table");
-  await expect(table).toContainText("900.000.000");
-  await expect(table).toContainText("2.100.000.000");
-  // Nothing filled in: the block stays away.
-  const cleared = await api.send("patch", `/admin/projects/${project.id}`, {
-    paymentSchedule: [],
-  });
-  expect(cleared.ok()).toBeTruthy();
-  await expect
-    .poll(async () => {
-      await page.goto(`/du-an/${project.slug}`);
-      return page.locator("#thanh-toan table").count();
-    })
-    .toBe(0);
-  const id = ((await unit.json()) as { data: { id: string } }).data.id;
-  await api.send("delete", `/admin/properties/${id}`);
-});
-
-test("a project lists its units one tower at a time, a few at first", async ({
+test("a development project shows towers and model units without prices", async ({
   page,
 }) => {
   const api = await apiAs();
@@ -306,63 +234,212 @@ test("a project lists its units one tower at a time, a few at first", async ({
   };
   const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
   const saved = await api.send("patch", `/admin/projects/${project.id}`, {
+    unitTypes: [{ name: "Căn QA 2 phòng ngủ", area: "Khoảng 70 m²" }],
     towers: [
       { name: "QA1", status: "Đang mở bán" },
       { name: "QA2", status: "Đang nhận booking" },
     ],
+    paymentSchedule: [
+      { label: "Đợt QA 1", percent: 30, timing: "Khi ký" },
+      { label: "Đợt QA 2", percent: 70 },
+    ],
   });
   expect(saved.ok()).toBeTruthy();
-  const ids: string[] = [];
-  for (let n = 0; n < 10; n++) {
-    const res = await api.send("post", "/admin/properties", {
-      name: `Căn tòa QA ${n}`,
-      projectId: project.id,
-      propertyType: "2pn",
-      unitCode: `QA1-${n}`,
-      tower: "QA1",
-      floor: 10 + (n % 2),
-      location: "Đà Nẵng",
-      areaM2: 70,
-      bedrooms: 2,
-      bathrooms: 2,
-      description: "Căn hộ kiểm tra danh sách theo tòa.",
-      forSale: true,
-      forRent: false,
-      salePriceVnd: String(5000000000 + n * 100000000),
-      status: "PUBLISHED",
-    });
-    expect(res.ok(), await res.text()).toBeTruthy();
-    ids.push(((await res.json()) as { data: { id: string } }).data.id);
-  }
-  const rows = page.locator("#bang-gia tbody tr");
+  const create = await api.send("post", "/admin/properties", {
+    name: "Căn mẫu QA1-06 2 PN",
+    projectId: project.id,
+    propertyType: "2pn",
+    unitCode: "QA1-06",
+    tower: "QA1",
+    floorNote: "Tầng 5-10",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn mẫu kiểm tra trang dự án và trang chi tiết.",
+    forSale: true,
+    forRent: false,
+    status: "PUBLISHED",
+  });
+  expect(create.ok(), await create.text()).toBeTruthy();
+  const unit = (
+    (await create.json()) as {
+      data: { id: string; slug: string };
+    }
+  ).data;
+  const section = page.locator("#can-mau");
   await expect
     .poll(async () => {
       await page.goto(`/du-an/${project.slug}`);
-      return rows.count();
+      return section.getByText("Căn QA 2 phòng ngủ").count();
     })
-    .toBe(8);
-  await page.getByRole("button", { name: "Xem thêm 2 căn" }).click();
-  await expect(rows).toHaveCount(10);
-  // Anywhere on a row opens the unit, except the call button.
-  await rows.first().scrollIntoViewIfNeeded();
-  await page.waitForTimeout(600); // smooth scroll settles
-  const cell = (await rows.first().locator("td").first().boundingBox())!;
-  await page.mouse.click(cell.x + cell.width / 2, cell.y + cell.height / 2);
-  await expect(page).toHaveURL(/\/mua-ban\//);
-  await page.goBack();
-  await expect(rows).not.toHaveCount(0);
-  const more = page.getByRole("button", { name: "Xem thêm 2 căn" });
-  if (await more.count()) await more.click();
-  await page.locator(".price-filters select").first().selectOption("10");
-  await expect(rows).toHaveCount(5);
-  // A tower with no units yet asks for a call.
+    .toBe(1);
+  await expect(section).not.toContainText("tỷ");
+  await expect(page.locator(".price-table, .sample-units")).toHaveCount(0);
+  await expect(page.locator("#thanh-toan")).toContainText("Đợt QA 2");
+  // A tower with no plan yet asks for a call.
   await page.locator(".tower-tabs button", { hasText: "QA2" }).click();
-  await expect(rows).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Gọi nhận danh sách căn" }),
+    page.getByRole("link", { name: "Gọi tư vấn tòa này" }),
   ).toBeVisible();
-  for (const id of ids) await api.send("delete", `/admin/properties/${id}`);
-  await api.send("patch", `/admin/projects/${project.id}`, { towers: [] });
+  // The unit's own page shows no price.
+  await page.goto(`/mua-ban/${unit.slug}`);
+  await expect(page.locator("main")).toContainText("5-10");
+  await expect(
+    page.locator(".model-hero-panel, .sale-unit-panel"),
+  ).not.toContainText("tỷ");
+  await api.send("delete", `/admin/properties/${unit.id}`);
+  await api.send("patch", `/admin/projects/${project.id}`, {
+    towers: [],
+    unitTypes: [],
+    paymentSchedule: [],
+  });
+});
+
+test("Capital Square shows its 360° tour and a unit's layout or 3D model", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: {
+      id: string;
+      slug: string;
+      towers: unknown[];
+      floorPlans: unknown[];
+    }[];
+  };
+  const project = projects.data.find((p) => p.slug === "capital-square")!;
+  // Plans must be in the library; this one ships with the site.
+  const { Client } = createRequire(`${BE_DIR}/package.json`)("pg");
+  const db = new Client({ connectionString: E2E_DATABASE_URL });
+  const planImage = "/images/projects/capital-square/mat-bang-c4-tang-5-10.webp";
+  await db.connect();
+  await db.query(
+    `INSERT INTO media_assets (id, storage, key, url, mime_type, size_bytes, updated_at)
+     VALUES (gen_random_uuid(), 'EXTERNAL', $1, $1, 'image/webp', 1, now())
+     ON CONFLICT DO NOTHING`,
+    [planImage],
+  );
+  await db.end();
+  const saved = await api.send("patch", `/admin/projects/${project.id}`, {
+    towers: [{ name: "C4", status: "Đang mở bán" }],
+    floorPlans: [
+      {
+        name: "C4 · Tầng 5-10",
+        tower: "C4",
+        image: planImage,
+      },
+    ],
+  });
+  expect(saved.ok(), await saved.text()).toBeTruthy();
+  const create = await api.send("post", "/admin/properties", {
+    name: "Căn mẫu C4-03 QA",
+    projectId: project.id,
+    propertyType: "2pn",
+    unitCode: "C4-03",
+    tower: "C4",
+    floorNote: "Tầng 5-10",
+    location: "Đà Nẵng",
+    areaM2: 65,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn mẫu kiểm tra mặt bằng và ảnh 3D.",
+    forSale: true,
+    forRent: false,
+    status: "PUBLISHED",
+  });
+  expect(create.ok(), await create.text()).toBeTruthy();
+  const unit = ((await create.json()) as { data: { id: string } }).data;
+  const spot = page.locator(".plan-spot:not([disabled])").first();
+  await expect
+    .poll(async () => {
+      await page.goto("/du-an/capital-square");
+      return spot.count();
+    })
+    .toBe(1);
+  // The 360° tour loads only when the visitor starts it.
+  await expect(page.locator(".tour-view")).toHaveCount(0);
+  await page.locator(".tour-start").click();
+  await expect(page.locator(".tour-view")).toHaveCount(1);
+  // The floor plan opens and closes from its small button.
+  await expect(page.locator(".tour-plan")).toHaveCount(0);
+  await page.locator(".tour-plan-toggle").click();
+  await expect(page.locator(".tour-plan-dot").first()).toBeVisible();
+  await page.locator(".tour-plan-toggle").click();
+  await expect(page.locator(".tour-plan")).toHaveCount(0);
+  // A chosen unit shows its layout or its 3D model, one at a time.
+  await spot.click();
+  await expect(page.locator(".plan-zoom-view")).toBeVisible();
+  await expect(page.locator(".plan-zoom-model")).toHaveCount(0);
+  const views = page.locator(".plan-zoom-switch button");
+  await views.nth(1).click();
+  await expect(page.locator(".plan-zoom-model")).toBeVisible();
+  await expect(page.locator(".plan-zoom-view")).toHaveCount(0);
+  await views.nth(0).click();
+  await expect(page.locator(".plan-zoom-view")).toBeVisible();
+  await expect(page.locator(".plan-zoom-model")).toHaveCount(0);
+  // The model unit's own page is built from the 3D model, with no tour.
+  await page.locator(".plan-open").click();
+  await expect(page).toHaveURL(/\/mua-ban\//);
+  await expect(page.locator(".model-hero-photo img")).toBeVisible();
+  await expect(page.locator(".model-room").first()).toContainText(
+    "Phòng khách",
+  );
+  await expect(page.locator(".tour")).toHaveCount(0);
+  await api.send("delete", `/admin/properties/${unit.id}`);
+  await api.send("patch", `/admin/projects/${project.id}`, {
+    towers: project.towers,
+    floorPlans: project.floorPlans,
+  });
+});
+
+test("a unit with its own price shows the payment worked out", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; stage: string }[];
+  };
+  const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
+  await api.send("patch", `/admin/projects/${project.id}`, {
+    paymentSchedule: [
+      { label: "Đợt QA 1", percent: 30 },
+      { label: "Đợt QA 2", percent: 70 },
+    ],
+  });
+  const res = await api.send("post", "/admin/properties", {
+    name: "Căn có giá QA",
+    projectId: project.id,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn hộ kiểm tra tính số tiền từng đợt.",
+    forSale: true,
+    forRent: false,
+    salePriceVnd: "3000000000",
+    status: "PUBLISHED",
+  });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  const { id, slug } = (
+    (await res.json()) as {
+      data: { id: string; slug: string };
+    }
+  ).data;
+  const table = page.locator(".room-payment table");
+  await expect
+    .poll(async () => {
+      await page.goto(`/mua-ban/${slug}`);
+      return table.count();
+    })
+    .toBe(1);
+  await expect(table).toContainText("900.000.000");
+  await expect(table).toContainText("2.100.000.000");
+  await api.send("delete", `/admin/properties/${id}`);
+  await api.send("patch", `/admin/projects/${project.id}`, {
+    paymentSchedule: [],
+  });
 });
 
 test("a unit with no photos of its own shows the model unit of its type", async ({
@@ -405,9 +482,11 @@ test("a unit with no photos of its own shows the model unit of its type", async 
   const open = async (name: string, type: string, cover?: string) => {
     const res = await unit(name, type, cover);
     expect(res.ok(), await res.text()).toBeTruthy();
-    const { id, slug } = ((await res.json()) as {
-      data: { id: string; slug: string };
-    }).data;
+    const { id, slug } = (
+      (await res.json()) as {
+        data: { id: string; slug: string };
+      }
+    ).data;
     ids.push(id);
     await expect
       .poll(async () => (await page.goto(`/mua-ban/${slug}`))?.status())

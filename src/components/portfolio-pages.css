@@ -832,7 +832,7 @@
 }
 .project-highlights {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: 16px;
   margin-top: 40px;
 }
@@ -1000,87 +1000,6 @@
   border: 0;
   background: var(--c-gold-400);
   color: var(--c-green-900);
-}
-.price-filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
-}
-.price-filters label,
-.lead-form label,
-.loan-card label,
-.planner-price {
-  display: grid;
-  gap: 5px;
-  font-size: 12.5px;
-  color: inherit;
-}
-.price-filters select,
-.lead-form input:not([type="checkbox"]),
-.lead-form select,
-.lead-form textarea,
-.loan-card input:not([type="range"]),
-.loan-card select,
-.planner-price input {
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid #d5dacd;
-  border-radius: 10px;
-  background: #fff;
-  font-size: 15px;
-  color: var(--c-green-900);
-}
-.price-count {
-  margin: 14px 0;
-  font-size: 13px;
-  color: #5f6f66;
-}
-.price-table {
-  overflow: hidden;
-  border-radius: 14px;
-  background: #fff;
-}
-.price-table table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-.price-table th,
-.price-table td {
-  padding: 13px 14px;
-  border-bottom: 1px solid #ece7da;
-  text-align: left;
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-.price-table thead th {
-  font-size: 12px;
-  color: #5f6f66;
-}
-.price-table tbody th a {
-  font-weight: 600;
-  color: var(--c-green-900);
-}
-.price-cell {
-  font-weight: 600;
-  white-space: nowrap;
-  color: var(--c-gold-700);
-}
-.price-action {
-  text-align: right;
-}
-.price-action .button {
-  min-height: 38px;
-  padding: 6px 14px;
-  font-size: 13px;
-}
-.state-pill {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  white-space: nowrap;
 }
 .policy-grid {
   display: grid;
@@ -1385,60 +1304,10 @@
   font-size: 22px;
 }
 @media (max-width: 900px) {
-  .project-overview,
+  .project-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
   /* The price list becomes one short card per unit. */
-  .price-table {
-    overflow: visible;
-    background: none;
-  }
-  .price-table thead {
-    display: none;
-  }
-  .price-table table,
-  .price-table tbody {
-    display: block;
-  }
-  .price-table tr {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 10px;
-    margin-bottom: 10px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: #fff;
-  }
-  .price-table th,
-  .price-table td {
-    padding: 0;
-    border: 0;
-    font-size: 13px;
-  }
-  .price-table tbody th {
-    flex: 1 1 40%;
-    font-size: 15px;
-  }
-  .price-table .price-cell {
-    order: -1;
-    flex: 1 1 100%;
-    font-size: 17px;
-  }
-  .price-table .price-cell small {
-    display: inline;
-    margin-left: 8px;
-  }
-  .price-table td[data-label]:not(.price-cell)::before {
-    content: attr(data-label) ": ";
-    color: #5f6f66;
-  }
-  .price-table .price-action {
-    flex: 1 1 100%;
-    margin-top: 8px;
-  }
-  .price-action .button {
-    width: 100%;
-    min-height: 38px;
-  }
   .unit-types {
     display: flex;
     margin-inline: calc(var(--container-pad, 16px) * -1);
@@ -1464,17 +1333,6 @@
   .lead-form {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-.price-table tbody th {
-  background: none;
-  font-size: 14px;
-}
-.price-cell small {
-  display: block;
-  margin-top: 2px;
-  font-size: 12px;
-  font-weight: 400;
-  color: #5f6f66;
 }
 
 /* A unit for sale (sale-unit.tsx). */
@@ -1739,24 +1597,6 @@
 .unit-browser .price-filters {
   grid-template-columns: repeat(auto-fit, minmax(130px, 200px));
 }
-.price-count {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.price-count button {
-  border: 0;
-  background: none;
-  font-size: 13px;
-  text-decoration: underline;
-  color: var(--c-gold-700);
-  cursor: pointer;
-}
-.price-table tbody .state-pill {
-  display: block;
-  width: fit-content;
-  margin-top: 4px;
-}
 @media (max-width: 900px) {
   .unit-browser .price-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1876,22 +1716,6 @@
 }
 
 /* The whole row opens the unit; the call button keeps its own click. */
-.price-table tbody tr {
-  position: relative;
-  transition: background var(--dur-2);
-}
-.price-table tbody tr:hover {
-  background: #f6f7f2;
-}
-.price-table tbody th a::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-.price-action {
-  position: relative;
-  z-index: 1;
-}
 @media (max-width: 640px) {
   .plan-spot span {
     min-width: 20px;
@@ -2234,10 +2058,47 @@
 .plan-zoom.closing {
   animation: plan-zoom-out 0.42s var(--ease-out) both;
 }
-@keyframes plan-zoom-out {
-  to {
-    opacity: 0;
-    transform: translateX(-30%) scale(0.7);
+/* The enlarged unit: its layout or its 3D model, one at a time. */
+.plan-zoom.with-model .plan-zoom-view {
+  width: min(100%, calc((var(--plan-h) - 48px) * var(--ratio)));
+}
+.plan-zoom-switch {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 10px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef0ea;
+}
+.plan-zoom-switch button {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-green-900);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.plan-zoom-switch button[aria-pressed="true"] {
+  background: var(--c-green-900);
+  color: #fff;
+}
+.plan-zoom-model {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The picture's scanned edge. */
+  clip-path: inset(1%);
+}
+/* Switching views moves nothing: both fill the same box. */
+@media (min-width: 901px) {
+  .plan-zoom.with-model {
+    align-self: start;
+  }
+  .plan-zoom-model {
+    height: calc(var(--plan-h) - 48px);
+    object-fit: contain;
   }
 }
 .plan-floors-fold {
@@ -2291,11 +2152,6 @@
 .price-excludes {
   color: #b42318;
 }
-.price-cell small.price-excludes {
-  margin-left: 0;
-  font-weight: 500;
-  color: #b42318;
-}
 .sale-unit-excludes {
   padding: 8px 12px;
   border-radius: 8px;
@@ -2304,10 +2160,6 @@
   color: var(--c-gold-300);
 }
 @media (max-width: 900px) {
-  .price-table .price-cell small.price-excludes {
-    display: block;
-    margin-left: 0;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .plan-stage,
@@ -2317,4 +2169,799 @@
   .plan-zoom.closing {
     animation: none;
   }
+}
+
+/* Model units of a tower. */
+.plan-floors nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.plan-floors nav .plan-open {
+  border-color: var(--c-gold-400);
+  background: var(--c-gold-400);
+  color: var(--c-green-950);
+}
+.plan-floors nav .plan-open:hover {
+  border-color: var(--c-gold-300);
+  background: var(--c-gold-300);
+}
+.sale-unit-ask {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  line-height: 1.3;
+  color: var(--c-gold-300);
+}
+.sale-unit-layout {
+  --plan-h: 640px;
+  max-width: 560px;
+  margin: 0;
+}
+@media (max-width: 640px) {
+}
+
+/* A model apartment (model-unit.tsx). */
+.model-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+.model-hero-photo {
+  position: relative;
+  min-height: 520px;
+  overflow: hidden;
+  border: 1px solid #e0e4d9;
+  border-radius: 20px;
+  background: #fff;
+}
+.model-hero-photo > a {
+  position: absolute;
+  inset: 16px;
+  display: block;
+}
+.model-hero-photo img {
+  object-fit: contain;
+}
+.model-hero-photo > span {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--c-green-900);
+  font-size: 12.5px;
+  color: var(--c-gold-300);
+}
+.model-hero-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 26px 24px;
+  border-radius: 20px;
+  background: linear-gradient(165deg, var(--c-green-800), var(--c-green-950));
+  color: #fff;
+}
+.model-hero-panel .signature-kicker {
+  color: var(--c-gold-300);
+}
+.model-hero-panel h1 {
+  margin: 0;
+  font-size: clamp(26px, 2.6vw, 34px);
+  line-height: 1.2;
+  color: #fff;
+}
+.model-hero-place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13.5px;
+  color: #dfe6e1;
+}
+.model-hero-panel dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+  margin: 6px 0;
+  padding-block: 14px;
+  border-block: 1px solid #d4b97a40;
+}
+.model-hero-panel dt {
+  font-size: 12px;
+  color: #ffffffb8;
+}
+.model-hero-panel dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+.model-hero-panel .call-button {
+  width: 100%;
+  margin: 0;
+  border-color: var(--c-gold-400);
+  background: var(--c-gold-400);
+  color: var(--c-green-950);
+}
+.model-hero-panel .call-button:hover {
+  border-color: var(--c-gold-300);
+  background: var(--c-gold-300);
+  color: var(--c-green-950);
+}
+.model-hero-panel .call-button small {
+  color: var(--c-green-950);
+}
+.model-hero-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+.model-plan {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: start;
+  margin-top: clamp(40px, 5vw, 64px);
+}
+.model-plan h2,
+.model-room-text h2 {
+  margin: 8px 0 18px;
+  font-size: clamp(24px, 2.6vw, 32px);
+}
+.model-room-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.model-room-list a {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid #e0e4d9;
+  font-size: 15px;
+  color: var(--c-green-900);
+}
+.model-room-list a:hover {
+  color: var(--c-gold-700);
+}
+.model-room-list b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.model-rooms {
+  display: grid;
+  gap: clamp(36px, 5vw, 64px);
+  margin-top: clamp(40px, 5vw, 64px);
+}
+.model-room {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+  scroll-margin-top: calc(var(--header-h) + 16px);
+}
+.model-room:nth-child(even) .model-room-photos {
+  order: 2;
+}
+.model-room-photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.model-room-photos > span {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #e9eadf;
+}
+.model-room-photos img {
+  object-fit: cover;
+}
+.model-room-photos > span:first-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 9;
+}
+.model-room-photos[data-count="2"] > span:first-child {
+  grid-column: auto;
+  aspect-ratio: 4 / 3;
+}
+.model-room-photos[data-count="1"] > span:first-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 10;
+}
+.model-room-number {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  color: var(--c-gold-700);
+}
+.model-room-text h2 {
+  margin: 4px 0 4px;
+}
+.model-room-text > p {
+  margin: 0 0 14px;
+  font-size: 14.5px;
+  color: #3c5148;
+}
+.model-room-text dl {
+  margin: 0;
+}
+.model-room-text dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #e0e4d9;
+  font-size: 13.5px;
+}
+.model-room-text dt {
+  color: #5f6f66;
+}
+.model-room-text dd {
+  margin: 0;
+  color: var(--c-green-900);
+  font-variant-numeric: tabular-nums;
+}
+.model-note {
+  margin: clamp(28px, 4vw, 44px) 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6f66;
+}
+@media (max-width: 900px) {
+  .model-hero,
+  .model-plan,
+  .model-room {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .model-hero-photo {
+    min-height: 0;
+    aspect-ratio: 4 / 3;
+  }
+  .model-room:nth-child(even) .model-room-photos {
+    order: 0;
+  }
+}
+
+/* 360° walk through a model apartment (tour-360.tsx). */
+.tour {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--c-green-950);
+}
+.tour-view {
+  position: absolute;
+  inset: 0;
+}
+.tour-start {
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  border: 0;
+  background-position: center;
+  background-size: cover;
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+}
+.tour-start b {
+  font-family: var(--font-heading);
+  font-size: clamp(48px, 7vw, 84px);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--c-gold-300);
+}
+.tour-start span {
+  font-size: clamp(16px, 1.8vw, 20px);
+  font-weight: 600;
+}
+.tour-start small {
+  font-size: 13.5px;
+  color: #ffffffcc;
+}
+.tour-tools {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.tour-tools button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #d4b97a66;
+  border-radius: 50%;
+  background: #061b16cc;
+  color: var(--c-gold-300);
+  cursor: pointer;
+}
+.tour-failed {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: #fff;
+}
+.tour .pnlm-load-button,
+.tour .pnlm-about-msg {
+  display: none;
+}
+.tour .pnlm-controls-container {
+  top: 60px;
+}
+.tour .tour-spot {
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--c-gold-300);
+  border-radius: 50%;
+  background: #061b16b3;
+  cursor: pointer;
+}
+.tour .tour-spot::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-top: 3px solid var(--c-gold-300);
+  border-left: 3px solid var(--c-gold-300);
+  transform: translateY(3px) rotate(45deg);
+}
+.tour .tour-spot span {
+  visibility: hidden;
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--c-green-900);
+  font-size: 13px;
+  white-space: nowrap;
+  color: #fff;
+  transform: translateX(-50%);
+}
+.tour .tour-spot:hover span {
+  visibility: visible;
+}
+@media (max-width: 640px) {
+  .tour {
+    aspect-ratio: 4 / 5;
+    border-radius: 14px;
+  }
+}
+
+/* Overview facts, in the site's green and gold. */
+.project-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #d4b97a59;
+  border-radius: 18px;
+  background: #d4b97a33;
+  box-shadow: 0 16px 38px #1027191f;
+}
+.project-facts div {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  grid-auto-rows: min-content;
+  gap: 3px 12px;
+  padding: 20px;
+  background: linear-gradient(160deg, var(--c-green-800), var(--c-green-950));
+}
+.project-facts div + div {
+  border-top: 0;
+}
+.project-facts .is-wide {
+  grid-column: 1 / -1;
+}
+@media (max-width: 640px) {
+  .project-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.project-facts svg {
+  grid-row: 1 / span 4;
+  margin-top: 2px;
+  color: var(--c-gold-300);
+}
+.project-facts dt,
+.project-facts dd {
+  grid-column: 2;
+}
+.project-facts dt {
+  font-size: 11.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--c-gold-300);
+}
+.project-facts dd {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #fff;
+}
+
+/* 360° section. */
+.project-tour {
+  background: linear-gradient(170deg, var(--c-green-800), var(--c-green-950));
+  color: #fff;
+}
+.project-tour > .container > h2 {
+  color: #fff;
+}
+.project-tour .signature-kicker {
+  color: var(--c-gold-300);
+}
+.tour {
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: auto;
+  border: 1px solid #d4b97a59;
+  background: var(--c-green-950);
+  box-shadow: 0 24px 60px #0000004d;
+}
+.tour-stage {
+  position: relative;
+  container-type: size;
+  /* Keeps the viewer's buttons under the page's sticky bars. */
+  isolation: isolate;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 16 / 8;
+}
+.tour-start {
+  position: relative;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: var(--c-green-950);
+}
+.tour-strip {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  animation: tour-pan 180s linear infinite;
+}
+.tour-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, #061b16b3 0%, #061b1673 100%);
+}
+.tour-start-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  color: #fff;
+}
+.tour-start-text b {
+  display: grid;
+  place-items: center;
+  width: clamp(92px, 11vw, 132px);
+  height: clamp(92px, 11vw, 132px);
+  border: 1px solid var(--c-gold-300);
+  border-radius: 50%;
+  background: #061b1680;
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 3.4vw, 40px);
+  font-weight: 400;
+  color: var(--c-gold-300);
+  backdrop-filter: blur(4px);
+  transition: transform var(--dur-3) var(--ease-out);
+}
+.tour-start:hover .tour-start-text b {
+  transform: scale(1.06);
+}
+.tour-start-text strong {
+  font-size: clamp(17px, 1.9vw, 22px);
+  font-weight: 600;
+}
+.tour-start-text small {
+  font-size: 13.5px;
+  color: #ffffffcc;
+}
+@keyframes tour-pan {
+  to {
+    /* One whole strip (2880 × 640), so the loop has no jump. */
+    background-position-x: -450cqh;
+  }
+}
+.tour-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border: 3px solid #ffffff40;
+  border-top-color: var(--c-gold-300);
+  border-radius: 50%;
+  background: #061b1659;
+  animation: tour-spin 0.9s linear infinite;
+  pointer-events: none;
+}
+@keyframes tour-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+.tour .pnlm-load-box {
+  display: none !important;
+}
+/* Room types and the floor plan, on the picture. */
+.tour-dock {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+.tour-dock > * {
+  pointer-events: auto;
+}
+.tour-types {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #ffffff2e;
+  border-radius: 999px;
+  background: #061b16b8;
+  backdrop-filter: blur(8px);
+}
+.tour-types button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 13.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tour-types button[aria-pressed="true"] {
+  background: var(--c-gold-400);
+  color: var(--c-green-950);
+}
+/* The floor plan as a small see-through map; the room you stand in glows. */
+.tour-plan-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #ffffff59;
+  border-radius: 10px;
+  background: #061b1666;
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+}
+.tour-plan-toggle[aria-expanded="true"] {
+  border-color: var(--c-gold-300);
+  background: #061b16b3;
+}
+.tour-plan-toggle svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+}
+.tour-plan {
+  position: absolute;
+  top: 60px;
+  right: 12px;
+  z-index: 3;
+  animation: tour-plan-in 0.2s ease-out;
+  width: clamp(104px, 14cqw, 190px);
+  border-radius: 10px;
+  background: #ffffff40;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 6px 18px #00000026;
+  transition: background 0.2s ease;
+}
+.tour-plan:hover {
+  background: #ffffffb3;
+}
+.tour-plan img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+  /* The plan's white paper disappears, only its lines stay. */
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+}
+@keyframes tour-plan-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+.tour-plan-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--c-gold-400);
+  opacity: 0.75;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+/* A larger target for fingers. */
+.tour-plan-dot::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
+.tour-plan-dot:hover,
+.tour-plan-dot:focus-visible {
+  z-index: 1;
+  opacity: 1;
+  transform: scale(1.25);
+}
+.tour-plan-dot[aria-current] {
+  z-index: 1;
+  background: #ffc933;
+  opacity: 1;
+  transform: scale(1.45);
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 10px 4px #ffc933;
+  animation: tour-here 1.6s ease-in-out infinite;
+}
+@keyframes tour-here {
+  50% {
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 18px 8px #ffc933;
+  }
+}
+.tour-plan-dot::after {
+  content: attr(data-room);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--c-green-950);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+.tour-plan-dot:hover::after,
+.tour-plan-dot:focus-visible::after {
+  opacity: 1;
+}
+.tour-logo {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 3;
+  width: clamp(44px, 5cqw, 64px);
+  height: auto;
+  opacity: 0.65;
+  filter: drop-shadow(0 1px 2px #00000066);
+  pointer-events: none;
+}
+.tour-stage:fullscreen {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+/* Tablets stand taller; a phone on its side still sees the whole viewer. */
+@media (max-width: 900px) {
+  .tour-stage {
+    aspect-ratio: 4 / 3;
+    max-height: max(280px, calc(100svh - 150px));
+  }
+  .tour-stage:fullscreen {
+    max-height: none;
+  }
+  .plan-zoom.with-model .plan-zoom-view,
+  .plan-zoom-model {
+    width: min(100%, 440px);
+    margin-inline: auto;
+  }
+}
+@media (max-width: 640px) {
+  .tour {
+    aspect-ratio: auto;
+  }
+  .tour-stage {
+    aspect-ratio: 4 / 5;
+  }
+  .tour-dock {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+  }
+  .tour-types {
+    flex: 1 1 100%;
+  }
+  .tour-types button {
+    flex: 1;
+    padding: 0 6px;
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-strip {
+    animation: none;
+  }
+  .tour-plan-dot[aria-current] {
+    animation: none;
+  }
+}
+
+/* Payment planner: each field is a label above a clear box. */
+.planner-price,
+.loan-inputs label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.payment-planner .planner-price input,
+.payment-planner .loan-inputs input,
+.payment-planner .loan-inputs select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #ffffff40;
+  border-radius: 10px;
+  background: #ffffff0f;
+  color: #fff;
+  font-size: 16px;
+}
+.planner-price input:focus-visible,
+.loan-inputs input:focus-visible,
+.loan-inputs select:focus-visible {
+  border-color: var(--c-gold-300);
+  outline: 0;
+}
+.loan-inputs select option {
+  color: var(--c-green-950);
+}
+.planner-price input::placeholder {
+  color: #ffffff80;
 }

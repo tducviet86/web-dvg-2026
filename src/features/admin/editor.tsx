@@ -821,6 +821,10 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             maxLength: 60,
             placeholder: "vd: Quỹ nước ngoài",
           }),
+          f("floorNote", "Tầng áp dụng (căn mẫu)", {
+            maxLength: 80,
+            placeholder: "vd: Tầng 5-10",
+          }),
           f("priceExcludesFees", "Giá bán chưa gồm VAT và kinh phí bảo trì", {
             type: "checkbox",
           }),
