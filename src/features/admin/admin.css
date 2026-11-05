@@ -5408,3 +5408,32 @@
 .section-item .banner-image-field {
   margin-top: 12px;
 }
+.rows-field-inputs {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+.rows-field-inputs label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #4d5f56;
+}
+.rows-field-inputs input {
+  width: 100%;
+  min-width: 0;
+}
+.rows-field .section-item-head {
+  align-items: flex-start;
+}
+.rows-field-total {
+  margin: 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f6b45;
+}
+.rows-field-total.invalid {
+  color: #b3261e;
+}

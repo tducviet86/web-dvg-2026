@@ -244,7 +244,14 @@ export function PropertyCard({
   );
 }
 /** A unit offered for sale: photo-led card that opens /mua-ban/<slug>. */
-export function SaleCard({ property: p }: { property: Property }) {
+export function SaleCard({
+  property: p,
+  image,
+}: {
+  property: Property;
+  /** Instead of the unit's cover, e.g. its model-unit photo. */
+  image?: string;
+}) {
   return (
     <article className="sale-card">
       <Link
@@ -254,7 +261,7 @@ export function SaleCard({ property: p }: { property: Property }) {
       >
         <span className="sale-card-photo image-wrap">
           <Image
-            src={p.image}
+            src={image ?? p.image}
             alt={p.imageAlt || `Căn hộ ${p.name}`}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

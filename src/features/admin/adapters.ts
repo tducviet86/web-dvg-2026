@@ -17,6 +17,17 @@ export type MediaState = {
 };
 
 const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+/** A rows field (JSON): rows with no `required` value dropped, blanks removed. */
+const rowsOf = (v: unknown, required: string) =>
+  (JSON.parse(str(v) || "[]") as Record<string, string>[])
+    .filter((row) => row[required]?.trim())
+    .map((row) =>
+      Object.fromEntries(
+        Object.entries(row)
+          .map(([key, value]) => [key, value.trim()])
+          .filter(([, value]) => value),
+      ),
+    );
 /** 2.500.000.000 → "2,5 tỷ"; 950.000.000 → "950 triệu". */
 const lines = (v: unknown) => (Array.isArray(v) ? v.join("\n") : "");
 const splitLines = (v: unknown) =>
@@ -91,6 +102,7 @@ export const furnishingOptions: [string, string][] = [
   ["FULL", "Đầy đủ nội thất"],
   ["BASIC", "Nội thất cơ bản"],
   ["NONE", "Không nội thất"],
+  ["ROUGH", "Bàn giao thô"],
 ];
 export const priorityOptions: [string, string][] = [
   ["NORMAL", "Bình thường"],
@@ -132,6 +144,23 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       highlights: ((d.highlights as { title: string; text: string }[]) ?? [])
         .map((h) => `${h.title} | ${h.text}`)
         .join("\n"),
+      unitTypes: JSON.stringify(d.unitTypes ?? []),
+      floorPlans: JSON.stringify(d.floorPlans ?? []),
+      paymentSchedule: JSON.stringify(
+        ((d.paymentSchedule as { percent: number }[] | undefined) ?? []).map(
+          (step) => ({ ...step, percent: String(step.percent) }),
+        ),
+      ),
+      paymentNote: str(d.paymentNote),
+      towers: JSON.stringify(d.towers ?? []),
+      photos: JSON.stringify(d.photos ?? []),
+      salesPolicies: JSON.stringify(d.salesPolicies ?? []),
+      connections: JSON.stringify(d.connections ?? []),
+      progressPhotos: JSON.stringify(d.progressPhotos ?? []),
+      videoUrl: str(d.videoUrl),
+      scale: str(d.scale),
+      priceNote: str(d.priceNote),
+      handoverNote: str(d.handoverNote),
       rentalIntro: str(d.rentalIntro),
       rentalFocus: str(d.rentalFocus),
       rentalChecks: lines(d.rentalChecks),
@@ -157,6 +186,10 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       bathrooms: str(d.bathrooms),
       floor: str(d.floor),
       direction: str(d.direction),
+      tower: str(d.tower),
+      viewNote: str(d.viewNote),
+      quota: str(d.quota),
+      priceExcludesFees: !!d.priceExcludesFees,
       furniture: str(d.furnishing),
       amenities: (d.amenities as string[] | undefined) ?? [],
       availability: str(d.availability),
@@ -338,6 +371,22 @@ export function payload(
         const [title, ...text] = line.split("|");
         return { title: title.trim(), text: text.join("|").trim() };
       }),
+      unitTypes: rowsOf(v.unitTypes, "name"),
+      floorPlans: rowsOf(v.floorPlans, "name"),
+      paymentSchedule: rowsOf(v.paymentSchedule, "label").map((step) => ({
+        ...step,
+        percent: Number(String(step.percent).replace(",", ".")),
+      })),
+      paymentNote: orNull(v.paymentNote),
+      towers: rowsOf(v.towers, "name"),
+      photos: rowsOf(v.photos, "image"),
+      salesPolicies: rowsOf(v.salesPolicies, "title"),
+      connections: rowsOf(v.connections, "place"),
+      progressPhotos: rowsOf(v.progressPhotos, "title"),
+      videoUrl: orNull(v.videoUrl),
+      scale: orNull(v.scale),
+      priceNote: orNull(v.priceNote),
+      handoverNote: orNull(v.handoverNote),
       rentalIntro: orNull(v.rentalIntro),
       rentalFocus: orNull(v.rentalFocus),
       rentalChecks: splitLines(v.rentalChecks),
@@ -365,6 +414,10 @@ export function payload(
       bathrooms: Number(v.bathrooms),
       floor: numOrNull(v.floor),
       direction: orNull(v.direction),
+      tower: orNull(v.tower),
+      viewNote: orNull(v.viewNote),
+      quota: orNull(v.quota),
+      priceExcludesFees: !!v.priceExcludesFees,
       furnishing: v.furniture || "FULL",
       amenities: (v.amenities as string[] | undefined) ?? [],
       availability: v.availability || "AVAILABLE",

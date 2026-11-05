@@ -1,0 +1,503 @@
+/** @jsxImportSource @/i18n/jsx */
+import Image from "next/image";
+import { ArrowRight, ArrowUpRight, MapPin, Phone } from "lucide-react";
+import Link from "@/components/page-navigation";
+import { t } from "@/i18n/server";
+import type { ApiProject, PaymentStep } from "@/lib/api/types";
+import { vacantNow } from "@/lib/availability";
+import { paymentAmounts } from "@/lib/payment";
+import { videoSource, type RentalMedia } from "@/lib/property-media";
+import { roomsLabel, hasRooms } from "@/lib/property-groups";
+import { salePrice, unitRef, vndFull } from "@/lib/utils";
+import { companyHotline, telephoneHref } from "@/lib/company-contact";
+import { CallContact } from "./call-contact";
+import { ProjectMap } from "./project-map";
+import {
+  GalleryTabs,
+  PaymentPlanner,
+  ProjectDesk,
+  ProjectLeadForm,
+  UnitBrowser,
+  type DeskUnit,
+} from "./project-sale-desk";
+import { PhotoHero } from "./search-hero";
+import type { PortfolioProject, ProjectLocation, ProjectStory, Property } from "@/types";
+
+const percentText = (n: number) => `${n.toLocaleString("vi-VN")}%`;
+
+/** The payment steps with the money due at each, for one unit's price. */
+export function PaymentTable({
+  steps,
+  price,
+}: {
+  steps: PaymentStep[];
+  price: number;
+}) {
+  const amounts = paymentAmounts(price, steps);
+  return (
+    <div className="payment-table">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Đợt thanh toán</th>
+            <th scope="col">Tỷ lệ</th>
+            <th scope="col">Số tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          {steps.map((step, i) => (
+            <tr key={step.label}>
+              <th scope="row">
+                {step.label}
+                {step.timing && <small>{step.timing}</small>}
+              </th>
+              <td>{percentText(step.percent)}</td>
+              <td>
+                {vndFull(amounts[i])} <span>đồng</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">Tổng cộng</th>
+            <td>100%</td>
+            <td>
+              {vndFull(price)} <span>đồng</span>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+export const toDeskUnit = (r: Property): DeskUnit => ({
+  id: r.id,
+  slug: r.slug,
+  name: t(r.name),
+  code: unitRef(r),
+  tower: r.tower ?? "",
+  floor: r.floor,
+  bedrooms: r.bedrooms,
+  rooms: t(hasRooms(r) ? roomsLabel(r) : r.type),
+  area: r.area,
+  direction: r.direction ? t(r.direction) : "",
+  view: r.viewNote ? t(r.viewNote) : "",
+  quota: r.quota ? t(r.quota) : "",
+  excludesFees: !!r.priceExcludesFees,
+  price: r.saleVnd ?? null,
+  state: vacantNow(r)
+    ? "available"
+    : r.status === "Đã bán"
+      ? "sold"
+      : "reserved",
+});
+
+/**
+ * A project under development, as a sales page: hero, overview, photos, tower
+ * → floor → unit, price list, policies, payment and loan, location, sign-up.
+ * Everything is entered in Admin › Dự án; a block with no data stays away.
+ */
+export function ProjectSalePage({
+  project: p,
+  api,
+  story,
+  place,
+  units: rawUnits,
+  crumbs,
+  productLinks,
+  children,
+}: {
+  project: PortfolioProject;
+  api?: ApiProject;
+  story: ProjectStory;
+  place?: ProjectLocation;
+  units: Property[];
+  crumbs: React.ReactNode;
+  productLinks: Record<string, string>;
+  children?: React.ReactNode;
+}) {
+  const units = rawUnits.map(toDeskUnit);
+  const call = telephoneHref(companyHotline);
+  const towers = (api?.towers ?? []).map((x) => ({
+    name: x.name,
+    status: x.status ? t(x.status) : "",
+    note: x.note ? t(x.note) : "",
+  }));
+  const plans = (api?.floorPlans ?? []).map((x) => ({
+    name: t(x.name),
+    tower: x.tower ?? "",
+    image: x.image,
+  }));
+  const types = api?.unitTypes ?? [];
+  const steps = api?.paymentSchedule ?? [];
+  const policies = api?.salesPolicies ?? [];
+  const connections = api?.connections ?? [];
+  const progress = api?.progressPhotos ?? [];
+  const amenities = api?.amenities ?? [];
+  const prices = units.flatMap((u) => u.price ?? []);
+  const lowest = prices.length ? Math.min(...prices) : 0;
+  const open = towers.filter((x) => x.status === t("Đang mở bán"));
+  const media = (group: string): RentalMedia[] =>
+    (api?.photos ?? [])
+      .filter((photo) => photo.group === group)
+      .map((photo) => ({
+        type: "image",
+        src: photo.image,
+        alt: `${group} ${p.name}`,
+      }));
+  const video = videoSource(api?.videoUrl ?? undefined);
+  const groups = [
+    { label: t("Phối cảnh"), media: media("Phối cảnh") },
+    { label: t("Căn hộ mẫu"), media: media("Căn hộ mẫu") },
+    { label: t("Căn 1 phòng ngủ"), media: media("Căn 1 phòng ngủ") },
+    { label: t("Căn 2 phòng ngủ"), media: media("Căn 2 phòng ngủ") },
+    { label: t("Căn 3 phòng ngủ"), media: media("Căn 3 phòng ngủ") },
+    { label: t("Tiện ích"), media: media("Tiện ích") },
+    {
+      label: t("Mặt bằng"),
+      media: plans.map(
+        (plan): RentalMedia => ({
+          type: "image",
+          src: plan.image,
+          alt: plan.name,
+        }),
+      ),
+    },
+    {
+      label: "Video",
+      media: video
+        ? [
+            {
+              type: "video",
+              ...video,
+              alt: `Video ${p.name}`,
+            } as RentalMedia,
+          ]
+        : [],
+    },
+  ].filter((group) => group.media.length);
+  const handover = api?.handoverDate?.split("-");
+  const facts: [string, string][] = [
+    ...(api?.developer ? [["Chủ đầu tư", api.developer] as [string, string]] : []),
+    ["Vị trí", api?.address || p.location],
+    ...(api?.scale ? [["Quy mô", api.scale] as [string, string]] : []),
+    ...(api?.totalUnits
+      ? [["Số căn", `Khoảng ${api.totalUnits.toLocaleString("vi-VN")} căn`] as [string, string]]
+      : []),
+    ...(api?.legalStatus ? [["Pháp lý", api.legalStatus] as [string, string]] : []),
+    ...(api?.handoverNote
+      ? [["Bàn giao", `Dự kiến ${api.handoverNote}`] as [string, string]]
+      : handover
+        ? [["Bàn giao", `Dự kiến tháng ${Number(handover[1])}/${handover[0]}`] as [string, string]]
+        : []),
+  ];
+  const nav: [string, string][] = [
+    ["tong-quan", "Tổng quan"],
+    ...(groups.length ? [["hinh-anh", "Hình ảnh"] as [string, string]] : []),
+    ["bang-gia", "Bảng giá & chọn căn"],
+    ...(policies.length ? [["chinh-sach", "Chính sách"] as [string, string]] : []),
+    ["thanh-toan", "Thanh toán"],
+    ["vi-tri", "Vị trí & tiện ích"],
+    ["dang-ky", "Đăng ký tư vấn"],
+  ];
+  return (
+    <main id="main" className="portfolio-page portfolio-development">
+      {children}
+      <PhotoHero
+        slides={[{ src: p.image, alt: p.imageAlt }]}
+        crumbs={crumbs}
+        title={p.name}
+        subtitle={
+          <>
+            <MapPin size={16} aria-hidden="true" />
+            {p.location}
+          </>
+        }
+      >
+        <div className="project-hero-actions">
+          <a href="#bang-gia" className="button project-hero-cta">
+            Xem bảng giá <ArrowRight size={18} aria-hidden="true" />
+          </a>
+          {call && (
+            <a href={call} className="button project-hero-ghost">
+              <Phone size={17} aria-hidden="true" />
+              Gọi tư vấn
+            </a>
+          )}
+        </div>
+        <dl className="project-hero-facts">
+          {open.length > 0 && (
+            <div>
+              <dt>Tòa đang mở bán</dt>
+              <dd>{open.map((x) => x.name).join(" · ")}</dd>
+            </div>
+          )}
+          {towers
+            .filter((x) => x.status && x.status !== t("Đang mở bán"))
+            .map((x) => (
+              <div key={x.name}>
+                <dt>{x.status}</dt>
+                <dd>{x.name}</dd>
+              </div>
+            ))}
+          {api?.totalUnits ? (
+            <div>
+              <dt>Quy mô</dt>
+              <dd>{`Khoảng ${api.totalUnits.toLocaleString("vi-VN")} căn`}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>Giá bán</dt>
+            <dd>{lowest ? `Từ ${salePrice(lowest)}` : "Liên hệ"}</dd>
+          </div>
+          {api?.handoverNote ? (
+            <div>
+              <dt>Bàn giao</dt>
+              <dd>{api.handoverNote}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </PhotoHero>
+      <nav className="project-nav" aria-label="Nội dung dự án">
+        <div className="container">
+          {nav.map(([id, label]) => (
+            <a key={id} href={`#${id}`}>
+              {label}
+            </a>
+          ))}
+        </div>
+      </nav>
+      <ProjectDesk>
+        <section id="tong-quan" className="project-block">
+          <div className="container project-overview">
+            <div>
+              <span className="signature-kicker">TỔNG QUAN DỰ ÁN</span>
+              <h2>{`Tìm hiểu về ${p.name}`}</h2>
+              {[...new Set([story.intro, ...story.paragraphs])].map((text) => (
+                <p key={text}>{text}</p>
+              ))}
+            </div>
+            <dl className="project-facts">
+              {facts.map(([name, value]) => (
+                <div key={name}>
+                  <dt>{name}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <div className="container">
+            {story.highlights.length > 0 && (
+              <div className="project-highlights">
+                {story.highlights.map((h) => (
+                  <article key={h.title}>
+                    <h3>{h.title}</h3>
+                    <p>{h.text}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+            {story.products.length > 0 && (
+              <div id="san-pham" className="project-links">
+                <ul>
+                  {story.products.map((name) => (
+                    <li key={name}>
+                      {productLinks[name] ? (
+                        <Link href={productLinks[name]}>
+                          {name}
+                          <ArrowUpRight size={18} aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <span>{name}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {groups.length > 0 && (
+          <section id="hinh-anh" className="project-block project-block-tint">
+            <div className="container">
+              <span className="signature-kicker">BỘ SƯU TẬP</span>
+              <h2>{`Hình ảnh ${p.name}`}</h2>
+              <GalleryTabs title={p.name} groups={groups} />
+            </div>
+          </section>
+        )}
+
+        <section id="bang-gia" className="project-block project-block-tint">
+          <div className="container">
+            <span className="signature-kicker">BẢNG GIÁ & CHỌN CĂN</span>
+            <h2>Chọn căn theo tòa</h2>
+            {types.length > 0 && (
+              <ul className="unit-types">
+                {types.map((type) => (
+                  <li key={type.name}>
+                    {type.image && (
+                      <a
+                        href={type.image}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="unit-type-photo"
+                        aria-label={`Xem mặt bằng ${type.name}`}
+                      >
+                        <Image
+                          src={type.image}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 100vw, 25vw"
+                        />
+                      </a>
+                    )}
+                    <h3>{type.name}</h3>
+                    {type.area && <p>{type.area}</p>}
+                    {type.note && <p>{type.note}</p>}
+                    <strong>{type.price || "Giá: Liên hệ"}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {units.length > 0 || towers.length > 0 ? (
+              <>
+                <UnitBrowser towers={towers} units={units} plans={plans} />
+                {units.length > 0 && api?.priceNote && (
+                  <p className="desk-note">{api.priceNote}</p>
+                )}
+              </>
+            ) : (
+              <div className="price-empty">
+                <p>
+                  Bảng giá từng căn đang được cập nhật. Gọi để nhận bảng giá mới
+                  nhất.
+                </p>
+                <CallContact label="Gọi nhận bảng giá" />
+              </div>
+            )}
+          </div>
+        </section>
+
+        {policies.length > 0 && (
+          <section id="chinh-sach" className="project-block">
+            <div className="container">
+              <span className="signature-kicker">CHÍNH SÁCH BÁN HÀNG</span>
+              <h2>Ưu đãi đang áp dụng</h2>
+              <ul className="policy-grid">
+                {policies.map((policy) => (
+                  <li key={policy.title}>
+                    <h3>{policy.title}</h3>
+                    {policy.body && <p>{policy.body}</p>}
+                    {policy.condition && (
+                      <small>
+                        <b>Điều kiện:</b> {policy.condition}
+                      </small>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        <section id="thanh-toan" className="project-block project-block-dark">
+          <div className="container">
+            <span className="signature-kicker">THANH TOÁN & VAY NGÂN HÀNG</span>
+            <h2>Ước tính dòng tiền của bạn</h2>
+            {steps.length === 0 && (
+              <p className="desk-note">
+                Tiến độ thanh toán đang được cập nhật. Bạn vẫn có thể ước tính
+                khoản vay bên dưới.
+              </p>
+            )}
+            <PaymentPlanner steps={steps} startPrice={lowest} />
+            {api?.paymentNote && (
+              <p className="desk-note">{api.paymentNote}</p>
+            )}
+          </div>
+        </section>
+
+        <section id="vi-tri" className="project-block">
+          <div className="container">
+            <span className="signature-kicker">VỊ TRÍ, TIỆN ÍCH, TIẾN ĐỘ</span>
+            <h2>{p.location}</h2>
+            <div className="project-location">
+              {place ? (
+                <ProjectMap place={place} />
+              ) : (
+                <div className="rental-map">
+                  <iframe
+                    title={`Bản đồ ${p.name}`}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(`${p.name} Đà Nẵng`)}&z=15&output=embed`}
+                  />
+                </div>
+              )}
+              <div>
+                {connections.length > 0 && (
+                  <>
+                    <h3>Kết nối khu vực</h3>
+                    <ul className="connection-list">
+                      {connections.map((c) => (
+                        <li key={c.place}>
+                          <span>{c.place}</span>
+                          {c.time && <b>{c.time}</b>}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {amenities.length > 0 && (
+                  <>
+                    <h3>Tiện ích</h3>
+                    <ul className="amenity-chips">
+                      {amenities.map((name) => (
+                        <li key={name}>{name}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
+            {progress.length > 0 && (
+              <>
+                <h3 className="progress-title">Tiến độ xây dựng thực tế</h3>
+                <ul className="progress-grid">
+                  {progress.map((photo) => (
+                    <li key={photo.image}>
+                      <span>
+                        <Image
+                          src={photo.image}
+                          alt={photo.title}
+                          fill
+                          sizes="(max-width: 640px) 100vw, 33vw"
+                        />
+                      </span>
+                      <b>{photo.title}</b>
+                      {photo.date && <small>{photo.date}</small>}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section id="dang-ky" className="project-block project-block-tint">
+          <div className="container">
+            <ProjectLeadForm
+              units={units.filter((u) => u.state !== "sold")}
+              projectSlug={p.slug}
+              projectName={p.name}
+            />
+          </div>
+        </section>
+      </ProjectDesk>
+    </main>
+  );
+}

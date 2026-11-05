@@ -65,6 +65,7 @@ import {
 } from "./model";
 import { ProjectBannerSection, type ProjectBannerDraft } from "./banners";
 import { NO_ROOM_TYPES } from "@/lib/property-groups";
+import { RowsField, type RowsConfig } from "./rows-field";
 import { ALL_RENT_FEES, RENT_FEES } from "@/lib/included-fees";
 
 /** Picking one of these types fills [bedrooms, bathrooms]. */
@@ -72,6 +73,7 @@ const ROOMS_BY_TYPE: Record<string, [number, number]> = {
   studio: [0, 1],
   "1pn": [1, 1],
   "2pn": [2, 2],
+  "2pn-plus": [2, 2],
   "3pn": [3, 2],
   "nha-pho": [3, 3],
   // No rooms: the fields are hidden and saved as 0.
@@ -102,7 +104,10 @@ type Field = {
     /** Amount in đồng, typed with thousand separators (20.000.000). */
     | "vnd"
     /** Page content blocks: heading + text, reorderable (JSON). */
-    | "sections";
+    | "sections"
+    /** A list of small records, see RowsConfig (JSON). */
+    | "rows";
+  table?: RowsConfig;
   required?: boolean;
   default?: string | number | boolean | string[];
   options?: [string, string][];
@@ -407,6 +412,235 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
         ],
       },
       {
+        id: "sales",
+        title: "Bán căn hộ tại dự án",
+        description:
+          "Hiển thị trên trang dự án đang triển khai. Mục nào để trống sẽ tự ẩn. Từng căn đang bán nhập ở mục Căn hộ, chọn đúng dự án này.",
+        icon: Home,
+        fields: [
+          f("scale", "Quy mô dự án", {
+            maxLength: 300,
+            wide: true,
+            placeholder: "vd: 14 tòa căn hộ, cao 24–29 tầng",
+          }),
+          f("handoverNote", "Thời điểm bàn giao", {
+            maxLength: 80,
+            placeholder: "vd: Quý IV/2027",
+            hint: "Hiện trên trang dự án và trang căn; ưu tiên hơn ngày bàn giao dự kiến.",
+          }),
+          f("towers", "Các tòa", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                { key: "name", label: "Tên tòa", placeholder: "vd: C4", maxLength: 40 },
+                {
+                  key: "status",
+                  label: "Trạng thái",
+                  placeholder: "vd: Đang mở bán",
+                  maxLength: 60,
+                },
+                { key: "note", label: "Ghi chú", maxLength: 200 },
+              ],
+              add: "Thêm tòa",
+              max: 40,
+            },
+          }),
+          f("photos", "Bộ sưu tập ảnh", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                {
+                  key: "group",
+                  label: "Nhóm ảnh",
+                  options: [
+                    "Phối cảnh",
+                    "Căn hộ mẫu",
+                    "Căn 1 phòng ngủ",
+                    "Căn 2 phòng ngủ",
+                    "Căn 3 phòng ngủ",
+                    "Tiện ích",
+                  ],
+                },
+              ],
+              image: "Ảnh",
+              add: "Thêm ảnh",
+              max: 80,
+            },
+          }),
+          f("videoUrl", "Video dự án", {
+            type: "url",
+            wide: true,
+            hint: "Liên kết YouTube hoặc tệp MP4 (https://…).",
+          }),
+          f("unitTypes", "Loại căn", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                {
+                  key: "name",
+                  label: "Tên loại căn",
+                  placeholder: "vd: Căn 2 phòng ngủ",
+                  maxLength: 120,
+                },
+                {
+                  key: "area",
+                  label: "Diện tích",
+                  placeholder: "vd: Khoảng 67–93 m²",
+                  maxLength: 60,
+                },
+                {
+                  key: "price",
+                  label: "Giá (trống = Liên hệ)",
+                  placeholder: "vd: Từ 3,2 tỷ",
+                  maxLength: 60,
+                },
+                {
+                  key: "note",
+                  label: "Ghi chú",
+                  placeholder: "vd: Hướng sông",
+                  maxLength: 200,
+                },
+              ],
+              image: "Ảnh mặt bằng căn (tùy chọn)",
+              add: "Thêm loại căn",
+              max: 30,
+            },
+          }),
+          f("priceNote", "Ghi chú bảng giá", {
+            type: "textarea",
+            rows: 2,
+            maxLength: 400,
+            wide: true,
+            hint: "Hiện dưới bảng giá, vd: giá đã gồm VAT và kinh phí bảo trì.",
+          }),
+          f("floorPlans", "Mặt bằng tầng", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                {
+                  key: "name",
+                  label: "Tên mặt bằng",
+                  placeholder: "vd: Mặt bằng tầng tòa C4",
+                  maxLength: 120,
+                },
+                {
+                  key: "tower",
+                  label: "Thuộc tòa",
+                  placeholder: "vd: C4",
+                  maxLength: 40,
+                },
+              ],
+              image: "Ảnh mặt bằng",
+              add: "Thêm mặt bằng",
+              max: 30,
+            },
+          }),
+          f("salesPolicies", "Chính sách bán hàng", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                {
+                  key: "title",
+                  label: "Tên ưu đãi",
+                  placeholder: "vd: Chiết khấu thanh toán sớm",
+                  maxLength: 160,
+                },
+                { key: "body", label: "Nội dung", maxLength: 1000 },
+                { key: "condition", label: "Điều kiện áp dụng", maxLength: 300 },
+              ],
+              add: "Thêm chính sách",
+              max: 20,
+            },
+          }),
+          f("paymentSchedule", "Tiến độ thanh toán", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                {
+                  key: "label",
+                  label: "Tên đợt",
+                  placeholder: "vd: Đợt 1 – Ký hợp đồng",
+                  maxLength: 120,
+                },
+                {
+                  key: "percent",
+                  label: "Tỷ lệ (%)",
+                  placeholder: "vd: 30",
+                  number: true,
+                },
+                {
+                  key: "timing",
+                  label: "Thời điểm",
+                  placeholder: "vd: Trong 7 ngày kể từ ngày ký",
+                  maxLength: 160,
+                },
+              ],
+              add: "Thêm đợt thanh toán",
+              max: 20,
+              percentTotal: "percent",
+            },
+          }),
+          f("paymentNote", "Ghi chú thanh toán", {
+            type: "textarea",
+            rows: 2,
+            maxLength: 600,
+            wide: true,
+            hint: "Vd: chính sách áp dụng đến ngày nào, ưu đãi, hỗ trợ vay.",
+          }),
+          f("connections", "Kết nối khu vực", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                {
+                  key: "place",
+                  label: "Địa điểm",
+                  placeholder: "vd: Sân bay Đà Nẵng",
+                  maxLength: 160,
+                },
+                {
+                  key: "time",
+                  label: "Thời gian",
+                  placeholder: "vd: Khoảng 15 phút",
+                  maxLength: 60,
+                },
+              ],
+              add: "Thêm địa điểm",
+              max: 20,
+            },
+          }),
+          f("progressPhotos", "Ảnh xây dựng thực tế", {
+            type: "rows",
+            wide: true,
+            table: {
+              columns: [
+                {
+                  key: "title",
+                  label: "Mô tả",
+                  placeholder: "vd: Tòa C4 cất nóc",
+                  maxLength: 160,
+                },
+                {
+                  key: "date",
+                  label: "Thời điểm",
+                  placeholder: "vd: Tháng 11/2026",
+                  maxLength: 60,
+                },
+              ],
+              image: "Ảnh",
+              add: "Thêm ảnh tiến độ",
+              max: 60,
+            },
+          }),
+        ],
+      },
+      {
         id: "rental",
         title: "Cho thuê tại dự án",
         description:
@@ -573,6 +807,22 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
                 "Tây Nam",
               ]),
             ],
+          }),
+          f("tower", "Tòa", {
+            maxLength: 40,
+            placeholder: "vd: C4",
+            hint: "Viết đúng tên tòa trong mục Các tòa của dự án.",
+          }),
+          f("viewNote", "View", {
+            maxLength: 120,
+            placeholder: "vd: Sông Hàn",
+          }),
+          f("quota", "Quỹ căn", {
+            maxLength: 60,
+            placeholder: "vd: Quỹ nước ngoài",
+          }),
+          f("priceExcludesFees", "Giá bán chưa gồm VAT và kinh phí bảo trì", {
+            type: "checkbox",
           }),
           f("furniture", "Nội thất", {
             type: "select",
@@ -1218,7 +1468,12 @@ const publicBase: Record<Kind, string> = {
   leads: "",
 };
 function checkField(field: Field, value: FormValue): string | null {
-  if (field.type === "amenities" || field.type === "sections") return null;
+  if (
+    field.type === "amenities" ||
+    field.type === "sections" ||
+    field.type === "rows"
+  )
+    return null;
   if (field.type === "checkboxes")
     return field.required && !(value as string[] | undefined)?.length
       ? "cần chọn ít nhất một mục"
@@ -1858,6 +2113,29 @@ export function Editor({
             }}
           />
           {item.hint && <small id={`${id}-hint`}>{item.hint}</small>}
+          {errorText}
+        </div>
+      );
+    }
+    if (item.type === "rows") {
+      let initial: Record<string, string>[] = [];
+      try {
+        initial = JSON.parse(str(value) || "[]");
+      } catch {
+        /* start empty */
+      }
+      return (
+        <div key={item.key} id={id} className="field full" tabIndex={-1}>
+          <RowsField
+            name={item.key}
+            label={item.label}
+            initial={initial}
+            config={item.table!}
+            onChange={() => {
+              setDirty(true);
+              snapshot();
+            }}
+          />
           {errorText}
         </div>
       );

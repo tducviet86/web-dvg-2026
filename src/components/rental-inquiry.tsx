@@ -11,7 +11,7 @@ import { Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/i18n/client";
 
-export type InquiryMode = "advice" | "consign";
+export type InquiryMode = "advice" | "consign" | "buy";
 
 export type InquiryTarget = {
   propertySlug?: string;

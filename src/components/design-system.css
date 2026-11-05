@@ -1751,67 +1751,6 @@ textarea {
 }
 
 /* Unit for sale: emerald price panel with champagne figures. */
-.room-sale .room-contact-panel {
-  background:
-    radial-gradient(ellipse at 100% 0%, #1d5144 0%, transparent 60%),
-    var(--c-green-800);
-  border: 0;
-  border-top: 2px solid var(--c-gold-400);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  color: var(--c-on-dark);
-}
-.room-sale .room-contact-panel .signature-kicker {
-  color: var(--c-gold-400);
-}
-.room-sale .room-price-label {
-  color: var(--c-on-dark-muted);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-}
-.room-sale .room-price {
-  font-family: var(--font-heading);
-  font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem);
-  font-weight: 400;
-  line-height: 1.05;
-  color: var(--c-gold-300);
-}
-.room-sale .room-contact-panel .room-sale-price {
-  color: var(--c-on-dark-muted);
-}
-.room-sale .room-contact-panel .room-sale-price strong {
-  font-size: var(--fs-md);
-  color: #fff;
-}
-.room-sale .room-contact-panel h2 {
-  color: #fff;
-}
-.room-sale .room-contact-panel > p,
-.room-sale .room-call-context span {
-  color: var(--c-on-dark-muted);
-}
-.room-sale .room-call-context {
-  border-color: var(--c-line-inverse);
-}
-.room-sale .room-call-context strong {
-  color: #fff;
-}
-.room-sale .room-contact-panel .room-availability {
-  background: #d4b97a26;
-  color: var(--c-gold-300);
-}
-.room-sale .room-contact-panel .call-button,
-.room-sale .room-contact-panel .call-button.button-outline-call {
-  background: var(--c-gold-400);
-  border-color: var(--c-gold-400);
-  color: var(--c-green-950);
-}
-.room-sale .room-contact-panel .call-button:hover {
-  background: var(--c-gold-300);
-}
-.room-sale .room-contact-panel > .text-link {
-  color: var(--c-gold-300);
-}
 .room-sale .room-mobile-call strong {
   font-family: var(--font-heading);
   color: var(--c-green-700);

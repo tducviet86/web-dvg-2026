@@ -14,6 +14,7 @@ import type { PortfolioProject } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { HomeProjects } from "./home-projects";
 import { PhotoHero, SearchHero } from "./search-hero";
+import { ProjectSalePage } from "./project-sale";
 import type { HeroMode } from "./rental-hero-search";
 import { isSaleSearch, searchUnits, type Filters } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
@@ -286,14 +287,9 @@ export function PortfolioDetail({
       <span aria-current="page">{p.name}</span>
     </>
   );
-  return (
-    <main
-      id="main"
-      className={`portfolio-page portfolio-detail ${development ? "portfolio-development" : "portfolio-operation"}`}
-    >
-      {(() => {
-        const api = content.apiProjects.find((x) => x.id === p.projectId);
-        return api ? (
+  const api = content.apiProjects.find((x) => x.id === p.projectId);
+  const forSale = rooms.filter((r) => r.forSale && !r.isDemo);
+  const schema = api ? (
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
@@ -307,141 +303,44 @@ export function PortfolioDetail({
               ),
             }}
           />
-        ) : null;
-      })()}
-      {!development && (
-        <SearchHero
-          slides={slides}
-          crumbs={crumbs}
-          title={p.name}
-          subtitle={
-            <>
-              <MapPin size={16} aria-hidden="true" />
-              {p.location}
-            </>
-          }
-          action={`/du-an/${p.slug}`}
-          mode={active}
-          values={filters}
-          project={{ slug: p.slug, name: p.name }}
-          units={rooms}
-        />
-      )}
-      {development && (
-        <PhotoHero
-          className="about-hero-compact"
-          slides={[{ src: p.image, alt: p.imageAlt }]}
-          crumbs={crumbs}
-          title={p.name}
-          subtitle={
-            <>
-              <MapPin size={16} aria-hidden="true" />
-              {p.location}
-            </>
-          }
-        />
-      )}
-      <div className="container">
-        {development ? (
+  ) : null;
+  if (development)
+    return (
+      <ProjectSalePage
+        project={p}
+        api={api}
+        story={story}
+        place={content.locations[p.projectId]}
+        units={forSale}
+        crumbs={crumbs}
+        productLinks={productLinks}
+      >
+        {schema}
+      </ProjectSalePage>
+    );
+  return (
+    <main
+      id="main"
+      className="portfolio-page portfolio-detail portfolio-operation"
+    >
+      {schema}
+      <SearchHero
+        slides={slides}
+        crumbs={crumbs}
+        title={p.name}
+        subtitle={
           <>
-            <nav className="portfolio-anchor-nav" aria-label="Nội dung dự án">
-              <a href="#tong-quan">01 Tổng quan</a>
-              <a href="#san-pham">02 Loại sản phẩm</a>
-              <a href="#vi-tri">03 Vị trí & kết nối</a>
-              <a href="#trao-doi">04 Trao đổi dự án</a>
-            </nav>
-            <section id="tong-quan" className="portfolio-overview">
-              <div>
-                <span className="signature-kicker">01 / GIỚI THIỆU DỰ ÁN</span>
-                <h2>
-                  Một góc nhìn
-                  <br />
-                  <em>về {p.name}.</em>
-                </h2>
-              </div>
-              <div>
-                {[...new Set([story.intro, ...story.paragraphs])].map((t) => (
-                  <p key={t}>{t}</p>
-                ))}
-              </div>
-            </section>
-            <div className="portfolio-highlights">
-              {story.highlights.map((h, i) => (
-                <article key={h.title}>
-                  <span>0{i + 1}</span>
-                  <h3>{h.title}</h3>
-                  <p>{h.text}</p>
-                </article>
-              ))}
-            </div>
-            <section id="san-pham" className="portfolio-products">
-              <div>
-                <span className="signature-kicker">
-                  02 / LOẠI HÌNH SẢN PHẨM
-                </span>
-                <h2>
-                  Không gian cho
-                  <br />
-                  <em>những nhu cầu khác nhau.</em>
-                </h2>
-              </div>
-              <ul>
-                {story.products.map((t, i) => (
-                  <li key={t}>
-                    {productLinks[t] ? (
-                      <Link href={productLinks[t]}>
-                        <span>0{i + 1}</span>
-                        {t}
-                        <ArrowUpRight size={20} aria-hidden="true" />
-                      </Link>
-                    ) : (
-                      <>
-                        <span>0{i + 1}</span>
-                        {t}
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section id="vi-tri" className="portfolio-location">
-              <MapPin size={32} />
-              <div>
-                <span className="signature-kicker">03 / VỊ TRÍ & KẾT NỐI</span>
-                <h2>{p.location}</h2>
-                <p>
-                  Khám phá khu vực xung quanh dự án để cân nhắc kết nối hằng
-                  ngày, môi trường sống và nhu cầu sử dụng.
-                </p>
-              </div>
-              <a
-                className="text-link"
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + " Đà Nẵng")}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Mở bản đồ <ArrowUpRight size={18} />
-              </a>
-            </section>
-            <section id="trao-doi" className="portfolio-direct">
-              <div>
-                <span className="signature-kicker">
-                  04 / TRAO ĐỔI CÙNG ĐẤT VÀNG
-                </span>
-                <h2>
-                  Tìm hiểu kỹ hơn
-                  <br />
-                  trước khi lựa chọn.
-                </h2>
-                <p>
-                  Trao đổi về loại căn, thông tin mặt bằng và lịch tham quan dự
-                  án.
-                </p>
-              </div>
-              <CallContact label="Gọi tư vấn dự án" />
-            </section>
+            <MapPin size={16} aria-hidden="true" />
+            {p.location}
           </>
-        ) : (
+        }
+        action={`/du-an/${p.slug}`}
+        mode={active}
+        values={filters}
+        project={{ slug: p.slug, name: p.name }}
+        units={rooms}
+      />
+      <div className="container">
           <>
             <section className="operation-intro">
               <p>{story.paragraphs[0] || story.intro}</p>
@@ -573,7 +472,6 @@ export function PortfolioDetail({
             </section>
             <ProjectMap place={content.locations[p.projectId]} />
           </>
-        )}
         {!development &&
           (() => {
             const faqs = listingFaqs(content.properties, p);

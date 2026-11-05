@@ -42,6 +42,13 @@ const copy: Record<
     source: "Cho thuê căn hộ",
     submit: "Gửi nhu cầu",
   },
+  buy: {
+    title: "Nhận bảng giá và mặt bằng",
+    lead: "Để lại thông tin, tư vấn viên sẽ gửi bảng giá, mặt bằng và chính sách thanh toán mới nhất.",
+    intent: "Mua căn hộ",
+    source: "Trang dự án",
+    submit: "Gửi yêu cầu",
+  },
   consign: {
     title: "Ký gửi căn hộ cho thuê",
     lead: "Giới thiệu căn hộ của bạn. Đất Vàng sẽ liên hệ khảo sát và đề xuất phương án cho thuê.",
@@ -98,6 +105,11 @@ function compose(mode: InquiryMode, target: InquiryTarget, v: Values) {
     .join(" · ");
   if (mode === "advice") {
     lines.push(`Tư vấn chọn căn hộ thuê${unit ? ` tại ${unit}` : ""}.`);
+    if (v.budget) lines.push(`Ngân sách: ${v.budget}.`);
+  } else if (mode === "buy") {
+    lines.push(
+      `Muốn nhận bảng giá và mặt bằng${unit ? ` tại ${unit}` : ""}.`,
+    );
     if (v.budget) lines.push(`Ngân sách: ${v.budget}.`);
   } else {
     lines.push(
@@ -365,7 +377,7 @@ export function InquiryDialogForm({
                     }
                   />
                 </Field>
-                {mode === "advice" && (
+                {mode !== "consign" && (
                   <Field
                     id={`${formId}-budget`}
                     label="Ngân sách mỗi tháng"

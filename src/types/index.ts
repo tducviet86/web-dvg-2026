@@ -18,6 +18,12 @@ export type AdminDetails = {
   amenityKeys?: string[];
   unitCode?: string;
   direction?: string;
+  tower?: string;
+  viewNote?: string;
+  /** Sales quota, e.g. "Quỹ nước ngoài". */
+  quota?: string;
+  /** The sale price leaves out VAT and the maintenance fund. */
+  priceExcludesFees?: boolean;
   deposit?: string;
   managementFee?: string;
   minimumLease?: string;

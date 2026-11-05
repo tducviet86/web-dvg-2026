@@ -224,6 +224,207 @@ const heroTouchesHeader = (page: Page) =>
     )
     .toBeLessThanOrEqual(1);
 
+test("a development project sells: unit types, units, payment worked out per unit", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; slug: string; name: string; stage: string }[];
+  };
+  const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
+  const saved = await api.send("patch", `/admin/projects/${project.id}`, {
+    unitTypes: [{ name: "Căn QA 2 phòng ngủ", area: "Khoảng 70 m²", price: "Từ 3 tỷ" }],
+    paymentSchedule: [
+      { label: "Đợt QA 1", percent: 30, timing: "Khi ký" },
+      { label: "Đợt QA 2", percent: 70 },
+    ],
+  });
+  expect(saved.ok()).toBeTruthy();
+  const unit = await api.send("post", "/admin/properties", {
+    name: "Căn bán QA dự án",
+    projectId: project.id,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn hộ kiểm tra trang bán của dự án.",
+    forSale: true,
+    forRent: false,
+    salePriceVnd: "3000000000",
+    status: "PUBLISHED",
+  });
+  expect(unit.ok(), await unit.text()).toBeTruthy();
+  await expect
+    .poll(async () => {
+      await page.goto(`/du-an/${project.slug}`);
+      return page.locator("#bang-gia tbody tr").count();
+    })
+    .toBeGreaterThan(0);
+  await expect(page.locator("#bang-gia")).toContainText("Căn QA 2 phòng ngủ");
+  await expect(page.locator("#thanh-toan")).toContainText("Đợt QA 2");
+  // Calling comes first; the chosen unit still reaches the calculator and the form.
+  await page.evaluate(() =>
+    document.addEventListener("click", (e) => e.preventDefault()),
+  );
+  await page
+    .locator("#bang-gia tbody tr", { hasText: "3.000.000.000" })
+    .first()
+    .getByRole("link", { name: "Gọi tư vấn" })
+    .click();
+  await expect(page.locator("#dang-ky select")).not.toHaveValue("");
+  await expect(page.locator(".planner-price input")).toHaveValue(
+    "3.000.000.000",
+  );
+  await expect(page.locator("#thanh-toan table")).toContainText("900.000.000");
+  await page.locator("#bang-gia tbody th a").first().click();
+  await expect(page).toHaveURL(/\/mua-ban\//);
+  const table = page.locator(".room-payment table");
+  await expect(table).toContainText("900.000.000");
+  await expect(table).toContainText("2.100.000.000");
+  // Nothing filled in: the block stays away.
+  const cleared = await api.send("patch", `/admin/projects/${project.id}`, {
+    paymentSchedule: [],
+  });
+  expect(cleared.ok()).toBeTruthy();
+  await expect
+    .poll(async () => {
+      await page.goto(`/du-an/${project.slug}`);
+      return page.locator("#thanh-toan table").count();
+    })
+    .toBe(0);
+  const id = ((await unit.json()) as { data: { id: string } }).data.id;
+  await api.send("delete", `/admin/properties/${id}`);
+});
+
+test("a project lists its units one tower at a time, a few at first", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; slug: string; stage: string }[];
+  };
+  const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
+  const saved = await api.send("patch", `/admin/projects/${project.id}`, {
+    towers: [
+      { name: "QA1", status: "Đang mở bán" },
+      { name: "QA2", status: "Đang nhận booking" },
+    ],
+  });
+  expect(saved.ok()).toBeTruthy();
+  const ids: string[] = [];
+  for (let n = 0; n < 10; n++) {
+    const res = await api.send("post", "/admin/properties", {
+      name: `Căn tòa QA ${n}`,
+      projectId: project.id,
+      propertyType: "2pn",
+      unitCode: `QA1-${n}`,
+      tower: "QA1",
+      floor: 10 + (n % 2),
+      location: "Đà Nẵng",
+      areaM2: 70,
+      bedrooms: 2,
+      bathrooms: 2,
+      description: "Căn hộ kiểm tra danh sách theo tòa.",
+      forSale: true,
+      forRent: false,
+      salePriceVnd: String(5000000000 + n * 100000000),
+      status: "PUBLISHED",
+    });
+    expect(res.ok(), await res.text()).toBeTruthy();
+    ids.push(((await res.json()) as { data: { id: string } }).data.id);
+  }
+  const rows = page.locator("#bang-gia tbody tr");
+  await expect
+    .poll(async () => {
+      await page.goto(`/du-an/${project.slug}`);
+      return rows.count();
+    })
+    .toBe(8);
+  await page.getByRole("button", { name: "Xem thêm 2 căn" }).click();
+  await expect(rows).toHaveCount(10);
+  // Anywhere on a row opens the unit, except the call button.
+  await rows.first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(600); // smooth scroll settles
+  const cell = (await rows.first().locator("td").first().boundingBox())!;
+  await page.mouse.click(cell.x + cell.width / 2, cell.y + cell.height / 2);
+  await expect(page).toHaveURL(/\/mua-ban\//);
+  await page.goBack();
+  await expect(rows).not.toHaveCount(0);
+  const more = page.getByRole("button", { name: "Xem thêm 2 căn" });
+  if (await more.count()) await more.click();
+  await page.locator(".price-filters select").first().selectOption("10");
+  await expect(rows).toHaveCount(5);
+  // A tower with no units yet asks for a call.
+  await page.locator(".tower-tabs button", { hasText: "QA2" }).click();
+  await expect(rows).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Gọi nhận danh sách căn" }),
+  ).toBeVisible();
+  for (const id of ids) await api.send("delete", `/admin/properties/${id}`);
+  await api.send("patch", `/admin/projects/${project.id}`, { towers: [] });
+});
+
+test("a unit with no photos of its own shows the model unit of its type", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; stage: string }[];
+  };
+  const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
+  const media = (await api.get("/admin/media?pageSize=10")) as {
+    data: { id: string; url: string; mimeType: string }[];
+  };
+  const images = media.data.filter((m) => m.mimeType.startsWith("image/"));
+  const saved = await api.send("patch", `/admin/projects/${project.id}`, {
+    photos: [
+      { group: "Căn 2 phòng ngủ", image: images[0].url },
+      { group: "Căn 2 phòng ngủ", image: images[1].url },
+      { group: "Căn 3 phòng ngủ", image: images[2].url },
+    ],
+  });
+  expect(saved.ok(), await saved.text()).toBeTruthy();
+  const unit = (name: string, propertyType: string, coverImageId?: string) =>
+    api.send("post", "/admin/properties", {
+      name,
+      projectId: project.id,
+      propertyType,
+      location: "Đà Nẵng",
+      areaM2: 78,
+      bedrooms: 2,
+      bathrooms: 2,
+      description: "Căn hộ kiểm tra ảnh mẫu theo loại căn.",
+      forSale: true,
+      forRent: false,
+      salePriceVnd: "3000000000",
+      status: "PUBLISHED",
+      coverImageId,
+    });
+  const ids: string[] = [];
+  const open = async (name: string, type: string, cover?: string) => {
+    const res = await unit(name, type, cover);
+    expect(res.ok(), await res.text()).toBeTruthy();
+    const { id, slug } = ((await res.json()) as {
+      data: { id: string; slug: string };
+    }).data;
+    ids.push(id);
+    await expect
+      .poll(async () => (await page.goto(`/mua-ban/${slug}`))?.status())
+      .toBe(200);
+  };
+  const note = page.locator(".room-image-note");
+  // 2 PN +1 shares the 2 PN album; the note says the photos are a model.
+  await open("Căn QA mẫu 2PN cộng", "2pn-plus");
+  await expect(note).toContainText("Hình ảnh căn hộ mẫu");
+  await expect(page.locator("main")).toContainText("1 / 2");
+  // Its own photo stays, with no model note.
+  await open("Căn QA ảnh riêng", "2pn", images[3].id);
+  await expect(note).not.toContainText("Hình ảnh căn hộ mẫu");
+  for (const id of ids) await api.send("delete", `/admin/properties/${id}`);
+  await api.send("patch", `/admin/projects/${project.id}`, { photos: [] });
+});
+
 test("a development project page opens on a photo right under the header", async ({
   page,
 }) => {

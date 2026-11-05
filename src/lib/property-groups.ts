@@ -50,8 +50,16 @@ export const floorLabel = (p: { floor?: number | null; typeCode?: string }) =>
   p.floor && p.typeCode !== "shophouse" ? `Tầng ${p.floor}` : undefined;
 
 /** "2 PN", or the type ("Studio", "Shophouse", "Mặt bằng") without bedrooms. */
-export const roomsLabel = (p: { bedrooms: number; type?: string }) =>
-  p.bedrooms > 0 ? `${p.bedrooms} PN` : p.type || "Studio";
+export const roomsLabel = (p: {
+  bedrooms: number;
+  type?: string;
+  typeCode?: string;
+}) =>
+  p.typeCode === "2pn-plus"
+    ? "2 PN +1"
+    : p.bedrooms > 0
+      ? `${p.bedrooms} PN`
+      : p.type || "Studio";
 
 /**
  * What a list holds, for its heading: the kind searched for ("loai"), else

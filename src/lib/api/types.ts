@@ -60,15 +60,43 @@ export type ApiProject = {
   gallery: ApiImage[];
   amenities: string[];
   highlights: { title: string; text: string }[];
+  unitTypes?: UnitType[];
+  floorPlans?: FloorPlan[];
+  paymentSchedule?: PaymentStep[];
+  paymentNote?: string | null;
+  towers?: Tower[];
+  photos?: ProjectPhoto[];
+  salesPolicies?: SalesPolicy[];
+  connections?: Connection[];
+  progressPhotos?: ProgressPhoto[];
+  videoUrl?: string | null;
+  scale?: string | null;
+  priceNote?: string | null;
+  handoverNote?: string | null;
   rentalGuide: { intro: string; focus: string | null; checks: string[] } | null;
   seo: { title: string | null; description: string | null };
   publishedAt: string | null;
   updatedAt: string;
 };
 
+export type UnitType = {
+  name: string;
+  area?: string;
+  price?: string;
+  note?: string;
+  image?: string;
+};
+export type FloorPlan = { name: string; tower?: string; image: string };
+export type Tower = { name: string; status?: string; note?: string };
+export type ProjectPhoto = { group: string; image: string };
+export type SalesPolicy = { title: string; body?: string; condition?: string };
+export type Connection = { place: string; time?: string };
+export type ProgressPhoto = { title: string; date?: string; image: string };
+export type PaymentStep = { label: string; percent: number; timing?: string };
+
 export type Availability =
   "AVAILABLE" | "RESERVED" | "RENTED" | "SOLD" | "MAINTENANCE";
-export type Furnishing = "FULL" | "BASIC" | "NONE";
+export type Furnishing = "FULL" | "BASIC" | "NONE" | "ROUGH";
 export type ApiProperty = {
   id: string;
   slug: string;
@@ -90,6 +118,10 @@ export type ApiProperty = {
   bathrooms: number;
   floor: number | null;
   direction: string | null;
+  tower?: string | null;
+  viewNote?: string | null;
+  quota?: string | null;
+  priceExcludesFees?: boolean;
   furnishing: Furnishing;
   rentPriceVnd: string | null;
   salePriceVnd: string | null;

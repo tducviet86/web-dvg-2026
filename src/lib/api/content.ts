@@ -47,8 +47,9 @@ export const furnishingLabels: Record<Furnishing, string> = {
   FULL: "Đầy đủ nội thất",
   BASIC: "Nội thất cơ bản",
   NONE: "Không nội thất",
+  ROUGH: "Bàn giao thô",
 };
-const FALLBACK_IMAGE = "/images/img1.png";
+export const FALLBACK_IMAGE = "/images/img1.png";
 /** "20000000" → "20.000.000 đ". */
 const vndText = (vnd: string) =>
   `${vnd.replace(/\B(?=(\d{3})+(?!\d))/g, ".")} đ`;
@@ -155,6 +156,10 @@ export function toProperty(p: ApiProperty): Property {
     interestScore: p.interestScore ?? 0,
     unitCode: p.unitCode ?? undefined,
     direction: p.direction ?? undefined,
+    tower: p.tower ?? undefined,
+    viewNote: p.viewNote ?? undefined,
+    quota: p.quota ?? undefined,
+    priceExcludesFees: !!p.priceExcludesFees,
     deposit: depositText(p.depositVnd, p.rentPriceVnd),
     managementFee: p.managementFeeVnd
       ? `${vndText(p.managementFeeVnd)} / tháng`

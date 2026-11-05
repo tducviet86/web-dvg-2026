@@ -949,3 +949,41 @@ test("a post scheduled for later says so, and can be published now", async ({
     "Bài hẹn giờ QA",
   );
 });
+
+test("project form: payment steps total 100%, are saved and stay editable", async ({
+  page,
+}) => {
+  await login(page);
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; name: string; stage: string }[];
+  };
+  const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
+  await page.goto("/admin/projects");
+  await page
+    .getByRole("button", { name: `Sửa ${project.name}`, exact: true })
+    .click();
+  const field = page.getByRole("group", { name: "Tiến độ thanh toán" });
+  await field.getByRole("button", { name: "Thêm đợt thanh toán" }).click();
+  await field.getByLabel("Tên đợt").fill("Đợt giao diện QA");
+  await field.getByLabel("Tỷ lệ (%)").fill("40");
+  await expect(field.locator(".rows-field-total.invalid")).toContainText("40%");
+  // The server refuses a schedule that is not 100%.
+  await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+  await expectErrorPopup(page, /100%/);
+  await page.keyboard.press("Escape");
+  await field.getByLabel("Tỷ lệ (%)").fill("100");
+  await expect(field.locator(".rows-field-total.invalid")).toHaveCount(0);
+  await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+  await expect
+    .poll(async () => {
+      const saved = (await api.get(`/admin/projects/${project.id}`)) as {
+        data: { paymentSchedule: { label: string; percent: number }[] };
+      };
+      return saved.data.paymentSchedule;
+    })
+    .toEqual([{ label: "Đợt giao diện QA", percent: 100 }]);
+  await api.send("patch", `/admin/projects/${project.id}`, {
+    paymentSchedule: [],
+  });
+});
