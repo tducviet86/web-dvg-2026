@@ -397,6 +397,9 @@ test("Capital Square shows its 360° tour and a unit's layout or 3D model", asyn
   await spot.click();
   await expect(page.locator(".plan-zoom-view")).toBeVisible();
   await expect(page.locator(".plan-zoom-model")).toHaveCount(0);
+  // Cut along the unit's outline, with the areas printed on the drawing.
+  await expect(page.locator(".plan-cut-edge")).toHaveCount(1);
+  await expect(page.locator(".plan-cut-facts")).toContainText("Thông thủy");
   const views = page.locator(".plan-zoom-switch button");
   await views.nth(1).click();
   await expect(page.locator(".plan-zoom-model")).toBeVisible();

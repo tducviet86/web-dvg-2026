@@ -3531,3 +3531,64 @@
     height: 32px;
   }
 }
+
+/* A unit cut along its real outline, with its areas below. */
+.plan-zoom-view.plan-cut {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  aspect-ratio: auto;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.plan-zoom.with-model .plan-zoom-view.plan-cut {
+  width: 100%;
+}
+.plan-cut-shape {
+  display: block;
+  width: 100%;
+  height: calc(var(--plan-h, 520px) - 150px);
+  filter: drop-shadow(0 10px 18px #10271938);
+}
+.plan-cut-edge {
+  fill: none;
+  stroke: var(--c-green-900);
+  stroke-width: 1.5;
+}
+.plan-cut-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+}
+.plan-cut-facts div {
+  flex: 1 1 96px;
+  max-width: 180px;
+  padding: 8px 12px;
+  border: 1px solid #e0e4d9;
+  border-radius: 10px;
+  background: #f9f8f3;
+  text-align: center;
+}
+.plan-cut-facts dt {
+  font-size: 12px;
+  color: #5f6f66;
+}
+.plan-cut-facts dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-green-900);
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .plan-cut-shape {
+    height: auto;
+    max-height: 58vh;
+  }
+}

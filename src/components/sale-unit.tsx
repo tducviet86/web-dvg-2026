@@ -10,6 +10,7 @@ import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { CallContact, WhatsAppContact } from "./call-contact";
 import { Favorite } from "./client-basics";
 import { RichText } from "./rich-text";
+import { PlanCutout, planArea } from "./plan-cutout";
 import { PaymentTable, toDeskUnit } from "./project-sale";
 import { ProjectDesk, ProjectLeadForm } from "./project-sale-desk";
 import { ProjectMap } from "./project-map";
@@ -30,17 +31,48 @@ export function unitLayout(r: Property, api?: ApiProject) {
     onPlan[0];
   const map = plan && planSpots(plan.image);
   const spot = map?.spots.find((x) => x.unit === number);
-  return plan && map && spot ? { plan, ratio: map.ratio, spot } : null;
+  return plan && map && spot
+    ? { plan, ratio: map.ratio, width: map.width, height: map.height, spot }
+    : null;
 }
 
-/** The unit cut out of the floor plan, with its name label. */
+/** The unit cut out of the floor plan, with its areas below. */
 export function UnitLayoutCrop({
-  layout: { plan, ratio, spot },
+  layout: { plan, ratio, width, height, spot },
   alt,
 }: {
   layout: NonNullable<ReturnType<typeof unitLayout>>;
   alt: string;
 }) {
+  if (spot.outline)
+    return (
+      <div className="plan-zoom-view sale-unit-layout plan-cut">
+        <PlanCutout
+          image={plan.image}
+          width={width}
+          height={height}
+          outline={spot.outline}
+          id={spot.unit}
+          label={alt}
+        />
+        <dl className="plan-cut-facts">
+          <div>
+            <dt>Căn</dt>
+            <dd>{`${plan.tower}-${spot.unit}`}</dd>
+          </div>
+          <div>
+            <dt>Thông thủy</dt>
+            <dd>{planArea(spot.outline.inner)}</dd>
+          </div>
+          {spot.outline.wall && (
+            <div>
+              <dt>Tim tường</dt>
+              <dd>{planArea(spot.outline.wall)}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+    );
   return (
     <div
       className="plan-zoom-view sale-unit-layout"

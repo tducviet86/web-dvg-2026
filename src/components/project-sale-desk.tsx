@@ -21,6 +21,7 @@ import type { SiteMap } from "@/lib/project-site-maps";
 import { loanFigures, paymentAmounts } from "@/lib/payment";
 import type { RentalMedia } from "@/lib/property-media";
 import { vndFull } from "@/lib/utils";
+import { PlanCutout, planArea } from "./plan-cutout";
 import { RentalGallery } from "./rental-gallery";
 
 export type DeskUnit = {
@@ -240,6 +241,33 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
                 height={1192}
                 sizes="(max-width: 900px) 100vw, 500px"
               />
+            ) : zoom.outline ? (
+              <div className="plan-zoom-view plan-cut">
+                <PlanCutout
+                  image={plan.image}
+                  width={map.width}
+                  height={map.height}
+                  outline={zoom.outline}
+                  id={zoom.unit}
+                  label={t("Mặt bằng căn {unit}", { unit: zoom.unit })}
+                />
+                <dl className="plan-cut-facts">
+                  <div>
+                    <dt>{t("Căn")}</dt>
+                    <dd>{unit ? shownCode(unit.code) : zoom.unit}</dd>
+                  </div>
+                  <div>
+                    <dt>{t("Thông thủy")}</dt>
+                    <dd>{planArea(zoom.outline.inner)}</dd>
+                  </div>
+                  {zoom.outline.wall && (
+                    <div>
+                      <dt>{t("Tim tường")}</dt>
+                      <dd>{planArea(zoom.outline.wall)}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
             ) : (
               <div
                 className="plan-zoom-view"
