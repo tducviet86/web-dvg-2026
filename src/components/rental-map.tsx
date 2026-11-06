@@ -34,13 +34,16 @@ const STYLE = "https://tiles.openfreemap.org/styles/positron";
 const VIEW = { pitch: 66, bearing: -10 };
 const OVERVIEW_ZOOM = { wide: 14.15, narrow: 13.5 };
 const PANEL_WIDTH = 360;
-/** Neighbouring names lean apart so they do not cover each other. */
-const PIN_SHIFT: Record<string, number> = {
-  "sun-ponte-residence": -62,
-  "hiyori-garden-tower": 62,
-  "monarchy-apartments": -30,
-  "sun-panoma": 30,
+/**
+ * Neighbouring names open to opposite sides so they do not cover each other or
+ * the towers; the name's tail always points at its own tower.
+ */
+const PIN_SIDE: Record<string, "left" | "right"> = {
+  "sun-ponte-residence": "left",
+  "monarchy-apartments": "right",
 };
+/** Tail's distance from the end of a name that opens to one side. */
+const TAIL = 22;
 /** Tower glass and podium; the chosen tower turns gold. */
 const GLASS = "#0f5f5c";
 const PODIUM = "#c8a765";
@@ -64,6 +67,18 @@ function paintPin(
   pin.textContent = title;
   pin.dataset.lit = String(lit);
   pin.dataset.empty = String(empty);
+}
+
+/** Pixels from a building's foot to its roof at the map's zoom and tilt. */
+function roofLift(made: MapLibre, b: MapBuilding) {
+  const metres = Math.max(
+    0,
+    ...(BUILDING_BLOCKS[b.slug] ?? []).map((x) => x.base + x.height),
+  );
+  const perMetre =
+    (512 * 2 ** made.getZoom()) /
+    (40_075_016 * Math.cos((b.lat * Math.PI) / 180));
+  return metres * perMetre * Math.sin((made.getPitch() * Math.PI) / 180);
 }
 
 /** Softer land, greener parks and clearer water than the plain style. */
@@ -276,21 +291,35 @@ export function RentalMap({ buildings }: { buildings: MapBuilding[] }) {
             label.addEventListener("click", () => choose.current(b.slug));
             label.addEventListener("mouseenter", () => setHovered(b.slug));
             label.addEventListener("mouseleave", () => setHovered(null));
+            const side = PIN_SIDE[b.slug];
+            if (side) label.dataset.side = side;
             markers.current[b.slug] = {
               el: label,
               marker: new maplibre.Marker({
                 element: label,
-                anchor: "bottom",
-                offset: [
-                  (PIN_SHIFT[b.slug] ?? 0) *
-                    (window.innerWidth > 900 ? 1 : 0.4),
-                  -40,
-                ],
+                // The name opens away from the tower, its tail over the roof.
+                anchor:
+                  side === "left"
+                    ? "bottom-right"
+                    : side === "right"
+                      ? "bottom-left"
+                      : "bottom",
               })
                 .setLngLat([b.lng, b.lat])
                 .addTo(made),
             };
           }
+          const placePins = () => {
+            for (const b of buildings) {
+              const side = PIN_SIDE[b.slug];
+              markers.current[b.slug]?.marker.setOffset([
+                side === "left" ? TAIL : side === "right" ? -TAIL : 0,
+                -(roofLift(made, b) + 8),
+              ]);
+            }
+          };
+          placePins();
+          made.on("move", placePins);
           setReady(true);
         });
       } catch {

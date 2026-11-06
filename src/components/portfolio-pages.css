@@ -3699,6 +3699,17 @@
   background: inherit;
   transform: translateX(-50%) rotate(45deg);
 }
+.rmap-pin[data-side="left"]::after {
+  right: 22px;
+  left: auto;
+  margin-right: -4.5px;
+  transform: rotate(45deg);
+}
+.rmap-pin[data-side="right"]::after {
+  left: 22px;
+  margin-left: -4.5px;
+  transform: rotate(45deg);
+}
 .rmap-pin[data-lit="true"] {
   z-index: 2;
   border-color: #fff;
