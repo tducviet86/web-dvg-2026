@@ -6,6 +6,7 @@ import { API_URL, BE_DIR, E2E_DATABASE_URL } from "../playwright.config";
 import { apiAs } from "./helpers";
 import { telephoneHref } from "../src/lib/company-contact";
 import { pickFeaturedRentals } from "../src/components/home-rentals";
+import { PLAN_OUTLINES } from "../src/lib/floor-plan-outlines";
 import type { Property } from "../src/types";
 
 test("project entry points separate introductions from operations", async ({
@@ -618,4 +619,20 @@ test("featured rentals: much-viewed units rise above HOT without a badge", () =>
     "moi",
     "hot-het-phong",
   ]);
+});
+
+test("tower C3 has its floor plan and a picture for each unit", async ({
+  request,
+}) => {
+  const base = "/images/projects/capital-square";
+  const plan = await request.get(`${base}/mat-bang-c3-tang-5-23.webp`);
+  expect(plan.status()).toBe(200);
+  const units = PLAN_OUTLINES["mat-bang-c3-tang-5-23.webp"].units;
+  expect(Object.keys(units)).toHaveLength(9);
+  for (const unit of Object.keys(units)) {
+    const res = await request.get(
+      `${base}/mat-bang-can/c3-tang-5-23/${unit.toLowerCase()}.webp`,
+    );
+    expect(res.status(), unit).toBe(200);
+  }
 });
