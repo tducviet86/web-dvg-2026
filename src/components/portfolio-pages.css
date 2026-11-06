@@ -3316,12 +3316,10 @@
 .site-stage[style*="height"] {
   overflow: hidden;
 }
+/* In turn: the map dives first, then the tower's plan comes. Together, the plan
+   would cover the map at once wherever it is as wide as the screen. */
 .site-panel {
   width: 100%;
-  transition:
-    opacity 0.5s ease,
-    transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1),
-    visibility 0s;
 }
 .site-panel[aria-hidden="true"] {
   position: absolute;
@@ -3330,14 +3328,28 @@
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
+}
+.site-panel-map {
+  transition: opacity 0.25s ease 0.05s;
+}
+.site-panel-map[aria-hidden="true"] {
   transition:
-    opacity 0.45s ease,
-    transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1),
+    opacity 0.25s ease 0.32s,
     visibility 0s 0.6s;
 }
 .site-panel-tower[aria-hidden="true"] {
-  transform: scale(0.94);
-  transform-origin: top center;
+  transition:
+    opacity 0.2s ease,
+    visibility 0s 0.2s;
+}
+.site-panel-tower[aria-hidden="false"] {
+  animation: site-tower-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) 0.42s both;
+}
+@keyframes site-tower-in {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.97);
+  }
 }
 .site-map {
   position: relative;
@@ -3354,11 +3366,12 @@
   position: absolute;
   inset: 0;
   transform-origin: var(--dive-x) var(--dive-y);
-  transition: transform 0.6s cubic-bezier(0.5, 0, 0.7, 0.4);
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
   will-change: transform;
 }
 .site-panel-map[aria-hidden="true"] .site-map-inner {
   transform: scale(3);
+  transition: transform 0.6s cubic-bezier(0.5, 0, 0.75, 0.5);
 }
 .site-map img {
   object-fit: cover;
@@ -3485,10 +3498,15 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .site-stage,
-  .site-panel,
-  .site-panel[aria-hidden="true"],
-  .site-map-inner {
+  .site-panel-map,
+  .site-panel-map[aria-hidden="true"],
+  .site-panel-tower[aria-hidden="true"],
+  .site-map-inner,
+  .site-panel-map[aria-hidden="true"] .site-map-inner {
     transition: none;
+  }
+  .site-panel-tower[aria-hidden="false"] {
+    animation: none;
   }
 }
 @media (max-width: 640px) {

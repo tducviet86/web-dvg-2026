@@ -340,15 +340,21 @@ export function UnitBrowser({
   const moveTo = (next: "site" | "tower") => {
     fromHeight.current = stage.current?.offsetHeight ?? null;
     setView(next);
-    const top = browser.current?.getBoundingClientRect().top ?? 0;
-    // Below the page header and the section menu, and well in view.
-    if (top < 150 || top > window.innerHeight * 0.4)
-      browser.current?.scrollIntoView({
-        block: "start",
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-      });
+    // Into a tower: the map is seen diving first, then the page settles.
+    setTimeout(
+      () => {
+        const top = browser.current?.getBoundingClientRect().top ?? 0;
+        // Below the page header and the section menu, and well in view.
+        if (top < 150 || top > window.innerHeight * 0.4)
+          browser.current?.scrollIntoView({
+            block: "start",
+            behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "auto"
+              : "smooth",
+          });
+      },
+      next === "tower" ? 450 : 0,
+    );
   };
   // The frame grows or shrinks smoothly to the new view: nothing below jumps.
   useLayoutEffect(() => {
