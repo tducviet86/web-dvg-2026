@@ -4,7 +4,6 @@ import Link from "@/components/page-navigation";
 import type { SiteContent } from "@/lib/api/content";
 import { searchUnits } from "@/lib/filter";
 import { SaleCard } from "./cards";
-import { ModelUnitLinks } from "./model-unit-links";
 import { SearchHero } from "./search-hero";
 
 /**
@@ -77,9 +76,6 @@ export function SalePage({ content }: { content: SiteContent }) {
             <Link href={`/du-an/${p.slug}#can-mau`} className="text-link">
               Xem mặt bằng và sơ đồ dự án
             </Link>
-            <ModelUnitLinks
-              units={units.filter((u) => u.projectId === p.projectId)}
-            />
           </section>
         ))}
       </div>

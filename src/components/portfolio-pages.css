@@ -3353,8 +3353,8 @@
 }
 .site-map {
   position: relative;
-  /* The whole site fits on a laptop screen. */
-  width: min(100%, calc((100svh - 130px) * var(--site-ratio)));
+  /* As large as the screen allows, the whole site still in view. */
+  width: min(100%, calc((100svh - 90px) * var(--site-ratio)));
   aspect-ratio: var(--site-ratio);
   margin: 0 auto;
   overflow: hidden;

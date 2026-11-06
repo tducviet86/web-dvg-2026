@@ -67,8 +67,8 @@ test("/mua-ban is an indexable page that links to the units on sale", async ({
   // Stays here once the search box has loaded.
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveURL(/\/mua-ban$/);
-  // Every model apartment is a real link, sorted by its code; the title names
-  // the code, so units of the same size do not share a title.
+  // A model apartment's title names its code, so units of the same size do not
+  // share a title.
   const api = await apiAs();
   const units = (await api.get(
     "/admin/properties?pageSize=100",
@@ -88,7 +88,7 @@ test("/mua-ban is an indexable page that links to the units on sale", async ({
       areaM2: 70,
       bedrooms: 2,
       bathrooms: 2,
-      description: "Căn mẫu kiểm tra danh sách liên kết trên trang mua bán.",
+      description: "Căn mẫu kiểm tra tiêu đề trang chi tiết căn mẫu.",
       forSale: true,
       forRent: false,
       status: "PUBLISHED",
@@ -101,24 +101,13 @@ test("/mua-ban is an indexable page that links to the units on sale", async ({
     slugs.push(data.slug);
   }
   try {
-    const codes = page.locator(".model-unit-links a strong");
-    await expect
-      .poll(async () => {
-        await page.goto("/mua-ban");
-        return (await codes.allTextContents()).filter((c) =>
-          c.startsWith("SEO1-"),
-        );
-      })
-      .toEqual(["SEO1-02", "SEO1-10"]);
-    await expect(
-      page.locator(`.model-unit-links a[href="/mua-ban/${slugs[0]}"]`),
-    ).toBeVisible();
     await page.goto(`/mua-ban/${slugs[0]}`);
     await expect(page).toHaveTitle(/^Căn mẫu SEO1-10 2 PN 70m² tại /);
   } finally {
     for (const id of ids) await api.send("delete", `/admin/properties/${id}`);
   }
   await page.goto("/mua-ban");
+  await expect(page.locator(".model-unit-links")).toHaveCount(0);
   // No sideways scrolling on a phone.
   await page.setViewportSize({ width: 375, height: 800 });
   expect(
