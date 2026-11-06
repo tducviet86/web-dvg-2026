@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "du-an/trien-khai" },
     { path: "du-an/van-hanh" },
     { path: "cho-thue" },
+    { path: "mua-ban" },
     { path: "blog", lastModified: latest(data.posts.map((p) => p.updatedAt)) },
     { path: "dich-vu" },
     { path: "tuyen-dung" },

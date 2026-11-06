@@ -17,6 +17,7 @@ import {
 } from "@/components/portfolio-pages";
 import { RoomDetail } from "@/components/room-detail";
 import { RentalPage } from "@/components/rental-page";
+import { SalePage } from "@/components/sale-page";
 import { AboutPage } from "@/components/about-page";
 import { ContactPage } from "@/components/contact-page";
 import { ABOUT_SUBPAGES, AboutSubPage } from "@/components/about-subpage";
@@ -183,6 +184,21 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       render: (filters) => <RentalPage filters={filters} content={content} />,
     };
   }
+  if (path === "mua-ban") {
+    const content = await getSiteContent();
+    const names = content.portfolio
+      .filter((p) =>
+        content.properties.some(
+          (u) => u.projectId === p.projectId && u.forSale && !u.isDemo,
+        ),
+      )
+      .map((p) => p.name);
+    return {
+      title: "Mua bán căn hộ Đà Nẵng",
+      description: `Căn hộ đang bán và căn mẫu tại Đà Nẵng${names.length ? `: ${names.join(", ")}` : ""}. Xem thông số, mặt bằng và liên hệ Đất Vàng Group để được tư vấn.`,
+      render: () => <SalePage content={content} />,
+    };
+  }
   if (slug[0] === "cho-thue" && slug[1] === "du-an" && slug.length === 3) {
     const lookup = await getProjectLookup(slug[2]);
     const project = settle(lookup, (s) => `/cho-thue/du-an/${s}`);
@@ -220,6 +236,9 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     return {
       title:
         room.seoTitle ||
+        (room.floorNote
+          ? `${room.name} ${room.area}m² tại ${project.name}`
+          : "") ||
         `${room.type} ${room.area}m² tại ${project.name}${room.isDemo ? " · Căn mẫu" : sale ? " đang bán" : " cho thuê"}`,
       description:
         room.seoDescription ||
@@ -228,7 +247,10 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       // Units rented / sold a while ago only stay reachable from old links.
       noindex: room.isDemo || !!room.delisted,
       parents: sale
-        ? [{ name: project.name, path: projectPath }]
+        ? [
+            { name: "Mua bán căn hộ Đà Nẵng", path: "/mua-ban" },
+            { name: project.name, path: projectPath },
+          ]
         : [
             { name: "Cho thuê căn hộ Đà Nẵng", path: "/cho-thue" },
             {
@@ -248,7 +270,11 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     if (!page || !project) return null;
     const links = await productLinksOf(project, content);
     return {
-      title: page.seo.title || `${page.title} | ${project.name}`,
+      title:
+        page.seo.title ||
+        (page.title.includes(project.name)
+          ? page.title
+          : `${page.title} | ${project.name}`),
       description: page.seo.description || page.intro,
       image: page.coverImage?.url || project.image,
       parents: [{ name: project.name, path: `/du-an/${project.slug}` }],

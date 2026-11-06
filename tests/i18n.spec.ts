@@ -229,3 +229,103 @@ test("a new unit is translated, prices kept apart from the words", async ({
   ).toBeVisible();
   await api.send("delete", `/admin/properties/${id}`);
 });
+
+test.describe("first visit language", () => {
+  const bar = (page: Page) => page.locator(".lang-suggestion");
+
+  test("Korean and Chinese browsers are redirected, without the bar", async ({
+    browser,
+    baseURL,
+  }) => {
+    for (const [locale, path] of [
+      ["ko-KR", "/ko"],
+      ["zh-CN", "/zh"],
+    ]) {
+      const context = await browser.newContext({ locale, baseURL });
+      const page = await context.newPage();
+      await page.goto("/");
+      expect(new URL(page.url()).pathname).toBe(path);
+      await expect(page.locator("header.site-header")).toBeVisible();
+      await expect(bar(page)).toHaveCount(0);
+      await context.close();
+    }
+  });
+
+  test("Vietnamese browsers see Vietnamese without the bar", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    expect(new URL(page.url()).pathname).toBe("/");
+    await expect(page.locator("header.site-header")).toBeVisible();
+    await expect(bar(page)).toHaveCount(0);
+  });
+
+  test("other browsers stay in Vietnamese and can switch to English once", async ({
+    browser,
+    baseURL,
+  }) => {
+    for (const locale of ["en-US", "ru-RU"]) {
+      const context = await browser.newContext({ locale, baseURL });
+      const page = await context.newPage();
+      await page.goto("/du-an");
+      expect(new URL(page.url()).pathname).toBe("/du-an");
+      await expect(page.locator("html")).toHaveAttribute("lang", "vi");
+      await bar(page).getByRole("button", { name: /in English/ }).click();
+      await expect(page).toHaveURL(/\/en\/du-an$/);
+      await expect(bar(page)).toHaveCount(0);
+      await page.goto("/gioi-thieu");
+      await expect(page).toHaveURL(/\/en\/gioi-thieu$/);
+      await context.close();
+    }
+  });
+
+  test("closing the bar is remembered and keeps Vietnamese", async ({
+    browser,
+    baseURL,
+  }) => {
+    const context = await browser.newContext({ locale: "en-US", baseURL });
+    const page = await context.newPage();
+    await page.goto("/");
+    await bar(page).getByRole("button", { name: "Close" }).click();
+    await expect(bar(page)).toHaveCount(0);
+    await page.goto("/du-an");
+    expect(new URL(page.url()).pathname).toBe("/du-an");
+    await expect(page.locator("header.site-header")).toBeVisible();
+    await expect(bar(page)).toHaveCount(0);
+    await context.close();
+  });
+
+  test("a remembered choice beats the browser language", async ({
+    browser,
+    baseURL,
+  }) => {
+    const context = await browser.newContext({ locale: "ko-KR", baseURL });
+    await context.addCookies([{ name: "dvg_lang", value: "vi", url: baseURL! }]);
+    const page = await context.newPage();
+    await page.goto("/");
+    expect(new URL(page.url()).pathname).toBe("/");
+    await context.close();
+  });
+
+  test("the bar fits a phone without sideways scrolling", async ({
+    browser,
+    baseURL,
+  }) => {
+    const context = await browser.newContext({
+      locale: "en-US",
+      baseURL,
+      viewport: { width: 375, height: 800 },
+    });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(bar(page)).toBeVisible();
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+    await context.close();
+  });
+});

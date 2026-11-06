@@ -44,6 +44,7 @@ export function SiteFooter() {
               ["Về Đất Vàng", "/gioi-thieu"],
               ["Dự án", "/du-an"],
               ["Căn hộ cho thuê", "/cho-thue"],
+              ["Mua bán căn hộ", "/mua-ban"],
               ["Tin tức", "/blog"],
             ].map(([t, h]) => (
               <Link key={h} href={h}>

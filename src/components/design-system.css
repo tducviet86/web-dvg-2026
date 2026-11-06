@@ -3093,3 +3093,83 @@ textarea {
     bottom: 88px;
   }
 }
+
+/* First-visit language suggestion: a slim strip under the fixed header. */
+.lang-suggestion {
+  position: fixed;
+  inset: var(--header-h) 0 auto;
+  z-index: 49;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 8px;
+  color: #fff;
+  background: #123c32;
+}
+.lang-suggestion button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.lang-suggestion button:first-child {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lang-suggestion .lang-suggestion-close {
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+}
+
+/* Every model apartment as a plain link (/mua-ban, project › Căn mẫu). */
+.model-unit-all {
+  margin-top: 24px;
+}
+.model-unit-all > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+.model-unit-links section {
+  margin-top: 20px;
+}
+.model-unit-links h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+.model-unit-links ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.model-unit-links a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #123c3224;
+  border-radius: 8px;
+}
+.model-unit-links a:hover {
+  border-color: var(--gold);
+}
+.model-unit-links small {
+  color: #4f5a56;
+}

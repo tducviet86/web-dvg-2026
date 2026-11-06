@@ -24,6 +24,7 @@ import { roomsLabel, hasRooms } from "@/lib/property-groups";
 import { unitRef, vndFull } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { CallContact } from "./call-contact";
+import { ModelUnitLinks } from "./model-unit-links";
 import { ProjectMap } from "./project-map";
 import {
   GalleryTabs,
@@ -453,6 +454,12 @@ export function ProjectSalePage({
                 <p>Thông tin căn đang được cập nhật. Gọi để được tư vấn.</p>
                 <CallContact label="Gọi tư vấn" />
               </div>
+            )}
+            {rawUnits.some((u) => u.floorNote) && (
+              <details className="model-unit-all">
+                <summary>Danh sách tất cả căn mẫu</summary>
+                <ModelUnitLinks units={rawUnits} />
+              </details>
             )}
           </div>
         </section>

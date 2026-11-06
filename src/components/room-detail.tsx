@@ -217,9 +217,9 @@ export function RoomDetail({
           <BackButton />
           {sale ? (
             <>
-              <Link href={projectPage}>{project.name}</Link>
+              <Link href="/mua-ban">Mua bán</Link>
               <span>/</span>
-              <Link href={saleList}>Mua bán</Link>
+              <Link href={projectPage}>{project.name}</Link>
             </>
           ) : (
             <>

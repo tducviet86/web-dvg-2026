@@ -4,35 +4,18 @@ import {
   isLocale,
   LANG_COOKIE,
   splitLocale,
-  type Locale,
 } from "@/i18n/config";
 
 /**
  * Language routing. Vietnamese pages keep their URLs (internally served from
- * /vi/...); /en, /ko and /zh are the translated versions. A visitor's first
- * request is sent to their browser language; search engines are never
- * redirected so every language version stays indexable.
+ * /vi/...); /en, /ko and /zh are the translated versions. Vietnamese is the
+ * default: only a language the visitor chose (remembered in a cookie) or a
+ * Korean / Chinese browser redirects; others get a suggestion bar instead
+ * (LanguageSuggestion). Search engines are never redirected, so every language
+ * version stays indexable.
  */
 const BOT =
   /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|lighthouse/i;
-
-function preferred(request: NextRequest): Locale {
-  const header = request.headers.get("accept-language");
-  if (!header) return DEFAULT_LOCALE;
-  const tags = header
-    .split(",")
-    .map((part) => {
-      const [tag, q] = part.trim().split(";q=");
-      return { tag: tag.toLowerCase(), q: q ? Number(q) : 1 };
-    })
-    .filter((x) => x.tag && x.tag !== "*")
-    .sort((a, b) => b.q - a.q);
-  const first = tags[0]?.tag.slice(0, 2);
-  if (!first || first === "vi") return DEFAULT_LOCALE;
-  if (first === "ko") return "ko";
-  if (first === "zh") return "zh";
-  return "en";
-}
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -40,7 +23,8 @@ export function proxy(request: NextRequest) {
 
   if (pathname === "/vi" || pathname.startsWith("/vi/")) {
     // Our own rewrite below can come back here as /vi/... (marked): serve it.
-    if (request.headers.get("x-dvg-locale") === "vi") return NextResponse.next();
+    if (request.headers.get("x-dvg-locale") === "vi")
+      return NextResponse.next();
     // A direct /vi/... link goes to the unprefixed URL.
     const url = request.nextUrl.clone();
     url.pathname = pathname.slice(3) || "/";
@@ -53,15 +37,20 @@ export function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers } });
   }
 
-  // Unprefixed (Vietnamese) URL: send first-time foreign visitors to their language.
-  const cookie = request.cookies.get(LANG_COOKIE)?.value;
+  // Unprefixed (Vietnamese) URL: back to the language the visitor chose, or
+  // on a first visit to the browser's language if it is Korean or Chinese.
+  const chosen = request.cookies.get(LANG_COOKIE)?.value;
+  const browser = /^(ko|zh)\b/i
+    .exec(request.headers.get("accept-language") || "")?.[1]
+    .toLowerCase();
+  const wanted = isLocale(chosen) ? chosen : browser;
   const isBot = BOT.test(request.headers.get("user-agent") || "");
-  const wanted = isLocale(cookie)
-    ? cookie
-    : isBot
-      ? DEFAULT_LOCALE
-      : preferred(request);
-  if (request.method === "GET" && wanted !== DEFAULT_LOCALE && !isBot) {
+  if (
+    request.method === "GET" &&
+    isLocale(wanted) &&
+    wanted !== DEFAULT_LOCALE &&
+    !isBot
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = `/${wanted}${path === "/" ? "" : path}`;
     url.search = search;

@@ -3596,3 +3596,353 @@
 .plan-cut-facts {
   order: -1;
 }
+
+/* Rental map: filters on top, the map beside the list of buildings and units. */
+.rental-map-section {
+  scroll-margin-top: calc(var(--header-h) + 12px);
+  padding-block: clamp(32px, 5vw, 64px);
+}
+.rental-map-section h2 {
+  margin: 10px 0 20px;
+  font-size: clamp(26px, 3.2vw, 42px);
+  line-height: 1.2;
+}
+.rmap-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+.rmap-pills {
+  display: flex;
+  gap: 2px;
+  max-width: 100%;
+  padding: 3px;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: #eef0ea;
+  scrollbar-width: none;
+}
+.rmap-pills button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-green-900);
+  font-size: 13.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.rmap-pills button[aria-pressed="true"] {
+  background: var(--c-green-900);
+  color: #fff;
+}
+.rmap-free {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  font-size: 13.5px;
+  color: var(--c-green-900);
+  cursor: pointer;
+}
+.rmap-free input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--c-green-800);
+}
+.rmap-body {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e0e4d9;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 44px #1027191a;
+}
+.rmap-stage {
+  position: relative;
+  height: clamp(560px, 78vh, 840px);
+  background: #f5f0e6;
+}
+.rmap-stage .rmap-canvas {
+  position: absolute;
+  inset: 0;
+}
+/* The building's name, with a small tail pointing down at it. */
+.rmap-pin {
+  position: relative;
+  padding: 7px 13px;
+  border: 1px solid #d4b97a;
+  border-radius: 999px;
+  background: #0b2a22;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 6px 16px #06140f47;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.rmap-pin::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid #d4b97a;
+  border-bottom: 1px solid #d4b97a;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+.rmap-pin[data-lit="true"] {
+  z-index: 2;
+  border-color: #fff;
+  background: #f2c14e;
+  color: #0b2a22;
+}
+.rmap-pin[data-empty="true"]:not([data-lit="true"]) {
+  background: #5d6b64;
+}
+/* Buildings by name, on the map where there is room for them. */
+.rmap-towers {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  max-width: calc(100% - 32px);
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: #0b2a22eb;
+  scrollbar-width: none;
+  translate: -50% 0;
+}
+.rmap-towers button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 13.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.rmap-towers button:hover {
+  background: #ffffff24;
+}
+.rmap-towers button[aria-pressed="true"] {
+  background: #f2c14e;
+  color: #0b2a22;
+}
+.rmap-body[data-open="true"] .rmap-towers {
+  left: calc((100% - 372px) / 2);
+  max-width: calc(100% - 404px);
+}
+.rmap-body[data-open="true"] .maplibregl-ctrl-top-right {
+  right: 372px;
+}
+.rmap-reset {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #061b16eb;
+  color: #fff;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.rmap-failed {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  color: #3c5148;
+}
+/* A building's units, sliding in over the map once it is chosen. */
+.rmap-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: 348px;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 40px #06140f4d;
+  animation: rmap-panel 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes rmap-panel {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+.rmap-head {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 16px 48px 14px 18px;
+  background: linear-gradient(120deg, var(--c-green-800), var(--c-green-950));
+  color: #fff;
+}
+.rmap-head h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+  color: #fff;
+}
+.rmap-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff24;
+  color: #fff;
+  cursor: pointer;
+}
+.rmap-head nav {
+  display: flex;
+  gap: 6px;
+}
+.rmap-head nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d4b97a80;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12.5px;
+}
+.rmap-units {
+  flex: 1;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.rmap-units a {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ece7da;
+  color: var(--c-green-900);
+}
+.rmap-units a:hover {
+  background: #fbf6e9;
+}
+.rmap-photo {
+  position: relative;
+  display: block;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e9eadf;
+}
+.rmap-photo img {
+  object-fit: cover;
+}
+.rmap-unit {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.rmap-unit b {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rmap-unit small {
+  font-size: 12.5px;
+  color: #5f6f66;
+}
+.rmap-unit strong {
+  font-size: 14px;
+}
+.rmap-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-gold-700);
+}
+.rmap-none {
+  padding: 24px 18px;
+  color: #5f6f66;
+}
+.rmap-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: #5f6f66;
+}
+.maplibregl-ctrl-attrib {
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .rmap-stage {
+    height: min(66vh, 520px);
+  }
+  .rmap-towers {
+    position: static;
+    max-width: none;
+    border-radius: 0;
+    translate: none;
+  }
+  .rmap-body[data-open="true"] .rmap-towers {
+    max-width: none;
+  }
+  .rmap-body[data-open="true"] .maplibregl-ctrl-top-right {
+    right: 0;
+  }
+  .rmap-panel {
+    position: static;
+    width: auto;
+    max-width: none;
+    max-height: 480px;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+  .rmap-pin {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rmap-panel {
+    animation: none;
+  }
+}

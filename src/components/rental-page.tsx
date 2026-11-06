@@ -25,8 +25,18 @@ import {
 } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { SearchHero } from "./search-hero";
-import { kindLabel, kindNoun, listingKind } from "@/lib/property-groups";
+import {
+  hasRooms,
+  kindLabel,
+  kindNoun,
+  listingKind,
+  roomsLabel,
+} from "@/lib/property-groups";
 import { ProjectMap } from "./project-map";
+import { RentalMap, type MapBuilding } from "./rental-map";
+import { t } from "@/i18n/server";
+import { BUILDING_BLOCKS, BUILDING_PLACES } from "@/lib/rental-map";
+import { vacantNow } from "@/lib/availability";
 import { siteUrl } from "@/lib/utils";
 import { InquiryDialog } from "./rental-inquiry";
 
@@ -59,6 +69,42 @@ export function RentalPage({
     content.properties,
     project ? { project: project.slug } : {},
   );
+  // The map on the main rental page: rental buildings with a place and a block.
+  const mapBuildings: MapBuilding[] = project
+    ? []
+    : locations.flatMap((b) => {
+        const known = content.locations[b.projectId];
+        const spot = known ?? BUILDING_PLACES[b.slug];
+        if (!spot || !BUILDING_BLOCKS[b.slug]) return [];
+        const place = {
+          lat: spot.lat,
+          lng: spot.lng,
+          url:
+            known?.url ??
+            `https://www.google.com/maps?q=${spot.lat},${spot.lng}`,
+        };
+        return [
+          {
+            slug: b.slug,
+            name: t(b.name),
+            lat: place.lat,
+            lng: place.lng,
+            url: place.url,
+            units: filterProperties(content.properties, { project: b.slug })
+              .filter((p) => !p.isDemo)
+              .map((p) => ({
+                slug: p.slug,
+                name: t(p.name),
+                rooms: t(hasRooms(p) ? roomsLabel(p) : p.type),
+                bedrooms: p.bedrooms,
+                area: p.area,
+                price: p.price,
+                image: p.image,
+                free: vacantNow(p),
+              })),
+          },
+        ];
+      });
   const showsDemo = result.some((p) => p.isDemo);
   // Full-screen photos: the project (and its units) or every rental project.
   const slides = (
@@ -211,10 +257,10 @@ export function RentalPage({
                 <Link
                   key={k}
                   href={nextUrl({ [k]: undefined, limit: undefined })}
-                  aria-label={`Bỏ lọc ${k === "project" ? locations.find((p) => p.slug === v)?.name : v}`}
+                  aria-label={`Bỏ lọc ${k === "project" ? content.portfolio.find((p) => p.slug === v)?.name : v}`}
                 >
                   {k === "project"
-                    ? locations.find((p) => p.slug === v)?.name
+                    ? content.portfolio.find((p) => p.slug === v)?.name
                     : k === "nhu-cau"
                       ? "Đang bán"
                       : k === "loai"
@@ -299,9 +345,20 @@ export function RentalPage({
             </div>
           )}
         </section>
+        {mapBuildings.length > 0 && (
+          <section id="ban-do-can-thue" className="rental-map-section">
+            <span className="signature-kicker">BẢN ĐỒ CĂN CHO THUÊ</span>
+            <h2>Chọn tòa trên bản đồ, xem căn phù hợp với bạn.</h2>
+            <RentalMap buildings={mapBuildings} />
+          </section>
+        )}
         <section className="rental-guide">
           <div>
-            <span className="signature-kicker">TRƯỚC KHI CHỌN CĂN</span>
+            <span className="signature-kicker">
+              {mapBuildings.length
+                ? "LƯU Ý KHI CHỌN CĂN"
+                : "TRƯỚC KHI CHỌN CĂN"}
+            </span>
             <h2>
               {guide?.focus ||
                 "Thuê căn hộ tại Đà Nẵng, bắt đầu từ điều bạn cần."}

@@ -18,6 +18,7 @@ import { PageNavigation, PageSurface } from "@/components/page-navigation";
 import { SiteHeader } from "@/components/layout/header";
 import { SiteFooter } from "@/components/layout/footer";
 import { ContactDock } from "@/components/contact-dock";
+import { LanguageSuggestion } from "@/components/translator";
 import { I18nProvider } from "@/i18n/client";
 import { isLocale, textKey } from "@/i18n/config";
 import { getDictionary, reportMissing } from "@/i18n/dictionary";
@@ -58,6 +59,7 @@ export default async function PublicLayout({
     <I18nProvider locale={locale} messages={messages}>
       <PageNavigation>
         <SiteHeader services={services} />
+        <LanguageSuggestion />
         <PageSurface>{children}</PageSurface>
         <SiteFooter />
         <ContactDock />

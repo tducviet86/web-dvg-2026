@@ -41,7 +41,7 @@ const NEEDS = [
     icon: KeyRound,
   },
   {
-    href: "/cho-thue?nhu-cau=mua",
+    href: "/mua-ban",
     title: "Mua căn hộ",
     text: "Căn đang bán tại các dự án Đà Nẵng.",
     icon: HandCoins,

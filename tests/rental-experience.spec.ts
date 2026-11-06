@@ -1042,3 +1042,29 @@ test("hovering a card fades through the unit's other photos, on a mouse only", a
   await page.mouse.move(0, 0);
   await expect(card.locator(".card-photos img[data-shown]")).toHaveCount(0);
 });
+
+test("the rental map lists buildings, filters them and opens a building's units", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  const section = page.locator("#ban-do-can-thue");
+  await section.scrollIntoViewIfNeeded();
+  const buildings = section.locator(".rmap-towers button");
+  await expect(buildings.first()).toBeVisible();
+  // The filters narrow what each building offers.
+  await section.getByRole("button", { name: "Dưới 15 triệu" }).click();
+  await expect(
+    section.getByRole("button", { name: "Dưới 15 triệu" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await section.getByRole("button", { name: "Mọi mức giá" }).click();
+  // Units appear only once a building is chosen.
+  await expect(section.locator(".rmap-panel")).toHaveCount(0);
+  const name = await buildings.first().textContent();
+  await buildings.first().click();
+  await expect(section.locator(".rmap-head h3")).toHaveText(name ?? "");
+  await section.getByRole("button", { name: "Đóng" }).click();
+  await expect(section.locator(".rmap-panel")).toHaveCount(0);
+  // A building's own rental page has no city map.
+  await page.goto("/cho-thue/du-an/monarchy-apartments");
+  await expect(page.locator("#ban-do-can-thue")).toHaveCount(0);
+});

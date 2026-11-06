@@ -1,7 +1,13 @@
 "use client";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown, Globe, X } from "lucide-react";
 import { useLocale } from "@/i18n/client";
 import {
   HTML_LANG,
@@ -24,6 +30,10 @@ const NOTE: Record<Locale, string> = {
   en: "Translated from Vietnamese with AI.",
   ko: "베트남어 원문을 AI로 번역했습니다.",
   zh: "由 AI 从越南语翻译。",
+};
+
+const rememberLanguage = (locale: Locale) => {
+  document.cookie = `${LANG_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
 };
 
 /**
@@ -55,6 +65,46 @@ function useSwitchTo() {
       );
     },
   };
+}
+
+const subscribeNever = () => () => {};
+
+/**
+ * First visit on a Vietnamese page from a browser that is not Vietnamese,
+ * Korean or Chinese (those two are redirected by src/proxy.ts): offers English.
+ * Written in English on purpose. Either answer is remembered as the choice.
+ */
+export function LanguageSuggestion() {
+  const lang = useLocale();
+  const switchTo = useSwitchTo();
+  const [closed, setClosed] = useState(false);
+  const undecided = useSyncExternalStore(
+    subscribeNever,
+    () =>
+      !document.cookie.includes(`${LANG_COOKIE}=`) &&
+      !/^(vi|ko|zh)\b/i.test(navigator.language),
+    () => false,
+  );
+  if (lang !== "vi" || closed || !undecided) return null;
+  return (
+    <aside className="lang-suggestion" lang="en" aria-label="Language">
+      <button type="button" onClick={() => switchTo.go("en")}>
+        <Globe size={15} aria-hidden="true" />
+        View this page in English?
+      </button>
+      <button
+        type="button"
+        className="lang-suggestion-close"
+        aria-label="Close"
+        onClick={() => {
+          rememberLanguage("vi");
+          setClosed(true);
+        }}
+      >
+        <X size={16} aria-hidden="true" />
+      </button>
+    </aside>
+  );
 }
 
 /** Navbar control: current language and a menu of the four languages. */
