@@ -5462,3 +5462,6 @@
 .rows-field-total.invalid {
   color: #b3261e;
 }
+.banner-switch[hidden] {
+  display: none;
+}

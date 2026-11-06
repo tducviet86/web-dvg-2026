@@ -161,3 +161,68 @@ test("admin lists model apartments apart from posted units", async ({ page }) =>
     await api.send("delete", `/admin/properties/${id}`);
   }
 });
+
+test("the unit form keeps project-sale fields to model apartments", async ({
+  page,
+}) => {
+  const projectFields = ["tower", "quota", "floorNote", "priceExcludesFees"];
+  await login(page);
+  await page.goto("/admin/properties/new");
+  await expect(page.locator("[name=viewNote]")).toBeVisible();
+  for (const name of projectFields)
+    await expect(page.locator(`[name=${name}]`), name).toBeHidden();
+
+  const api = await apiAs();
+  const units = (await api.get(
+    "/admin/properties?pageSize=100",
+  )) as unknown as { data: { projectId?: string; project?: { id: string } }[] };
+  const projectId = units.data[0].projectId ?? units.data[0].project!.id;
+  const made = await api.send("post", "/admin/properties", {
+    name: "Căn mẫu FORM1-01 2 PN",
+    projectId,
+    propertyType: "2pn",
+    unitCode: "FORM1-01",
+    tower: "FORM1",
+    floorNote: "Tầng 5-10",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn mẫu kiểm tra các trường trong form quản trị.",
+    forSale: true,
+    forRent: false,
+    status: "PUBLISHED",
+  });
+  expect(made.ok(), await made.text()).toBeTruthy();
+  const { id } = ((await made.json()) as { data: { id: string } }).data;
+  try {
+    await page.goto(`/admin/properties/${id}/edit`);
+    await expect(page.locator("[name=tower]")).toBeVisible();
+    await expect(page.locator("[name=tower]")).toHaveValue("FORM1");
+    await expect(page.locator("[name=floorNote]")).toBeVisible();
+  } finally {
+    await api.send("delete", `/admin/properties/${id}`);
+  }
+});
+
+test("the contact page's back button is below the fixed header", async ({
+  browser,
+  baseURL,
+}) => {
+  for (const [width, height] of [
+    [375, 800],
+    [1280, 800],
+  ]) {
+    const context = await browser.newContext({
+      viewport: { width, height },
+      locale: "vi-VN",
+      baseURL,
+    });
+    const page = await context.newPage();
+    await page.goto("/lien-he");
+    const header = await page.locator("header.site-header").boundingBox();
+    const back = await page.locator(".rental-hero-crumbs").boundingBox();
+    expect(back!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
+    await context.close();
+  }
+});

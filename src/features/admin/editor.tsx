@@ -808,10 +808,13 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
               ]),
             ],
           }),
+          // Project-sale fields: only model apartments use them, not units
+          // posted for rent or sale.
           f("tower", "Tòa", {
             maxLength: 40,
             placeholder: "vd: C4",
             hint: "Viết đúng tên tòa trong mục Các tòa của dự án.",
+            showWhen: "floorNote",
           }),
           f("viewNote", "View", {
             maxLength: 120,
@@ -820,13 +823,16 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           f("quota", "Quỹ căn", {
             maxLength: 60,
             placeholder: "vd: Quỹ nước ngoài",
+            showWhen: "floorNote",
           }),
           f("floorNote", "Tầng áp dụng (căn mẫu)", {
             maxLength: 80,
             placeholder: "vd: Tầng 5-10",
+            showWhen: "floorNote",
           }),
           f("priceExcludesFees", "Giá bán chưa gồm VAT và kinh phí bảo trì", {
             type: "checkbox",
+            showWhen: "floorNote",
           }),
           f("furniture", "Nội thất", {
             type: "select",
@@ -2245,6 +2251,7 @@ export function Editor({
           key={item.key}
           htmlFor={id}
           className={`banner-switch${item.wide ? " full" : ""}`}
+          hidden={item.showWhen ? !live[item.showWhen] : undefined}
         >
           <input
             id={id}

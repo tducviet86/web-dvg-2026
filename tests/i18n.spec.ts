@@ -270,7 +270,9 @@ test.describe("first visit language", () => {
       await page.goto("/du-an");
       expect(new URL(page.url()).pathname).toBe("/du-an");
       await expect(page.locator("html")).toHaveAttribute("lang", "vi");
-      await bar(page).getByRole("button", { name: /in English/ }).click();
+      await bar(page)
+        .getByRole("button", { name: /in English/ })
+        .click();
       await expect(page).toHaveURL(/\/en\/du-an$/);
       await expect(bar(page)).toHaveCount(0);
       await page.goto("/gioi-thieu");
@@ -300,7 +302,9 @@ test.describe("first visit language", () => {
     baseURL,
   }) => {
     const context = await browser.newContext({ locale: "ko-KR", baseURL });
-    await context.addCookies([{ name: "dvg_lang", value: "vi", url: baseURL! }]);
+    await context.addCookies([
+      { name: "dvg_lang", value: "vi", url: baseURL! },
+    ]);
     const page = await context.newPage();
     await page.goto("/");
     expect(new URL(page.url()).pathname).toBe("/");
@@ -317,6 +321,15 @@ test.describe("first visit language", () => {
       viewport: { width: 375, height: 800 },
     });
     const page = await context.newPage();
+    // Page content starts below the bar.
+    await page.goto("/cho-thue");
+    await expect(bar(page)).toBeVisible();
+    const barBox = await bar(page).boundingBox();
+    const back = await page
+      .locator(".breadcrumb button, .breadcrumb a")
+      .first()
+      .boundingBox();
+    expect(back!.y).toBeGreaterThanOrEqual(barBox!.y + barBox!.height);
     await page.goto("/");
     await expect(bar(page)).toBeVisible();
     expect(

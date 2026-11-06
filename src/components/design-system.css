@@ -850,15 +850,15 @@ textarea {
 .signature-home .corporate-banner-bottom {
   bottom: clamp(24px, 5vw, 56px);
 }
-.signature-home .banner-caption {
+.signature-home .banner-captions {
   max-width: 760px;
 }
-.signature-home .banner-caption > span {
+.signature-home .banner-captions > * > span {
   font-size: var(--fs-2xs);
   letter-spacing: var(--tracking-eyebrow);
   color: var(--c-gold-300);
 }
-.signature-home .banner-caption > p {
+.signature-home .banner-captions > * > p {
   font-family: var(--font-heading);
   font-size: clamp(2rem, 1.4rem + 2.6vw, 3.75rem);
   line-height: var(--lh-tight);
@@ -866,7 +866,7 @@ textarea {
   color: #fff;
   animation: ds-caption-in var(--dur-5) var(--ease-out-strong) backwards;
 }
-.signature-home .banner-caption > small {
+.signature-home .banner-captions > * > small {
   font-size: var(--fs-base);
   color: #e3e7e1;
 }
@@ -1534,7 +1534,7 @@ textarea {
   .dialog-overlay,
   .navigation-status > span,
   .signature-home .hero-photo,
-  .signature-home .banner-caption > p,
+  .signature-home .banner-captions > * > p,
   .signature-field-image > img,
   .signature-field-panel {
     animation: none !important;
@@ -3128,4 +3128,18 @@ textarea {
   justify-content: center;
   width: 36px;
   padding: 0;
+}
+
+/* Home banner captions stacked in one cell: the tallest sets the height. */
+.banner-captions {
+  display: grid;
+  align-items: end;
+  min-width: 0;
+}
+.banner-captions > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.banner-caption-spacer {
+  visibility: hidden;
 }

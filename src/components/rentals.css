@@ -1966,7 +1966,8 @@
 
 /* ── Cho thuê: full-screen photo + search (Thuê / Mua / Ký gửi) ── */
 /* The photo starts right under the fixed header (no page gap). */
-.page-surface > main.rental-page {
+.page-surface > main.rental-page,
+.page-surface > main.contact-page {
   padding-top: var(--header-h);
 }
 .rental-hero {

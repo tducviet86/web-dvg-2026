@@ -95,6 +95,18 @@ export function CorporateBanner({ slides }: { slides: ResolvedBanner[] }) {
     return () => window.clearInterval(timer);
   }, [playing, interacting, active, api]);
   const slide = slides[Math.min(active, slides.length - 1)];
+  const caption = (item: ResolvedBanner) => (
+    <>
+      {item.label && <span>{item.label}</span>}
+      <p>{item.title}</p>
+      {item.description && <small>{item.description}</small>}
+      {item.href && (
+        <em className="banner-caption-cue" aria-hidden="true">
+          {t("Xem chi tiết dự án")} <ArrowUpRight size={14} />
+        </em>
+      )}
+    </>
+  );
   return (
     <section
       className="corporate-banner"
@@ -160,15 +172,21 @@ export function CorporateBanner({ slides }: { slides: ResolvedBanner[] }) {
         </div>
       </div>
       <div className="corporate-banner-bottom container">
-        <div className="banner-caption" aria-live={paused ? "polite" : "off"}>
-          {slide.label && <span>{slide.label}</span>}
-          <p>{slide.title}</p>
-          {slide.description && <small>{slide.description}</small>}
-          {slide.href && (
-            <em className="banner-caption-cue" aria-hidden="true">
-              {t("Xem chi tiết dự án")} <ArrowUpRight size={14} />
-            </em>
-          )}
+        {/* Hidden copies keep the height of the longest caption, so changing
+            slide moves nothing on the page. */}
+        <div className="banner-captions" aria-live={paused ? "polite" : "off"}>
+          {slides.map((item) => (
+            <div
+              key={item.id}
+              className="banner-caption-spacer"
+              aria-hidden="true"
+            >
+              {caption(item)}
+            </div>
+          ))}
+          <div key={slide.id} className="banner-caption">
+            {caption(slide)}
+          </div>
         </div>
         <div className="banner-controls">
           <span className="banner-count">
