@@ -262,7 +262,7 @@ test("what AI assistants read: company, sales and no empty headings", async ({
     "Dự án QA",
     {
       address: null,
-      location: "Bên sông Hàn",
+      location: "Bên sông Hàn · Đà Nẵng",
       developer: null,
       legalStatus: "Sở hữu lâu dài.",
       scale: null,
@@ -283,6 +283,7 @@ test("what AI assistants read: company, sales and no empty headings", async ({
     ],
   );
   const text = faqs.flat().join(" ");
+  expect(text).toContain("Dự án QA nằm bên sông Hàn, Đà Nẵng.");
   expect(text).toContain("C3 (Royal Place)");
   expect(text).toContain("45 m² đến 47,5 m²");
   expect(text).not.toContain("Chủ đầu tư");

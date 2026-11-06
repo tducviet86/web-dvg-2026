@@ -138,8 +138,17 @@ export function saleFaqs(
   units: Pick<Property, "bedrooms" | "area">[],
 ): Faq[] {
   const faqs: Faq[] = [];
-  const place = (api.address || api.location || "").trim();
-  if (place) faqs.push([`${name} nằm ở đâu?`, `${name} nằm tại ${place}.`]);
+  // "Bên sông Hàn · Đà Nẵng" reads as "nằm bên sông Hàn, Đà Nẵng".
+  const place = (api.address || api.location || "")
+    .trim()
+    .replace(/\s*·\s*/g, ", ");
+  if (place)
+    faqs.push([
+      `${name} nằm ở đâu?`,
+      `${name} nằm ${
+        /^bên /i.test(place) ? `b${place.slice(1)}` : `tại ${place}`
+      }.`,
+    ]);
   if (api.developer)
     faqs.push([`Chủ đầu tư ${name} là ai?`, `${api.developer}.`]);
   if (api.scale) faqs.push([`Quy mô ${name} như thế nào?`, `${api.scale}.`]);
