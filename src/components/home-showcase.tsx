@@ -13,6 +13,7 @@ export function HomeShowcase({
   id,
   kicker,
   title,
+  hiddenTitle,
   lead,
   more,
   projects,
@@ -21,6 +22,8 @@ export function HomeShowcase({
   id: string;
   kicker: string;
   title: string;
+  /** For readers and crawlers, when no title is shown. */
+  hiddenTitle?: string;
   lead: string;
   more: { href: string; label: string };
   projects: PortfolioProject[];
@@ -34,7 +37,11 @@ export function HomeShowcase({
         <div className="home-head">
           <div>
             <span className="home-kicker">{kicker}</span>
-            <h2>{title}</h2>
+            {title ? (
+              <h2>{title}</h2>
+            ) : (
+              hiddenTitle && <h2 className="sr-only">{hiddenTitle}</h2>
+            )}
           </div>
           <div className="home-head-aside">
             <p>{lead}</p>

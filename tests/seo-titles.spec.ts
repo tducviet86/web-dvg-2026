@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { saleFaqs } from "../src/lib/faq";
+import { towerHandover } from "../src/lib/handover";
 import { apiAs, login } from "./helpers";
 
 test("old website URLs move permanently to the matching page", async ({
@@ -119,7 +121,9 @@ test("/mua-ban is an indexable page that links to the units on sale", async ({
   ).toBe(true);
 });
 
-test("admin lists model apartments apart from posted units", async ({ page }) => {
+test("admin lists model apartments apart from posted units", async ({
+  page,
+}) => {
   const api = await apiAs();
   const units = (await api.get(
     "/admin/properties?pageSize=100",
@@ -165,10 +169,16 @@ test("admin lists model apartments apart from posted units", async ({ page }) =>
 test("the unit form keeps project-sale fields to model apartments", async ({
   page,
 }) => {
-  const projectFields = ["tower", "quota", "floorNote", "priceExcludesFees"];
+  const projectFields = [
+    "tower",
+    "viewNote",
+    "quota",
+    "floorNote",
+    "priceExcludesFees",
+  ];
   await login(page);
   await page.goto("/admin/properties/new");
-  await expect(page.locator("[name=viewNote]")).toBeVisible();
+  await expect(page.locator("[name=direction]")).toBeVisible();
   for (const name of projectFields)
     await expect(page.locator(`[name=${name}]`), name).toBeHidden();
 
@@ -225,4 +235,63 @@ test("the contact page's back button is below the fixed header", async ({
     expect(back!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
     await context.close();
   }
+});
+
+test("what AI assistants read: company, sales and no empty headings", async ({
+  page,
+  request,
+}) => {
+  const llms = await (await request.get("/llms.txt")).text();
+  expect(llms).toContain("/mua-ban");
+  expect(llms).toContain("Đất Vàng Luxury");
+
+  const about = await (await request.get("/gioi-thieu")).text();
+  expect(about).toContain('"RealEstateAgent"');
+  expect(about).toContain('"alternateName"');
+  expect(about).toContain("công ty bất động sản tại Đà Nẵng");
+
+  await page.goto("/");
+  const headings = await page.locator("h2").allTextContents();
+  expect(headings.filter((h) => !h.trim())).toEqual([]);
+
+  const sale = await (await request.get("/mua-ban")).text();
+  expect(sale).toContain('"FAQPage"');
+
+  // Only stored facts: nothing to say means no question; handover stays out.
+  const faqs = saleFaqs(
+    "Dự án QA",
+    {
+      address: null,
+      location: "Bên sông Hàn",
+      developer: null,
+      legalStatus: "Sở hữu lâu dài.",
+      scale: null,
+      towers: [
+        { name: "C4", status: "" },
+        {
+          name: "C3",
+          note: "Royal Place",
+          status: "",
+          handover: "Quý IV/2028",
+        },
+      ],
+      handoverNote: "Quý IV/2027",
+    },
+    [
+      { bedrooms: 1, area: 45 },
+      { bedrooms: 1, area: 47.5 },
+    ],
+  );
+  const text = faqs.flat().join(" ");
+  expect(text).toContain("C3 (Royal Place)");
+  expect(text).toContain("45 m² đến 47,5 m²");
+  expect(text).not.toContain("Chủ đầu tư");
+  // A tower's own handover date is stated beside the project's.
+  expect(text).toContain("Quý IV/2027 (tòa C3: Quý IV/2028)");
+  const api = {
+    handoverNote: "Quý IV/2027",
+    towers: [{ name: "C3", handover: "Quý IV/2028" }, { name: "C4" }],
+  };
+  expect(towerHandover(api, "C3")).toBe("Quý IV/2028");
+  expect(towerHandover(api, "C4")).toBe("Quý IV/2027");
 });

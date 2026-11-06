@@ -1,4 +1,5 @@
 /** @jsxImportSource @/i18n/jsx */
+import { towerHandover } from "@/lib/handover";
 import Image from "next/image";
 import { ArrowUpRight, MapPin, MessageCircle } from "lucide-react";
 import Link from "@/components/page-navigation";
@@ -143,8 +144,8 @@ export function SaleUnitBody({
     ...(r.quota ? [["Quỹ căn", r.quota] as [string, string]] : []),
     ...(r.floorNote ? [["Tầng áp dụng", r.floorNote] as [string, string]] : []),
     ["Nội thất bàn giao", r.furniture === "Bàn giao thô" ? "Thô" : r.furniture],
-    ...(api?.handoverNote
-      ? [["Bàn giao nhà", api.handoverNote] as [string, string]]
+    ...(towerHandover(api, r.tower)
+      ? [["Bàn giao nhà", towerHandover(api, r.tower)] as [string, string]]
       : []),
   ];
   return (

@@ -4,6 +4,7 @@ import { ArrowUpRight, Info, MapPin, MessageCircle } from "lucide-react";
 import Link from "@/components/page-navigation";
 import { zaloHref } from "@/lib/company-contact";
 import type { ApiProject } from "@/lib/api/types";
+import { towerHandover } from "@/lib/handover";
 import { modelTour } from "@/lib/model-tours";
 import type { ModelUnit } from "@/lib/model-units";
 import { roomsLabel } from "@/lib/property-groups";
@@ -48,8 +49,8 @@ export function ModelUnitBody({
     ["Diện tích thông thủy", `${r.area.toLocaleString("vi-VN")} m²`],
     ["Tầng áp dụng", (r.floorNote ?? "").replace(/^Tầng /, "")],
     ["Bàn giao", "Thô"],
-    ...(api?.handoverNote
-      ? [["Thời điểm", api.handoverNote] as [string, string]]
+    ...(towerHandover(api, r.tower)
+      ? [["Thời điểm", towerHandover(api, r.tower)] as [string, string]]
       : []),
   ];
   return (

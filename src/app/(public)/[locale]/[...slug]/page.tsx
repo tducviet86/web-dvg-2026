@@ -42,7 +42,7 @@ import { isPreview, previewPost, previewProject } from "@/lib/api/preview";
 import type { Lookup } from "@/lib/api/server";
 import type { EditorialContent } from "@/lib/pages";
 import { siteUrl } from "@/lib/utils";
-import { agentSchema, jsonLd } from "@/lib/structured-data";
+import { agentSchema, jsonLd, COMPANY_SUMMARY } from "@/lib/structured-data";
 import { isLocale, localizeHref, type Locale } from "@/i18n/config";
 import {
   defaultOgImage,
@@ -594,18 +594,19 @@ export default async function Page({ params, searchParams }: Props) {
           }).replace(/</g, "\\u003c"),
         }}
       />
-      {/* The contact page describes the company as a local agent. */}
-      {path === "lien-he" && (
+      {/* The about and contact pages describe the company as a local agent. */}
+      {(path === "lien-he" || path === "gioi-thieu") && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: jsonLd(
-              agentSchema(
+            __html: jsonLd({
+              ...agentSchema(
                 await getPublicSettings().catch(
                   () => ({}) as Record<string, string>,
                 ),
               ),
-            ),
+              description: t(COMPANY_SUMMARY),
+            }),
           }}
         />
       )}

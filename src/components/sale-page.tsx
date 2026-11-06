@@ -3,7 +3,9 @@ import { BackButton } from "@/components/layout/back-button";
 import Link from "@/components/page-navigation";
 import type { SiteContent } from "@/lib/api/content";
 import { searchUnits } from "@/lib/filter";
+import { saleListFaqs } from "@/lib/faq";
 import { SaleCard } from "./cards";
+import { FaqSection } from "./faq-section";
 import { SearchHero } from "./search-hero";
 
 /**
@@ -78,6 +80,12 @@ export function SalePage({ content }: { content: SiteContent }) {
             </Link>
           </section>
         ))}
+        <FaqSection
+          faqs={saleListFaqs(
+            projects.map((p) => p.name),
+            modelProjects.length > 0,
+          )}
+        />
       </div>
     </main>
   );

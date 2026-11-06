@@ -88,6 +88,10 @@ export function openingHours(text?: string): string[] | undefined {
   return out.length ? out : undefined;
 }
 
+/** What the company does, for the company's structured data (translate it). */
+export const COMPANY_SUMMARY =
+  "Đất Vàng Group là công ty bất động sản tại Đà Nẵng: cho thuê, mua bán, ký gửi và quản lý vận hành căn hộ.";
+
 /* ── The company ──────────────────────────────────────────────────────── */
 export function agentSchema(settings: Record<string, string>) {
   const address = settings["company.address"]?.trim();
@@ -96,6 +100,8 @@ export function agentSchema(settings: Record<string, string>) {
     "@type": "RealEstateAgent",
     "@id": ORGANIZATION_ID,
     name: settings["company.brand"] || "Đất Vàng Group",
+    // Earlier brands, now merged: the same company wherever they are named.
+    alternateName: ["Đất Vàng Luxury", "Đất Vàng Smart City"],
     legalName: settings["company.legalName"],
     url: siteUrl,
     logo: `${siteUrl}/images/dat-vang-group-logo-transparent.png`,
@@ -126,7 +132,8 @@ export function agentSchema(settings: Record<string, string>) {
 function postalAddress(project: Pick<ApiProject, "address" | "location">) {
   return clean({
     "@type": "PostalAddress",
-    streetAddress: project.address || project.location,
+    // "535 Trần Hưng Đạo · Đà Nẵng": the city has its own field below.
+    streetAddress: (project.address || project.location)?.split("·")[0].trim(),
     addressLocality: "Đà Nẵng",
     addressCountry: "VN",
   });

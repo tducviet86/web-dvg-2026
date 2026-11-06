@@ -24,6 +24,9 @@ import { roomsLabel, hasRooms } from "@/lib/property-groups";
 import { unitRef, vndFull } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { CallContact } from "./call-contact";
+import { FaqSection } from "./faq-section";
+import { saleFaqs } from "@/lib/faq";
+import { handoverSummary } from "@/lib/handover";
 import { ProjectMap } from "./project-map";
 import {
   GalleryTabs,
@@ -248,7 +251,7 @@ export function ProjectSalePage({
             label: "Bàn giao",
             values: [
               api?.handoverNote
-                ? `Dự kiến ${api.handoverNote}`
+                ? `Dự kiến ${handoverSummary(api)}`
                 : `Dự kiến tháng ${Number(handover![1])}/${handover![0]}`,
             ],
           },
@@ -321,7 +324,7 @@ export function ProjectSalePage({
           {api?.handoverNote ? (
             <div>
               <dt>Bàn giao</dt>
-              <dd>{api.handoverNote}</dd>
+              <dd>{handoverSummary(api)}</dd>
             </div>
           ) : null}
         </dl>
@@ -569,6 +572,12 @@ export function ProjectSalePage({
             )}
           </div>
         </section>
+
+        {api && (
+          <div className="container">
+            <FaqSection faqs={saleFaqs(p.name, api, rawUnits)} />
+          </div>
+        )}
 
         <section id="dang-ky" className="project-block project-block-tint">
           <div className="container">

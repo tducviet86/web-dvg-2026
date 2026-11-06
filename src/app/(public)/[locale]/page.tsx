@@ -9,7 +9,12 @@ import {
   getPublicSettings,
   getSiteContent,
 } from "@/lib/api/content";
-import { agentSchema, graphNode, jsonLd } from "@/lib/structured-data";
+import {
+  agentSchema,
+  graphNode,
+  jsonLd,
+  COMPANY_SUMMARY,
+} from "@/lib/structured-data";
 import type { ResolvedBanner } from "@/lib/banners";
 import { Reveal } from "@/components/client-basics";
 import { CorporateBanner } from "@/components/corporate-banner";
@@ -90,9 +95,7 @@ export default async function Home({ params }: Props) {
             "@graph": [
               {
                 ...agent,
-                description: t(
-                  "Giới thiệu doanh nghiệp, lĩnh vực hoạt động và định hướng phát triển của Đất Vàng Group.",
-                ),
+                description: t(COMPANY_SUMMARY),
               },
               {
                 "@type": "WebSite",
@@ -124,6 +127,7 @@ export default async function Home({ params }: Props) {
         id="du-an-van-hanh"
         kicker="DỰ ÁN ĐANG VẬN HÀNH"
         title=""
+        hiddenTitle="Dự án đang vận hành tại Đà Nẵng"
         lead="Căn hộ thực tế tại các tòa nhà Đất Vàng Group đang vận hành."
         more={{ href: "/du-an/van-hanh", label: "Xem dự án vận hành" }}
         projects={portfolio.filter((p) => p.group === "operation")}

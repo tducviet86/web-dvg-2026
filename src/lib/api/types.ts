@@ -87,7 +87,13 @@ export type UnitType = {
   image?: string;
 };
 export type FloorPlan = { name: string; tower?: string; image: string };
-export type Tower = { name: string; status?: string; note?: string };
+export type Tower = {
+  name: string;
+  status?: string;
+  /** Only when it differs from the project's handover date. */
+  handover?: string;
+  note?: string;
+};
 export type ProjectPhoto = { group: string; image: string };
 export type SalesPolicy = { title: string; body?: string; condition?: string };
 export type Connection = { place: string; time?: string };

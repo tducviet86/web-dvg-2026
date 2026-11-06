@@ -33,6 +33,14 @@ export async function GET() {
     p.categories.includes("rent"),
   );
 
+  const towerNames = (projectId: string) => {
+    const towers = content.apiProjects.find((x) => x.id === projectId)?.towers;
+    return towers?.length
+      ? `các tòa: ${towers
+          .map((x) => (x.note ? `${x.name} (${x.note})` : x.name))
+          .join(", ")}`
+      : "";
+  };
   const projectLine = (p: (typeof content.portfolio)[number]) => {
     const own = free.filter((u) => u.projectId === p.projectId);
     const prices = own.map((u) => u.rentVnd).filter((n): n is number => !!n);
@@ -40,6 +48,7 @@ export async function GET() {
       p.location,
       own.length ? `${own.length} căn còn trống` : "",
       prices.length ? `giá thuê từ ${million(Math.min(...prices))}/tháng` : "",
+      towerNames(p.projectId),
     ].filter(Boolean);
     const page = p.categories.includes("rent")
       ? `${siteUrl}/cho-thue/du-an/${p.slug}`
@@ -71,6 +80,8 @@ export async function GET() {
         .join(", ")}.`,
     )}`,
     "",
+    "Đất Vàng Luxury và Đất Vàng Smart City nay được gộp chung vào Đất Vàng Group.",
+    "",
     `Website bằng tiếng Việt (có bản tiếng Anh /en, tiếng Hàn /ko, tiếng Trung /zh). Giá và tình trạng căn hộ lấy trực tiếp từ hệ thống quản lý và thay đổi theo thời điểm${
       free.length ? `; hiện có ${free.length} căn hộ còn trống để cho thuê` : ""
     }.`,
@@ -78,6 +89,9 @@ export async function GET() {
     "## Căn hộ cho thuê theo dự án",
     ...rentProjects.map(projectLine),
     `- [Tất cả căn hộ cho thuê tại Đà Nẵng](${siteUrl}/cho-thue)`,
+    "",
+    "## Mua bán căn hộ",
+    `- [Căn hộ đang bán và căn mẫu tại Đà Nẵng](${siteUrl}/mua-ban)`,
     "",
     "## Dự án khác",
     ...content.portfolio

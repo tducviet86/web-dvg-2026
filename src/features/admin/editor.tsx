@@ -440,6 +440,12 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
                   placeholder: "vd: Đang mở bán",
                   maxLength: 60,
                 },
+                {
+                  key: "handover",
+                  label: "Bàn giao riêng",
+                  placeholder: "Chỉ điền nếu khác dự án",
+                  maxLength: 80,
+                },
                 { key: "note", label: "Ghi chú", maxLength: 200 },
               ],
               add: "Thêm tòa",
@@ -819,6 +825,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           f("viewNote", "View", {
             maxLength: 120,
             placeholder: "vd: Sông Hàn",
+            showWhen: "floorNote",
           }),
           f("quota", "Quỹ căn", {
             maxLength: 60,

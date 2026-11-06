@@ -42,6 +42,10 @@ function PostMeta({ post }: { post: Post }) {
 }
 
 /** Image card used in the news grid and "Đọc tiếp". */
+/** The byline: a name set on the post, otherwise Admin (never the company). */
+const authorOf = (post: { author?: string | null }) =>
+  !post.author || post.author === "Đất Vàng Group" ? "Admin" : post.author;
+
 export function PostCard({
   post,
   priority = false,
@@ -77,7 +81,7 @@ export function PostCard({
         </h3>
         <p>{post.description}</p>
         <div className="post-card-foot">
-          <span>{post.author || "Đất Vàng Group"}</span>
+          <span>{authorOf(post)}</span>
           <PostMeta post={post} />
         </div>
       </div>
@@ -403,7 +407,7 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
     .slice(0, 4);
   // "Đọc tiếp": the same category first, otherwise the latest posts.
   const more = sameCategory.length ? sameCategory : latest.slice(0, 3);
-  const author = post.author || "Đất Vàng Group";
+  const author = authorOf(post);
   const updated =
     post.updatedAt &&
     post.updatedAt.slice(0, 10) !== post.createdAt.slice(0, 10)
@@ -424,7 +428,7 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
             datePublished: post.createdAt,
             dateModified: post.updatedAt || post.createdAt,
             image: post.image,
-            author: { "@type": "Organization", name: author },
+            author: { "@type": "Person", name: author },
             mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
           }),
         }}
