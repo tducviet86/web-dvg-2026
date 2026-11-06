@@ -241,11 +241,7 @@ export function Tour360({
             <span className="tour-start-text">
               <b>360°</b>
               <strong>{t("Bắt đầu tham quan")}</strong>
-              <small>
-                {t("{n} không gian · kéo để nhìn quanh", {
-                  n: tour.scenes.length,
-                })}
-              </small>
+             
             </span>
           </button>
         )}

@@ -33,8 +33,11 @@ type Stats = {
   /** Rented / sold over `hideDays` days ago: off the site. */
   delisted?: number;
   hideDays?: number;
+  kinds?: { unit: number; model: number };
 };
 type Filters = {
+  /** The list's two tabs: units posted for rent / sale, or model apartments. */
+  kind: "unit" | "model";
   q: string;
   status: string;
   project: string;
@@ -45,6 +48,7 @@ type Filters = {
   pageSize: number;
 };
 const EMPTY: Filters = {
+  kind: "unit",
   q: "",
   status: "",
   project: "",
@@ -158,6 +162,7 @@ export function PropertiesList({
       page: String(page),
       pageSize: String(filters.pageSize),
       sort: filters.sort,
+      kind: filters.kind,
     });
     for (const key of [
       "q",
@@ -174,7 +179,10 @@ export function PropertiesList({
           "GET",
           `/admin/properties?${params}`,
         ),
-        api<{ data: Stats }>("GET", "/admin/properties/stats"),
+        api<{ data: Stats }>(
+          "GET",
+          `/admin/properties/stats?kind=${filters.kind}`,
+        ),
       ]);
       if (id !== request.current) return;
       setRows(list.data);
@@ -240,7 +248,7 @@ export function PropertiesList({
   const pages = Math.max(1, Math.ceil(total / filters.pageSize));
   const active = Object.entries(filters).some(
     ([key, value]) =>
-      !["sort", "pageSize"].includes(key) &&
+      !["kind", "sort", "pageSize"].includes(key) &&
       value !== EMPTY[key as keyof Filters],
   );
   const allChecked = !!rows?.length && rows.every((r) => selected.has(r.id));
@@ -291,6 +299,23 @@ export function PropertiesList({
 
   return (
     <div className="units">
+      <div className="units-kinds" role="group" aria-label="Loại căn">
+        {(
+          [
+            ["unit", "Căn đăng thuê / bán", stats?.kinds?.unit],
+            ["model", "Căn mẫu dự án", stats?.kinds?.model],
+          ] as const
+        ).map(([kind, label, count]) => (
+          <button
+            key={kind}
+            type="button"
+            aria-pressed={filters.kind === kind}
+            onClick={() => set({ ...EMPTY, kind, pageSize: filters.pageSize })}
+          >
+            {label} <small>{count ?? "–"}</small>
+          </button>
+        ))}
+      </div>
       <div className="units-stats" role="group" aria-label="Tóm tắt căn hộ">
         {cards.map((c) => (
           <button
@@ -399,6 +424,7 @@ export function PropertiesList({
               onClick={() =>
                 set({
                   ...EMPTY,
+                  kind: filters.kind,
                   sort: filters.sort,
                   pageSize: filters.pageSize,
                 })

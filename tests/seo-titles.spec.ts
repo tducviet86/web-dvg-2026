@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { apiAs } from "./helpers";
+import { apiAs, login } from "./helpers";
 
 test("old website URLs move permanently to the matching page", async ({
   request,
@@ -128,4 +128,47 @@ test("/mua-ban is an indexable page that links to the units on sale", async ({
         document.documentElement.clientWidth,
     ),
   ).toBe(true);
+});
+
+test("admin lists model apartments apart from posted units", async ({ page }) => {
+  const api = await apiAs();
+  const units = (await api.get(
+    "/admin/properties?pageSize=100",
+  )) as unknown as { data: { projectId?: string; project?: { id: string } }[] };
+  const projectId = units.data[0].projectId ?? units.data[0].project!.id;
+  const made = await api.send("post", "/admin/properties", {
+    name: "Căn mẫu TAB1-01 2 PN",
+    projectId,
+    propertyType: "2pn",
+    unitCode: "TAB1-01",
+    tower: "TAB1",
+    floorNote: "Tầng 5-10",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn mẫu kiểm tra tab trong trang quản trị.",
+    forSale: true,
+    forRent: false,
+    status: "PUBLISHED",
+  });
+  expect(made.ok(), await made.text()).toBeTruthy();
+  const { id } = ((await made.json()) as { data: { id: string } }).data;
+  try {
+    await login(page);
+    await page.goto("/admin/properties");
+    const name = page.getByText("Căn mẫu TAB1-01 2 PN");
+    await expect(
+      page.getByRole("button", { name: /Căn đăng thuê \/ bán/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".units-table, table").first()).toBeVisible();
+    await expect(name).toHaveCount(0);
+    await page.getByRole("button", { name: /Căn mẫu dự án/ }).click();
+    await expect(name).toBeVisible();
+    // The chosen tab survives opening a unit and coming back.
+    await page.reload();
+    await expect(name).toBeVisible();
+  } finally {
+    await api.send("delete", `/admin/properties/${id}`);
+  }
 });

@@ -392,6 +392,9 @@ test("Capital Square shows its 360° tour and a unit's layout or 3D model", asyn
   await expect(page.locator(".site-map")).toBeHidden();
   await page.locator(".site-map-back").click();
   await expect(page.locator(".site-map")).toBeVisible();
+  await expect(
+    page.locator('.site-map polygon[aria-label="Tòa C3"]'),
+  ).toHaveCount(1);
   await page.getByRole("button", { name: "Tòa C4" }).click();
   // A chosen unit shows its layout or its 3D model, one at a time.
   await spot.click();

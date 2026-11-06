@@ -4252,6 +4252,31 @@
   display: grid;
   gap: 16px;
 }
+.units-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.units-kinds button {
+  min-height: 44px;
+  padding: 8px 16px;
+  font-weight: 600;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #123c3224;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.units-kinds button[aria-pressed="true"] {
+  color: #fff;
+  background: #123c32;
+  border-color: #123c32;
+}
+.units-kinds small {
+  margin-left: 4px;
+  font-weight: 400;
+}
 .units-stats {
   display: grid;
   grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr));
