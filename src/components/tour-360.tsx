@@ -1,15 +1,15 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Maximize2, X } from "lucide-react";
+import { Maximize2, Minimize2, X } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { modelTour, type Tour } from "@/lib/model-tours";
 
 type Viewer = {
   destroy: () => void;
+  resize: () => void;
   loadScene: (id: string) => void;
   getScene: () => string;
   on: (event: string, handler: () => void) => void;
-  toggleFullscreen: () => void;
 };
 declare global {
   interface Window {
@@ -49,7 +49,7 @@ function TourStrip({ type }: { type: string }) {
  * Walk through a model apartment in 360°. Loads nothing until the visitor
  * starts it, so the page stays light. `children` sit on the picture.
  */
-function Tour360({
+export function Tour360({
   tour,
   title,
   children,
@@ -59,7 +59,6 @@ function Tour360({
   children?: ReactNode;
 }) {
   const t = useT();
-  const stage = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const viewer = useRef<Viewer | null>(null);
   const [started, setStarted] = useState(false);
@@ -68,6 +67,9 @@ function Tour360({
   /** The tour whose first room is on screen. */
   const [ready, setReady] = useState<string | null>(null);
   const [changingRoom, setChangingRoom] = useState(false);
+  // Fills the window with CSS: phones have no fullscreen for pages, and on
+  // tablets the browser's own fullscreen ends with a swipe.
+  const [full, setFull] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const firstLoad = started && !failed && ready !== tour.type;
 
@@ -87,7 +89,10 @@ function Tour360({
               ),
               yaw: s.yaw,
               pitch: s.pitch,
+              // One fixed view: no zooming, by mouse or by fingers.
               hfov: 110,
+              minHfov: 110,
+              maxHfov: 110,
               hotSpots: s.spots.map((spot) => ({
                 type: "scene",
                 pitch: spot.pitch,
@@ -135,8 +140,24 @@ function Tour360({
     };
   }, [started, tour]);
 
+  useEffect(() => {
+    viewer.current?.resize();
+    if (!full) return;
+    const page = document.documentElement;
+    const before = page.style.overflow;
+    page.style.overflow = "hidden";
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFull(false);
+    };
+    window.addEventListener("keydown", key);
+    return () => {
+      page.style.overflow = before;
+      window.removeEventListener("keydown", key);
+    };
+  }, [full]);
+
   function close() {
-    if (document.fullscreenElement) document.exitFullscreen();
+    setFull(false);
     setStarted(false);
     setReady(null);
     setChangingRoom(false);
@@ -145,7 +166,7 @@ function Tour360({
 
   return (
     <div className="tour">
-      <div ref={stage} className="tour-stage">
+      <div className={full ? "tour-stage is-full" : "tour-stage"}>
         {started ? (
           <>
             <div ref={box} className="tour-view" aria-label={title} />
@@ -240,21 +261,18 @@ function Tour360({
             <div className="tour-tools">
               <button
                 type="button"
-                aria-label={t("Xem toàn màn hình")}
-                onClick={() =>
-                  document.fullscreenElement
-                    ? document.exitFullscreen()
-                    : stage.current?.requestFullscreen?.()
-                }
+                aria-label={t(full ? "Thu nhỏ màn hình" : "Xem toàn màn hình")}
+                onClick={() => setFull(!full)}
               >
-                <Maximize2 size={17} aria-hidden="true" />
+                {full ? (
+                  <Minimize2 size={17} aria-hidden="true" />
+                ) : (
+                  <Maximize2 size={17} aria-hidden="true" />
+                )}
               </button>
-              <button
-                type="button"
-                aria-label={t("Đóng tour 360")}
-                onClick={close}
-              >
+              <button type="button" className="tour-exit" onClick={close}>
                 <X size={17} aria-hidden="true" />
+                {t("Thoát VR360")}
               </button>
             </div>
           )}

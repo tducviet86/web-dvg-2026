@@ -232,7 +232,10 @@ test("a development project shows towers and model units without prices", async 
   const projects = (await api.get("/admin/projects?pageSize=100")) as {
     data: { id: string; slug: string; stage: string }[];
   };
-  const project = projects.data.find((p) => p.stage === "UNDER_DEVELOPMENT")!;
+  // Capital Square picks towers on its site plan and has its own test.
+  const project = projects.data.find(
+    (p) => p.stage === "UNDER_DEVELOPMENT" && p.slug !== "capital-square",
+  )!;
   const saved = await api.send("patch", `/admin/projects/${project.id}`, {
     unitTypes: [{ name: "Căn QA 2 phòng ngủ", area: "Khoảng 70 m²" }],
     towers: [
@@ -280,7 +283,7 @@ test("a development project shows towers and model units without prices", async 
   // A tower with no plan yet asks for a call.
   await page.locator(".tower-tabs button", { hasText: "QA2" }).click();
   await expect(
-    page.getByRole("link", { name: "Gọi tư vấn tòa này" }),
+    page.getByRole("link", { name: "Liên Hệ Tư Vấn" }),
   ).toBeVisible();
   // The unit's own page shows no price.
   await page.goto(`/mua-ban/${unit.slug}`);
@@ -312,7 +315,8 @@ test("Capital Square shows its 360° tour and a unit's layout or 3D model", asyn
   // Plans must be in the library; this one ships with the site.
   const { Client } = createRequire(`${BE_DIR}/package.json`)("pg");
   const db = new Client({ connectionString: E2E_DATABASE_URL });
-  const planImage = "/images/projects/capital-square/mat-bang-c4-tang-5-10.webp";
+  const planImage =
+    "/images/projects/capital-square/mat-bang-c4-tang-5-10.webp";
   await db.connect();
   await db.query(
     `INSERT INTO media_assets (id, storage, key, url, mime_type, size_bytes, updated_at)
@@ -354,10 +358,25 @@ test("Capital Square shows its 360° tour and a unit's layout or 3D model", asyn
   await expect
     .poll(async () => {
       await page.goto("/du-an/capital-square");
-      return spot.count();
+      return page.getByRole("button", { name: "Tòa C4" }).count();
     })
     .toBe(1);
+  // The photo album shows no totals.
+  await expect(page.locator("#hinh-anh .desk-tabs")).not.toContainText(/\d+$/);
+  await expect(page.locator("#hinh-anh .rental-gallery-counter")).toHaveCount(
+    0,
+  );
   // The 360° tour loads only when the visitor starts it.
+  await expect(page.locator(".tour-view")).toHaveCount(0);
+  await page.locator(".tour-start").click();
+  await expect(page.locator(".tour-view")).toHaveCount(1);
+  // Full screen fills the window, on any device; only "Thoát VR360" leaves.
+  await page.getByRole("button", { name: "Xem toàn màn hình" }).click();
+  await expect(page.locator(".tour-stage.is-full")).toBeVisible();
+  await page.getByRole("button", { name: "Thu nhỏ màn hình" }).click();
+  await expect(page.locator(".tour-stage.is-full")).toHaveCount(0);
+  await expect(page.locator(".tour-view")).toHaveCount(1);
+  await page.getByRole("button", { name: "Thoát VR360" }).click();
   await expect(page.locator(".tour-view")).toHaveCount(0);
   await page.locator(".tour-start").click();
   await expect(page.locator(".tour-view")).toHaveCount(1);
@@ -367,6 +386,13 @@ test("Capital Square shows its 360° tour and a unit's layout or 3D model", asyn
   await expect(page.locator(".tour-plan-dot").first()).toBeVisible();
   await page.locator(".tour-plan-toggle").click();
   await expect(page.locator(".tour-plan")).toHaveCount(0);
+  // The site plan: a tower on it dives into that tower's floor plan.
+  await page.getByRole("button", { name: "Tòa C4" }).click();
+  await expect(page.locator(".tower-head")).toContainText("C4");
+  await expect(page.locator(".site-map")).toBeHidden();
+  await page.locator(".site-map-back").click();
+  await expect(page.locator(".site-map")).toBeVisible();
+  await page.getByRole("button", { name: "Tòa C4" }).click();
   // A chosen unit shows its layout or its 3D model, one at a time.
   await spot.click();
   await expect(page.locator(".plan-zoom-view")).toBeVisible();
@@ -378,14 +404,18 @@ test("Capital Square shows its 360° tour and a unit's layout or 3D model", asyn
   await views.nth(0).click();
   await expect(page.locator(".plan-zoom-view")).toBeVisible();
   await expect(page.locator(".plan-zoom-model")).toHaveCount(0);
-  // The model unit's own page is built from the 3D model, with no tour.
+  // The model unit's own page is built from the 3D model, with its own tour.
   await page.locator(".plan-open").click();
   await expect(page).toHaveURL(/\/mua-ban\//);
   await expect(page.locator(".model-hero-photo img")).toBeVisible();
   await expect(page.locator(".model-room").first()).toContainText(
     "Phòng khách",
   );
-  await expect(page.locator(".tour")).toHaveCount(0);
+  await page.locator(".tour-start").click();
+  await expect(page.locator(".tour-view")).toHaveCount(1);
+  await page.locator(".tour-plan-toggle").click();
+  await expect(page.locator(".tour-plan-dot").first()).toBeVisible();
+  await expect(page.locator(".tour-types")).toHaveCount(0);
   await api.send("delete", `/admin/properties/${unit.id}`);
   await api.send("patch", `/admin/projects/${project.id}`, {
     towers: project.towers,

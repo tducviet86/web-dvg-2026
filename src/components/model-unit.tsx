@@ -1,9 +1,10 @@
 /** @jsxImportSource @/i18n/jsx */
 import Image from "next/image";
-import { ArrowUpRight, MapPin, MessageCircle } from "lucide-react";
+import { ArrowUpRight, Info, MapPin, MessageCircle } from "lucide-react";
 import Link from "@/components/page-navigation";
 import { zaloHref } from "@/lib/company-contact";
 import type { ApiProject } from "@/lib/api/types";
+import { modelTour } from "@/lib/model-tours";
 import type { ModelUnit } from "@/lib/model-units";
 import { roomsLabel } from "@/lib/property-groups";
 import type { Property } from "@/types";
@@ -11,6 +12,7 @@ import { CallContact, WhatsAppContact } from "./call-contact";
 import { Favorite } from "./client-basics";
 import { toDeskUnit } from "./project-sale";
 import { ProjectDesk, ProjectLeadForm } from "./project-sale-desk";
+import { Tour360 } from "./tour-360";
 import { ShareButton } from "./rental-inquiry";
 import { UnitLayoutCrop, unitLayout } from "./sale-unit";
 
@@ -37,6 +39,7 @@ export function ModelUnitBody({
 }) {
   const code = (r.unitCode ?? "").replace(/-T5$/, "");
   const layout = unitLayout(r, api);
+  const tour = modelTour(r.typeCode);
   const zalo = zaloHref();
   const facts: [string, string][] = [
     ["Tòa", r.tower ?? ""],
@@ -67,7 +70,7 @@ export function ModelUnitBody({
               sizes="(max-width: 900px) 100vw, 800px"
             />
           </a>
-          <span>Mô hình 3D căn mẫu</span>
+          <span>Mô hình 3D · Ảnh minh hoạ</span>
         </div>
         <aside className="model-hero-panel">
           <span className="signature-kicker">{projectName}</span>
@@ -114,6 +117,26 @@ export function ModelUnitBody({
         </aside>
       </section>
 
+      <aside className="model-note">
+        <Info size={22} aria-hidden="true" />
+        <div>
+          <strong>Hình ảnh mang tính minh hoạ</strong>
+          <p>
+            Mô hình, hình ảnh và kích thước nội thất lấy từ căn mẫu của chủ đầu
+            tư, chỉ để định hướng bố trí. Căn hộ bàn giao thô; diện tích từng
+            phòng có thể khác theo vị trí căn.
+          </p>
+        </div>
+      </aside>
+
+      {tour && (
+        <section id="tham-quan-360" className="model-tour">
+          <span className="signature-kicker">THAM QUAN 360°</span>
+          <h2>Đi một vòng trong căn mẫu</h2>
+          <Tour360 tour={tour} title={`Tham quan 360° ${r.name}`} />
+        </section>
+      )}
+
       <section className="model-plan">
         {layout && (
           <div>
@@ -138,6 +161,9 @@ export function ModelUnitBody({
             {model.rooms.map((room) => (
               <li key={room.name}>
                 <a href={`#phong-${model.rooms.indexOf(room) + 1}`}>
+                  <i>
+                    {String(model.rooms.indexOf(room) + 1).padStart(2, "0")}
+                  </i>
                   <span>{room.name}</span>
                   <b>{`${room.area} m²`}</b>
                 </a>
@@ -161,6 +187,7 @@ export function ModelUnitBody({
                   />
                 </span>
               ))}
+              <em className="model-photo-tag">Ảnh minh hoạ</em>
             </div>
             <div className="model-room-text">
               <span className="model-room-number">
@@ -183,12 +210,10 @@ export function ModelUnitBody({
         ))}
       </div>
 
-      <p className="model-note">
-        Mô hình, hình ảnh và kích thước nội thất lấy từ căn mẫu của chủ đầu tư,
-        chỉ để định hướng bố trí. Căn hộ bàn giao thô; diện tích từng phòng có
-        thể khác theo vị trí căn.
-      </p>
-      <Link href={`${projectPage}#can-mau`} className="sale-unit-link">
+      <Link
+        href={`${projectPage}#can-mau`}
+        className="sale-unit-link model-more"
+      >
         Xem các căn mẫu khác của dự án
         <ArrowUpRight size={16} aria-hidden="true" />
       </Link>

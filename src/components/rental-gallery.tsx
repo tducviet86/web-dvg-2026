@@ -52,10 +52,13 @@ export function RentalGallery({
   media,
   title,
   demo = false,
+  hideCounts = false,
 }: {
   media: RentalMedia[];
   title: string;
   demo?: boolean;
+  /** No "1 / 7" or photo totals, for pages that do not show how many. */
+  hideCounts?: boolean;
 }) {
   const t = useT();
   const [active, setActive] = useState(0);
@@ -159,9 +162,11 @@ export function RentalGallery({
               </button>
             </div>
           )}
-          <span className="rental-gallery-counter">
-            {active + 1} / {media.length}
-          </span>
+          {!hideCounts && (
+            <span className="rental-gallery-counter">
+              {active + 1} / {media.length}
+            </span>
+          )}
           {media.length > 1 && (
             <Dialog.Trigger asChild>
               <button
@@ -169,12 +174,14 @@ export function RentalGallery({
                 onClick={() => setExpanded(active)}
               >
                 <Images size={16} aria-hidden="true" />
-                {t(
-                  hasVideo
-                    ? "Xem tất cả {n} ảnh và video"
-                    : "Xem tất cả {n} ảnh",
-                  { n: media.length },
-                )}
+                {hideCounts
+                  ? t("Xem tất cả ảnh")
+                  : t(
+                      hasVideo
+                        ? "Xem tất cả {n} ảnh và video"
+                        : "Xem tất cả {n} ảnh",
+                      { n: media.length },
+                    )}
               </button>
             </Dialog.Trigger>
           )}
@@ -233,9 +240,11 @@ export function RentalGallery({
                 {t("Dùng phím mũi tên để chuyển ảnh, Escape để đóng.")}
               </Dialog.Description>
             </div>
-            <span className="rental-lightbox-count" aria-live="polite">
-              {expanded + 1} / {media.length}
-            </span>
+            {!hideCounts && (
+              <span className="rental-lightbox-count" aria-live="polite">
+                {expanded + 1} / {media.length}
+              </span>
+            )}
             <Dialog.Close
               className="rental-lightbox-close"
               aria-label={t("Đóng bộ ảnh")}

@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   Building2,
   CalendarCheck,
+  Check,
   House,
   Layers,
   MapPin,
@@ -18,6 +19,7 @@ import { vacantNow } from "@/lib/availability";
 import { paymentAmounts } from "@/lib/payment";
 import { videoSource, type RentalMedia } from "@/lib/property-media";
 import { modelUnit } from "@/lib/model-units";
+import { projectSiteMap } from "@/lib/project-site-maps";
 import { roomsLabel, hasRooms } from "@/lib/property-groups";
 import { unitRef, vndFull } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
@@ -348,7 +350,7 @@ export function ProjectSalePage({
           <div className="container project-overview">
             <div>
               <span className="signature-kicker">TỔNG QUAN DỰ ÁN</span>
-              <h2>{`Tìm hiểu về ${p.name}`}</h2>
+              <h2>{`${p.name} Đà Nẵng`}</h2>
               {[...new Set([story.intro, ...story.paragraphs])].map((text) => (
                 <p key={text}>{text}</p>
               ))}
@@ -401,7 +403,7 @@ export function ProjectSalePage({
           <section id="tham-quan-360" className="project-block project-tour">
             <div className="container">
               <span className="signature-kicker">THAM QUAN 360°</span>
-              <h2>Tham Quan Ngôi Nhà</h2>
+              <h2>Căn Hộ Mẫu</h2>
               <TourShowcase title={p.name} />
             </div>
           </section>
@@ -410,7 +412,7 @@ export function ProjectSalePage({
         <section id="can-mau" className="project-block project-block-tint">
           <div className="container">
             <span className="signature-kicker">CĂN MẪU & MẶT BẰNG</span>
-            <h2>Chọn căn mẫu theo tòa</h2>
+            <h2>Phối Cảnh Căn Hộ Mẫu</h2>
             {types.length > 0 && (
               <ul className="unit-types">
                 {types.map((type) => (
@@ -440,7 +442,12 @@ export function ProjectSalePage({
               </ul>
             )}
             {units.length > 0 || towers.length > 0 ? (
-              <UnitBrowser towers={towers} units={units} plans={plans} />
+              <UnitBrowser
+                towers={towers}
+                units={units}
+                plans={plans}
+                siteMap={projectSiteMap(p.slug)}
+              />
             ) : (
               <div className="price-empty">
                 <p>Thông tin căn đang được cập nhật. Gọi để được tư vấn.</p>
@@ -491,45 +498,53 @@ export function ProjectSalePage({
           <div className="container">
             <span className="signature-kicker">VỊ TRÍ, TIỆN ÍCH, TIẾN ĐỘ</span>
             <h2>{p.location}</h2>
-            <div className="project-location">
-              {place ? (
-                <ProjectMap place={place} />
-              ) : (
-                <div className="rental-map">
-                  <iframe
-                    title={`Bản đồ ${p.name}`}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    allowFullScreen
-                    src={`https://www.google.com/maps?q=${encodeURIComponent(`${p.name} Đà Nẵng`)}&z=15&output=embed`}
-                  />
-                </div>
-              )}
-              <div>
-                {connections.length > 0 && (
-                  <>
-                    <h3>Kết nối khu vực</h3>
-                    <ul className="connection-list">
-                      {connections.map((c) => (
-                        <li key={c.place}>
-                          <span>{c.place}</span>
-                          {c.time && <b>{c.time}</b>}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                {amenities.length > 0 && (
-                  <>
-                    <h3>Tiện ích</h3>
-                    <ul className="amenity-chips">
-                      {amenities.map((name) => (
-                        <li key={name}>{name}</li>
-                      ))}
-                    </ul>
-                  </>
+            <div className="place-card">
+              <div className="place-map">
+                {place ? (
+                  <ProjectMap place={place} />
+                ) : (
+                  <div className="rental-map">
+                    <iframe
+                      title={`Bản đồ ${p.name}`}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      allowFullScreen
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(`${p.name} Đà Nẵng`)}&z=15&output=embed`}
+                    />
+                  </div>
                 )}
               </div>
+              {(connections.length > 0 || amenities.length > 0) && (
+                <div className="place-info">
+                  {connections.length > 0 && (
+                    <>
+                      <h3>Kết nối khu vực</h3>
+                      <ul className="place-links">
+                        {connections.map((c) => (
+                          <li key={c.place}>
+                            <MapPin size={15} aria-hidden="true" />
+                            <span>{c.place}</span>
+                            {c.time && <b>{c.time}</b>}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  {amenities.length > 0 && (
+                    <>
+                      <h3>Tiện ích</h3>
+                      <ul className="place-amenities">
+                        {amenities.map((name) => (
+                          <li key={name}>
+                            <Check size={15} aria-hidden="true" />
+                            {name}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
             {progress.length > 0 && (
               <>

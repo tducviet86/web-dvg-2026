@@ -477,8 +477,9 @@ const PLANS: Record<string, TourPlan> = {
   },
 };
 
-export function modelTour(type: string): Tour | undefined {
-  return SCENES[type]
+export function modelTour(typeCode?: string): Tour | undefined {
+  const type = typeCode === "2pn-plus" ? "2pn" : typeCode;
+  return type && SCENES[type]
     ? { type, scenes: SCENES[type], plan: PLANS[type] }
     : undefined;
 }

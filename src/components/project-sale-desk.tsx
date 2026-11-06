@@ -2,13 +2,14 @@
 import {
   createContext,
   useContext,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import Image from "next/image";
-import { ChevronDown, MessageCircle, Phone, X } from "lucide-react";
+import { ArrowLeft, MessageCircle, Phone, X } from "lucide-react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { track } from "@/lib/analytics";
@@ -16,6 +17,7 @@ import type { PaymentStep } from "@/lib/api/types";
 import { postPublic } from "@/lib/api/client";
 import { companyHotline, telephoneHref, zaloHref } from "@/lib/company-contact";
 import { planSpots } from "@/lib/floor-plan-spots";
+import type { SiteMap } from "@/lib/project-site-maps";
 import { loanFigures, paymentAmounts } from "@/lib/payment";
 import type { RentalMedia } from "@/lib/property-media";
 import { vndFull } from "@/lib/utils";
@@ -85,11 +87,15 @@ export function GalleryTabs({
             onClick={() => setActive(i)}
           >
             {g.label}
-            <small>{g.media.length}</small>
           </button>
         ))}
       </div>
-      <RentalGallery key={group.label} title={title} media={group.media} />
+      <RentalGallery
+        key={group.label}
+        title={title}
+        media={group.media}
+        hideCounts
+      />
     </>
   );
 }
@@ -299,10 +305,12 @@ export function UnitBrowser({
   towers,
   units,
   plans,
+  siteMap,
 }: {
   towers: DeskTower[];
   units: DeskUnit[];
   plans: DeskPlan[];
+  siteMap?: SiteMap;
 }) {
   const t = useT();
   // Units of a tower not listed in Admin still get a tab.
@@ -317,53 +325,71 @@ export function UnitBrowser({
     tabs.find((x) => count(x.name) > 0)?.name ?? tabs[0]?.name ?? "",
   );
   const [plan, setPlan] = useState(0);
+  // With a site plan: pick a tower, the view dives in and its plan appears.
+  const [view, setView] = useState<"site" | "tower">(
+    siteMap ? "site" : "tower",
+  );
+  const [entered, setEntered] = useState(false);
+  const browser = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const panels = useRef<Record<"site" | "tower", HTMLDivElement | null>>({
+    site: null,
+    tower: null,
+  });
+  const fromHeight = useRef<number | null>(null);
+  const moveTo = (next: "site" | "tower") => {
+    fromHeight.current = stage.current?.offsetHeight ?? null;
+    setView(next);
+    const top = browser.current?.getBoundingClientRect().top ?? 0;
+    // Below the page header and the section menu, and well in view.
+    if (top < 150 || top > window.innerHeight * 0.4)
+      browser.current?.scrollIntoView({
+        block: "start",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+  };
+  // The frame grows or shrinks smoothly to the new view: nothing below jumps.
+  useLayoutEffect(() => {
+    const box = stage.current;
+    const panel = panels.current[view];
+    const from = fromHeight.current;
+    fromHeight.current = null;
+    if (!box || !panel || from === null) return;
+    box.style.height = `${from}px`;
+    void box.offsetHeight;
+    box.style.height = `${panel.offsetHeight}px`;
+    const done = () => {
+      box.style.height = "";
+    };
+    const timer = setTimeout(
+      done,
+      matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650,
+    );
+    return () => clearTimeout(timer);
+  }, [view]);
+  const pickTower = (name: string) => {
+    setTower(name);
+    setPlan(0);
+    setEntered(true);
+    if (view === "site") moveTo("tower");
+  };
+  const focus = siteMap?.towers.find((x) => x.tower === tower)?.points;
   const current = tabs.find((x) => x.name === tower);
   const inTower = units
     .filter((u) => u.tower === tower)
     .sort((a, b) => a.code.localeCompare(b.code, "vi", { numeric: true }));
   const towerPlans = plans.filter((p) => p.tower === tower);
   const activePlan = towerPlans[plan] ?? towerPlans[0];
-  return (
-    <div className="unit-browser">
-      {tabs.length > 0 && (
-        <>
-          <div
-            className="desk-tabs tower-tabs"
-            role="group"
-            aria-label={t("Chọn tòa")}
-          >
-            {tabs.map((x) => (
-              <button
-                key={x.name}
-                type="button"
-                aria-pressed={x.name === tower}
-                onClick={() => {
-                  setTower(x.name);
-                  setPlan(0);
-                }}
-              >
-                <b>{x.name}</b>
-                <small>{x.status || t("Đang cập nhật")}</small>
-              </button>
-            ))}
-          </div>
-          <div className="tower-head">
-            <h3>
-              {t("Tòa {tower}", { tower })}
-              {current?.note && <span> · {current.note}</span>}
-            </h3>
-          </div>
-        </>
-      )}
+  const towerPlanBlock = (
+    <>
       {activePlan && (
-        <details className="tower-plan" open>
-          <summary>
-            <span>
-              <small>{t("Sơ đồ mặt bằng")}</small>
-              <b>{t("Tòa {tower}", { tower })}</b>
-            </span>
-            <ChevronDown size={20} aria-hidden="true" />
-          </summary>
+        <div key={tower} className="tower-plan">
+          <div className="tower-plan-title">
+            <small>{t("Sơ đồ mặt bằng")}</small>
+            <b>{t("Tòa {tower}", { tower })}</b>
+          </div>
           <div className="tower-plan-bar">
             <p>{t("Bấm vào một căn trên sơ đồ để xem layout")}</p>
             {towerPlans.length > 1 && (
@@ -382,18 +408,145 @@ export function UnitBrowser({
             )}
           </div>
           <FloorPlanMap plan={activePlan} units={inTower} />
-        </details>
+        </div>
       )}
       {!activePlan && tabs.length > 0 && (
-        <div className="unit-picker-empty">
+        <div key={tower} className="unit-picker-empty">
           <p>
             {t("Thông tin căn của tòa {tower} đang được cập nhật.", { tower })}
           </p>
           <a href={call} className="button button-primary">
             <Phone size={16} aria-hidden="true" />
-            {t("Gọi tư vấn tòa này")}
+            {t("Liên Hệ Tư Vấn")}
           </a>
         </div>
+      )}
+    </>
+  );
+  return (
+    <div ref={browser} className="unit-browser">
+      {siteMap ? (
+        <div ref={stage} className="site-stage" data-view={view}>
+          <div
+            ref={(el) => {
+              panels.current.site = el;
+            }}
+            className="site-panel site-panel-map"
+            aria-hidden={view !== "site"}
+          >
+            <div
+              className="site-map"
+              style={
+                {
+                  "--dive-x": `${focus ? (focus.reduce((n, q) => n + q[0], 0) / focus.length / siteMap.width) * 100 : 50}%`,
+                  "--dive-y": `${focus ? (focus.reduce((n, q) => n + q[1], 0) / focus.length / siteMap.height) * 100 : 50}%`,
+                  "--site-ratio": siteMap.width / siteMap.height,
+                } as React.CSSProperties
+              }
+            >
+              <div className="site-map-inner">
+                <Image
+                  src={siteMap.image}
+                  alt={t("Sơ đồ tổng thể dự án")}
+                  fill
+                  sizes="(max-width: 1320px) 100vw, 1280px"
+                />
+                <svg
+                  viewBox={`0 0 ${siteMap.width} ${siteMap.height}`}
+                  preserveAspectRatio="xMidYMid slice"
+                  role="group"
+                  aria-label={t("Chọn tòa")}
+                >
+                  {siteMap.towers.map((x) => (
+                    <polygon
+                      key={x.tower}
+                      points={x.points.map((q) => q.join(",")).join(" ")}
+                      role="button"
+                      tabIndex={view === "site" ? 0 : -1}
+                      aria-label={t("Tòa {tower}", { tower: x.tower })}
+                      onClick={() => pickTower(x.tower)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        pickTower(x.tower);
+                      }}
+                    />
+                  ))}
+                </svg>
+              </div>
+              <p className="site-map-hint">
+                {t("Bấm vào một tòa để xem mặt bằng")}
+              </p>
+            </div>
+          </div>
+          {entered && (
+            <div
+              ref={(el) => {
+                panels.current.tower = el;
+              }}
+              className="site-panel site-panel-tower"
+              aria-hidden={view !== "tower"}
+            >
+              <div className="tower-bar">
+                <div className="tower-head">
+                  <h3>
+                    {t("Tòa {tower}", { tower })}
+                    {current?.note && <span> · {current.note}</span>}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  className="site-map-back"
+                  tabIndex={view === "tower" ? 0 : -1}
+                  onClick={() => moveTo("site")}
+                >
+                  <span className="site-map-thumb">
+                    <Image src={siteMap.image} alt="" fill sizes="64px" />
+                  </span>
+                  <span className="site-map-back-text">
+                    <small>{t("Quay lại")}</small>
+                    {t("Sơ đồ tổng quan")}
+                  </span>
+                  <span className="site-map-back-arrow">
+                    <ArrowLeft size={16} aria-hidden="true" />
+                  </span>
+                </button>
+              </div>
+              {towerPlanBlock}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {tabs.length > 0 && (
+            <>
+              <div
+                className="desk-tabs tower-tabs"
+                role="group"
+                aria-label={t("Chọn tòa")}
+              >
+                {tabs.map((x) => (
+                  <button
+                    key={x.name}
+                    type="button"
+                    aria-pressed={x.name === tower}
+                    onClick={() => pickTower(x.name)}
+                  >
+                    <b>{x.name}</b>
+                    <small>{x.status || t("Đang cập nhật")}</small>
+                  </button>
+                ))}
+              </div>
+              <div className="tower-head">
+                <h3>
+                  {t("Tòa {tower}", { tower })}
+                  {current?.note && <span> · {current.note}</span>}
+                </h3>
+              </div>
+            </>
+          )}
+          {towerPlanBlock}
+        </>
       )}
     </div>
   );
@@ -611,15 +764,23 @@ export function ProjectLeadForm({
         </p>
         <div className="lead-panel-contacts">
           {call && (
-            <a href={call}>
-              <Phone size={18} aria-hidden="true" />
-              {companyHotline}
+            <a href={call} className="lead-hotline">
+              <Phone size={22} aria-hidden="true" />
+              <span>
+                <small>{t("Hotline tư vấn")}</small>
+                {companyHotline}
+              </span>
             </a>
           )}
           {zalo && (
-            <a href={zalo} target="_blank" rel="noopener noreferrer">
+            <a
+              href={zalo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lead-zalo"
+            >
               <MessageCircle size={18} aria-hidden="true" />
-              Zalo
+              {t("Nhắn Zalo")}
             </a>
           )}
         </div>
