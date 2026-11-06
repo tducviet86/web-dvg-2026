@@ -31,14 +31,12 @@ export function unitLayout(r: Property, api?: ApiProject) {
     onPlan[0];
   const map = plan && planSpots(plan.image);
   const spot = map?.spots.find((x) => x.unit === number);
-  return plan && map && spot
-    ? { plan, ratio: map.ratio, width: map.width, height: map.height, spot }
-    : null;
+  return plan && map && spot ? { plan, ratio: map.ratio, spot } : null;
 }
 
 /** The unit cut out of the floor plan, with its areas below. */
 export function UnitLayoutCrop({
-  layout: { plan, ratio, width, height, spot },
+  layout: { plan, ratio, spot },
   alt,
 }: {
   layout: NonNullable<ReturnType<typeof unitLayout>>;
@@ -49,10 +47,8 @@ export function UnitLayoutCrop({
       <div className="plan-zoom-view sale-unit-layout plan-cut">
         <PlanCutout
           image={plan.image}
-          width={width}
-          height={height}
+          unit={spot.unit}
           outline={spot.outline}
-          id={spot.unit}
           label={alt}
         />
         <dl className="plan-cut-facts">
@@ -64,12 +60,10 @@ export function UnitLayoutCrop({
             <dt>Thông thủy</dt>
             <dd>{planArea(spot.outline.inner)}</dd>
           </div>
-          {spot.outline.wall && (
-            <div>
-              <dt>Tim tường</dt>
-              <dd>{planArea(spot.outline.wall)}</dd>
-            </div>
-          )}
+          <div>
+            <dt>Tim tường</dt>
+            <dd>{planArea(spot.outline.wall)}</dd>
+          </div>
         </dl>
       </div>
     );

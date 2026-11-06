@@ -55,7 +55,27 @@ const S4_TOP_RIGHT: Row[2] = [
   ["09", 982, 1146],
 ];
 
+const C1_TOP: Row[2] = [["06", 150, 247], ["06A", 247, 339], ["08", 389, 562], ["09", 562, 732], ["10", 732, 892]];
+
 const PLANS: Record<string, Plan> = {
+  "mat-bang-c1-tang-9-25.webp": {
+    width: 960,
+    height: 530,
+    label: 88,
+    rows: [[100, 244, C1_TOP], [287, 430, [["05", 150, 389], ["03", 389, 562], ["02", 562, 732], ["01", 732, 892]]]],
+  },
+  "mat-bang-c1-tang-5-8.webp": {
+    width: 960,
+    height: 530,
+    label: 88,
+    rows: [[100, 244, C1_TOP], [285, 429, [["05", 150, 296], ["03A", 296, 390], ["03", 390, 560], ["02", 560, 730], ["01", 730, 890]]]],
+  },
+  "mat-bang-c1-tang-12a.webp": {
+    width: 960,
+    height: 530,
+    label: 88,
+    rows: [[100, 244, C1_TOP], [287, 430, [["05", 150, 389], ["02", 562, 732], ["01", 732, 892]]]],
+  },
   "mat-bang-c4-tang-11-27.webp": {
     width: 1646,
     height: 805,
@@ -291,10 +311,5 @@ export function planSpots(image: string) {
       };
     }),
   );
-  return {
-    spots,
-    ratio: plan.width / plan.height,
-    width: traced?.width ?? plan.width,
-    height: traced?.height ?? plan.height,
-  };
+  return { spots, ratio: plan.width / plan.height };
 }

@@ -1,32 +1,37 @@
 import type { UnitOutline } from "@/lib/floor-plan-outlines";
 
+/** The unit's own sharp picture, cut from the developer's drawing. */
+const unitPicture = (plan: string, unit: string) =>
+  plan.replace(
+    /mat-bang-([^/]+)\.webp$/,
+    `mat-bang-can/$1/${unit.toLowerCase()}.webp`,
+  );
+
 /** A unit cut out of its floor plan along its real outline, not a rectangle. */
 export function PlanCutout({
   image,
-  width,
-  height,
+  unit,
   outline,
-  id,
   label,
 }: {
+  /** The floor plan's image. */
   image: string;
-  width: number;
-  height: number;
+  unit: string;
   outline: UnitOutline;
-  /** Unique on the page. */
-  id: string;
   label: string;
 }) {
   const xs = outline.points.map((q) => q[0]);
   const ys = outline.points.map((q) => q[1]);
   const left = Math.min(...xs);
   const top = Math.min(...ys);
+  const width = Math.max(...xs) - left;
+  const height = Math.max(...ys) - top;
   const points = outline.points.map((q) => q.join(",")).join(" ");
-  const clip = `plan-cut-${id}`;
+  const clip = `plan-cut-${unit}`;
   return (
     <svg
       className="plan-cut-shape"
-      viewBox={`${left} ${top} ${Math.max(...xs) - left} ${Math.max(...ys) - top}`}
+      viewBox={`${left} ${top} ${width} ${height}`}
       role="img"
       aria-label={label}
     >
@@ -34,9 +39,12 @@ export function PlanCutout({
         <polygon points={points} />
       </clipPath>
       <image
-        href={image}
+        href={unitPicture(image, unit)}
+        x={left}
+        y={top}
         width={width}
         height={height}
+        preserveAspectRatio="none"
         clipPath={`url(#${clip})`}
       />
       <polygon className="plan-cut-edge" points={points} />

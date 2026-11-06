@@ -3592,3 +3592,7 @@
     max-height: 58vh;
   }
 }
+/* The areas read first, above the drawing. */
+.plan-cut-facts {
+  order: -1;
+}

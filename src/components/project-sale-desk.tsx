@@ -128,7 +128,12 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
   const floors = plan.name.split("· ")[1] ?? "";
   const unitAt = (spot: string) => {
     const here = units.filter((u) => planNumber(u.code) === spot);
-    return here.find((u) => u.floorNote === floors) ?? here[0];
+    const area = map?.spots.find((x) => x.unit === spot)?.outline?.inner;
+    return (
+      here.find((u) => u.area === area) ??
+      here.find((u) => u.floorNote === floors) ??
+      here[0]
+    );
   };
   const choose = (spot: string) => {
     clearTimeout(closing.current);
@@ -245,10 +250,8 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
               <div className="plan-zoom-view plan-cut">
                 <PlanCutout
                   image={plan.image}
-                  width={map.width}
-                  height={map.height}
+                  unit={zoom.unit}
                   outline={zoom.outline}
-                  id={zoom.unit}
                   label={t("Mặt bằng căn {unit}", { unit: zoom.unit })}
                 />
                 <dl className="plan-cut-facts">
@@ -260,12 +263,10 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
                     <dt>{t("Thông thủy")}</dt>
                     <dd>{planArea(zoom.outline.inner)}</dd>
                   </div>
-                  {zoom.outline.wall && (
-                    <div>
-                      <dt>{t("Tim tường")}</dt>
-                      <dd>{planArea(zoom.outline.wall)}</dd>
-                    </div>
-                  )}
+                  <div>
+                    <dt>{t("Tim tường")}</dt>
+                    <dd>{planArea(zoom.outline.wall)}</dd>
+                  </div>
                 </dl>
               </div>
             ) : (
