@@ -12,11 +12,48 @@ test("old website URLs move permanently to the matching page", async ({
     ["/tong-quan-du-an-capital-square-da-nang", "/du-an/capital-square"],
     ["/tin-tuc-du-an", "/blog"],
     ["/tin-tuc-du-an/page/9", "/blog"],
+    // Reported as "Not found (404)" in Search Console, November 2026.
+    ["/tin-tuc/page/17", "/blog"],
+    ["/tags/tuyen-dung-katqlzz2xv", "/tuyen-dung"],
+    [
+      "/ban-giao-can-ho-chung-cu-the-monarchy-da-nang",
+      "/du-an/monarchy-apartments",
+    ],
+    [
+      "/can-shophouse-sh07-san-pham-gioi-han-cong-nang-da-nhiem-tai-fpt-plaza-2",
+      "/du-an",
+    ],
+    [
+      "/siet-chat-hoat-dong-moi-gioi-bat-dong-san",
+      "/blog/danh-muc/thi-truong-bat-dong-san",
+    ],
+    ["/cho-thue/can-ho-1-pn", "/cho-thue"],
+    ["/%E6%9C%88", "/blog"],
+    // The same under a language, as the old English pages were.
+    ["/en/tags/ve-chung-toi", "/en/gioi-thieu"],
+    ["/en/contact", "/en/lien-he"],
+    ["/ko/blog/danh-muc/phong-cach-song", "/ko/blog"],
   ]) {
     const res = await request.get(from, { maxRedirects: 0 });
     expect(res.status(), from).toBe(301);
     expect(new URL(res.headers().location, "http://x").pathname).toBe(to);
   }
+});
+
+test("a unit taken down goes to its project's listing, not a 404", async ({
+  request,
+}) => {
+  for (const [from, to] of [
+    ["/cho-thue/can-ho-sam-tower-demo-99", "/cho-thue/du-an/sam-tower"],
+    ["/zh/cho-thue/can-ho-sam-tower-demo-99", "/zh/cho-thue/du-an/sam-tower"],
+    ["/mua-ban/can-ho-sam-tower-demo-99", "/du-an/sam-tower"],
+  ]) {
+    const res = await request.get(from, { maxRedirects: 0 });
+    expect(res.status(), from).toBe(308);
+    expect(new URL(res.headers().location, "http://x").pathname).toBe(to);
+  }
+  // An address naming no project stays a 404.
+  expect((await request.get("/cho-thue/khong-co-can-nay")).status()).toBe(404);
 });
 
 test("a title that already names the brand does not get it twice", async ({

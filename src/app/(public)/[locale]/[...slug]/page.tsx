@@ -230,6 +230,20 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
   if ((slug[0] === "cho-thue" || slug[0] === "mua-ban") && slug.length === 2) {
     const sale = slug[0] === "mua-ban";
     const lookup = await getPropertyLookup(slug[1]);
+    // A unit removed or archived (old sample units "can-ho-sam-tower-demo-04"…)
+    // whose address names its project: to that project's listing, not a 404.
+    if (lookup.kind === "missing" || lookup.kind === "gone") {
+      const { portfolio } = await getSiteContent();
+      const home = portfolio.find((p) => slug[1].includes(p.slug));
+      if (home)
+        permanentRedirect(
+          href(
+            !sale && home.categories.includes("rent")
+              ? `/cho-thue/du-an/${home.slug}`
+              : `/du-an/${home.slug}`,
+          ),
+        );
+    }
     const apiRoom = settle(lookup, (s) => `/${slug[0]}/${s}`);
     const room: Property = toProperty(apiRoom);
     // Each unit lives under the listing it is offered in: rentals under
