@@ -26,17 +26,13 @@ import {
 import { PropertyCard, SaleCard } from "./cards";
 import { SearchHero } from "./search-hero";
 import {
-  hasRooms,
   kindLabel,
   kindNoun,
   listingKind,
-  roomsLabel,
 } from "@/lib/property-groups";
 import { ProjectMap } from "./project-map";
-import { RentalMap, type MapBuilding } from "./rental-map";
-import { t } from "@/i18n/server";
-import { BUILDING_BLOCKS, BUILDING_PLACES } from "@/lib/rental-map";
-import { vacantNow } from "@/lib/availability";
+import { RentalMap } from "./rental-map";
+import { mapBuildings } from "@/lib/map-buildings";
 import { siteUrl } from "@/lib/utils";
 import { InquiryDialog } from "./rental-inquiry";
 
@@ -70,41 +66,9 @@ export function RentalPage({
     project ? { project: project.slug } : {},
   );
   // The map on the main rental page: rental buildings with a place and a block.
-  const mapBuildings: MapBuilding[] = project
+  const buildings = project
     ? []
-    : locations.flatMap((b) => {
-        const known = content.locations[b.projectId];
-        const spot = known ?? BUILDING_PLACES[b.slug];
-        if (!spot || !BUILDING_BLOCKS[b.slug]) return [];
-        const place = {
-          lat: spot.lat,
-          lng: spot.lng,
-          url:
-            known?.url ??
-            `https://www.google.com/maps?q=${spot.lat},${spot.lng}`,
-        };
-        return [
-          {
-            slug: b.slug,
-            name: t(b.name),
-            lat: place.lat,
-            lng: place.lng,
-            url: place.url,
-            units: filterProperties(content.properties, { project: b.slug })
-              .filter((p) => !p.isDemo)
-              .map((p) => ({
-                slug: p.slug,
-                name: t(p.name),
-                rooms: t(hasRooms(p) ? roomsLabel(p) : p.type),
-                bedrooms: p.bedrooms,
-                area: p.area,
-                price: p.price,
-                image: p.image,
-                free: vacantNow(p),
-              })),
-          },
-        ];
-      });
+    : mapBuildings(content, { rentalsOnly: true });
   const showsDemo = result.some((p) => p.isDemo);
   // Full-screen photos: the project (and its units) or every rental project.
   const slides = (
@@ -345,17 +309,17 @@ export function RentalPage({
             </div>
           )}
         </section>
-        {mapBuildings.length > 0 && (
+        {buildings.length > 0 && (
           <section id="ban-do-can-thue" className="rental-map-section">
             <span className="signature-kicker">BẢN ĐỒ CĂN CHO THUÊ</span>
             <h2>Chọn tòa trên bản đồ, xem căn phù hợp với bạn.</h2>
-            <RentalMap buildings={mapBuildings} />
+            <RentalMap buildings={buildings} />
           </section>
         )}
         <section className="rental-guide">
           <div>
             <span className="signature-kicker">
-              {mapBuildings.length
+              {buildings.length
                 ? "LƯU Ý KHI CHỌN CĂN"
                 : "TRƯỚC KHI CHỌN CĂN"}
             </span>

@@ -16,6 +16,7 @@ import {
   PortfolioDetail,
 } from "@/components/portfolio-pages";
 import { RoomDetail } from "@/components/room-detail";
+import { MapPage } from "@/components/map-page";
 import { RentalPage } from "@/components/rental-page";
 import { SalePage } from "@/components/sale-page";
 import { AboutPage } from "@/components/about-page";
@@ -182,6 +183,15 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       image: content.portfolio.find((p) => p.categories.includes("rent"))
         ?.image,
       render: (filters) => <RentalPage filters={filters} content={content} />,
+    };
+  }
+  if (path === "ban-do") {
+    const content = await getSiteContent();
+    return {
+      title: "Bản đồ dự án và căn hộ Đà Nẵng",
+      description:
+        "Xem các dự án Đất Vàng Group đang giới thiệu trên bản đồ 3D, tìm theo tên hoặc khu vực và xem mặt bằng 3D từng tầng.",
+      render: (filters) => <MapPage content={content} filters={filters} />,
     };
   }
   if (path === "mua-ban") {
@@ -520,7 +530,8 @@ export async function generateMetadata({
   const path = "/" + slug.join("/");
   const query = await searchParams;
   const filteredRental =
-    slug[0] === "cho-thue" && Object.keys(query).length > 0;
+    (slug[0] === "cho-thue" || slug[0] === "ban-do") &&
+    Object.keys(query).length > 0;
   const title = t(item.title);
   const description = t(item.description);
   return {

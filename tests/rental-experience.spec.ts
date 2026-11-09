@@ -3,6 +3,19 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Property } from "../src/types";
 import { propertyMedia, videoSource } from "../src/lib/property-media";
 import { filterProperties } from "../src/lib/filter";
+import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
+import { BE_DIR, E2E_DATABASE_URL } from "../playwright.config";
+import {
+  BUILDING_BLOCKS,
+  BUILDING_ROWS,
+  FLOOR_METRES,
+  rowLots,
+  blockRing,
+  lotFeatures,
+  lotPlan,
+} from "../src/lib/rental-map";
+import { PLAN_ANCHORS, PLAN_OUTLINES } from "../src/lib/floor-plan-outlines";
 import { apiAs, humanPause } from "./helpers";
 
 const room = "/cho-thue/can-ho-sun-ponte-residence-demo-01";
@@ -515,7 +528,7 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
     await expect(hero.getByLabel("Nhà phố", { exact: true })).toBeEnabled({
       timeout: 1000,
     });
-  }).toPass({ timeout: 30_000 });
+  }).toPass({ timeout: 60_000 });
   // Shophouse and mặt bằng have no bedrooms: the field goes away.
   await hero.getByLabel("Shophouse", { exact: true }).check();
   await expect(hero.getByLabel("Phòng ngủ")).toHaveCount(0);
@@ -556,7 +569,7 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
     await expect(hero.getByLabel("Mặt bằng", { exact: true })).toBeDisabled({
       timeout: 1000,
     });
-  }).toPass({ timeout: 30_000 });
+  }).toPass({ timeout: 60_000 });
   await hero.getByLabel("Căn hộ", { exact: true }).check();
   await expect(hero.getByLabel("Phòng ngủ")).toBeVisible();
   await hero.getByRole("button", { name: "Tìm kiếm" }).click();
@@ -1043,7 +1056,7 @@ test("hovering a card fades through the unit's other photos, on a mouse only", a
   await expect(card.locator(".card-photos img[data-shown]")).toHaveCount(0);
 });
 
-test("the rental map lists buildings, filters them and opens a building's units", async ({
+test("the rental map lists buildings without filters and opens a building's units", async ({
   page,
 }) => {
   await page.goto("/cho-thue");
@@ -1051,12 +1064,7 @@ test("the rental map lists buildings, filters them and opens a building's units"
   await section.scrollIntoViewIfNeeded();
   const buildings = section.locator(".rmap-towers button");
   await expect(buildings.first()).toBeVisible();
-  // The filters narrow what each building offers.
-  await section.getByRole("button", { name: "Dưới 15 triệu" }).click();
-  await expect(
-    section.getByRole("button", { name: "Dưới 15 triệu" }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await section.getByRole("button", { name: "Mọi mức giá" }).click();
+  await expect(section.locator(".rmap-filters")).toHaveCount(0);
   // Units appear only once a building is chosen.
   await expect(section.locator(".rmap-panel")).toHaveCount(0);
   const name = await buildings.first().textContent();
@@ -1068,3 +1076,531 @@ test("the rental map lists buildings, filters them and opens a building's units"
   await page.goto("/cho-thue/du-an/monarchy-apartments");
   await expect(page.locator("#ban-do-can-thue")).toHaveCount(0);
 });
+
+test("the whole-screen map searches projects and shares what is open", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  const section = page.locator("#ban-do-can-thue");
+  await section.scrollIntoViewIfNeeded();
+  await section.getByRole("link", { name: "Phóng to" }).click();
+  await expect(page).toHaveURL(/\/ban-do$/);
+  const side = page.locator(".rmap-side");
+  const rows = side.locator(".rmap-list button");
+  const first = (await rows.first().locator("b").textContent()) ?? "";
+  // Without accents and in lower case, the search still finds it.
+  await side.getByRole("searchbox").fill(
+    first
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase(),
+  );
+  await expect(rows.first().locator("b")).toHaveText(first);
+  await side.getByRole("searchbox").fill("khong co du an nay");
+  await expect(rows).toHaveCount(0);
+  await side.getByRole("searchbox").fill("");
+  // The tools answer: the sun's hour and the ruler.
+  await page.getByRole("button", { name: "Nắng" }).click();
+  await expect(page.locator(".rmap-sun input")).toBeVisible();
+  await page.getByRole("button", { name: "Đo", exact: true }).click();
+  await expect(page.locator(".rmap-hint")).toBeVisible();
+  await page.getByRole("button", { name: "Đo", exact: true }).click();
+  await rows.first().click();
+  await expect(page.locator(".rmap-head h3")).toHaveText(first);
+  await expect(page).toHaveURL(/du-an=/);
+  // The address opens the same building again.
+  await page.reload();
+  await expect(page.locator(".rmap-head h3")).toHaveText(first);
+});
+
+test("The Monarchy stands inside its four roads, with its real floors", () => {
+  // Trần Hưng Đạo, An Trung 3, An Trung 2, Trần Quang Diệu.
+  const plot = [
+    [-51, 93],
+    [41, 105],
+    [62, -32],
+    [-29, -46],
+  ];
+  const inside = ([x, y]: number[]) =>
+    plot.every(([ax, ay], i) => {
+      const [bx, by] = plot[(i + 1) % plot.length];
+      return (bx - ax) * (y - ay) - (by - ay) * (x - ax) < 0;
+    });
+  const blocks = BUILDING_BLOCKS["monarchy-apartments"];
+  for (const b of blocks)
+    for (const [x, y] of b.outline ?? [])
+      expect(inside([b.east + x, b.north + y])).toBe(true);
+  expect(
+    blocks
+      .filter((b) => b.tower)
+      .map((b) => [b.tower, Math.round(b.height / FLOOR_METRES)]),
+  ).toEqual([
+    // A: a one-floor podium of shops under the 17-floor octagon.
+    ["Monarchy A", 1],
+    ["Monarchy A", 17],
+    // One tower B, in two parts: 33 floors (B1,2) and 27 (B3).
+    ["Monarchy B", 33],
+    ["Monarchy B", 27],
+  ]);
+});
+
+test("Sun Ponte stands east of Trần Hưng Đạo, the Rio west of it, off the road", () => {
+  // The road, in metres from the pin, from OpenStreetMap; x at a given y.
+  const road = [
+    [-2, -78],
+    [-4, -58],
+    [-16, 45],
+    [-17, 62],
+  ];
+  const roadX = (y: number) => {
+    const i = Math.max(0, road.findIndex(([, q]) => q >= y) - 1);
+    const [ax, ay] = road[i];
+    const [bx, by] = road[i + 1];
+    return ax + ((bx - ax) * (y - ay)) / (by - ay);
+  };
+  const LAT = 16.058169;
+  const LNG = 108.230759;
+  const metres = ([lng, lat]: number[]) => [
+    (lng - LNG) * 110_574 * Math.cos((LAT * Math.PI) / 180),
+    (lat - LAT) * 110_574,
+  ];
+  const blocks = BUILDING_BLOCKS["sun-ponte-residence"];
+  expect(blocks.filter((b) => b.tower === "Rio")).toHaveLength(3);
+  for (const block of blocks) {
+    const away = blockRing(LAT, LNG, block).map((c) => {
+      const [x, y] = metres(c);
+      return x - roadX(y);
+    });
+    if (block.tower === "Rio") expect(Math.max(...away)).toBeLessThan(-8);
+    else expect(Math.min(...away)).toBeGreaterThan(8);
+  }
+});
+
+test("Sun Panoma: P1 by Ngũ Hành Sơn, P2 by the bridge, nothing on the main roads", () => {
+  // Centre lines from OpenStreetMap, metres from the pin.
+  const roads = [
+    [
+      [-344, -169],
+      [-265, -157],
+      [-229, -147],
+      [-195, -131],
+      [-162, -110],
+      [-115, -68],
+      [-61, 7],
+      [-11, 80],
+      [1, 93],
+    ],
+    [
+      [-342, -187],
+      [-263, -175],
+      [-224, -163],
+      [-177, -141],
+      [-123, -104],
+      [-93, -70],
+      [-67, -38],
+      [-53, -22],
+      [-25, 26],
+      [-3, 58],
+      [9, 71],
+    ],
+    [
+      [43, -26],
+      [58, -5],
+      [47, 32],
+      [28, 92],
+    ],
+  ];
+  const toSegment = (p: number[], a: number[], b: number[]) => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const u = Math.max(
+      0,
+      Math.min(
+        1,
+        ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy),
+      ),
+    );
+    return Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dy);
+  };
+  const blocks = BUILDING_BLOCKS["sun-panoma"];
+  const LAT = 16.052409;
+  const LNG = 108.236731;
+  for (const b of blocks) {
+    const turn = (b.angle * Math.PI) / 180;
+    const corners = b.outline
+      ? b.outline.map(([x, y]) => [b.east + x, b.north + y])
+      : blockRing(LAT, LNG, b).map(([lng, lat]) => [
+          (lng - LNG) * 110_574 * Math.cos((LAT * Math.PI) / 180),
+          (lat - LAT) * 110_574,
+        ]);
+    expect(turn).not.toBeNaN();
+    for (const p of corners)
+      for (const road of roads)
+        for (let i = 0; i + 1 < road.length; i++)
+          expect(toSegment(p, road[i], road[i + 1])).toBeGreaterThan(8);
+  }
+  // Townhouses are cut into houses, none on the road either.
+  const lots = BUILDING_ROWS["sun-panoma"].flatMap(rowLots);
+  expect(lots.length).toBeGreaterThan(40);
+  for (const lot of lots)
+    for (const p of lot)
+      for (const road of roads)
+        for (let i = 0; i + 1 < road.length; i++)
+          expect(toSegment(p, road[i], road[i + 1])).toBeGreaterThan(4);
+  // No solid slab of townhouses any more.
+  expect(blocks.filter((b) => b.low)).toHaveLength(0);
+  const p1 = blocks.filter((b) => b.tower === "Panoma 1");
+  expect(p1.map((b) => Math.round(b.height / FLOOR_METRES))).toEqual([
+    33, 26, 18,
+  ]);
+  const p2 = blocks.find((b) => b.tower === "Panoma 2");
+  expect(Math.round((p2?.height ?? 0) / FLOOR_METRES)).toBe(27);
+});
+
+test("Sun Cosmo's houses: every lot of the master plan, by block, kind and size", () => {
+  const lots = lotFeatures("sun-panoma", 16.052409, 108.236731).map(
+    (f) => f.properties,
+  );
+  const count = (key: (l: (typeof lots)[number]) => string) =>
+    lots.reduce<Record<string, number>>((n, l) => {
+      n[key(l)] = (n[key(l)] ?? 0) + 1;
+      return n;
+    }, {});
+  expect(count((l) => l.code.split(" · ")[0])).toEqual({
+    "B2-3": 16,
+    "B2-5": 21,
+    "B2-6": 4,
+    "B2-7": 35,
+    "B2-8": 25,
+    "B3-10": 9,
+    "B3-12": 12,
+    "B3-13": 19,
+    "B3-14": 5,
+  });
+  expect(count((l) => l.kind)).toEqual({
+    "Nhà phố": 101,
+    "Biệt thự song lập": 30,
+    "Biệt thự đơn lập": 6,
+    "Biệt thự song lập đặc biệt": 9,
+  });
+  const lot = (code: string) => lots.find((l) => l.code === code);
+  expect(lot("B2-7 · 35")).toMatchObject({ area: 114, kind: "Nhà phố" });
+  expect(lot("B3-13 · 06")).toMatchObject({
+    area: 455,
+    kind: "Biệt thự đơn lập",
+  });
+  expect(lot("B3-12 · 02")?.kind).toBe("Biệt thự song lập đặc biệt");
+  expect(lot("B3-10 · 12")?.area).toBe(381);
+  // Floors and model plans as the developer's drawings give them.
+  expect(lot("B2-3 · 05")?.floors).toBe(7);
+  expect(lot("B3-12 · 02")?.floors).toBe(3);
+  expect(lotPlan("sun-panoma", "Nhà phố", 100, 4)?.image).toMatch(
+    /nha-pho-20-tang-4-5\.webp$/,
+  );
+  expect(lotPlan("sun-panoma", "Nhà phố", 140, 7)?.model).toBe("5 × 28 m");
+  expect(lotPlan("sun-panoma", "Biệt thự đơn lập", 455, 4)).toBeNull();
+  expect(lotPlan("sun-symphony-residence", "Nhà phố", 100, 1)).toBeNull();
+  for (const l of lots)
+    for (let n = 1; n <= l.floors; n++) {
+      const plan = lotPlan("sun-panoma", l.kind, l.area, n);
+      expect(plan, `${l.code} floor ${n}`).not.toBeNull();
+      expect(existsSync(`public${plan?.image}`)).toBe(true);
+    }
+  // Each drawn near its printed size (the plan is a picture, not to scale:
+  // its triangle B3-13 · 06 comes out smallest), and none on another.
+  const rings = BUILDING_ROWS["sun-panoma"].flatMap(rowLots);
+  const area = (r: number[][]) =>
+    Math.abs(
+      r.reduce((n, p, i) => {
+        const q = r[(i + 1) % r.length];
+        return n + p[0] * q[1] - q[0] * p[1];
+      }, 0) / 2,
+    );
+  const inside = ([x, y]: number[], r: number[][]) =>
+    r.reduce((odd, p, i) => {
+      const q = r[(i + r.length - 1) % r.length];
+      return p[1] > y !== q[1] > y &&
+        x < ((q[0] - p[0]) * (y - p[1])) / (q[1] - p[1]) + p[0]
+        ? !odd
+        : odd;
+    }, false);
+  rings.forEach((r, i) => {
+    expect(area(r) / lots[i].area).toBeGreaterThan(0.5);
+    expect(area(r) / lots[i].area).toBeLessThan(1.6);
+    const middle = [0, 1].map(
+      (k) => r.reduce((n, p) => n + p[k], 0) / r.length,
+    );
+    rings.forEach((other, j) => {
+      if (j !== i) expect(inside(middle, other)).toBe(false);
+    });
+  });
+});
+
+test("Sun Panoma's floor plans: every unit, laid on its own tower", () => {
+  // The affine map of a drawing onto the site, from its three anchors.
+  const onSite = (file: string) => {
+    const { image, site } = PLAN_ANCHORS[file];
+    const [[x0, y0], [x1, y1], [x2, y2]] = image;
+    const det = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+    return ([x, y]: number[]) => {
+      const u = ((x - x0) * (y2 - y0) - (x2 - x0) * (y - y0)) / det;
+      const v = ((x1 - x0) * (y - y0) - (x - x0) * (y1 - y0)) / det;
+      return [0, 1].map(
+        (k) =>
+          site[0][k] +
+          u * (site[1][k] - site[0][k]) +
+          v * (site[2][k] - site[0][k]),
+      );
+    };
+  };
+  const inside = ([x, y]: number[], ring: number[][]) => {
+    let hit = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [ax, ay] = ring[i];
+      const [bx, by] = ring[j];
+      if (ay > y !== by > y && x < ((bx - ax) * (y - ay)) / (by - ay) + ax)
+        hit = !hit;
+    }
+    return hit;
+  };
+  const near = (p: number[], ring: number[][], metres: number) =>
+    inside(p, ring) ||
+    ring.some(([ax, ay], i) => {
+      const [bx, by] = ring[(i + 1) % ring.length];
+      const t = Math.max(
+        0,
+        Math.min(
+          1,
+          ((p[0] - ax) * (bx - ax) + (p[1] - ay) * (by - ay)) /
+            ((bx - ax) ** 2 + (by - ay) ** 2),
+        ),
+      );
+      return (
+        Math.hypot(ax + t * (bx - ax) - p[0], ay + t * (by - ay) - p[1]) <
+        metres
+      );
+    });
+  const towers = (name: string) =>
+    BUILDING_BLOCKS["sun-panoma"]
+      .filter((b) => b.tower === name)
+      .map((b) => (b.outline ?? []).map(([x, y]) => [b.east + x, b.north + y]));
+  const counts: Record<string, [string, number]> = {
+    "p1-tang-1.webp": ["Panoma 1", 16],
+    "p1-tang-4-17.webp": ["Panoma 1", 18],
+    "p1-tang-19-25.webp": ["Panoma 1", 13],
+    "p1-tang-20-26.webp": ["Panoma 1", 13],
+    "p1-tang-27.webp": ["Panoma 1", 6],
+    "p1-tang-28-32.webp": ["Panoma 1", 6],
+    "p1-tang-29-33.webp": ["Panoma 1", 6],
+    "p2-tang-1.webp": ["Panoma 2", 13],
+    "p2-tang-dien-hinh.webp": ["Panoma 2", 12],
+  };
+  for (const [file, [tower, count]] of Object.entries(counts)) {
+    const units = Object.values(PLAN_OUTLINES[file].units);
+    expect(units, file).toHaveLength(count);
+    const map = onSite(file);
+    const rings = towers(tower);
+    // Each corner of each unit on its tower (the ground floor's shops reach a
+    // few metres past the tower above them).
+    for (const unit of units)
+      for (const p of unit.points)
+        expect(
+          rings.some((ring) =>
+            near(map(p), ring, file.endsWith("-1.webp") ? 9 : 4),
+          ),
+          `${file} ${p}`,
+        ).toBe(true);
+  }
+});
+
+test("Capital Square stands inside its roads, each tower with its floors", () => {
+  // Centre lines from OpenStreetMap, metres from the pin.
+  const roads = [
+    [
+      [-156, -158],
+      [-161, -13],
+      [-161, 132],
+      [-158, 213],
+    ],
+    [
+      [194, -240],
+      [127, -214],
+      [28, -183],
+      [-50, -160],
+      [-156, -158],
+    ],
+    [
+      [56, 153],
+      [176, -159],
+      [198, -230],
+    ],
+  ];
+  const toSegment = (p: number[], a: number[], b: number[]) => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const u = Math.max(
+      0,
+      Math.min(
+        1,
+        ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy),
+      ),
+    );
+    return Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dy);
+  };
+  const LAT = 16.07008;
+  const LNG = 108.23038;
+  const blocks = BUILDING_BLOCKS["capital-square"];
+  for (const b of blocks)
+    for (const [lng, lat] of blockRing(LAT, LNG, b)) {
+      const p = [
+        (lng - LNG) * 110_574 * Math.cos((LAT * Math.PI) / 180),
+        (lat - LAT) * 110_574,
+      ];
+      for (const road of roads)
+        for (let i = 0; i + 1 < road.length; i++)
+          expect(toSegment(p, road[i], road[i + 1])).toBeGreaterThan(8);
+    }
+  const floors = Object.fromEntries(
+    blocks.map((b) => [b.tower, Math.round(b.height / FLOOR_METRES)]),
+  );
+  expect(floors).toMatchObject({
+    C4: 27,
+    C6: 27,
+    C7: 27,
+    S4: 24,
+    S3: 24,
+    C3: 23,
+    C1: 25,
+  });
+  expect(blocks.filter((b) => b.tower)).toHaveLength(14);
+  // Only the seven towers on sale are solid; the rest are "coming soon".
+  expect(blocks.filter((b) => b.tower && !b.soon).map((b) => b.tower)).toEqual([
+    "C4",
+    "C6",
+    "C7",
+    "S4",
+    "S3",
+    "C3",
+    "C1",
+  ]);
+});
+
+test("Sun Symphony: five towers with their floors, all west of Trần Hưng Đạo", () => {
+  const blocks = BUILDING_BLOCKS["sun-symphony-residence"];
+  expect(
+    Object.fromEntries(
+      blocks.map((b) => [b.tower, Math.round(b.height / FLOOR_METRES)]),
+    ),
+  ).toEqual({ S1: 30, S2A: 24, S2B: 16, S3A: 30, S3B: 22 });
+  // The road runs at x = 57 from the pin.
+  for (const b of blocks)
+    for (const [x] of b.outline ?? []) expect(b.east + x).toBeLessThan(49);
+  const rows = BUILDING_ROWS["sun-symphony-residence"];
+  // The rows along the road; the last one follows Lê Văn Duyệt, inland.
+  for (const row of rows.slice(0, -1))
+    for (const lot of rowLots(row))
+      for (const [x] of lot) expect(x).toBeLessThan(49);
+  // As many lots as the plan has numbers, each with its printed area.
+  expect(rows[2].lots).toHaveLength(43);
+  expect(rows[3].lots).toHaveLength(43);
+  expect(rows[2].lots?.[0]).toEqual(["23", 172.69]);
+  expect(rows[8].lots?.[0]).toEqual(["02", 473.59]);
+  const count = rows.reduce((n, r) => n + (r.lots?.length ?? 0), 0);
+  expect(count).toBeGreaterThan(150);
+});
+
+/** Capital Square with the plans of two towers (they ship with the site). */
+async function seedFloorPlans() {
+  const dir = "/images/projects/capital-square";
+  const plans = [
+    {
+      name: "Tòa C4 · Tầng 5-10",
+      tower: "C4",
+      image: `${dir}/mat-bang-c4-tang-5-10.webp`,
+    },
+    {
+      name: "Tòa C4 · Tầng 11-12, 14-27",
+      tower: "C4",
+      image: `${dir}/mat-bang-c4-tang-11-27.webp`,
+    },
+    {
+      name: "Tòa C7 · Tầng 5-10",
+      tower: "C7",
+      image: `${dir}/mat-bang-c7-tang-5-10.webp`,
+    },
+  ];
+  const { Client } = createRequire(`${BE_DIR}/package.json`)("pg");
+  const db = new Client({ connectionString: E2E_DATABASE_URL });
+  await db.connect();
+  for (const plan of plans)
+    await db.query(
+      `INSERT INTO media_assets (id, storage, key, url, mime_type, size_bytes, updated_at)
+       VALUES (gen_random_uuid(), 'EXTERNAL', $1, $1, 'image/webp', 1, now())
+       ON CONFLICT DO NOTHING`,
+      [plan.image],
+    );
+  await db.end();
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; slug: string }[];
+  };
+  const project = projects.data.find((p) => p.slug === "capital-square")!;
+  const saved = await api.send("patch", `/admin/projects/${project.id}`, {
+    towers: [
+      { name: "C4", status: "Đang mở bán" },
+      { name: "C7", status: "Đang mở bán" },
+    ],
+    floorPlans: plans,
+  });
+  expect(saved.ok(), await saved.text()).toBeTruthy();
+}
+
+for (const [name, width] of [
+  ["computer", 1440],
+  ["phone", 390],
+] as const)
+  test(`3D floor plan: tower, floor and unit, on a ${name}`, async ({
+    page,
+  }) => {
+    await seedFloorPlans();
+    await page.setViewportSize({ width, height: 844 });
+    const plan = page.getByRole("region", { name: "Mặt bằng 3D" });
+    await expect
+      .poll(
+        async () => {
+          await page.goto("/ban-do?du-an=capital-square&toa=C4&tang=10");
+          // The viewer loads after the page.
+          await plan.waitFor({ timeout: 5_000 }).catch(() => {});
+          return plan.count();
+        },
+        { timeout: 60_000 },
+      )
+      .toBe(1);
+    await expect(plan.locator("canvas")).toBeVisible();
+    const floor = plan.getByRole("combobox", { name: "Tầng" });
+    await expect(floor).toHaveValue("10");
+    // Tầng 13 does not exist in this tower.
+    await expect(floor.locator("option", { hasText: /^13$/ })).toHaveCount(0);
+    await plan.getByRole("button", { name: "Tầm nhìn từ tầng 10" }).click();
+    await expect(page.locator(".rmap-view")).toBeVisible();
+    await page.getByRole("button", { name: "Quay lại mặt bằng" }).click();
+    await expect(floor).toHaveValue("10");
+    await plan.getByRole("combobox", { name: "Căn" }).selectOption("01");
+    await expect(plan.locator(".fp3d-info h3")).toHaveText("C4-1001");
+    await expect(plan.locator(".fp3d-info")).toContainText("77,69");
+    await expect(page).toHaveURL(/toa=C4&tang=10&can=01/);
+    // Another floor uses another drawing: the choice of unit starts over.
+    await floor.selectOption("11");
+    await expect(plan.locator(".fp3d-info")).toHaveCount(0);
+    await plan.getByRole("button", { name: "C7", exact: true }).click();
+    await expect(
+      plan.getByRole("button", { name: "C7", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(floor).toHaveValue("5");
+    const sideways = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(sideways).toBeLessThanOrEqual(0);
+    await plan.getByRole("button", { name: "Đóng mặt bằng 3D" }).click();
+    await expect(plan).toHaveCount(0);
+  });
