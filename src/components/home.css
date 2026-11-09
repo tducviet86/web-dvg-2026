@@ -89,6 +89,9 @@
   background: var(--c-green-800);
   isolation: isolate;
 }
+.showcase-row[data-size="compact"] .showcase-card a {
+  aspect-ratio: 4 / 3;
+}
 /* The frame next/image fills (it must be positioned). */
 .showcase-photo {
   position: absolute;
@@ -296,6 +299,15 @@
   }
 }
 
+/* The map between the featured rentals and the projects in operation. */
+.home-map {
+  padding-top: var(--home-gap);
+  scroll-margin-top: calc(var(--header-h) + 12px);
+}
+.home-map + .home-showcase + * {
+  margin-top: var(--home-gap);
+}
+
 /* Featured rentals: a row of compact cards, photo on top, white body,
    price in deep green with a gold hairline. */
 .home-rentals {
@@ -308,13 +320,61 @@
 .home-rentals + .home-showcase + * {
   margin-top: var(--home-gap);
 }
+/* Four cards in view; the rest wait to the right and slide in. */
 .rent-mini-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
   gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.rent-mini-row::-webkit-scrollbar {
+  display: none;
+}
+.rent-mini-row > .rent-mini {
+  flex: 0 0 calc((100% - 48px) / 4);
+  scroll-snap-align: start;
+}
+.side-scroller {
+  position: relative;
+}
+.side-scroller-arrows button {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #e0e4d9;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--c-green-900);
+  box-shadow: 0 8px 22px #10271926;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: opacity var(--dur-2);
+}
+.side-scroller-arrows button:first-child {
+  left: 10px;
+}
+.side-scroller-arrows button:last-child {
+  right: 10px;
+}
+.side-scroller-arrows button:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.rent-mini-status.is-new {
+  background: var(--c-gold-400);
+  color: var(--c-green-900);
+}
+.rent-mini-status.is-new::before {
+  background: var(--c-green-900);
 }
 /* Unit card: the photo fills the rounded card; project, name and rent sit
    on it and the facts slide up on hover or focus (always shown on touch
@@ -545,8 +605,8 @@
   outline-offset: 3px;
 }
 @media (max-width: 1080px) {
-  .rent-mini-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .rent-mini-row > .rent-mini {
+    flex-basis: calc((100% - 16px) / 2);
   }
 }
 @media (max-width: 760px) {
@@ -565,9 +625,14 @@
   .rent-mini-row::-webkit-scrollbar {
     display: none;
   }
-  .rent-mini {
+  .rent-mini,
+  .rent-mini-row > .rent-mini {
     flex: 0 0 78%;
     scroll-snap-align: start;
+  }
+  /* A finger slides the row; no arrows. */
+  .side-scroller-arrows {
+    display: none;
   }
   /* Taller, so the photo still shows above the open facts. */
   .rent-mini-row .rent-mini-photo {

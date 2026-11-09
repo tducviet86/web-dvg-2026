@@ -25,11 +25,7 @@ import {
 } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { SearchHero } from "./search-hero";
-import {
-  kindLabel,
-  kindNoun,
-  listingKind,
-} from "@/lib/property-groups";
+import { kindLabel, kindNoun, listingKind } from "@/lib/property-groups";
 import { ProjectMap } from "./project-map";
 import { RentalMap } from "./rental-map";
 import { mapBuildings } from "@/lib/map-buildings";
@@ -66,9 +62,7 @@ export function RentalPage({
     project ? { project: project.slug } : {},
   );
   // The map on the main rental page: rental buildings with a place and a block.
-  const buildings = project
-    ? []
-    : mapBuildings(content, { rentalsOnly: true });
+  const buildings = project ? [] : mapBuildings(content, { rentalsOnly: true });
   const showsDemo = result.some((p) => p.isDemo);
   // Full-screen photos: the project (and its units) or every rental project.
   const slides = (
@@ -279,7 +273,11 @@ export function RentalPage({
                     : {}
                 }
                 trigger={
-                  <button type="button" className="button button-outline">
+                  <button
+                    type="button"
+                    aria-haspopup="dialog"
+                    className="button button-outline"
+                  >
                     <MessageCircle size={18} /> Gửi nhu cầu để được tìm căn
                   </button>
                 }
@@ -319,9 +317,7 @@ export function RentalPage({
         <section className="rental-guide">
           <div>
             <span className="signature-kicker">
-              {buildings.length
-                ? "LƯU Ý KHI CHỌN CĂN"
-                : "TRƯỚC KHI CHỌN CĂN"}
+              {buildings.length ? "LƯU Ý KHI CHỌN CĂN" : "TRƯỚC KHI CHỌN CĂN"}
             </span>
             <h2>
               {guide?.focus ||
@@ -386,7 +382,11 @@ export function RentalPage({
                   : {}
               }
               trigger={
-                <button type="button" className="button button-primary">
+                <button
+                  type="button"
+                  aria-haspopup="dialog"
+                  className="button button-primary"
+                >
                   <KeyRound size={18} /> Gửi thông tin ký gửi
                 </button>
               }

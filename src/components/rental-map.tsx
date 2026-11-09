@@ -17,6 +17,7 @@ import {
   CloudSun,
   Eye,
   Layers,
+  List,
   Maximize2,
   MapPin,
   Minimize2,
@@ -25,14 +26,20 @@ import {
   Phone,
   Play,
   RotateCw,
-  Ruler,
   Search,
   Share2,
+  SlidersHorizontal,
   Square,
   X,
 } from "lucide-react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
+import {
+  NO_FILTER,
+  isFiltering,
+  unitFits,
+  type MapFilter,
+} from "@/lib/map-filter";
 import type { Towers, TowerHit } from "./map-towers";
 import { planArea } from "./plan-cutout";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
@@ -63,6 +70,10 @@ export type MapUnit = {
   href: string;
   image: string;
   tower: string;
+  /** -1 for a unit without rooms (a shop). */
+  bedrooms: number;
+  /** Million VND a month; 0 when not for rent. */
+  rent: number;
 };
 export type MapBuilding = {
   slug: string;
@@ -90,8 +101,9 @@ export type MapSelection = {
 
 const STYLE = "https://tiles.openfreemap.org/styles/positron";
 /** Looking north along the river, so a far building still shows up ahead. */
-const VIEW = { pitch: 66, bearing: -10 };
-const OVERVIEW_ZOOM = { wide: 14.15, narrow: 13.5 };
+// Looking north-east over the river towards Sơn Trà and the sea.
+const VIEW = { pitch: 58, bearing: 57 };
+const OVERVIEW_ZOOM = { wide: 14.15, narrow: 13.1 };
 const PANEL_WIDTH = 360;
 /**
  * Neighbouring names open to opposite sides so they do not cover each other or
@@ -99,8 +111,12 @@ const PANEL_WIDTH = 360;
  */
 const PIN_SIDE: Record<string, "left" | "right"> = {
   "sun-ponte-residence": "left",
-  "monarchy-apartments": "right",
+  "monarchy-apartments": "left",
+  "sun-panoma": "right",
 };
+/** The tour: flying to a tower, then turning around it (ms). */
+const TOUR_FLY = 3500;
+const TOUR_TURN = 6000;
 /** Tail's distance from the end of a name that opens to one side. */
 const TAIL = 22;
 /** Floors under the first apartments of a tower with plans. */
@@ -409,6 +425,9 @@ export function RentalMap({
     initial.floor ? { floor: initial.floor, unit: initial.unit ?? "" } : null,
   );
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<MapFilter>(NO_FILTER);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filtering = isFiltering(filter);
   const [area, setArea] = useState("");
   const [sheet, setSheet] = useState(false);
   const [flat, setFlat] = useState(false);
@@ -417,8 +436,6 @@ export function RentalMap({
   const [hour, setHour] = useState(10);
   const [night, setNight] = useState(false);
   const [sunOpen, setSunOpen] = useState(false);
-  const [measuring, setMeasuring] = useState(false);
-  const [measured, setMeasured] = useState<number | null>(null);
   const [touring, setTouring] = useState(false);
   const [view, setView] = useState<{
     floor: string;
@@ -445,7 +462,6 @@ export function RentalMap({
   >(() => {});
   const tip = useRef<HTMLDivElement>(null);
   const towers = useRef<Towers | null>(null);
-  const measureOn = useRef(false);
   const focusOn = useRef(false);
   const [peek, setPeek] = useState<Peek | null>(null);
   const peekBox = useRef<HTMLDivElement>(null);
@@ -460,11 +476,19 @@ export function RentalMap({
 
   const current = buildings.find((b) => b.slug === chosen);
   const units =
-    current?.units.filter((u) => !tower || !u.tower || u.tower === tower) ?? [];
+    current?.units.filter(
+      (u) =>
+        (!tower || !u.tower || u.tower === tower) &&
+        (!filtering || unitFits(u, filter)),
+    ) ?? [];
+  /** Units of a building that fit the filter. */
+  const fitting = (b: MapBuilding) =>
+    b.units.filter((u) => unitFits(u, filter)).length;
   const areas = [...new Set(buildings.map((b) => b.area).filter(Boolean))];
   const found = buildings.filter(
     (b) =>
       (!area || b.area === area) &&
+      (!filtering || fitting(b) > 0) &&
       plain(
         [
           b.name,
@@ -488,7 +512,7 @@ export function RentalMap({
     return {
       center: [
         buildings.reduce((n, b) => n + b.lng, 0) / buildings.length,
-        south + (Math.max(...lats) - south) * 0.3,
+        south + (Math.max(...lats) - south) * 0.15,
       ] as [number, number],
       ...VIEW,
     };
@@ -785,7 +809,6 @@ export function RentalMap({
             },
           });
           made.on("click", "dvg-lots", (e) => {
-            if (measureOn.current) return;
             const lot = e.features?.[0];
             if (!lot?.properties?.slug) return;
             if (!lot.properties.code) {
@@ -818,32 +841,6 @@ export function RentalMap({
               duration: 2600,
             });
           }
-          made.addSource("dvg-measure", {
-            type: "geojson",
-            data: { type: "FeatureCollection", features: [] },
-          });
-          made.addLayer({
-            id: "dvg-measure-line",
-            type: "line",
-            source: "dvg-measure",
-            paint: {
-              "line-color": "#d9412f",
-              "line-width": 3,
-              "line-dasharray": [2, 1],
-            },
-          });
-          made.addLayer({
-            id: "dvg-measure-dots",
-            type: "circle",
-            source: "dvg-measure",
-            filter: ["==", ["geometry-type"], "Point"],
-            paint: {
-              "circle-radius": 6,
-              "circle-color": "#d9412f",
-              "circle-stroke-color": "#fff",
-              "circle-stroke-width": 2,
-            },
-          });
           /** The floor a pointer is on, when the tower has plans for it. */
           const floorOf = (hit: TowerHit | null) => {
             if (!full || !hit?.tower || hit.soon) return "";
@@ -864,7 +861,6 @@ export function RentalMap({
               peekAt.current(unit, e.point.x, e.point.y);
               return;
             }
-            if (measureOn.current) return;
             const hit = models.pick(e.point.x, e.point.y);
             const floor = floorOf(hit);
             const lotHit = hit
@@ -905,43 +901,7 @@ export function RentalMap({
             models.markFloor("", "", 0);
             placeTip(tip.current, 0, 0, "");
           });
-          const picks: [number, number][] = [];
           made.on("click", (e) => {
-            if (measureOn.current) {
-              if (picks.length === 2) picks.length = 0;
-              picks.push([e.lngLat.lng, e.lngLat.lat]);
-              (made.getSource("dvg-measure") as GeoJSONSource).setData({
-                type: "FeatureCollection",
-                features: [
-                  ...picks.map((coordinates) => ({
-                    type: "Feature" as const,
-                    properties: {},
-                    geometry: { type: "Point" as const, coordinates },
-                  })),
-                  ...(picks.length === 2
-                    ? [
-                        {
-                          type: "Feature" as const,
-                          properties: {},
-                          geometry: {
-                            type: "LineString" as const,
-                            coordinates: picks,
-                          },
-                        },
-                      ]
-                    : []),
-                ],
-              });
-              setMeasured(
-                picks.length === 2
-                  ? distance(
-                      { lat: picks[0][1], lng: picks[0][0] },
-                      { lat: picks[1][1], lng: picks[1][0] },
-                    )
-                  : null,
-              );
-              return;
-            }
             if (focusOn.current) {
               const unit = models.pickUnit(e.point.x, e.point.y);
               if (unit) openUnit.current(unit.tower, unit.unit);
@@ -1086,9 +1046,19 @@ export function RentalMap({
     for (const b of buildings) {
       const pin = markers.current[b.slug]?.el;
       if (!pin) continue;
-      paintPin(pin, b.name, b.slug === lit);
-      // Names stay hidden until a building is pointed at or chosen.
-      showPin(pin, found.includes(b) && b.slug === lit && b.slug !== chosen);
+      paintPin(
+        pin,
+        filtering
+          ? t("{name} · {n} căn", { name: b.name, n: fitting(b) })
+          : b.name,
+        b.slug === lit,
+      );
+      // Names stay hidden until a building is pointed at or chosen; while
+      // filtering, every building with fitting units shows its count.
+      showPin(
+        pin,
+        found.includes(b) && (filtering || b.slug === lit) && b.slug !== chosen,
+      );
     }
     for (const pin of towerPins.current) {
       // Names would cover the towers; only "coming soon" stays marked.
@@ -1098,7 +1068,17 @@ export function RentalMap({
     for (const place of placePins.current) showPin(place, landmarks);
     towers.current?.highlight(lit, hovered ? "" : tower);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, buildings, hovered, chosen, tower, landmarks, query, area]);
+  }, [
+    ready,
+    buildings,
+    hovered,
+    chosen,
+    tower,
+    landmarks,
+    query,
+    area,
+    filter,
+  ]);
 
   // Time of day: light, windows, shadows and the colours of the map.
   useEffect(() => {
@@ -1108,9 +1088,6 @@ export function RentalMap({
   useEffect(() => {
     if (ready && map.current) colourBase(map.current, night);
   }, [ready, night]);
-  useEffect(() => {
-    measureOn.current = measuring;
-  }, [measuring]);
   useEffect(() => {
     focusOn.current = !!focus;
   }, [focus]);
@@ -1308,22 +1285,24 @@ export function RentalMap({
       if (run !== tourRun.current) return;
       const b = found[i % found.length];
       setHovered(b.slug);
-      made.once("moveend", () => {
-        if (run !== tourRun.current) return;
-        made.once("moveend", () => visit(i + 1));
-        made.easeTo({
-          bearing: made.getBearing() + 80,
-          duration: 6000,
-          easing: (x) => x,
-        });
-      });
+      // Timed, not on "moveend": any other move of the camera (a panel
+      // closing, the first look settling) would end a leg early.
       made.flyTo({
         center: [b.lng, b.lat],
         zoom: 16.2,
         pitch: 68,
         bearing: (i * 70) % 360,
-        duration: 3500,
+        duration: TOUR_FLY,
       });
+      window.setTimeout(() => {
+        if (run !== tourRun.current) return;
+        made.easeTo({
+          bearing: made.getBearing() + 80,
+          duration: TOUR_TURN,
+          easing: (x) => x,
+        });
+        window.setTimeout(() => visit(i + 1), TOUR_TURN + 100);
+      }, TOUR_FLY + 100);
     };
     visit(0);
   };
@@ -1468,6 +1447,92 @@ export function RentalMap({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const ROOMS: [string, string][] = [
+    ["", t("Tất cả")],
+    ["1", t("Studio · 1PN")],
+    ["2", t("2PN")],
+    ["3", t("3PN trở lên")],
+  ];
+  const PRICES: [string, string][] = [
+    ["", t("Tất cả")],
+    ["0-10", t("Dưới 10 triệu")],
+    ["10-20", t("10 – 20 triệu")],
+    ["20-35", t("20 – 35 triệu")],
+    ["35-", t("Trên 35 triệu")],
+  ];
+  const fitTotal = buildings.reduce((n, b) => n + fitting(b), 0);
+  const fitTowers = buildings.filter((b) => fitting(b) > 0).length;
+  const filterSummary = [
+    ROOMS.find(([v]) => v && v === filter.rooms)?.[1],
+    PRICES.find(([v]) => v && v === filter.price)?.[1],
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  /** "Lọc căn": a button, and under it the choices as plain buttons. */
+  const filterBar = (where: string) => (
+    <div className={`rmap-filter rmap-filter-${where}`}>
+      <button
+        type="button"
+        className="rmap-filter-toggle"
+        aria-expanded={filterOpen}
+        data-on={filtering || undefined}
+        onClick={() => setFilterOpen((v) => !v)}
+      >
+        <SlidersHorizontal size={16} aria-hidden="true" />
+        {filtering ? filterSummary : t("Lọc căn")}
+      </button>
+      {filterOpen && (
+        <div
+          className="rmap-filter-panel"
+          role="group"
+          aria-label={t("Lọc căn")}
+        >
+          {(
+            [
+              ["rooms", t("Phòng ngủ"), ROOMS],
+              ["price", t("Giá thuê mỗi tháng"), PRICES],
+            ] as const
+          ).map(([key, label, choices]) => (
+            <fieldset key={key}>
+              <legend>{label}</legend>
+              {choices.map(([value, name]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={filter[key] === value}
+                  onClick={() => setFilter((f) => ({ ...f, [key]: value }))}
+                >
+                  {name}
+                </button>
+              ))}
+            </fieldset>
+          ))}
+          <p className="rmap-filter-result">
+            {filtering
+              ? fitTotal
+                ? t("{n} căn phù hợp ở {m} tòa", { n: fitTotal, m: fitTowers })
+                : t("Chưa có căn phù hợp. Thử mức giá khác.")
+              : t("Chọn số phòng hoặc mức giá để xem tòa có căn phù hợp.")}
+          </p>
+          <div className="rmap-filter-actions">
+            {filtering && (
+              <button type="button" onClick={() => setFilter(NO_FILTER)}>
+                {t("Bỏ lọc")}
+              </button>
+            )}
+            <button
+              type="button"
+              className="is-main"
+              onClick={() => setFilterOpen(false)}
+            >
+              {t("Xem trên bản đồ")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="rmap" data-full={full || undefined}>
       {full && (
@@ -1486,6 +1551,14 @@ export function RentalMap({
               <Minimize2 size={16} aria-hidden="true" />
               {t("Thu nhỏ")}
             </Link>
+            <button
+              type="button"
+              className="rmap-list-close"
+              aria-label={t("Ẩn danh sách")}
+              onClick={() => setSheet(false)}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
           </div>
           <label className="rmap-search">
             <Search size={16} aria-hidden="true" />
@@ -1498,6 +1571,7 @@ export function RentalMap({
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
+          {filterBar("sheet")}
           {areas.length > 1 && (
             <div className="rmap-areas" role="group" aria-label={t("Khu vực")}>
               {["", ...areas].map((name) => (
@@ -1526,11 +1600,13 @@ export function RentalMap({
                   <b>{b.name}</b>
                   <small>{b.location}</small>
                   <small>
-                    {b.floors
-                      ? t("Có mặt bằng 3D")
-                      : b.units.length
-                        ? t("{n} căn đang có", { n: b.units.length })
-                        : t("Liên hệ để biết căn trống")}
+                    {filtering
+                      ? t("{n} căn phù hợp", { n: fitting(b) })
+                      : b.floors
+                        ? t("Có mặt bằng 3D")
+                        : b.units.length
+                          ? t("{n} căn đang có", { n: b.units.length })
+                          : t("Liên hệ để biết căn trống")}
                   </small>
                 </button>
               </li>
@@ -1555,6 +1631,36 @@ export function RentalMap({
             </p>
           )}
           <div className="rmap-tools">
+            {full && (
+              <Link
+                href="/"
+                className="rmap-reset"
+                onClick={(e) => {
+                  // Back to the page the map was opened from, when on this site.
+                  if (
+                    document.referrer.startsWith(window.location.origin) &&
+                    window.history.length > 1
+                  ) {
+                    e.preventDefault();
+                    window.history.back();
+                  }
+                }}
+              >
+                <X size={16} aria-hidden="true" />
+                {t("Thoát")}
+              </Link>
+            )}
+            {full && !sheet && (
+              <button
+                type="button"
+                className="rmap-reset rmap-list-open"
+                onClick={() => setSheet(true)}
+              >
+                <List size={16} aria-hidden="true" />
+                {t("Danh sách dự án")}
+              </button>
+            )}
+            {filterBar("map")}
             {!full && (
               <Link
                 href={chosen ? `/ban-do?du-an=${chosen}` : "/ban-do"}
@@ -1708,22 +1814,6 @@ export function RentalMap({
               </button>
               <button
                 type="button"
-                title={t("Đo khoảng cách")}
-                aria-pressed={measuring}
-                onClick={() => {
-                  setMeasuring(!measuring);
-                  setMeasured(null);
-                  (
-                    map.current?.getSource("dvg-measure") as
-                      GeoJSONSource | undefined
-                  )?.setData({ type: "FeatureCollection", features: [] });
-                }}
-              >
-                <Ruler size={18} aria-hidden="true" />
-                <span>{t("Đo")}</span>
-              </button>
-              <button
-                type="button"
                 title={t("Chia sẻ góc nhìn này")}
                 onClick={() => void share()}
               >
@@ -1750,13 +1840,6 @@ export function RentalMap({
                 }}
               />
             </label>
-          )}
-          {measuring && (
-            <p className="rmap-hint">
-              {measured === null
-                ? t("Bấm hai điểm trên bản đồ để đo khoảng cách.")
-                : `${t("Khoảng cách đường chim bay")}: ${metres(measured)}`}
-            </p>
           )}
           {view && (
             <div className="rmap-horizon" aria-hidden="true">
@@ -1958,7 +2041,9 @@ export function RentalMap({
                 ))}
                 {!units.length && (
                   <li className="rmap-none">
-                    {t("Tòa này hiện chưa có căn. Bạn gọi để được tư vấn.")}
+                    {filtering
+                      ? t("Không có căn phù hợp bộ lọc ở tòa này.")
+                      : t("Tòa này hiện chưa có căn. Bạn gọi để được tư vấn.")}
                   </li>
                 )}
               </ul>
@@ -2125,10 +2210,7 @@ export function RentalMap({
           )}
         </aside>
       )}
-      <p className="rmap-note">
-        {full &&
-          ` ${t("Bản đồ © OpenStreetMap.")}`}
-      </p>
+      <p className="rmap-note">{full && ` ${t("Bản đồ © OpenStreetMap.")}`}</p>
     </div>
   );
 }

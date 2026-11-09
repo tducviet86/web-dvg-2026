@@ -448,6 +448,9 @@ export function mapBuildings(
             href: unitHref(p),
             image: p.image,
             tower: p.tower ?? "",
+            // For the map's filter: -1 without rooms, 0 when not for rent.
+            bedrooms: hasRooms(p) ? p.bedrooms : -1,
+            rent: p.forRent ? p.price : 0,
           })),
         floors: rentalsOnly ? undefined : floorData(content, b.slug, all),
       },

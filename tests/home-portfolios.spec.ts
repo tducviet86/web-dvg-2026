@@ -5,7 +5,10 @@ import { createRequire } from "node:module";
 import { API_URL, BE_DIR, E2E_DATABASE_URL } from "../playwright.config";
 import { apiAs } from "./helpers";
 import { telephoneHref } from "../src/lib/company-contact";
-import { pickFeaturedRentals } from "../src/components/home-rentals";
+import {
+  pickFeaturedRentals,
+  pickHomeRentals,
+} from "../src/components/home-rentals";
 import { PLAN_OUTLINES } from "../src/lib/floor-plan-outlines";
 import type { Property } from "../src/types";
 
@@ -198,19 +201,46 @@ test("home features a few rental units under the operated projects", async ({
   });
   await expect(section).toBeVisible();
   await expect(section).toContainText("Căn tiêu biểu trang chủ QA");
-  // Between "Dự án đang triển khai" and "Dự án đang vận hành".
+  // Between "Dự án đang triển khai" and the map over "Dự án đang vận hành".
   await expect(
-    page.locator("#du-an-trien-khai + #can-ho-tieu-bieu + #du-an-van-hanh"),
+    page.locator(
+      "#du-an-trien-khai + #can-ho-tieu-bieu + #ban-do-du-an + #du-an-van-hanh",
+    ),
   ).toHaveCount(1);
   const tiles = section.locator(".rent-mini");
   expect(await tiles.count()).toBeGreaterThan(0);
-  expect(await tiles.count()).toBeLessThanOrEqual(4);
+  expect(await tiles.count()).toBeLessThanOrEqual(12);
   await expect(tiles.first()).toContainText(/\d{1,3}(\.\d{3})+ vnđ/);
   await section.getByRole("link", { name: "Xem tất cả căn cho thuê" }).click();
   await expect(page).toHaveURL(/\/cho-thue$/);
   await page.goBack();
+  // The map opens full screen.
+  await expect(
+    page.locator("#ban-do-du-an").getByRole("link", {
+      name: "Mở bản đồ toàn màn hình",
+    }),
+  ).toHaveAttribute("href", /\/ban-do$/);
   await page.locator("#can-ho-tieu-bieu .rent-mini a").first().click();
   await expect(page).toHaveURL(/\/cho-thue\/[^/]+$/);
+});
+
+test("home rentals: the featured four, then the newest others, up to twelve", () => {
+  const unit = (slug: string, extra: Partial<Property> = {}) =>
+    ({ id: slug, slug, status: "Còn trống", ...extra }) as Property;
+  const units = [
+    unit("moi-1"),
+    unit("moi-2"),
+    unit("hot", { highlight: "hot" }),
+    unit("demo", { isDemo: true }),
+    ...Array.from({ length: 14 }, (_, i) => unit(`cu-${i}`)),
+  ];
+  const row = pickHomeRentals(units).map((p) => p.slug);
+  expect(row).toHaveLength(12);
+  expect(row.slice(0, 4)).toEqual(
+    pickFeaturedRentals(units).map((p) => p.slug),
+  );
+  expect(new Set(row).size).toBe(12);
+  expect(row).not.toContain("demo");
 });
 
 /** The photo starts right under the header (once the entrance has ended). */

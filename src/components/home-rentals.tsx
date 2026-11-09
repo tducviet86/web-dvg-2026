@@ -17,6 +17,7 @@ import {
 import type { Property } from "@/types";
 import { vndFull } from "@/lib/utils";
 import { LuxuryBadges } from "./cards";
+import { SideScroller } from "./side-scroller";
 import { TRENDING_SCORE } from "@/lib/highlights";
 import { availabilityRank, statusLabel } from "@/lib/availability";
 import {
@@ -62,10 +63,28 @@ export function pickFeaturedRentals(units: Property[], count = 4) {
     .map(({ p }) => p);
 }
 
+/** Published within this many days: a "Mới đăng" tag on the card. */
+const NEW_DAYS = 14;
+const isNew = (p: Property, now = Date.now()) =>
+  !!p.publishedAt &&
+  now - Date.parse(p.publishedAt) < NEW_DAYS * 24 * 3600 * 1000;
+
+/**
+ * The home row: the featured units, then the newest others (the API lists
+ * them newest first), up to `total`.
+ */
+export function pickHomeRentals(units: Property[], featured = 4, total = 12) {
+  const top = pickFeaturedRentals(units, featured);
+  const rest = units.filter(
+    (p) => p.forRent !== false && !p.isDemo && !top.includes(p),
+  );
+  return [...top, ...rest].slice(0, total);
+}
+
 /**
  * Home: "Căn hộ cho thuê tiêu biểu", a row of unit cards: the photo fills
- * the card with the name and rent on it, the facts slide up on hover (a
- * sideways row on phones). Every card opens the unit page.
+ * the card with the name and rent on it, the facts slide up on hover. Four
+ * show at a time; the row slides sideways (arrows, trackpad or finger). Every card opens the unit page.
  */
 export function HomeRentals({ units }: { units: Property[] }) {
   if (!units.length) return null;
@@ -91,17 +110,26 @@ export function HomeRentals({ units }: { units: Property[] }) {
             </Link>
           </div>
         </div>
-        <ul className="rent-mini-row">
-          {units.map((unit) => (
-            <RentalMini key={unit.id} unit={unit} />
-          ))}
-        </ul>
+        <SideScroller>
+          <ul className="rent-mini-row">
+            {units.map((unit) => (
+              <RentalMini key={unit.id} unit={unit} fresh={isNew(unit)} />
+            ))}
+          </ul>
+        </SideScroller>
       </div>
     </section>
   );
 }
 
-export function RentalMini({ unit }: { unit: Property }) {
+export function RentalMini({
+  unit,
+  fresh = false,
+}: {
+  unit: Property;
+  /** Published lately: tagged "Mới đăng". */
+  fresh?: boolean;
+}) {
   return (
     <li className="rent-mini">
       <Link href={`/cho-thue/${unit.slug}`} aria-label={`Xem căn ${unit.name}`}>
@@ -121,6 +149,7 @@ export function RentalMini({ unit }: { unit: Property }) {
             {availabilityRank(unit) < 2 && (
               <span className="rent-mini-status">{statusLabel(unit)}</span>
             )}
+            {fresh && <span className="rent-mini-status is-new">Mới đăng</span>}
           </span>
         </span>
         <span className="rent-mini-body">

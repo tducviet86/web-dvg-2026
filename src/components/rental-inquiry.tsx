@@ -33,7 +33,10 @@ const loadForm = () =>
 /**
  * "Nhận tư vấn" / "Ký gửi" popup. Pages only carry the button: the form is
  * downloaded when the visitor points at, focuses or clicks it, then opens
- * as if it had been there all along.
+ * as if it had been there all along. A button made in a Server Component
+ * carries aria-haspopup="dialog" itself: in development it reaches the
+ * server render still unloaded and cannot be cloned there, so only the
+ * browser would add it and the two would differ.
  */
 export function InquiryDialog(props: {
   mode: InquiryMode;

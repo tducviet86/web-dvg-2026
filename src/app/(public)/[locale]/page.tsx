@@ -21,7 +21,10 @@ import { CorporateBanner } from "@/components/corporate-banner";
 import { SignatureFields } from "@/components/signature-fields";
 import { Reviews } from "@/components/reviews-section";
 import { HomeShowcase } from "@/components/home-showcase";
-import { HomeRentals, pickFeaturedRentals } from "@/components/home-rentals";
+import { HomeRentals, pickHomeRentals } from "@/components/home-rentals";
+import { RentalMap } from "@/components/rental-map";
+import { mapBuildings } from "@/lib/map-buildings";
+import { NEARBY_PLACES } from "@/lib/rental-map";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { photos } from "@/data";
 import { siteUrl } from "@/lib/utils";
@@ -76,13 +79,13 @@ const fallbackSlides: ResolvedBanner[] = [
 
 export default async function Home({ params }: Props) {
   const locale = await pageLocale(params);
-  const [banners, { portfolio, properties }, posts, settings] =
-    await Promise.all([
-      getBanners(),
-      getSiteContent(),
-      getPosts(),
-      getPublicSettings().catch(() => ({}) as Record<string, string>),
-    ]);
+  const [banners, content, posts, settings] = await Promise.all([
+    getBanners(),
+    getSiteContent(),
+    getPosts(),
+    getPublicSettings().catch(() => ({}) as Record<string, string>),
+  ]);
+  const { portfolio, properties } = content;
   // The company as a local real-estate agent (address, hours from Admin › Cài đặt).
   const agent = graphNode(agentSchema(settings));
   return (
@@ -115,6 +118,7 @@ export default async function Home({ params }: Props) {
       </h1>
       <HomeShowcase
         eager
+        compact
         id="du-an-trien-khai"
         kicker="DỰ ÁN ĐANG TRIỂN KHAI"
         title="Dự án mới tại Đà Nẵng"
@@ -122,7 +126,28 @@ export default async function Home({ params }: Props) {
         more={{ href: "/du-an/trien-khai", label: "Xem dự án triển khai" }}
         projects={portfolio.filter((p) => p.group === "development")}
       />
-      <HomeRentals units={pickFeaturedRentals(properties)} />
+      <HomeRentals units={pickHomeRentals(properties)} />
+      <section id="ban-do-du-an" className="home-map">
+        <div className="container">
+          <div className="home-head">
+            <div>
+              <span className="home-kicker">BẢN ĐỒ DỰ ÁN</span>
+              <h2>Các tòa nhà trên bản đồ Đà Nẵng</h2>
+            </div>
+            <div className="home-head-aside">
+              <p>Chọn tòa để xem vị trí, tầng và căn đang cho thuê.</p>
+              <Link href="/ban-do" className="home-more">
+                Mở bản đồ toàn màn hình
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+          <RentalMap
+            buildings={mapBuildings(content, { rentalsOnly: false })}
+            places={NEARBY_PLACES.map((p) => t(p.name))}
+          />
+        </div>
+      </section>
       <HomeShowcase
         id="du-an-van-hanh"
         kicker="DỰ ÁN ĐANG VẬN HÀNH"

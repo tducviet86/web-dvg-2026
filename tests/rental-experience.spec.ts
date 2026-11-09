@@ -16,6 +16,7 @@ import {
   lotPlan,
 } from "../src/lib/rental-map";
 import { PLAN_ANCHORS, PLAN_OUTLINES } from "../src/lib/floor-plan-outlines";
+import { unitFits } from "../src/lib/map-filter";
 import { apiAs, humanPause } from "./helpers";
 
 const room = "/cho-thue/can-ho-sun-ponte-residence-demo-01";
@@ -1077,6 +1078,77 @@ test("the rental map lists buildings without filters and opens a building's unit
   await expect(page.locator("#ban-do-can-thue")).toHaveCount(0);
 });
 
+test("the map's filter: rooms and monthly rent", () => {
+  const unit = (bedrooms: number, rent: number) => ({ bedrooms, rent });
+  const fits = (
+    u: { bedrooms: number; rent: number },
+    rooms = "",
+    price = "",
+  ) => unitFits(u, { rooms, price });
+  expect(fits(unit(0, 8), "1")).toBe(true);
+  expect(fits(unit(1, 8), "1", "0-10")).toBe(true);
+  expect(fits(unit(2, 8), "1")).toBe(false);
+  expect(fits(unit(4, 60), "3", "35-")).toBe(true);
+  expect(fits(unit(2, 20), "", "10-20")).toBe(false);
+  expect(fits(unit(2, 20), "", "20-35")).toBe(true);
+  // A shop has no rooms; a unit on sale has no rent.
+  expect(fits(unit(-1, 30), "2")).toBe(false);
+  expect(fits(unit(2, 0), "", "0-10")).toBe(false);
+  expect(fits(unit(-1, 0))).toBe(true);
+});
+
+test("the owner's consign button is a dialog button in the server's HTML", async ({
+  request,
+}) => {
+  // Made in a Server Component: the attribute must not wait for the browser,
+  // or the page hydrates with a mismatch (seen in development).
+  const html = await (await request.get("/cho-thue")).text();
+  expect(html).toMatch(
+    /<button[^>]*aria-haspopup="dialog"[^>]*class="button button-primary"/,
+  );
+});
+
+test("the whole-screen map filters towers by rooms and rent", async ({
+  page,
+}) => {
+  await page.goto("/ban-do");
+  await page.getByRole("button", { name: "Danh sách dự án" }).click();
+  const rows = page.locator(".rmap-side .rmap-list button");
+  const all = await rows.count();
+  expect(all).toBeGreaterThan(0);
+  const tools = page.locator(".rmap-filter-map");
+  await tools.getByRole("button", { name: "Lọc căn" }).click();
+  const panel = tools.getByRole("group", { name: "Lọc căn" });
+  await panel.getByRole("button", { name: "2PN", exact: true }).click();
+  await expect(
+    panel.getByRole("button", { name: "2PN", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".rmap-side .rmap-list")).toContainText(
+    /căn phù hợp|Không tìm thấy dự án phù hợp/,
+  );
+  const left = await rows.count();
+  expect(left).toBeLessThanOrEqual(all);
+  // Each tower left says how many of its units fit, as the panel adds up.
+  for (let i = 0; i < left; i++)
+    await expect(rows.nth(i).locator("small").last()).toHaveText(
+      /^[1-9]\d* căn phù hợp$/,
+    );
+  await expect(panel.locator(".rmap-filter-result")).toHaveText(
+    left ? new RegExp(`căn phù hợp ở ${left} tòa`) : /Chưa có căn phù hợp/,
+  );
+  // A second choice narrows further; the button shows what is chosen.
+  await panel.getByRole("button", { name: "Dưới 10 triệu" }).click();
+  expect(await rows.count()).toBeLessThanOrEqual(left);
+  await expect(tools.locator(".rmap-filter-toggle")).toHaveText(
+    "2PN · Dưới 10 triệu",
+  );
+  await panel.getByRole("button", { name: "Bỏ lọc" }).click();
+  await expect(rows).toHaveCount(all);
+  await panel.getByRole("button", { name: "Xem trên bản đồ" }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(tools.locator(".rmap-filter-toggle")).toHaveText("Lọc căn");
+});
+
 test("the whole-screen map searches projects and shares what is open", async ({
   page,
 }) => {
@@ -1085,7 +1157,11 @@ test("the whole-screen map searches projects and shares what is open", async ({
   await section.scrollIntoViewIfNeeded();
   await section.getByRole("link", { name: "Phóng to" }).click();
   await expect(page).toHaveURL(/\/ban-do$/);
+  // The list starts hidden so the city fills the screen; a button opens it.
   const side = page.locator(".rmap-side");
+  await expect(side).toBeHidden();
+  await page.getByRole("button", { name: "Danh sách dự án" }).click();
+  await expect(side).toBeVisible();
   const rows = side.locator(".rmap-list button");
   const first = (await rows.first().locator("b").textContent()) ?? "";
   // Without accents and in lower case, the search still finds it.
@@ -1099,18 +1175,35 @@ test("the whole-screen map searches projects and shares what is open", async ({
   await side.getByRole("searchbox").fill("khong co du an nay");
   await expect(rows).toHaveCount(0);
   await side.getByRole("searchbox").fill("");
-  // The tools answer: the sun's hour and the ruler.
+  // The tools answer: the sun's hour.
   await page.getByRole("button", { name: "Nắng" }).click();
   await expect(page.locator(".rmap-sun input")).toBeVisible();
-  await page.getByRole("button", { name: "Đo", exact: true }).click();
-  await expect(page.locator(".rmap-hint")).toBeVisible();
-  await page.getByRole("button", { name: "Đo", exact: true }).click();
+  // No ruler any more. The tour flies to the first tower and stays a while
+  // there (it used to skip on at once), until pressed again.
+  await expect(
+    page.getByRole("button", { name: "Đo", exact: true }),
+  ).toHaveCount(0);
+  const tour = page.getByRole("button", { name: "Tham quan" });
+  await tour.click();
+  await expect(tour).toHaveAttribute("aria-pressed", "true");
+  const shown = page.locator(".rmap-pin:not([hidden])");
+  await expect(shown).toHaveCount(1);
+  const firstStop = await shown.textContent();
+  await page.waitForTimeout(2500);
+  await expect(shown).toHaveText(firstStop ?? "");
+  await tour.click();
+  await expect(tour).toHaveAttribute("aria-pressed", "false");
+  // The tour folds the list away; it opens again from its button.
+  await page.getByRole("button", { name: "Danh sách dự án" }).click();
   await rows.first().click();
   await expect(page.locator(".rmap-head h3")).toHaveText(first);
   await expect(page).toHaveURL(/du-an=/);
   // The address opens the same building again.
   await page.reload();
   await expect(page.locator(".rmap-head h3")).toHaveText(first);
+  // "Thoát" leaves the full-screen map.
+  await page.getByRole("link", { name: "Thoát" }).click();
+  await expect(page).not.toHaveURL(/\/ban-do/);
 });
 
 test("The Monarchy stands inside its four roads, with its real floors", () => {

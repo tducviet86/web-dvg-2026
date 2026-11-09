@@ -18,6 +18,7 @@ export function HomeShowcase({
   more,
   projects,
   eager = false,
+  compact = false,
 }: {
   id: string;
   kicker: string;
@@ -29,6 +30,8 @@ export function HomeShowcase({
   projects: PortfolioProject[];
   /** First row on the page: its first photos load at once (they are the LCP on phones). */
   eager?: boolean;
+  /** Shorter photos, so the row takes less of the screen. */
+  compact?: boolean;
 }) {
   if (!projects.length) return null;
   return (
@@ -51,7 +54,11 @@ export function HomeShowcase({
             </Link>
           </div>
         </div>
-        <ul className="showcase-row" data-count={projects.length}>
+        <ul
+          className="showcase-row"
+          data-count={projects.length}
+          data-size={compact ? "compact" : undefined}
+        >
           {projects.map((p, i) => (
             <li key={p.id} className="showcase-card">
               <Link
