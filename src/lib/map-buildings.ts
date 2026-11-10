@@ -247,78 +247,6 @@ function ponteShops(): Record<string, UnitKind> {
     ),
   );
 }
-/**
- * Units with a 3D model to walk into: the model of their type, mirrored for
- * those on the other side of the tower from the drawn one.
- */
-const PONTE_INSIDE: Record<string, { key: string; flip?: "x" | "z" | "xz" }> =
-  (() => {
-    const sets: [string[], Record<string, [string, ("x" | "z" | "xz")?]>][] = [
-      [
-        [
-          "ponte-t1-tang-3a-18.webp",
-          "ponte-t1-tang-19-21-23.webp",
-          "ponte-t1-tang-20-22-24.webp",
-        ],
-        {
-          "10": ["ponte-dk-92"],
-          "11": ["ponte-2pn-70", "x"],
-          "12": ["ponte-3pn-91-t1"],
-        },
-      ],
-      [
-        ["ponte-t1-tang-20-22-24.webp"],
-        { "3A": ["ponte-dk-88"], "05": ["ponte-dk-88", "z"] },
-      ],
-      [
-        ["ponte-t2-tang-3a-18.webp"],
-        {
-          "11": ["ponte-2pn-77"],
-          "10": ["ponte-2pn-77", "z"],
-          "07": ["ponte-1pn-1-52"],
-          "08": ["ponte-1pn-1-52", "x"],
-        },
-      ],
-      [
-        [
-          "ponte-t2-tang-3a-18.webp",
-          "ponte-t2-tang-19-21-23.webp",
-          "ponte-t2-tang-20-22-24.webp",
-        ],
-        {
-          "3A": ["ponte-3pn-91-t2"],
-          "05": ["ponte-2pn-70"],
-          "06": ["ponte-dk-92", "x"],
-        },
-      ],
-      [
-        ["ponte-t2-tang-19-21-23.webp", "ponte-t2-tang-20-22-24.webp"],
-        {
-          "02": ["ponte-1pn-1-52", "xz"],
-          "07": ["ponte-1pn-1-52"],
-          "08": ["ponte-1pn-1-52", "x"],
-        },
-      ],
-      [
-        ["ponte-t2-tang-20-22-24.webp"],
-        {
-          "12": ["ponte-1pn-43"],
-          "11": ["ponte-1pn-43", "z"],
-          "12A": ["ponte-3pn-104"],
-        },
-      ],
-    ];
-    return Object.fromEntries(
-      sets.flatMap(([files, units]) =>
-        files.flatMap((file) =>
-          Object.entries(units).map(([n, [key, flip]]) => [
-            `${file}/${n}`,
-            flip ? { key, flip } : { key },
-          ]),
-        ),
-      ),
-    );
-  })();
 function ponteKinds(): Record<string, UnitKind> {
   return Object.fromEntries(
     Object.entries(PONTE_UNITS).flatMap(([file, units]) =>
@@ -337,9 +265,6 @@ function ponteKinds(): Record<string, UnitKind> {
             // Same sides as Sun Panoma's: west looks over the Hàn river.
             view: PANOMA_DIRS[dir],
             ...(picture && { picture: PONTE + picture, flat: true }),
-            ...(PONTE_INSIDE[`${file}/${n}`] && {
-              interior: PONTE_INSIDE[`${file}/${n}`],
-            }),
           },
         ];
       }),
@@ -535,6 +460,9 @@ function monarchyKind(number: string): UnitKind {
   return { rooms: t("2PN"), bedrooms: 2, area: 80, view, picture: two };
 }
 
+/** Projects whose model apartments have 360° tours: Capital Square's. */
+const TOUR_360 = new Set(["capital-square"]);
+
 /** A project's towers, plans and units for the 3D floor plans. */
 function floorData(
   content: SiteContent,
@@ -553,12 +481,14 @@ function floorData(
       kinds: kept.kinds,
       notes: kept.notes,
       naming: kept.naming,
+      tour360: TOUR_360.has(slug),
     };
   if (!plans.length) return undefined;
   return {
     towers: (api?.towers ?? [])
       .filter((x) => plans.some((p) => p.tower === x.name))
       .map((x) => ({ name: x.name, note: x.note ? t(x.note) : "" })),
+    tour360: TOUR_360.has(slug),
     plans: plans.map((p) => ({
       tower: p.tower ?? "",
       image: p.image,
@@ -636,6 +566,10 @@ export function mapBuildings(
             // For the map's filter: -1 without rooms, 0 when not for rent.
             bedrooms: hasRooms(p) ? p.bedrooms : -1,
             rent: p.forRent ? p.price : 0,
+            forRent: !!p.forRent || !p.forSale,
+            forSale: !!p.forSale,
+            hot: p.interestScore ?? 0,
+            trending: !!p.trending,
           })),
         floors: rentalsOnly ? undefined : floorData(content, b.slug, all),
       },

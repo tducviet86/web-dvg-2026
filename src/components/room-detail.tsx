@@ -28,6 +28,7 @@ import { LuxuryBadges, SaleCard } from "./cards";
 import { modelUnit } from "@/lib/model-units";
 import { ModelUnitBody } from "./model-unit";
 import { SaleUnitBody } from "./sale-unit";
+import { mapBuildings } from "@/lib/map-buildings";
 import { ViewBeacon } from "./view-beacon";
 import { CallContact, WhatsAppContact } from "./call-contact";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
@@ -63,6 +64,8 @@ export function RoomDetail({
 }) {
   // The unit comes fresh from the API while the project list may be up to a
   // few minutes old (a project just published): the page must still open.
+  // The site's own map, for the project's place and the way there.
+  const buildings = mapBuildings(content, { rentalsOnly: false });
   const project = content.projects.find((p) => p.id === r.projectId) ?? {
     slug: r.projectSlug ?? "",
     name: r.projectName ?? "",
@@ -270,6 +273,7 @@ export function RoomDetail({
                 projectDescription={project.description}
                 projectPage={projectPage}
                 place={content.locations[r.projectId]}
+                buildings={buildings}
                 status={status}
                 available={available}
                 foreign={foreign}
@@ -423,7 +427,13 @@ export function RoomDetail({
                     </span>
                     <h2>{project.name}</h2>
                     <p>{project.description}</p>
-                    <ProjectMap place={content.locations[r.projectId]} />
+                    <ProjectMap
+                      place={content.locations[r.projectId]}
+                      slug={r.projectSlug ?? ""}
+                      name={project.name}
+                      address={r.location}
+                      buildings={buildings}
+                    />
                     <Link href={projectPage} className="room-project-link">
                       <span>
                         <small>Dự án</small>
@@ -539,7 +549,9 @@ export function RoomDetail({
                       <span className="signature-kicker">
                         THÊM LỰA CHỌN CHO BẠN
                       </span>
-                      <h2>{model ? "Căn mẫu cùng dự án." : "Căn bán cùng dự án."}</h2>
+                      <h2>
+                        {model ? "Căn mẫu cùng dự án." : "Căn bán cùng dự án."}
+                      </h2>
                     </div>
                     <Link href={saleList} className="text-link">
                       Xem tất cả <ArrowUpRight size={18} />

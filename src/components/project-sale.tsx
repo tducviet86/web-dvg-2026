@@ -28,6 +28,7 @@ import { FaqSection } from "./faq-section";
 import { saleFaqs } from "@/lib/faq";
 import { handoverSummary } from "@/lib/handover";
 import { ProjectMap } from "./project-map";
+import type { MapBuilding } from "./rental-map";
 import {
   GalleryTabs,
   PaymentPlanner,
@@ -128,6 +129,7 @@ export function ProjectSalePage({
   api,
   story,
   place,
+  buildings,
   units: rawUnits,
   crumbs,
   productLinks,
@@ -137,6 +139,8 @@ export function ProjectSalePage({
   api?: ApiProject;
   story: ProjectStory;
   place?: ProjectLocation;
+  /** The site map's buildings, for the location block. */
+  buildings: MapBuilding[];
   units: Property[];
   crumbs: React.ReactNode;
   productLinks: Record<string, string>;
@@ -501,23 +505,15 @@ export function ProjectSalePage({
           <div className="container">
             <span className="signature-kicker">VỊ TRÍ, TIỆN ÍCH, TIẾN ĐỘ</span>
             <h2>{p.location}</h2>
-            <div className="place-card">
-              <div className="place-map">
-                {place ? (
-                  <ProjectMap place={place} />
-                ) : (
-                  <div className="rental-map">
-                    <iframe
-                      title={`Bản đồ ${p.name}`}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      allowFullScreen
-                      src={`https://www.google.com/maps?q=${encodeURIComponent(`${p.name} Đà Nẵng`)}&z=15&output=embed`}
-                    />
-                  </div>
-                )}
-              </div>
-              {(connections.length > 0 || amenities.length > 0) && (
+            <ProjectMap
+              place={place}
+              slug={p.slug}
+              name={p.name}
+              address={p.location}
+              buildings={buildings}
+            />
+            {(connections.length > 0 || amenities.length > 0) && (
+              <div className="place-card" data-only="info">
                 <div className="place-info">
                   {connections.length > 0 && (
                     <>
@@ -547,8 +543,8 @@ export function ProjectSalePage({
                     </>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             {progress.length > 0 && (
               <>
                 <h3 className="progress-title">Tiến độ xây dựng thực tế</h3>

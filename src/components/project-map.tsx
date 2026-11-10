@@ -1,26 +1,45 @@
-/** @jsxImportSource @/i18n/jsx */
-import { MapPin, ArrowUpRight } from "lucide-react";
 import type { ProjectLocation } from "@/types";
+import { t } from "@/i18n/server";
+import { NEARBY_PLACES } from "@/lib/rental-map";
+import { RentalMap, type MapBuilding } from "./rental-map";
 
-export function ProjectMap({ place }: { place?: ProjectLocation }) {
-  if (!place) return null;
+/**
+ * A project's place on the site's own 3D map, its tower chosen, with the way
+ * there from where the visitor stands.
+ */
+export function ProjectMap({
+  place,
+  slug,
+  name,
+  address = "",
+  buildings,
+}: {
+  place?: ProjectLocation;
+  slug: string;
+  /** The project's name, for the way there. */
+  name: string;
+  address?: string;
+  /** The map's buildings (lib/map-buildings.ts). */
+  buildings: MapBuilding[];
+}) {
+  // Without a place, the map still shows the project when it is drawn on it.
+  if (!buildings.length || (!place && !buildings.some((b) => b.slug === slug)))
+    return null;
   return (
-    <div className="rental-map">
-      <iframe
-        title={`Bản đồ ${place.label}`}
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        allowFullScreen
-        src={`https://www.google.com/maps?q=${place.lat},${place.lng}&z=16&output=embed`}
+    <section className="project-map" aria-label={t("Bản đồ và chỉ đường")}>
+      <RentalMap
+        buildings={buildings}
+        places={NEARBY_PLACES.map((p) => t(p.name))}
+        initial={{ slug }}
+        route={
+          place && {
+            name: t(name),
+            address: t(address),
+            lat: place.lat,
+            lng: place.lng,
+          }
+        }
       />
-      <a href={place.url} target="_blank" rel="noopener noreferrer">
-        <MapPin size={20} />
-        <span>
-          <strong>{place.label}</strong>
-          <small>Mở địa điểm & chỉ đường trên Google Maps</small>
-        </span>
-        <ArrowUpRight size={19} />
-      </a>
-    </div>
+    </section>
   );
 }

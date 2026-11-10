@@ -2012,8 +2012,6 @@
   font-size: 13.5px;
   color: var(--c-gold-300);
 }
-@media (max-width: 900px) {
-}
 @media (prefers-reduced-motion: reduce) {
   .plan-stage,
   .plan-floors-fold {
@@ -2054,8 +2052,6 @@
   --plan-h: 640px;
   max-width: 560px;
   margin: 0;
-}
-@media (max-width: 640px) {
 }
 
 /* A model apartment (model-unit.tsx). */
@@ -2859,26 +2855,8 @@
   background: #fff;
   box-shadow: 0 18px 44px #1027191a;
 }
-.place-map,
-.place-map .rental-map {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  height: 100%;
-}
-.place-map .rental-map {
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-}
-.place-map .rental-map iframe {
-  flex: 1;
-  min-height: 420px;
-  height: auto;
-}
-.place-map .rental-map > a {
-  flex: none;
-  padding: 14px 20px;
+.place-card[data-only="info"] {
+  grid-template-columns: minmax(0, 1fr);
 }
 .place-info {
   padding: clamp(22px, 3vw, 36px);
@@ -2956,11 +2934,6 @@
 @media (max-width: 900px) {
   .place-card {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .place-map .rental-map iframe {
-    min-height: 0;
-    height: clamp(240px, 45vw, 340px);
-    flex: none;
   }
 }
 @media (max-width: 420px) {
@@ -3986,14 +3959,72 @@ a.rmap-reset {
 .rmap-unit strong {
   font-size: 14px;
 }
-.rmap-more {
+/* A tower's units: to rent on one side, to buy on the other, hottest first. */
+@media (min-width: 901px) {
+  .rmap-panel[data-tab="units"] {
+    width: 520px;
+  }
+}
+.rmap-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex: 1;
+  min-height: 0;
+}
+.rmap-split > section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.rmap-split > section + section {
+  border-left: 1px solid #ece7da;
+}
+.rmap-split h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #ece7da;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--c-green-900);
+}
+.rmap-split h4 b {
+  min-width: 24px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f3ead2;
+  font-size: 12px;
+  text-align: center;
+}
+.rmap-split .rmap-units a {
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 9px;
+  padding: 9px 10px;
+}
+.rmap-split .rmap-photo {
+  height: 56px;
+}
+.rmap-split .rmap-none {
+  padding: 16px 12px;
+  font-size: 13px;
+}
+.rmap-hot {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--c-gold-700);
+  gap: 3px;
+  justify-self: start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fde3d3;
+  color: #b4441a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
 }
 .rmap-none {
   padding: 24px 18px;
@@ -4864,7 +4895,7 @@ a.rmap-reset {
 .fp3d-state[data-state="sold"] {
   color: #5f6f66;
 }
-/* The unit's plan, with the way into it in 3D laid over it. */
+/* The unit's plan. */
 .fp3d-media {
   position: relative;
   display: grid;
@@ -4875,199 +4906,6 @@ a.rmap-reset {
   font-size: 12px;
   color: #5f6f66;
   text-align: center;
-}
-.fp3d-inside {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 999px;
-  background: #f2c14e;
-  color: #0b2a22;
-  font-size: 14.5px;
-  font-weight: 600;
-  box-shadow: 0 8px 20px #06140f33;
-  cursor: pointer;
-}
-.fp3d-picture + .fp3d-inside {
-  position: absolute;
-  bottom: 34px;
-  left: 50%;
-  white-space: nowrap;
-  transform: translateX(-50%);
-}
-/* Inside a unit in 3D: the whole screen. */
-.in3d {
-  position: fixed;
-  inset: 0;
-  z-index: 10050;
-  background: #cfe2ef;
-}
-.in3d-stage,
-.in3d-stage canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-  cursor: grab;
-}
-.in3d-head {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  pointer-events: none;
-}
-.in3d-head > * {
-  pointer-events: auto;
-}
-.in3d-head div {
-  display: grid;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: #061b16d9;
-  color: #fff;
-}
-.in3d-head b {
-  font-size: 15px;
-  font-weight: 600;
-}
-.in3d-head small {
-  color: #f2c14e;
-  font-size: 12.5px;
-}
-.in3d-close {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: #061b16eb;
-  color: #fff;
-  font-size: 13.5px;
-  cursor: pointer;
-}
-/* Arrows to the other rooms, as in the 360° tours of the model units. */
-.in3d-spot {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  width: 46px;
-  height: 46px;
-  padding: 0;
-  border: 2px solid var(--c-gold-300);
-  border-radius: 50%;
-  background: #061b16b3;
-  cursor: pointer;
-}
-.in3d-spot[hidden] {
-  display: none;
-}
-.in3d-spot::after {
-  content: "";
-  position: absolute;
-  inset: 13px;
-  border-top: 3px solid var(--c-gold-300);
-  border-left: 3px solid var(--c-gold-300);
-  transform: translateY(4px) rotate(45deg);
-}
-.in3d-spot span {
-  position: absolute;
-  bottom: 52px;
-  left: 50%;
-  padding: 3px 9px;
-  border-radius: 8px;
-  background: var(--c-green-900);
-  color: #fff;
-  font-size: 12.5px;
-  white-space: nowrap;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-.in3d-rooms {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  display: flex;
-  gap: 6px;
-  max-width: calc(100% - 24px);
-  padding: 6px;
-  overflow-x: auto;
-  border-radius: 999px;
-  background: #061b16d9;
-  scrollbar-width: none;
-  translate: -50% 0;
-}
-.in3d-rooms button {
-  flex: none;
-  min-height: 36px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: #fff;
-  font-size: 13px;
-  cursor: pointer;
-}
-.in3d-rooms button:hover,
-.in3d-rooms button:focus-visible {
-  background: #ffffff26;
-}
-.in3d-plan {
-  position: absolute;
-  top: 70px;
-  right: 12px;
-  width: 220px;
-  border: 2px solid #fff;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 10px 28px #06140f40;
-}
-.in3d-plan span {
-  position: absolute;
-  inset: 0;
-  background-size: 100% 100%;
-}
-.in3d-plan i {
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-right: 12px solid transparent;
-  border-bottom: 26px solid #f2c14ecc;
-  border-left: 12px solid transparent;
-  filter: drop-shadow(0 0 2px #0b2a22);
-}
-.in3d-hint {
-  position: absolute;
-  bottom: 70px;
-  left: 50%;
-  margin: 0;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #ffffffd9;
-  color: #0b2a22;
-  font-size: 12.5px;
-  white-space: nowrap;
-  translate: -50% 0;
-}
-@media (max-width: 760px) {
-  .in3d-plan {
-    top: 88px;
-    width: 130px;
-  }
-  .in3d-hint {
-    display: none;
-  }
 }
 /* The developer's plan of the unit, with its sizes. */
 .fp3d-picture {
@@ -5109,7 +4947,8 @@ a.rmap-reset {
   flex-wrap: wrap;
   gap: 8px;
 }
-.fp3d-actions a {
+.fp3d-actions a,
+.fp3d-actions button {
   display: inline-flex;
   flex: 1 1 140px;
   align-items: center;
@@ -5122,6 +4961,13 @@ a.rmap-reset {
   color: var(--c-green-900);
   font-size: 13.5px;
   font-weight: 600;
+}
+.fp3d-actions button {
+  flex-basis: 100%;
+  border-color: #c8962f;
+  background: #f2c14e;
+  color: #0b2a22;
+  cursor: pointer;
 }
 .fp3d-actions a:first-child {
   background: var(--c-green-900);
@@ -5319,4 +5165,141 @@ a.rmap-reset {
   .rmap-panel {
     animation: none;
   }
+}
+
+/* A project's page: the site's map, and the way there under it. */
+.project-map {
+  margin-block: 24px;
+}
+.mroute {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 10px;
+  padding: 14px 18px;
+  border: 1px solid #e0e4d9;
+  border-radius: 16px;
+  background: #fff;
+}
+.mroute-place {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  color: var(--c-green-800);
+}
+.mroute-place > svg {
+  flex: none;
+  margin-top: 2px;
+  color: #b8862f;
+}
+.mroute-place strong {
+  display: block;
+  font-size: 15.5px;
+}
+.mroute-place small {
+  display: block;
+  font-size: 13px;
+  color: #5f6f66;
+}
+.mroute-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mroute-actions > * {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.mroute-go {
+  border: 0;
+  background: #1f6feb;
+  color: #fff;
+  cursor: pointer;
+}
+.mroute-go:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.mroute-actions > a {
+  border: 1px solid #cfd6ca;
+  color: var(--c-green-800);
+}
+.mroute-result {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+  color: var(--c-green-800);
+}
+.mroute-result:empty {
+  display: none;
+}
+/* The project's pin and the visitor's own spot on the map. */
+.mroute-goal {
+  width: 26px;
+  height: 26px;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #c8962f;
+  box-shadow: 0 4px 10px #06140f59;
+  transform: rotate(-45deg);
+}
+.mroute-me {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #1f6feb;
+  box-shadow: 0 0 0 8px #1f6feb33;
+}
+@media (max-width: 640px) {
+  .mroute {
+    padding: 14px;
+  }
+  .mroute-actions,
+  .mroute-actions > * {
+    flex: 1 1 100%;
+  }
+}
+
+/* Capital Square: the model apartment in 360°, over the floor plan. */
+.fp3d-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: grid;
+  align-content: center;
+  padding: 56px clamp(12px, 3vw, 40px) 20px;
+  background: #061b16f2;
+}
+.fp3d-tour .tour {
+  width: min(100%, 1100px);
+  margin-inline: auto;
+}
+.fp3d-tour-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #0b2a22;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }

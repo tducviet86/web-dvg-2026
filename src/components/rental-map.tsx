@@ -16,6 +16,7 @@ import {
   ChevronRight,
   CloudSun,
   Eye,
+  Flame,
   Layers,
   List,
   Maximize2,
@@ -42,6 +43,7 @@ import {
 } from "@/lib/map-filter";
 import type { Towers, TowerHit } from "./map-towers";
 import { planArea } from "./plan-cutout";
+import { MapRoute, type RouteTarget } from "./map-route";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { towerFloors, unitName, type FloorData } from "@/lib/floor-3d";
 import {
@@ -74,6 +76,12 @@ export type MapUnit = {
   bedrooms: number;
   /** Million VND a month; 0 when not for rent. */
   rent: number;
+  /** Which column of the tower's list it goes in (both when both). */
+  forRent: boolean;
+  forSale: boolean;
+  /** Interest lately: views and enquiries (server), for the order. */
+  hot: number;
+  trending: boolean;
 };
 export type MapBuilding = {
   slug: string;
@@ -128,6 +136,11 @@ const LOOKS = [
   ["Tây", 270],
 ] as const;
 const call = telephoneHref(companyHotline);
+/** Projects whose floors light up under the pointer and open on a click. */
+const FLOOR_HOVER = new Set(["capital-square"]);
+/** The most wanted first: trending, then by views and enquiries. */
+const byHeat = (a: MapUnit, b: MapUnit) =>
+  Number(b.trending) - Number(a.trending) || b.hot - a.hot;
 // Marks along the horizon while looking out from a floor.
 const COMPASS = [
   "Bắc",
@@ -398,12 +411,15 @@ export function RentalMap({
   full = false,
   places = [],
   initial = {},
+  route,
 }: {
   buildings: MapBuilding[];
   full?: boolean;
   /** Translated names of NEARBY_PLACES. */
   places?: string[];
   initial?: MapSelection;
+  /** On a project's page: the project, and the way there from the visitor. */
+  route?: RouteTarget;
 }) {
   const t = useT();
   const stage = useRef<HTMLDivElement>(null);
@@ -414,6 +430,7 @@ export function RentalMap({
   );
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
+  const [live, setLive] = useState<MapLibre | null>(null);
   const [chosen, setChosen] = useState<string | null>(
     buildings.some((b) => b.slug === initial.slug)
       ? (initial.slug as string)
@@ -843,7 +860,8 @@ export function RentalMap({
           }
           /** The floor a pointer is on, when the tower has plans for it. */
           const floorOf = (hit: TowerHit | null) => {
-            if (!full || !hit?.tower || hit.soon) return "";
+            if (!full || !hit?.tower || hit.soon || !FLOOR_HOVER.has(hit.slug))
+              return "";
             const { floors, planned, first } = towerLevels(
               buildings.find((b) => b.slug === hit.slug),
               hit.tower,
@@ -852,6 +870,29 @@ export function RentalMap({
             if (!planned) return floors[Math.min(hit.level, floors.length) - 1];
             if (hit.level < first) return "";
             return floors[Math.min(hit.level - first, floors.length - 1)];
+          };
+          /** What pointing at a tower shows: its units to rent and to buy. */
+          const towerTip = (slug: string, towerName: string) => {
+            const b = buildings.find((x) => x.slug === slug);
+            if (!b) return ["", ""];
+            const here = b.units.filter(
+              (u) => !towerName || !u.tower || u.tower === towerName,
+            );
+            const rent = here.filter((u) => u.forRent).length;
+            const sale = here.filter((u) => u.forSale).length;
+            const top = [...here].sort(byHeat)[0];
+            return [
+              towerName ? `${b.name} · ${t("Tòa")} ${towerName}` : b.name,
+              [
+                t("{rent} căn thuê · {sale} căn bán", { rent, sale }),
+                top && (top.hot > 0 || top.trending)
+                  ? t("Hot: {name}", { name: top.name })
+                  : "",
+                t("Bấm để xem"),
+              ]
+                .filter(Boolean)
+                .join(" · "),
+            ];
           };
           made.on("mousemove", (e) => {
             if (focusOn.current) {
@@ -862,7 +903,6 @@ export function RentalMap({
               return;
             }
             const hit = models.pick(e.point.x, e.point.y);
-            const floor = floorOf(hit);
             const lotHit = hit
               ? undefined
               : made.queryRenderedFeatures(e.point, {
@@ -880,21 +920,20 @@ export function RentalMap({
             made.getCanvas().style.cursor =
               (hit && !hit.soon) || lotCode ? "pointer" : "";
             setHovered(hit?.slug ?? null);
+            const floor = floorOf(hit);
             models.markFloor(
               hit?.slug ?? "",
               hit?.tower ?? "",
               floor ? (hit?.level ?? 0) : 0,
             );
-            placeTip(
-              tip.current,
-              e.point.x,
-              e.point.y,
-              hit?.soon
-                ? t("Sắp ra mắt")
-                : floor
-                  ? `${t("Tầng")} ${floor}`
-                  : hoverLot,
-            );
+            const [title, hint] = hit?.soon
+              ? [t("Sắp ra mắt"), ""]
+              : floor
+                ? [`${t("Tầng")} ${floor}`, ""]
+                : hit
+                  ? towerTip(hit.slug, hit.tower ?? "")
+                  : [hoverLot, ""];
+            placeTip(tip.current, e.point.x, e.point.y, title, hint);
           });
           made.getCanvas().addEventListener("mouseleave", () => {
             setHovered(null);
@@ -910,17 +949,22 @@ export function RentalMap({
             const hit = models.pick(e.point.x, e.point.y);
             if (!hit || hit.soon) return;
             const floor = floorOf(hit);
-            // A mouse opens the floor it points at; a finger chooses the tower first.
-            const opens =
-              floor &&
-              (window.matchMedia("(hover: hover)").matches ||
+            if (floor) {
+              // A mouse opens the floor it points at; a finger chooses the tower first.
+              const opens =
+                window.matchMedia("(hover: hover)").matches ||
                 towerPins.current.some(
                   (p) =>
                     p.el.dataset.lit === "true" &&
                     p.el.textContent === hit.tower,
-                ));
-            choose.current(hit.slug, hit.tower, !!opens);
-            if (opens) openTowerFloor.current(hit.slug, hit.tower, floor);
+                );
+              choose.current(hit.slug, hit.tower, opens);
+              if (opens) openTowerFloor.current(hit.slug, hit.tower, floor);
+              return;
+            }
+            // The tower's units, to rent and to buy, the most wanted first.
+            choose.current(hit.slug, hit.tower);
+            setTab("units");
           });
           stopTour.current = () => {
             tourRun.current++;
@@ -977,9 +1021,10 @@ export function RentalMap({
                 label.disabled = true;
               }
               label.textContent = block.tower;
-              label.addEventListener("click", () =>
-                choose.current(b.slug, block.tower),
-              );
+              label.addEventListener("click", () => {
+                choose.current(b.slug, block.tower);
+                setTab("units");
+              });
               towerPins.current.push({ slug: b.slug, el: label });
               const pin = new maplibre.Marker({
                 element: label,
@@ -1013,6 +1058,7 @@ export function RentalMap({
           movePins();
           made.on("move", movePins);
           setReady(true);
+          setLive(made);
         });
       } catch {
         setFailed(true);
@@ -1912,7 +1958,7 @@ export function RentalMap({
           ))}
         </div>
         {current && !view && !lot && !focus && (
-          <aside key={current.slug} className="rmap-panel">
+          <aside key={current.slug} className="rmap-panel" data-tab={shownTab}>
             <header className="rmap-head">
               <Image
                 className="rmap-head-photo"
@@ -1960,7 +2006,10 @@ export function RentalMap({
                       key={name}
                       type="button"
                       aria-pressed={name === tower}
-                      onClick={() => choose.current(current.slug, name)}
+                      onClick={() => {
+                        choose.current(current.slug, name);
+                        setTab("units");
+                      }}
                     >
                       {name}
                     </button>
@@ -2022,37 +2071,55 @@ export function RentalMap({
               </ul>
             )}
             {shownTab === "units" && (
-              <ul className="rmap-units">
-                {units.map((u) => (
-                  <li key={u.slug}>
-                    <Link href={u.href}>
-                      <span className="rmap-photo">
-                        {u.image && (
-                          <Image src={u.image} alt="" fill sizes="96px" />
-                        )}
-                      </span>
-                      <span className="rmap-unit">
-                        <b>{u.name}</b>
-                        <small>
-                          {u.rooms} · {u.area} m²
-                        </small>
-                        <strong>{u.priceText}</strong>
-                        <span className="rmap-more">
-                          {t("Xem chi tiết")}
-                          <ArrowUpRight size={14} aria-hidden="true" />
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
+              <div className="rmap-split">
+                {(
+                  [
+                    ["rent", t("Cho thuê"), units.filter((u) => u.forRent)],
+                    ["sale", t("Bán"), units.filter((u) => u.forSale)],
+                  ] as const
+                ).map(([key, label, list]) => (
+                  <section key={key} aria-label={label}>
+                    <h4>
+                      {label} <b>{list.length}</b>
+                    </h4>
+                    <ul className="rmap-units">
+                      {[...list].sort(byHeat).map((u, i) => (
+                        <li key={u.slug}>
+                          <Link href={u.href}>
+                            <span className="rmap-photo">
+                              {u.image && (
+                                <Image src={u.image} alt="" fill sizes="64px" />
+                              )}
+                            </span>
+                            <span className="rmap-unit">
+                              {(u.trending || (i === 0 && u.hot > 0)) && (
+                                <em className="rmap-hot">
+                                  <Flame size={12} aria-hidden="true" />
+                                  {t("Hot")}
+                                </em>
+                              )}
+                              <b>{u.name}</b>
+                              <small>
+                                {u.rooms} · {u.area} m²
+                              </small>
+                              <strong>{u.priceText}</strong>
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                      {!list.length && (
+                        <li className="rmap-none">
+                          {filtering
+                            ? t("Không có căn phù hợp bộ lọc.")
+                            : key === "rent"
+                              ? t("Chưa có căn cho thuê ở tòa này.")
+                              : t("Chưa có căn bán ở tòa này.")}
+                        </li>
+                      )}
+                    </ul>
+                  </section>
                 ))}
-                {!units.length && (
-                  <li className="rmap-none">
-                    {filtering
-                      ? t("Không có căn phù hợp bộ lọc ở tòa này.")
-                      : t("Tòa này hiện chưa có căn. Bạn gọi để được tư vấn.")}
-                  </li>
-                )}
-              </ul>
+              </div>
             )}
           </aside>
         )}
@@ -2216,6 +2283,7 @@ export function RentalMap({
           )}
         </aside>
       )}
+      {route && <MapRoute map={live} target={route} />}
       <p className="rmap-note">{full && ` ${t("Bản đồ © OpenStreetMap.")}`}</p>
     </div>
   );

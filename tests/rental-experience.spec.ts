@@ -17,7 +17,6 @@ import {
 } from "../src/lib/rental-map";
 import { PLAN_ANCHORS, PLAN_OUTLINES } from "../src/lib/floor-plan-outlines";
 import { unitFits } from "../src/lib/map-filter";
-import { INTERIORS } from "../src/lib/interiors";
 import { apiAs, humanPause } from "./helpers";
 
 const room = "/cho-thue/can-ho-sun-ponte-residence-demo-01";
@@ -150,10 +149,16 @@ test("rental search, project landing, real map links and filter removal", async 
   await expect(
     page.locator('main a[href="https://maps.app.goo.gl/9z4BBFMd3ovgpS5y5"]'),
   ).toHaveCount(1);
-  await expect(page.locator('iframe[title*="Panoma"]')).toHaveAttribute(
-    "src",
-    /16.0524094,108.236731/,
-  );
+  // The site's own map, not Google's, with the way there under it.
+  await expect(page.locator('iframe[src*="google.com/maps"]')).toHaveCount(0);
+  const route = page.locator(".project-map .mroute");
+  await expect(route).toContainText("Sun Panoma");
+  await expect(
+    route.getByRole("link", { name: /Google Maps/ }),
+  ).toHaveAttribute("href", /destination=16.0524094,108.236731/);
+  await expect(
+    route.getByRole("button", { name: "Chỉ đường từ vị trí của tôi" }),
+  ).toBeVisible();
   await page.goto("/cho-thue/du-an/sun-panoma?bedrooms=2&sort=price-asc");
   await expect(page.locator('.hero-search [name="project"]')).toHaveCount(0);
   await page.locator(".filter-chips a").click();
@@ -1606,58 +1611,6 @@ test("Sun Ponte's floor plans: every unit on T1, T2 or the floors joining them",
   }
 });
 
-test("the 3D unit to walk into: everything inside it, no room spot in a wall", () => {
-  for (const [name, unit] of Object.entries(INTERIORS)) {
-    const within = ([x0, z0, x1, z1]: number[]) =>
-      x0 >= 0 &&
-      z0 >= 0 &&
-      x1 <= unit.width + 1e-6 &&
-      z1 <= unit.depth + 1e-6 &&
-      x0 < x1 &&
-      z0 <= z1;
-    for (const r of [
-      ...unit.walls,
-      ...unit.doors,
-      ...unit.glass,
-      ...unit.windows,
-    ])
-      expect(within(r), `${name} ${r}`).toBe(true);
-    for (const f of unit.furniture)
-      expect(within(f.at), `${name} ${f.kind} ${f.at}`).toBe(true);
-    const inWall = ([x, z]: number[]) =>
-      unit.walls.some(
-        ([x0, z0, x1, z1]) => x > x0 && x < x1 && z > z0 && z < z1,
-      );
-    for (const room of unit.rooms)
-      expect(inWall(room.at), `${name} ${room.name}`).toBe(false);
-    // No piece of furniture stands in a wall.
-    for (const f of unit.furniture) {
-      const [x0, z0, x1, z1] = f.at;
-      expect(
-        inWall([(x0 + x1) / 2, (z0 + z1) / 2]),
-        `${name} ${f.kind} ${f.at}`,
-      ).toBe(false);
-    }
-  }
-});
-
-test("Sun Ponte T1-12 opens in 3D from its unit card, and closes", async ({
-  page,
-}) => {
-  await page.goto("/ban-do?du-an=sun-ponte-residence&toa=T1&tang=10&can=12");
-  const inside = page.getByRole("button", { name: "Vào bên trong căn 3D" });
-  await expect(inside).toBeVisible({ timeout: 20_000 });
-  await inside.click();
-  const room = page.getByRole("dialog", { name: /T110-12/ });
-  await expect(room).toBeVisible();
-  await expect(room.locator(".in3d-rooms button")).toHaveCount(9);
-  await expect(room.locator(".in3d-head small")).toContainText(
-    "Đang nhìn hướng",
-  );
-  await room.getByRole("button", { name: "Thoát" }).click();
-  await expect(room).toHaveCount(0);
-});
-
 test("Capital Square stands inside its roads, each tower with its floors", () => {
   // Centre lines from OpenStreetMap, metres from the pin.
   const roads = [
@@ -1833,6 +1786,12 @@ for (const [name, width] of [
     await plan.getByRole("combobox", { name: "Căn" }).selectOption("01");
     await expect(plan.locator(".fp3d-info h3")).toHaveText("C4-1001");
     await expect(plan.locator(".fp3d-info")).toContainText("77,69");
+    // Capital Square's units open the model apartment in 360°.
+    await plan.getByRole("button", { name: "Xem 360° căn mẫu" }).click();
+    const tour = page.getByRole("dialog", { name: "Căn mẫu 360°" });
+    await expect(tour).toBeVisible();
+    await tour.getByRole("button", { name: "Đóng", exact: true }).click();
+    await expect(tour).toHaveCount(0);
     await expect(page).toHaveURL(/toa=C4&tang=10&can=01/);
     // Another floor uses another drawing: the choice of unit starts over.
     await floor.selectOption("11");
@@ -1849,3 +1808,16 @@ for (const [name, width] of [
     await plan.getByRole("button", { name: "Đóng mặt bằng 3D" }).click();
     await expect(plan).toHaveCount(0);
   });
+
+test("a tower on the map lists its units to rent and to buy, hottest first", async ({
+  page,
+}) => {
+  await page.goto("/ban-do?du-an=sun-ponte-residence");
+  await page
+    .locator(".rmap-plan-towers")
+    .getByRole("button", { name: "T1", exact: true })
+    .click({ timeout: 30_000 });
+  const split = page.locator(".rmap-panel .rmap-split");
+  await expect(split).toBeVisible();
+  await expect(split.locator("h4")).toHaveText([/^Cho thuê/, /^Bán/]);
+});

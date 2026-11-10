@@ -819,8 +819,8 @@ textarea {
 }
 /* Banner */
 .signature-home .corporate-banner {
-  height: min(100svh, 980px);
-  min-height: 560px;
+  height: min(65svh, 640px);
+  min-height: 440px;
   max-height: none;
 }
 .signature-home .banner-swipe-slide[aria-hidden="false"] .hero-photo {
@@ -1349,8 +1349,8 @@ textarea {
     align-items: flex-start;
   }
   .signature-home .corporate-banner {
-    height: min(88svh, 760px);
-    min-height: 520px;
+    height: min(60svh, 500px);
+    min-height: 400px;
   }
   .signature-hero-content {
     top: calc(var(--header-h) + 16px);

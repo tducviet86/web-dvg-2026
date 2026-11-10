@@ -90,7 +90,10 @@
   isolation: isolate;
 }
 .showcase-row[data-size="compact"] .showcase-card a {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
+}
+.showcase-row[data-size="compact"] .showcase-body strong {
+  font-size: clamp(18px, 1.4vw, 22px);
 }
 /* The frame next/image fills (it must be positioned). */
 .showcase-photo {
@@ -287,6 +290,9 @@
   .showcase-card {
     flex: 0 0 76%;
     scroll-snap-align: start;
+  }
+  .showcase-row[data-size="compact"] .showcase-card {
+    flex-basis: 66%;
   }
   .home-cta-actions > * {
     flex: 1 1 100%;

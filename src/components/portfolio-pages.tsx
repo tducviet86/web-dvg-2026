@@ -22,6 +22,7 @@ import { CallContact } from "./call-contact";
 import { FaqSection } from "./faq-section";
 import { listingFaqs } from "@/lib/faq";
 import { ProjectMap } from "./project-map";
+import { mapBuildings } from "@/lib/map-buildings";
 import { complexSchema, jsonLd } from "@/lib/structured-data";
 import { href, t } from "@/i18n/server";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
@@ -290,19 +291,19 @@ export function PortfolioDetail({
   const api = content.apiProjects.find((x) => x.id === p.projectId);
   const forSale = rooms.filter((r) => r.forSale && !r.isDemo);
   const schema = api ? (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: jsonLd(
-                complexSchema(
-                  api,
-                  href(`/du-an/${p.slug}`),
-                  rooms.filter((r) => !r.isDemo && vacantNow(r)).length,
-                  t,
-                ),
-              ),
-            }}
-          />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: jsonLd(
+          complexSchema(
+            api,
+            href(`/du-an/${p.slug}`),
+            rooms.filter((r) => !r.isDemo && vacantNow(r)).length,
+            t,
+          ),
+        ),
+      }}
+    />
   ) : null;
   if (development)
     return (
@@ -311,6 +312,7 @@ export function PortfolioDetail({
         api={api}
         story={story}
         place={content.locations[p.projectId]}
+        buildings={mapBuildings(content, { rentalsOnly: false })}
         units={forSale}
         crumbs={crumbs}
         productLinks={productLinks}
@@ -341,137 +343,141 @@ export function PortfolioDetail({
         units={rooms}
       />
       <div className="container">
-          <>
-            <section className="operation-intro">
-              <p>{story.paragraphs[0] || story.intro}</p>
-              {p.facebook && (
-                <a
-                  href={p.facebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="project-facebook project-facebook-lg"
-                >
-                  <Facebook size={18} aria-hidden="true" />
-                  Theo dõi fanpage {p.name}
-                  <ArrowUpRight size={16} aria-hidden="true" />
-                </a>
-              )}
-            </section>
-            <section id="can-ho" className="operation-content">
-              {active === "ky-gui" ? (
-                <div className="operation-service">
+        <>
+          <section className="operation-intro">
+            <p>{story.paragraphs[0] || story.intro}</p>
+            {p.facebook && (
+              <a
+                href={p.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="project-facebook project-facebook-lg"
+              >
+                <Facebook size={18} aria-hidden="true" />
+                Theo dõi fanpage {p.name}
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </a>
+            )}
+          </section>
+          <section id="can-ho" className="operation-content">
+            {active === "ky-gui" ? (
+              <div className="operation-service">
+                <div>
+                  <span className="signature-kicker">
+                    DÀNH CHO CHỦ SỞ HỮU / {p.name}
+                  </span>
+                  <h2>
+                    Ký gửi tài sản.
+                    <br />
+                    <em>Kết nối cơ hội phù hợp.</em>
+                  </h2>
+                  <p>
+                    Gửi bán hoặc cho thuê căn hộ với một đầu mối trao đổi. Chủ
+                    sở hữu chủ động thống nhất giá đề xuất, lịch xem và phạm vi
+                    hỗ trợ trước khi giới thiệu tài sản.
+                  </p>
+                  <div className="consign-checklist">
+                    <strong>Thông tin cần chuẩn bị</strong>
+                    <ul>
+                      <li>Mã căn, tầng, diện tích và số phòng ngủ</li>
+                      <li>Ảnh hiện trạng, nội thất và thời gian có thể xem</li>
+                      <li>Nhu cầu bán hoặc cho thuê, mức giá mong muốn</li>
+                    </ul>
+                  </div>
+                  <CallContact label="Gọi trao đổi ký gửi" />
+                </div>
+                <ol className="service-steps">
+                  {[
+                    [
+                      "Tiếp nhận thông tin",
+                      "Trao đổi nhu cầu và thông tin căn hộ với chủ sở hữu.",
+                    ],
+                    [
+                      "Thống nhất phương án",
+                      "Xác nhận cách giới thiệu, điều kiện xem và phạm vi dịch vụ.",
+                    ],
+                    [
+                      "Kết nối khách phù hợp",
+                      "Cập nhật phản hồi và hỗ trợ sắp xếp lịch xem căn hộ.",
+                    ],
+                  ].map(([title, text], i) => (
+                    <li key={title}>
+                      <span>0{i + 1}</span>
+                      <div>
+                        <h3>{title}</h3>
+                        <p>{text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <>
+                <div className="operation-content-heading">
                   <div>
                     <span className="signature-kicker">
-                      DÀNH CHO CHỦ SỞ HỮU / {p.name}
+                      {active === "mua"
+                        ? `MUA BÁN · ${p.name}`
+                        : "KHÁM PHÁ KHÔNG GIAN SỐNG"}
                     </span>
                     <h2>
-                      Ký gửi tài sản.
-                      <br />
-                      <em>Kết nối cơ hội phù hợp.</em>
+                      {`${kindNoun(listingKind(filters.loai, found))} ${active === "mua" ? "đang bán" : "cho thuê"} tại ${p.name}`}
                     </h2>
-                    <p>
-                      Gửi bán hoặc cho thuê căn hộ với một đầu mối trao đổi. Chủ
-                      sở hữu chủ động thống nhất giá đề xuất, lịch xem và phạm
-                      vi hỗ trợ trước khi giới thiệu tài sản.
-                    </p>
-                    <div className="consign-checklist">
-                      <strong>Thông tin cần chuẩn bị</strong>
-                      <ul>
-                        <li>Mã căn, tầng, diện tích và số phòng ngủ</li>
-                        <li>
-                          Ảnh hiện trạng, nội thất và thời gian có thể xem
-                        </li>
-                        <li>Nhu cầu bán hoặc cho thuê, mức giá mong muốn</li>
-                      </ul>
-                    </div>
-                    <CallContact label="Gọi trao đổi ký gửi" />
                   </div>
-                  <ol className="service-steps">
-                    {[
-                      [
-                        "Tiếp nhận thông tin",
-                        "Trao đổi nhu cầu và thông tin căn hộ với chủ sở hữu.",
-                      ],
-                      [
-                        "Thống nhất phương án",
-                        "Xác nhận cách giới thiệu, điều kiện xem và phạm vi dịch vụ.",
-                      ],
-                      [
-                        "Kết nối khách phù hợp",
-                        "Cập nhật phản hồi và hỗ trợ sắp xếp lịch xem căn hộ.",
-                      ],
-                    ].map(([title, text], i) => (
-                      <li key={title}>
-                        <span>0{i + 1}</span>
-                        <div>
-                          <h3>{title}</h3>
-                          <p>{text}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
                 </div>
-              ) : (
-                <>
-                  <div className="operation-content-heading">
-                    <div>
-                      <span className="signature-kicker">
-                        {active === "mua"
-                          ? `MUA BÁN · ${p.name}`
-                          : "KHÁM PHÁ KHÔNG GIAN SỐNG"}
-                      </span>
-                      <h2>
-                        {`${kindNoun(listingKind(filters.loai, found))} ${active === "mua" ? "đang bán" : "cho thuê"} tại ${p.name}`}
-                      </h2>
-                    </div>
+                {found.some((r) => r.isDemo) && (
+                  <p className="portfolio-data-note">
+                    Một số căn là dữ liệu minh họa. Liên hệ để xác nhận quỹ căn
+                    và hiện trạng thực tế.
+                  </p>
+                )}
+                {found.length ? (
+                  <div
+                    className={active === "mua" ? "sale-grid" : "grid grid-3"}
+                  >
+                    {found.map((r) =>
+                      active === "mua" ? (
+                        <SaleCard key={r.id} property={r} />
+                      ) : (
+                        <PropertyCard key={r.id} property={r} />
+                      ),
+                    )}
                   </div>
-                  {found.some((r) => r.isDemo) && (
-                    <p className="portfolio-data-note">
-                      Một số căn là dữ liệu minh họa. Liên hệ để xác nhận quỹ
-                      căn và hiện trạng thực tế.
-                    </p>
-                  )}
-                  {found.length ? (
-                    <div
-                      className={active === "mua" ? "sale-grid" : "grid grid-3"}
-                    >
-                      {found.map((r) =>
-                        active === "mua" ? (
-                          <SaleCard key={r.id} property={r} />
-                        ) : (
-                          <PropertyCard key={r.id} property={r} />
-                        ),
-                      )}
+                ) : (
+                  <div className="inventory-empty sale-empty">
+                    <Building2 size={25} />
+                    <div>
+                      <strong>
+                        {active === "mua"
+                          ? "Chưa có căn bán được công bố trên website"
+                          : "Chưa có căn phù hợp với bộ lọc"}
+                      </strong>
+                      <p>
+                        {active === "mua"
+                          ? "Gọi để trao đổi quỹ căn đang bán tại dự án."
+                          : "Thử bỏ bớt bộ lọc hoặc gọi để được tìm căn."}
+                      </p>
                     </div>
-                  ) : (
-                    <div className="inventory-empty sale-empty">
-                      <Building2 size={25} />
-                      <div>
-                        <strong>
-                          {active === "mua"
-                            ? "Chưa có căn bán được công bố trên website"
-                            : "Chưa có căn phù hợp với bộ lọc"}
-                        </strong>
-                        <p>
-                          {active === "mua"
-                            ? "Gọi để trao đổi quỹ căn đang bán tại dự án."
-                            : "Thử bỏ bớt bộ lọc hoặc gọi để được tìm căn."}
-                        </p>
-                      </div>
-                      <CallContact
-                        label={
-                          active === "mua"
-                            ? "Gọi tư vấn mua bán"
-                            : "Gọi tư vấn thuê"
-                        }
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
-            <ProjectMap place={content.locations[p.projectId]} />
-          </>
+                    <CallContact
+                      label={
+                        active === "mua"
+                          ? "Gọi tư vấn mua bán"
+                          : "Gọi tư vấn thuê"
+                      }
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+          <ProjectMap
+            place={content.locations[p.projectId]}
+            slug={p.slug}
+            name={p.name}
+            address={p.location}
+            buildings={mapBuildings(content, { rentalsOnly: false })}
+          />
+        </>
         {!development &&
           (() => {
             const faqs = listingFaqs(content.properties, p);

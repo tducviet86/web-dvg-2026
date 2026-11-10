@@ -352,7 +352,15 @@ export function RentalPage({
             ))}
           </div>
         </section>
-        {project && <ProjectMap place={content.locations[project.projectId]} />}
+        {project && (
+          <ProjectMap
+            place={content.locations[project.projectId]}
+            slug={project.slug}
+            name={project.name}
+            address={project.location}
+            buildings={mapBuildings(content, { rentalsOnly: false })}
+          />
+        )}
         <Reviews project={project?.slug} limit={3} />
         <FaqSection
           faqs={[

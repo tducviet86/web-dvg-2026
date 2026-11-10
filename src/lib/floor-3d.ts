@@ -25,6 +25,8 @@ export type FloorData = {
   notes?: Record<string, string>;
   /** How the developer names a unit, when not "T1-1012": "{tower}{floor}-{unit}". */
   naming?: string;
+  /** Its model apartments can be walked through in 360° (lib/model-tours.ts). */
+  tour360?: boolean;
 };
 
 /** A unit's name: "Panoma 2-1003", or as the project's `naming` writes it. */
@@ -50,8 +52,6 @@ export type UnitKind = {
   flat?: boolean;
   /** Its name when not "tower-floor+number", as for a shophouse. */
   code?: string;
-  /** A 3D model of the unit to walk into (lib/interiors.ts), turned as it stands. */
-  interior?: { key: string; flip?: "x" | "z" | "xz" };
 };
 
 /** "Tòa C4 · Tầng 11-12, 14-27" → 11, 12, 14, 15 … 27; "Tầng 12A" → 12A. */

@@ -1,18 +1,25 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, ChevronLeft, ChevronRight, Eye, Phone, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Phone,
+  Rotate3d,
+  X,
+} from "lucide-react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import Image from "next/image";
-import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { towerFloors, unitName, type FloorData } from "@/lib/floor-3d";
 import { PLAN_OUTLINES } from "@/lib/floor-plan-outlines";
-import { placed } from "@/lib/interiors";
-import { FLOOR_METRES } from "@/lib/rental-map";
 import { planArea } from "./plan-cutout";
+import { Tour360 } from "./tour-360";
+import { modelTour } from "@/lib/model-tours";
 
 const SCALE = 100;
 const WALL = 0.34;
@@ -30,8 +37,6 @@ const SOLD = "#9aa39d";
 const call = telephoneHref(companyHotline);
 
 type Choice = { tower: string; floor: string; unit: string };
-
-const Interior3D = dynamic(() => import("./interior-3d"), { ssr: false });
 
 /** Bedrooms printed on the listing, else judged from the drawn area. */
 const roomsFromArea = (m2: number) =>
@@ -108,8 +113,7 @@ export default function FloorPlan3D({
   const t = useT();
   const stage = useRef<HTMLDivElement>(null);
   const [failed] = useState(() => !canDraw3D());
-  const [inside, setInside] = useState(false);
-  const closeInside = useCallback(() => setInside(false), []);
+  const [tourOpen, setTourOpen] = useState(false);
   const floors = useMemo(
     () => towerFloors(data.plans, tower),
     [data.plans, tower],
@@ -337,8 +341,12 @@ export default function FloorPlan3D({
         : t("Đã giữ chỗ")
     : t("Liên hệ để biết tình trạng căn này");
   const kind = picked ? kindOf(picked) : undefined;
-  const room = kind?.interior ? placed(kind.interior) : undefined;
   const rooms = listing?.rooms ?? model?.rooms ?? kind?.rooms;
+  // The model apartment with as many bedrooms, in 360°.
+  const tour =
+    data.tour360 && picked
+      ? modelTour(["", "1pn", "2pn", "3pn"][Math.min(3, bedroomsOf(picked))])
+      : undefined;
 
   return (
     <section className="fp3d" aria-label={t("Mặt bằng 3D")}>
@@ -493,44 +501,36 @@ export default function FloorPlan3D({
                 </div>
               )}
             </dl>
-            {(kind?.picture || room) && (
+            {kind?.picture && (
               <figure className="fp3d-media">
-                {kind?.picture && (
-                  <a
-                    className="fp3d-picture"
-                    href={kind.picture}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Image
-                      src={kind.picture}
-                      alt={t("Mặt bằng căn {name}", {
-                        name: unitName(data.naming, tower, shownFloor, picked),
-                      })}
-                      width={640}
-                      height={450}
-                      sizes="320px"
-                    />
-                  </a>
-                )}
-                {room && (
-                  <button
-                    type="button"
-                    className="fp3d-inside"
-                    onClick={() => setInside(true)}
-                  >
-                    <Box size={17} aria-hidden="true" />
-                    {t("Vào bên trong căn 3D")}
-                  </button>
-                )}
-                {kind?.picture && (
-                  <figcaption>
-                    {t("Mặt bằng căn · bấm ảnh để phóng to")}
-                  </figcaption>
-                )}
+                <a
+                  className="fp3d-picture"
+                  href={kind.picture}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Image
+                    src={kind.picture}
+                    alt={t("Mặt bằng căn {name}", {
+                      name: unitName(data.naming, tower, shownFloor, picked),
+                    })}
+                    width={640}
+                    height={450}
+                    sizes="320px"
+                  />
+                </a>
+                <figcaption>
+                  {t("Mặt bằng căn · bấm ảnh để phóng to")}
+                </figcaption>
               </figure>
             )}
             <div className="fp3d-actions">
+              {tour && (
+                <button type="button" onClick={() => setTourOpen(true)}>
+                  <Rotate3d size={16} aria-hidden="true" />
+                  {t("Xem 360° căn mẫu")}
+                </button>
+              )}
               {(listing ?? model) && (
                 <Link href={(listing ?? model)?.href ?? ""}>
                   {listing ? t("Xem căn này") : t("Xem căn mẫu cùng vị trí")}
@@ -553,15 +553,31 @@ export default function FloorPlan3D({
           {t("Mặt bằng theo bản vẽ của chủ đầu tư, chỉ để tham khảo.")}
         </p>
       </div>
-      {inside && room && (
-        <Interior3D
-          unit={room}
-          title={`${unitName(data.naming, tower, shownFloor, picked)} · ${rooms ?? ""} · ${t("Tầng {n}", { n: shownFloor })}`}
-          // The floor's slab above the ground: floors under it, as drawn.
-          height={Math.max(0, floors.indexOf(shownFloor)) * FLOOR_METRES}
-          onClose={closeInside}
-        />
-      )}
+      {tourOpen &&
+        tour &&
+        // Over the whole page (the site's header too), not only the map.
+        createPortal(
+          <div
+            className="fp3d-tour"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("Căn mẫu 360°")}
+          >
+            <button
+              type="button"
+              className="fp3d-tour-close"
+              onClick={() => setTourOpen(false)}
+            >
+              <X size={16} aria-hidden="true" />
+              {t("Đóng")}
+            </button>
+            <Tour360
+              tour={tour}
+              title={`${t("Căn mẫu")} ${rooms ?? ""} 360°`}
+            />
+          </div>,
+          document.body,
+        )}
     </section>
   );
 }

@@ -15,6 +15,7 @@ import { PlanCutout, planArea } from "./plan-cutout";
 import { PaymentTable, toDeskUnit } from "./project-sale";
 import { ProjectDesk, ProjectLeadForm } from "./project-sale-desk";
 import { ProjectMap } from "./project-map";
+import type { MapBuilding } from "./rental-map";
 import { ShareButton } from "./rental-inquiry";
 import type { ProjectLocation, Property } from "@/types";
 
@@ -104,6 +105,7 @@ export function SaleUnitBody({
   projectDescription,
   projectPage,
   place,
+  buildings,
   status,
   available,
   foreign,
@@ -116,6 +118,8 @@ export function SaleUnitBody({
   projectDescription: string;
   projectPage: string;
   place?: ProjectLocation;
+  /** The site map's buildings, for the project's place. */
+  buildings: MapBuilding[];
   status: string;
   available: boolean;
   foreign: boolean;
@@ -238,7 +242,13 @@ export function SaleUnitBody({
           <section id="du-an">
             <h2>{projectName}</h2>
             <p className="sale-unit-text">{projectDescription}</p>
-            <ProjectMap place={place} />
+            <ProjectMap
+              place={place}
+              slug={r.projectSlug ?? ""}
+              name={projectName}
+              address={r.location}
+              buildings={buildings}
+            />
             <Link href={projectPage} className="sale-unit-link">
               Xem toàn bộ dự án và mặt bằng
               <ArrowUpRight size={16} aria-hidden="true" />
