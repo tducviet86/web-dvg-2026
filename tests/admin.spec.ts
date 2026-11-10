@@ -467,6 +467,10 @@ test("settings persist and roles limit what staff can open", async ({
   ).toHaveCount(0);
   await sales.goto("/admin/projects");
   await expect(sales.getByRole("button", { name: "Thêm mới" })).toHaveCount(0);
+  // The photo library is the administrator's alone.
+  await expect(
+    nav(sales).getByRole("link", { name: "Thư viện ảnh" }),
+  ).toHaveCount(0);
   await sales.close();
 
   const editor = await browser.newPage();
@@ -475,6 +479,15 @@ test("settings persist and roles limit what staff can open", async ({
     nav(editor).getByRole("link", { name: "Khách hàng" }),
   ).toHaveCount(0);
   await editor.goto("/admin/leads");
+  await expect(
+    editor.getByRole("heading", {
+      name: "Bạn không có quyền truy cập mục này",
+    }),
+  ).toBeVisible();
+  await expect(
+    nav(editor).getByRole("link", { name: "Thư viện ảnh" }),
+  ).toHaveCount(0);
+  await editor.goto("/admin/media");
   await expect(
     editor.getByRole("heading", {
       name: "Bạn không có quyền truy cập mục này",

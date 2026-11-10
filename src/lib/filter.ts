@@ -57,7 +57,10 @@ export const isSaleSearch = (f: Filters) =>
  */
 export function searchUnits(items: Property[], f: Filters) {
   const sale = isSaleSearch(f);
-  const listed = items.filter((p) => (sale ? p.forSale : p.forRent !== false));
+  // Model units (a floor note, no real floor) show on their project's page only.
+  const listed = items.filter((p) =>
+    sale ? p.forSale && !p.floorNote : p.forRent !== false,
+  );
   const budget = Number(f["gia-ban"]) || 0;
   const from = Number(f["gia-ban-tu"]) || 0;
   return filterProperties(
@@ -89,7 +92,7 @@ export const searchFacets = (items: Property[]): SearchFacet[] =>
     bedrooms: p.bedrooms,
     project: p.projectSlug,
     rent: p.forRent !== false,
-    sale: !!p.forSale,
+    sale: !!p.forSale && !p.floorNote,
     words: unitWords(p),
   }));
 
@@ -99,7 +102,7 @@ export const RENT_RANGE: [number, number] = [0, 100];
 /** Sale slider: the cheapest to the dearest unit for sale, in whole tỷ. */
 export function saleRange(items: Property[]): [number, number] {
   const prices = items
-    .filter((p) => p.forSale && p.saleVnd)
+    .filter((p) => p.forSale && !p.floorNote && p.saleVnd)
     .map((p) => p.saleVnd! / 1e9);
   if (!prices.length) return [0, 20];
   const low = Math.floor(Math.min(...prices));

@@ -160,6 +160,8 @@ export function ProjectSalePage({
   }));
   const types = api?.unitTypes ?? [];
   const steps = api?.paymentSchedule ?? [];
+  // Payment and loan: not on Capital Square's page, which is not on sale yet.
+  const payment = p.slug !== "capital-square";
   const policies = api?.salesPolicies ?? [];
   const connections = api?.connections ?? [];
   const progress = api?.progressPhotos ?? [];
@@ -275,7 +277,7 @@ export function ProjectSalePage({
     ...(policies.length
       ? [["chinh-sach", "Chính sách"] as [string, string]]
       : []),
-    ["thanh-toan", "Thanh toán"],
+    ...(payment ? [["thanh-toan", "Thanh toán"] as [string, string]] : []),
     ["vi-tri", "Vị trí & tiện ích"],
     ["dang-ky", "Đăng ký tư vấn"],
   ];
@@ -486,20 +488,26 @@ export function ProjectSalePage({
           </section>
         )}
 
-        <section id="thanh-toan" className="project-block project-block-dark">
-          <div className="container">
-            <span className="signature-kicker">THANH TOÁN & VAY NGÂN HÀNG</span>
-            <h2>Ước tính dòng tiền của bạn</h2>
-            {steps.length === 0 && (
-              <p className="desk-note">
-                Tiến độ thanh toán đang được cập nhật. Bạn vẫn có thể ước tính
-                khoản vay bên dưới.
-              </p>
-            )}
-            <PaymentPlanner steps={steps} startPrice={0} />
-            {api?.paymentNote && <p className="desk-note">{api.paymentNote}</p>}
-          </div>
-        </section>
+        {payment && (
+          <section id="thanh-toan" className="project-block project-block-dark">
+            <div className="container">
+              <span className="signature-kicker">
+                THANH TOÁN & VAY NGÂN HÀNG
+              </span>
+              <h2>Ước tính dòng tiền của bạn</h2>
+              {steps.length === 0 && (
+                <p className="desk-note">
+                  Tiến độ thanh toán đang được cập nhật. Bạn vẫn có thể ước tính
+                  khoản vay bên dưới.
+                </p>
+              )}
+              <PaymentPlanner steps={steps} startPrice={0} />
+              {api?.paymentNote && (
+                <p className="desk-note">{api.paymentNote}</p>
+              )}
+            </div>
+          </section>
+        )}
 
         <section id="vi-tri" className="project-block">
           <div className="container">

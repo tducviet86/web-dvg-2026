@@ -23,6 +23,9 @@ import {
   TRENDING_LABEL,
 } from "@/lib/highlights";
 
+/** The count of hidden units the note was closed at (this browser). */
+const DELISTED_SEEN_KEY = "dvg:admin-delisted-seen";
+
 type Stats = {
   total: number;
   published: number;
@@ -136,6 +139,14 @@ export function PropertiesList({
   const [rows, setRows] = useState<Unit[] | null>(null);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<Stats | null>(null);
+  // The note on hidden units, once closed, stays closed until the count changes.
+  const [seenDelisted, setSeenDelisted] = useState(() => {
+    try {
+      return Number(localStorage.getItem(DELISTED_SEEN_KEY)) || 0;
+    } catch {
+      return 0;
+    }
+  });
   const [projects, setProjects] = useState<[string, string][]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -330,15 +341,39 @@ export function PropertiesList({
           </button>
         ))}
       </div>
-      {!filters.availability && !filters.q && !!stats?.delisted && (
-        <p className="units-delisted-note">
-          {stats.delisted} căn đã cho thuê hoặc đã bán quá {stats.hideDays} ngày
-          đã tự ẩn khỏi website và không hiện trong danh sách này.{" "}
-          <button type="button" onClick={() => set({ availability: "RENTED" })}>
-            Xem mục Đã cho thuê
-          </button>
-        </p>
-      )}
+      {!filters.availability &&
+        !filters.q &&
+        !!stats?.delisted &&
+        stats.delisted !== seenDelisted && (
+          <p className="units-delisted-note">
+            {stats.delisted} căn đã cho thuê hoặc đã bán quá {stats.hideDays}{" "}
+            ngày đã tự ẩn khỏi website và không hiện trong danh sách này.{" "}
+            <button
+              type="button"
+              onClick={() => set({ availability: "RENTED" })}
+            >
+              Xem mục Đã cho thuê
+            </button>
+            <button
+              type="button"
+              className="units-delisted-close"
+              aria-label="Đóng thông báo"
+              onClick={() => {
+                setSeenDelisted(stats.delisted ?? 0);
+                try {
+                  localStorage.setItem(
+                    DELISTED_SEEN_KEY,
+                    String(stats.delisted),
+                  );
+                } catch {
+                  /* storage blocked: closed for this visit only */
+                }
+              }}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          </p>
+        )}
 
       <section className="admin-panel units-panel">
         <div className="units-toolbar">

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import type { Property } from "../src/types";
 import { propertyMedia, videoSource } from "../src/lib/property-media";
-import { filterProperties } from "../src/lib/filter";
+import { filterProperties, searchUnits } from "../src/lib/filter";
 import { createRequire } from "node:module";
 import { existsSync } from "node:fs";
 import { BE_DIR, E2E_DATABASE_URL } from "../playwright.config";
@@ -1820,4 +1820,41 @@ test("a tower on the map lists its units to rent and to buy, hottest first", asy
   const split = page.locator(".rmap-panel .rmap-split");
   await expect(split).toBeVisible();
   await expect(split.locator("h4")).toHaveText([/^Cho thuê/, /^Bán/]);
+});
+
+test("model units stay off the sale search: only their project page shows them", () => {
+  const base = {
+    id: "1",
+    slug: "a",
+    name: "A",
+    projectId: "p",
+    projectSlug: "capital-square",
+    location: "Đà Nẵng",
+    type: "Căn hộ",
+    price: 0,
+    area: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    floor: 10,
+    furniture: "",
+    status: "Còn trống",
+    image: "",
+    description: "",
+    updatedAt: "2026-01-01",
+    forRent: false,
+    forSale: true,
+    saleVnd: 3e9,
+  } as unknown as Property;
+  const model = { ...base, id: "2", slug: "b", floorNote: "Căn mẫu" };
+  const found = searchUnits([base, model], { "nhu-cau": "mua" });
+  expect(found.map((p) => p.slug)).toEqual(["a"]);
+});
+
+test("Capital Square's page has no payment and loan block", async ({
+  page,
+}) => {
+  await page.goto("/du-an/capital-square");
+  await expect(page.locator("#vi-tri")).toBeAttached();
+  await expect(page.locator("#thanh-toan")).toHaveCount(0);
+  await expect(page.locator('a[href="#thanh-toan"]')).toHaveCount(0);
 });

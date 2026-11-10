@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 import { api, errorMessage } from "./api";
 import { availabilityOptions } from "./adapters";
-import { leadStatusOptions } from "./model";
+import { leadStatusOptions, sectionPermission } from "./model";
 import { fileSize } from "./media-library";
 import type { SceneProject } from "./portfolio-scene";
 
@@ -451,9 +451,10 @@ export function Overview({
 
   const kpis: Kpi[] = [
     {
-      label: "Lượt xem căn hộ",
+      // The period in the label: each browser keeps its own choice of range.
+      label: `Lượt xem căn hộ · ${period}`,
       value: t?.views,
-      note: `so với ${period} trước`,
+      note: `so với ${period} trước đó`,
       delta: growth(t?.views, t?.prevViews),
       spark: t?.series.map((d) => d.views),
       icon: Eye,
@@ -462,7 +463,7 @@ export function Overview({
     ...(leads
       ? [
           {
-            label: "Yêu cầu tư vấn",
+            label: `Yêu cầu tư vấn · ${period}`,
             value: t?.leads,
             note: `${newLeads} chưa liên hệ`,
             delta: growth(t?.leads, t?.prevLeads),
@@ -593,7 +594,7 @@ export function Overview({
       href: "/admin/posts/new",
       icon: PenLine,
     },
-    can("media:write") && {
+    can(sectionPermission.media) && {
       label: "Thư viện ảnh",
       href: "/admin/media",
       icon: Images,
@@ -1104,7 +1105,8 @@ export function Overview({
 
       {data && (
         <p className="dash-footnote">
-          Thư viện: {nf(data.media.total)} tệp · {fileSize(data.media.bytes)}.
+          {can(sectionPermission.media) &&
+            `Thư viện: ${nf(data.media.total)} tệp · ${fileSize(data.media.bytes)}. `}
           Lượt xem tính theo ngày UTC; căn mẫu không được tính.
         </p>
       )}

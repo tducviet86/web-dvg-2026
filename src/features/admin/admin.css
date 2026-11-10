@@ -5314,15 +5314,16 @@
   color: #6b5a2e;
 }
 .units-delisted-note {
+  position: relative;
   margin: 12px 0 0;
-  padding: 10px 14px;
+  padding: 10px 44px 10px 14px;
   border: 1px solid #e7dcbf;
   border-radius: 10px;
   background: #fbf6e8;
   font-size: 13.5px;
   color: #4d4223;
 }
-.units-delisted-note button {
+.units-delisted-note button:not(.units-delisted-close) {
   padding: 0;
   border: 0;
   background: none;
@@ -5331,6 +5332,26 @@
   color: var(--c-green-700, #1d4d3f);
   text-decoration: underline;
   cursor: pointer;
+}
+
+.units-delisted-close {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #4d4223;
+  cursor: pointer;
+  translate: 0 -50%;
+}
+.units-delisted-close:hover {
+  background: #f1e6c8;
 }
 
 /* "Loại hình": one row of pills per group (Căn hộ / Nhà phố / Mặt bằng). */

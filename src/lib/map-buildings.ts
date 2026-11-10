@@ -566,8 +566,9 @@ export function mapBuildings(
             // For the map's filter: -1 without rooms, 0 when not for rent.
             bedrooms: hasRooms(p) ? p.bedrooms : -1,
             rent: p.forRent ? p.price : 0,
-            forRent: !!p.forRent || !p.forSale,
-            forSale: !!p.forSale,
+            // A model unit is neither: it only shows how the units look.
+            forRent: !p.floorNote && (!!p.forRent || !p.forSale),
+            forSale: !p.floorNote && !!p.forSale,
             hot: p.interestScore ?? 0,
             trending: !!p.trending,
           })),
