@@ -1000,3 +1000,38 @@ test("project form: payment steps total 100%, are saved and stay editable", asyn
     paymentSchedule: [],
   });
 });
+
+test("a unit page is not counted as a view while signed in to Admin", async ({
+  browser,
+  page,
+}) => {
+  const api = await apiAs();
+  const list = (await api.get("/properties?pageSize=20")) as {
+    data: { slug: string; forRent?: boolean; isDemo?: boolean }[];
+  };
+  const unit = list.data.find((p) => p.forRent && !p.isDemo);
+  expect(unit).toBeTruthy();
+  const url = `/cho-thue/${unit!.slug}`;
+  const counted = (p: typeof page) => {
+    const sent: string[] = [];
+    p.on("request", (r) => {
+      if (r.method() === "POST" && r.url().endsWith("/view"))
+        sent.push(r.url());
+    });
+    return sent;
+  };
+
+  // A visitor: one view.
+  const visitor = await browser.newPage();
+  const fromVisitor = counted(visitor);
+  await visitor.goto(url);
+  await expect.poll(() => fromVisitor.length).toBe(1);
+  await visitor.close();
+
+  // Staff signed in: none.
+  await login(page);
+  const fromStaff = counted(page);
+  await page.goto(url);
+  await page.waitForLoadState("networkidle");
+  expect(fromStaff).toHaveLength(0);
+});
