@@ -4864,6 +4864,224 @@ a.rmap-reset {
 .fp3d-state[data-state="sold"] {
   color: #5f6f66;
 }
+/* The unit's plan, with the way into it in 3D laid over it. */
+.fp3d-media {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.fp3d-media figcaption {
+  font-size: 12px;
+  color: #5f6f66;
+  text-align: center;
+}
+.fp3d-inside {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #f2c14e;
+  color: #0b2a22;
+  font-size: 14.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 20px #06140f33;
+  cursor: pointer;
+}
+.fp3d-picture + .fp3d-inside {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+/* Inside a unit in 3D: the whole screen. */
+.in3d {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: #cfe2ef;
+}
+.in3d-stage,
+.in3d-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+.in3d-head {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+.in3d-head > * {
+  pointer-events: auto;
+}
+.in3d-head div {
+  display: grid;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: #061b16d9;
+  color: #fff;
+}
+.in3d-head b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.in3d-head small {
+  color: #f2c14e;
+  font-size: 12.5px;
+}
+.in3d-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #061b16eb;
+  color: #fff;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+/* Arrows to the other rooms, as in the 360° tours of the model units. */
+.in3d-spot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 2px solid var(--c-gold-300);
+  border-radius: 50%;
+  background: #061b16b3;
+  cursor: pointer;
+}
+.in3d-spot[hidden] {
+  display: none;
+}
+.in3d-spot::after {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  border-top: 3px solid var(--c-gold-300);
+  border-left: 3px solid var(--c-gold-300);
+  transform: translateY(4px) rotate(45deg);
+}
+.in3d-spot span {
+  position: absolute;
+  bottom: 52px;
+  left: 50%;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--c-green-900);
+  color: #fff;
+  font-size: 12.5px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.in3d-rooms {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  display: flex;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  padding: 6px;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: #061b16d9;
+  scrollbar-width: none;
+  translate: -50% 0;
+}
+.in3d-rooms button {
+  flex: none;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.in3d-rooms button:hover,
+.in3d-rooms button:focus-visible {
+  background: #ffffff26;
+}
+.in3d-plan {
+  position: absolute;
+  top: 70px;
+  right: 12px;
+  width: 220px;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px #06140f40;
+}
+.in3d-plan span {
+  position: absolute;
+  inset: 0;
+  background-size: 100% 100%;
+}
+.in3d-plan i {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-right: 12px solid transparent;
+  border-bottom: 26px solid #f2c14ecc;
+  border-left: 12px solid transparent;
+  filter: drop-shadow(0 0 2px #0b2a22);
+}
+.in3d-hint {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ffffffd9;
+  color: #0b2a22;
+  font-size: 12.5px;
+  white-space: nowrap;
+  translate: -50% 0;
+}
+@media (max-width: 760px) {
+  .in3d-plan {
+    top: 88px;
+    width: 130px;
+  }
+  .in3d-hint {
+    display: none;
+  }
+}
+/* The developer's plan of the unit, with its sizes. */
+.fp3d-picture {
+  display: block;
+  overflow: hidden;
+  border: 1px solid #e6e8df;
+  border-radius: 12px;
+  background: #fff;
+}
+.fp3d-picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 .fp3d-info dl {
   display: grid;
   gap: 6px;
@@ -4893,7 +5111,9 @@ a.rmap-reset {
 }
 .fp3d-actions a {
   display: inline-flex;
+  flex: 1 1 140px;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   min-height: 42px;
   padding: 0 14px;

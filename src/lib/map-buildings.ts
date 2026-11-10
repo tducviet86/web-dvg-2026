@@ -190,6 +190,163 @@ function panomaKinds(): Record<string, UnitKind> {
   );
 }
 
+const PONTE = "/images/projects/sun-ponte-residence/";
+/**
+ * Sun Ponte's units from the developer's typical floor sheets: type and the
+ * side the unit looks out of (west: the Hàn river). DK is a dual-key unit.
+ */
+// prettier-ignore
+const PONTE_UNITS: Record<string, Record<string, [string, string]>> = {
+  "ponte-t1-tang-3a-18.webp": { "10": ["DK", "Đông Nam"], "11": ["2BR", "Nam"], "12": ["3BR", "Tây Nam"], "01": ["1BR+", "Tây"], "02": ["STU", "Tây"], "03": ["3BR", "Tây"], "3A": ["2BR", "Tây Bắc"], "05": ["2BR", "Đông Bắc"], "06": ["1BR+", "Đông"], "07": ["STU", "Đông"], "08": ["STU", "Đông"], "09": ["1BR+", "Đông"] },
+  "ponte-t2-tang-3a-18.webp": { "10": ["2BR", "Đông Nam"], "11": ["2BR", "Tây Nam"], "01": ["STU", "Tây"], "02": ["1BR+", "Tây"], "03": ["STU", "Tây"], "3A": ["3BR", "Tây Bắc"], "05": ["2BR", "Bắc"], "06": ["DK", "Đông Bắc"], "07": ["1BR+", "Đông"], "08": ["1BR+", "Đông"], "09": ["STU", "Đông"] },
+  "ponte-t1-tang-19-21-23.webp": { "10": ["DK", "Đông Nam"], "11": ["2BR", "Nam"], "12": ["3BR", "Tây Nam"], "01": ["1BR+", "Tây"], "02": ["2BR", "Tây"], "03": ["1BR+", "Tây Bắc"], "3A": ["DK", "Tây Bắc"], "05": ["DK", "Đông Bắc"], "06": ["1BR+", "Đông Bắc"], "07": ["2BR", "Đông"], "08": ["STU", "Đông"], "09": ["1BR+", "Đông"] },
+  "ponte-t2-tang-19-21-23.webp": { "10": ["3BR", "Đông Nam"], "11": ["1BR", "Đông Nam"], "12": ["1BR", "Tây Nam"], "12A": ["3BR", "Tây Nam"], "01": ["STU", "Tây"], "02": ["1BR+", "Tây"], "03": ["STU", "Tây"], "3A": ["3BR", "Tây Bắc"], "05": ["2BR", "Bắc"], "06": ["DK", "Đông Bắc"], "07": ["1BR+", "Đông"], "08": ["1BR+", "Đông"], "09": ["STU", "Đông"] },
+  "ponte-t1-tang-20-22-24.webp": { "10": ["DK", "Đông Nam"], "11": ["2BR", "Nam"], "12": ["3BR", "Tây Nam"], "01": ["1BR+", "Tây"], "02": ["2BR", "Tây"], "03": ["1BR+", "Tây Bắc"], "3A": ["DK", "Tây Bắc"], "05": ["DK", "Đông Bắc"], "06": ["1BR+", "Đông Bắc"], "07": ["2BR", "Đông"], "08": ["STU", "Đông"], "09": ["1BR+", "Đông"] },
+  "ponte-t2-tang-20-22-24.webp": { "10": ["3BR", "Đông Nam"], "11": ["1BR", "Đông Nam"], "12": ["1BR", "Tây Nam"], "12A": ["3BR", "Tây Nam"], "01": ["STU", "Tây"], "02": ["1BR+", "Tây"], "03": ["STU", "Tây"], "3A": ["3BR", "Tây Bắc"], "05": ["2BR", "Bắc"], "06": ["DK", "Đông Bắc"], "07": ["1BR+", "Đông"], "08": ["1BR+", "Đông"], "09": ["STU", "Đông"] },
+};
+const PONTE_TYPES: Record<string, [string, number]> = {
+  STU: ["Studio", 1],
+  "1BR": ["1PN", 1],
+  "1BR+": ["1PN+1", 1],
+  "2BR": ["2PN", 2],
+  "3BR": ["3PN", 3],
+  DK: ["Dual Key", 2],
+};
+/** The developer's plan of a unit type, with its sizes, by tower/type/area. */
+const PONTE_PICTURES: Record<string, string> = {
+  "t1/3BR/91.1": "can/3pn-91-t1.webp",
+  "t2/3BR/91.1": "can/3pn-91-t2.webp",
+  "DK/92.2": "can/dk-92.webp",
+  "DK/92.3": "can/dk-92.webp",
+  "DK/88.2": "can/dk-88.webp",
+  "2BR/77.1": "can/2pn-77.webp",
+  "2BR/70.8": "can/2pn-70.webp",
+  "1BR+/52.8": "can/1pn-1-52.webp",
+  "1BR/43.5": "can/1pn-43.webp",
+  "3BR/103.9": "can/3pn-104.webp",
+};
+/** The podium's shophouses (two floors each), by the side they front on. */
+// prettier-ignore
+const PONTE_SHOPS: Record<string, Record<string, string>> = {
+  "ponte-khoi-de-tang-1.webp": { "06": "Tây Nam", "05": "Nam", "3A": "Đông Nam", "03": "Đông Nam", "02": "Đông", "01": "Đông", "07": "Tây", "08": "Tây", "09": "Tây", "10": "Tây", "11": "Tây", "26": "Đông", "12": "Tây", "25": "Đông", "12A": "Tây", "24": "Đông", "12B": "Tây", "15": "Tây", "16": "Tây", "17": "Tây", "18": "Tây", "19": "Tây Bắc", "20": "Bắc", "21": "Đông Bắc", "22": "Đông Bắc", "23": "Đông" },
+  "ponte-khoi-de-tang-2.webp": { "06": "Tây Nam", "05": "Nam", "3A": "Đông Nam", "03": "Đông Nam", "02": "Đông", "07": "Tây", "08": "Tây", "09": "Tây", "10": "Tây", "11": "Tây", "26": "Đông", "12": "Tây", "25": "Đông", "12A": "Tây", "24": "Đông", "12B": "Tây", "15": "Tây", "16": "Tây", "17": "Tây", "18": "Tây", "19": "Tây Bắc", "20": "Bắc", "21": "Đông Bắc", "22": "Đông Bắc" },
+};
+function ponteShops(): Record<string, UnitKind> {
+  return Object.fromEntries(
+    Object.entries(PONTE_SHOPS).flatMap(([file, shops]) =>
+      Object.entries(shops).map(([n, dir]) => [
+        `${file}/${n}`,
+        {
+          rooms: t("Shophouse"),
+          bedrooms: 0,
+          area: PLAN_OUTLINES[file]?.units[n]?.inner || "",
+          view: PANOMA_DIRS[dir],
+          code: `Shophouse T-01-${n}`,
+        },
+      ]),
+    ),
+  );
+}
+/**
+ * Units with a 3D model to walk into: the model of their type, mirrored for
+ * those on the other side of the tower from the drawn one.
+ */
+const PONTE_INSIDE: Record<string, { key: string; flip?: "x" | "z" | "xz" }> =
+  (() => {
+    const sets: [string[], Record<string, [string, ("x" | "z" | "xz")?]>][] = [
+      [
+        [
+          "ponte-t1-tang-3a-18.webp",
+          "ponte-t1-tang-19-21-23.webp",
+          "ponte-t1-tang-20-22-24.webp",
+        ],
+        {
+          "10": ["ponte-dk-92"],
+          "11": ["ponte-2pn-70", "x"],
+          "12": ["ponte-3pn-91-t1"],
+        },
+      ],
+      [
+        ["ponte-t1-tang-20-22-24.webp"],
+        { "3A": ["ponte-dk-88"], "05": ["ponte-dk-88", "z"] },
+      ],
+      [
+        ["ponte-t2-tang-3a-18.webp"],
+        {
+          "11": ["ponte-2pn-77"],
+          "10": ["ponte-2pn-77", "z"],
+          "07": ["ponte-1pn-1-52"],
+          "08": ["ponte-1pn-1-52", "x"],
+        },
+      ],
+      [
+        [
+          "ponte-t2-tang-3a-18.webp",
+          "ponte-t2-tang-19-21-23.webp",
+          "ponte-t2-tang-20-22-24.webp",
+        ],
+        {
+          "3A": ["ponte-3pn-91-t2"],
+          "05": ["ponte-2pn-70"],
+          "06": ["ponte-dk-92", "x"],
+        },
+      ],
+      [
+        ["ponte-t2-tang-19-21-23.webp", "ponte-t2-tang-20-22-24.webp"],
+        {
+          "02": ["ponte-1pn-1-52", "xz"],
+          "07": ["ponte-1pn-1-52"],
+          "08": ["ponte-1pn-1-52", "x"],
+        },
+      ],
+      [
+        ["ponte-t2-tang-20-22-24.webp"],
+        {
+          "12": ["ponte-1pn-43"],
+          "11": ["ponte-1pn-43", "z"],
+          "12A": ["ponte-3pn-104"],
+        },
+      ],
+    ];
+    return Object.fromEntries(
+      sets.flatMap(([files, units]) =>
+        files.flatMap((file) =>
+          Object.entries(units).map(([n, [key, flip]]) => [
+            `${file}/${n}`,
+            flip ? { key, flip } : { key },
+          ]),
+        ),
+      ),
+    );
+  })();
+function ponteKinds(): Record<string, UnitKind> {
+  return Object.fromEntries(
+    Object.entries(PONTE_UNITS).flatMap(([file, units]) =>
+      Object.entries(units).map(([n, [type, dir]]) => {
+        const area = PLAN_OUTLINES[file]?.units[n]?.inner ?? 0;
+        const [rooms, bedrooms] = PONTE_TYPES[type];
+        const picture =
+          PONTE_PICTURES[`${file.slice(6, 8)}/${type}/${area}`] ??
+          PONTE_PICTURES[`${type}/${area}`];
+        return [
+          `${file}/${n}`,
+          {
+            rooms: t(rooms),
+            bedrooms,
+            area,
+            // Same sides as Sun Panoma's: west looks over the Hàn river.
+            view: PANOMA_DIRS[dir],
+            ...(picture && { picture: PONTE + picture, flat: true }),
+            ...(PONTE_INSIDE[`${file}/${n}`] && {
+              interior: PONTE_INSIDE[`${file}/${n}`],
+            }),
+          },
+        ];
+      }),
+    ),
+  );
+}
+
 /**
  * Floor plans kept with the site for projects that have none in Admin. The
  * Monarchy: floors 5–17 of A are typical; B's plan of floor 3 stands in for
@@ -203,6 +360,7 @@ const SITE_PLANS: Record<
     pictures?: Record<string, string>;
     kinds?: Record<string, UnitKind>;
     notes?: Record<string, string>;
+    naming?: string;
   }
 > = {
   // Sun Panoma: P1's six typical floors and P2's, from the developer. Floors with
@@ -252,6 +410,32 @@ const SITE_PLANS: Record<
       { tower: "Panoma 2", image: "", floors: ["26", "27"] },
     ].map((p) => ({ ...p, image: p.image && PANOMA + p.image })),
     kinds: { ...panomaKinds(), ...panomaShops() },
+  },
+  // Sun Ponte: the podium's two floors of shophouses under both towers; T1 and
+  // T2 on the developer's typical floors from 4, joined by their middle units
+  // on 19–24. 3 and 3A, between 3 and 4 (amenities, events, play): no drawing.
+  "sun-ponte-residence": {
+    towers: ["T1", "T2"],
+    plans: ["T1", "T2"].flatMap((tower) => {
+      const own = `ponte-${tower.toLowerCase()}-tang-`;
+      return [
+        { tower, image: "ponte-khoi-de-tang-1.webp", floors: ["1"] },
+        { tower, image: "ponte-khoi-de-tang-2.webp", floors: ["2"] },
+        { tower, image: "", floors: ["3", "3A"] },
+        { tower, image: `${own}3a-18.webp`, floors: range(4, 18) },
+        { tower, image: `${own}19-21-23.webp`, floors: ["19", "21", "23"] },
+        { tower, image: `${own}20-22-24.webp`, floors: ["20", "22", "24"] },
+      ].map((p) => ({ ...p, image: p.image && PONTE + p.image }));
+    }),
+    kinds: { ...ponteKinds(), ...ponteShops() },
+    notes: Object.fromEntries(
+      ["T1", "T2"].map((tower) => [
+        `${tower}/3A`,
+        t("Tầng tiện ích: giải trí, hội nghị và khu vui chơi."),
+      ]),
+    ),
+    // As on the drawings: T108-12 is T1, floor 8, unit 12.
+    naming: "{tower}{floor}-{unit}",
   },
   "monarchy-apartments": {
     towers: ["Monarchy A", "Monarchy B"],
@@ -368,6 +552,7 @@ function floorData(
       pictures: kept.pictures,
       kinds: kept.kinds,
       notes: kept.notes,
+      naming: kept.naming,
     };
   if (!plans.length) return undefined;
   return {

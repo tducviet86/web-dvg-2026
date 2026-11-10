@@ -17,6 +17,7 @@ import {
 } from "../src/lib/rental-map";
 import { PLAN_ANCHORS, PLAN_OUTLINES } from "../src/lib/floor-plan-outlines";
 import { unitFits } from "../src/lib/map-filter";
+import { INTERIORS } from "../src/lib/interiors";
 import { apiAs, humanPause } from "./helpers";
 
 const room = "/cho-thue/can-ho-sun-ponte-residence-demo-01";
@@ -1504,6 +1505,157 @@ test("Sun Panoma's floor plans: every unit, laid on its own tower", () => {
           `${file} ${p}`,
         ).toBe(true);
   }
+});
+
+test("Sun Ponte's floor plans: every unit on T1, T2 or the floors joining them", () => {
+  const onSite = (file: string) => {
+    const { image, site } = PLAN_ANCHORS[file];
+    const [[x0, y0], [x1, y1], [x2, y2]] = image;
+    const det = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+    return ([x, y]: number[]) => {
+      const u = ((x - x0) * (y2 - y0) - (x2 - x0) * (y - y0)) / det;
+      const v = ((x1 - x0) * (y - y0) - (x - x0) * (y1 - y0)) / det;
+      return [0, 1].map(
+        (k) =>
+          site[0][k] +
+          u * (site[1][k] - site[0][k]) +
+          v * (site[2][k] - site[0][k]),
+      );
+    };
+  };
+  const LAT = 16.058169;
+  const LNG = 108.230759;
+  const ring = (b: (typeof BUILDING_BLOCKS)[string][number]) =>
+    blockRing(LAT, LNG, b)
+      .slice(0, 4)
+      .map(([lng, lat]) => [
+        (lng - LNG) * 110_574 * Math.cos((LAT * Math.PI) / 180),
+        (lat - LAT) * 110_574,
+      ]);
+  const blocks = BUILDING_BLOCKS["sun-ponte-residence"];
+  const bridge = ring(blocks.find((b) => b.bare)!);
+  const towerRing = (name: string) =>
+    ring(blocks.find((b) => b.tower === name)!);
+  const toEdge = (p: number[], r: number[][]) => {
+    const inside =
+      r.every(([ax, ay], i) => {
+        const [bx, by] = r[(i + 1) % r.length];
+        return (bx - ax) * (p[1] - ay) - (by - ay) * (p[0] - ax) <= 0;
+      }) ||
+      r.every(([ax, ay], i) => {
+        const [bx, by] = r[(i + 1) % r.length];
+        return (bx - ax) * (p[1] - ay) - (by - ay) * (p[0] - ax) >= 0;
+      });
+    if (inside) return 0;
+    return Math.min(
+      ...r.map(([ax, ay], i) => {
+        const [bx, by] = r[(i + 1) % r.length];
+        const t = Math.max(
+          0,
+          Math.min(
+            1,
+            ((p[0] - ax) * (bx - ax) + (p[1] - ay) * (by - ay)) /
+              ((bx - ax) ** 2 + (by - ay) ** 2),
+          ),
+        );
+        return Math.hypot(ax + t * (bx - ax) - p[0], ay + t * (by - ay) - p[1]);
+      }),
+    );
+  };
+  const counts: Record<string, [string, number]> = {
+    "ponte-t1-tang-3a-18.webp": ["T1", 12],
+    "ponte-t2-tang-3a-18.webp": ["T2", 11],
+    "ponte-t1-tang-19-21-23.webp": ["T1", 12],
+    "ponte-t2-tang-19-21-23.webp": ["T2", 13],
+    "ponte-t1-tang-20-22-24.webp": ["T1", 12],
+    "ponte-t2-tang-20-22-24.webp": ["T2", 13],
+  };
+  for (const [file, [tower, count]] of Object.entries(counts)) {
+    const units = PLAN_OUTLINES[file].units;
+    expect(Object.keys(units), file).toHaveLength(count);
+    const map = onSite(file);
+    const own = towerRing(tower);
+    for (const [n, unit] of Object.entries(units)) {
+      expect(unit.inner, `${file} ${n}`).toBeGreaterThan(20);
+      // On 3A–18 the towers stand apart; above, the middle units join them.
+      for (const p of unit.points)
+        expect(
+          Math.min(
+            toEdge(map(p), own),
+            file.includes("3a-18") ? Infinity : toEdge(map(p), bridge),
+          ),
+          `${file} ${n} ${p}`,
+        ).toBeLessThan(4);
+    }
+  }
+  // The podium's shophouses: 26 on floor 1, 24 on floor 2 (the nursery takes
+  // the middle), all on the podium.
+  const podium = ring(blocks.find((b) => !b.tower && !b.bare)!);
+  for (const [file, count] of [
+    ["ponte-khoi-de-tang-1.webp", 26],
+    ["ponte-khoi-de-tang-2.webp", 24],
+  ] as const) {
+    const units = PLAN_OUTLINES[file].units;
+    expect(Object.keys(units), file).toHaveLength(count);
+    const map = onSite(file);
+    for (const [n, unit] of Object.entries(units)) {
+      expect(unit.inner, `${file} ${n}`).toBeGreaterThan(30);
+      for (const p of unit.points)
+        expect(toEdge(map(p), podium), `${file} ${n} ${p}`).toBeLessThan(3);
+    }
+  }
+});
+
+test("the 3D unit to walk into: everything inside it, no room spot in a wall", () => {
+  for (const [name, unit] of Object.entries(INTERIORS)) {
+    const within = ([x0, z0, x1, z1]: number[]) =>
+      x0 >= 0 &&
+      z0 >= 0 &&
+      x1 <= unit.width + 1e-6 &&
+      z1 <= unit.depth + 1e-6 &&
+      x0 < x1 &&
+      z0 <= z1;
+    for (const r of [
+      ...unit.walls,
+      ...unit.doors,
+      ...unit.glass,
+      ...unit.windows,
+    ])
+      expect(within(r), `${name} ${r}`).toBe(true);
+    for (const f of unit.furniture)
+      expect(within(f.at), `${name} ${f.kind} ${f.at}`).toBe(true);
+    const inWall = ([x, z]: number[]) =>
+      unit.walls.some(
+        ([x0, z0, x1, z1]) => x > x0 && x < x1 && z > z0 && z < z1,
+      );
+    for (const room of unit.rooms)
+      expect(inWall(room.at), `${name} ${room.name}`).toBe(false);
+    // No piece of furniture stands in a wall.
+    for (const f of unit.furniture) {
+      const [x0, z0, x1, z1] = f.at;
+      expect(
+        inWall([(x0 + x1) / 2, (z0 + z1) / 2]),
+        `${name} ${f.kind} ${f.at}`,
+      ).toBe(false);
+    }
+  }
+});
+
+test("Sun Ponte T1-12 opens in 3D from its unit card, and closes", async ({
+  page,
+}) => {
+  await page.goto("/ban-do?du-an=sun-ponte-residence&toa=T1&tang=10&can=12");
+  const inside = page.getByRole("button", { name: "Vào bên trong căn 3D" });
+  await expect(inside).toBeVisible({ timeout: 20_000 });
+  await inside.click();
+  const room = page.getByRole("dialog", { name: /T110-12/ });
+  await expect(room).toBeVisible();
+  await expect(room.locator(".in3d-rooms button")).toHaveCount(9);
+  await expect(room.locator(".in3d-head small")).toContainText(
+    "Đang nhìn hướng",
+  );
+  await room.getByRole("button", { name: "Thoát" }).click();
+  await expect(room).toHaveCount(0);
 });
 
 test("Capital Square stands inside its roads, each tower with its floors", () => {

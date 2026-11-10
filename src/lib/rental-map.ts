@@ -347,8 +347,9 @@ export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
       lowFloors: ["shop"],
     },
   ],
-  // East of Trần Hưng Đạo the podium (102 × 31 m) with T1 and T2, joined on floors
-  // 19–24. West of the road the three Rio blocks. Outlines from OpenStreetMap.
+  // East of Trần Hưng Đạo the podium (102 × 31 m, two floors of shops) with T1
+  // and T2: floors 1–24 and 3A between 3 and 4, joined on floors 19–24. West
+  // of the road the three Rio blocks. Outlines from OpenStreetMap.
   "sun-ponte-residence": [
     rectangle(
       [
@@ -357,31 +358,31 @@ export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
         [45, -47],
         [38, 54],
       ],
-      { base: 0, height: 16.5 },
+      { base: 0, height: 2 * FLOOR_METRES },
     ),
     {
       tower: "T1",
       ...placed(27.8, -23.5, 86),
       width: 38,
       depth: 26,
-      base: 16.5,
-      height: 99,
+      base: 2 * FLOOR_METRES,
+      height: 25 * FLOOR_METRES,
     },
     {
       tower: "T2",
       ...placed(24.2, 28.5, 86),
       width: 38,
       depth: 26,
-      base: 16.5,
-      height: 99,
+      base: 2 * FLOOR_METRES,
+      height: 25 * FLOOR_METRES,
     },
     {
       bare: true,
       ...placed(26, 2.5, 86),
       width: 14,
       depth: 22,
-      base: 74,
-      height: 96,
+      base: 19 * FLOOR_METRES,
+      height: 25 * FLOOR_METRES,
     },
     rectangle(
       [

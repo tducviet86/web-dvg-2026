@@ -1,13 +1,17 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, Phone, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Box, ChevronLeft, ChevronRight, Eye, Phone, X } from "lucide-react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
-import { towerFloors, type FloorData } from "@/lib/floor-3d";
+import { towerFloors, unitName, type FloorData } from "@/lib/floor-3d";
 import { PLAN_OUTLINES } from "@/lib/floor-plan-outlines";
+import { placed } from "@/lib/interiors";
+import { FLOOR_METRES } from "@/lib/rental-map";
 import { planArea } from "./plan-cutout";
 
 const SCALE = 100;
@@ -26,6 +30,8 @@ const SOLD = "#9aa39d";
 const call = telephoneHref(companyHotline);
 
 type Choice = { tower: string; floor: string; unit: string };
+
+const Interior3D = dynamic(() => import("./interior-3d"), { ssr: false });
 
 /** Bedrooms printed on the listing, else judged from the drawn area. */
 const roomsFromArea = (m2: number) =>
@@ -102,6 +108,8 @@ export default function FloorPlan3D({
   const t = useT();
   const stage = useRef<HTMLDivElement>(null);
   const [failed] = useState(() => !canDraw3D());
+  const [inside, setInside] = useState(false);
+  const closeInside = useCallback(() => setInside(false), []);
   const floors = useMemo(
     () => towerFloors(data.plans, tower),
     [data.plans, tower],
@@ -113,7 +121,11 @@ export default function FloorPlan3D({
   const file = plan?.image.split("/").pop() ?? "";
   const outlines = PLAN_OUTLINES[file];
   const numbers = useMemo(
-    () => Object.keys(outlines?.units ?? {}).sort(),
+    // By number: "3A" after "03", "12A" after "12".
+    () =>
+      Object.keys(outlines?.units ?? {}).sort(
+        (a, b) => parseFloat(a) - parseFloat(b) || a.localeCompare(b),
+      ),
     [outlines],
   );
   const onFloor = (number: string) => ({
@@ -325,6 +337,7 @@ export default function FloorPlan3D({
         : t("Đã giữ chỗ")
     : t("Liên hệ để biết tình trạng căn này");
   const kind = picked ? kindOf(picked) : undefined;
+  const room = kind?.interior ? placed(kind.interior) : undefined;
   const rooms = listing?.rooms ?? model?.rooms ?? kind?.rooms;
 
   return (
@@ -435,7 +448,7 @@ export default function FloorPlan3D({
         {outline ? (
           <div className="fp3d-info">
             <h3>
-              {kind?.code ?? `${tower}-${shownFloor.padStart(2, "0")}${picked}`}
+              {kind?.code ?? unitName(data.naming, tower, shownFloor, picked)}
             </h3>
             <p className="fp3d-state" data-state={listing?.state ?? "unknown"}>
               {stateText}
@@ -459,7 +472,8 @@ export default function FloorPlan3D({
                   </div>
                 </>
               )}
-              {outline.inner > 0 && (
+              {/* Both areas only where the drawing gives both. */}
+              {outline.inner > 0 && outline.wall > 0 && (
                 <>
                   {" "}
                   <div>
@@ -479,6 +493,43 @@ export default function FloorPlan3D({
                 </div>
               )}
             </dl>
+            {(kind?.picture || room) && (
+              <figure className="fp3d-media">
+                {kind?.picture && (
+                  <a
+                    className="fp3d-picture"
+                    href={kind.picture}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Image
+                      src={kind.picture}
+                      alt={t("Mặt bằng căn {name}", {
+                        name: unitName(data.naming, tower, shownFloor, picked),
+                      })}
+                      width={640}
+                      height={450}
+                      sizes="320px"
+                    />
+                  </a>
+                )}
+                {room && (
+                  <button
+                    type="button"
+                    className="fp3d-inside"
+                    onClick={() => setInside(true)}
+                  >
+                    <Box size={17} aria-hidden="true" />
+                    {t("Vào bên trong căn 3D")}
+                  </button>
+                )}
+                {kind?.picture && (
+                  <figcaption>
+                    {t("Mặt bằng căn · bấm ảnh để phóng to")}
+                  </figcaption>
+                )}
+              </figure>
+            )}
             <div className="fp3d-actions">
               {(listing ?? model) && (
                 <Link href={(listing ?? model)?.href ?? ""}>
@@ -502,6 +553,15 @@ export default function FloorPlan3D({
           {t("Mặt bằng theo bản vẽ của chủ đầu tư, chỉ để tham khảo.")}
         </p>
       </div>
+      {inside && room && (
+        <Interior3D
+          unit={room}
+          title={`${unitName(data.naming, tower, shownFloor, picked)} · ${rooms ?? ""} · ${t("Tầng {n}", { n: shownFloor })}`}
+          // The floor's slab above the ground: floors under it, as drawn.
+          height={Math.max(0, floors.indexOf(shownFloor)) * FLOOR_METRES}
+          onClose={closeInside}
+        />
+      )}
     </section>
   );
 }

@@ -23,7 +23,22 @@ export type FloorData = {
   kinds?: Record<string, UnitKind>;
   /** A word about a floor with no units to show ("tower/floor"): parking. */
   notes?: Record<string, string>;
+  /** How the developer names a unit, when not "T1-1012": "{tower}{floor}-{unit}". */
+  naming?: string;
 };
+
+/** A unit's name: "Panoma 2-1003", or as the project's `naming` writes it. */
+export function unitName(
+  naming: string | undefined,
+  tower: string,
+  floor: string,
+  unit: string,
+) {
+  return (naming ?? "{tower}-{floor}{unit}")
+    .replace("{tower}", tower)
+    .replace("{floor}", floor.padStart(2, "0"))
+    .replace("{unit}", unit);
+}
 export type UnitKind = {
   rooms: string;
   bedrooms: number;
@@ -35,6 +50,8 @@ export type UnitKind = {
   flat?: boolean;
   /** Its name when not "tower-floor+number", as for a shophouse. */
   code?: string;
+  /** A 3D model of the unit to walk into (lib/interiors.ts), turned as it stands. */
+  interior?: { key: string; flip?: "x" | "z" | "xz" };
 };
 
 /** "Tòa C4 · Tầng 11-12, 14-27" → 11, 12, 14, 15 … 27; "Tầng 12A" → 12A. */

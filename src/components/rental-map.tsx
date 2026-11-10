@@ -43,7 +43,7 @@ import {
 import type { Towers, TowerHit } from "./map-towers";
 import { planArea } from "./plan-cutout";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
-import { towerFloors, type FloorData } from "@/lib/floor-3d";
+import { towerFloors, unitName, type FloorData } from "@/lib/floor-3d";
 import {
   BUILDING_BLOCKS,
   FLOOR_METRES,
@@ -1711,7 +1711,13 @@ export function RentalMap({
                   )}
                   <b>
                     {peekKind?.code ??
-                      `${peek.tower}-${focus.floor.padStart(2, "0")}${peek.unit}`}
+                      unitName(
+                        buildings.find((b) => b.slug === focus.slug)?.floors
+                          ?.naming,
+                        peek.tower,
+                        focus.floor,
+                        peek.unit,
+                      )}
                     {(peekModel?.rooms ?? peekKind?.rooms)
                       ? ` · ${peekModel?.rooms ?? peekKind?.rooms}`
                       : ""}
