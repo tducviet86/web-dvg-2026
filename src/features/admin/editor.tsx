@@ -1,4 +1,5 @@
 "use client";
+import { moneyWords } from "@/lib/utils";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -433,7 +434,12 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             wide: true,
             table: {
               columns: [
-                { key: "name", label: "Tên tòa", placeholder: "vd: C4", maxLength: 40 },
+                {
+                  key: "name",
+                  label: "Tên tòa",
+                  placeholder: "vd: C4",
+                  maxLength: 40,
+                },
                 {
                   key: "status",
                   label: "Trạng thái",
@@ -557,7 +563,11 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
                   maxLength: 160,
                 },
                 { key: "body", label: "Nội dung", maxLength: 1000 },
-                { key: "condition", label: "Điều kiện áp dụng", maxLength: 300 },
+                {
+                  key: "condition",
+                  label: "Điều kiện áp dụng",
+                  maxLength: 300,
+                },
               ],
               add: "Thêm chính sách",
               max: 20,
@@ -2001,8 +2011,10 @@ export function Editor({
           : str(v.bedrooms) === "0"
             ? "Studio"
             : `${str(v.bedrooms)} phòng ngủ`,
-        v.forRent && str(v.price) && `Giá thuê: ${str(v.price)} đ/tháng`,
-        v.forSale && str(v.salePrice) && `Giá bán: ${str(v.salePrice)} đ`,
+        v.forRent &&
+          str(v.price) &&
+          `Giá thuê: ${moneyWords(v.price, "/tháng")}`,
+        v.forSale && str(v.salePrice) && `Giá bán: ${moneyWords(v.salePrice)}`,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -2054,8 +2066,8 @@ export function Editor({
     )
       .map((key) => amenityOf(key)?.label ?? key)
       .join(", ");
-    const rent = v.forRent && str(v.price) ? `${str(v.price)} đ/tháng` : "";
-    const sale = v.forSale && str(v.salePrice) ? `${str(v.salePrice)} đ` : "";
+    const rent = v.forRent && str(v.price) ? moneyWords(v.price, "/tháng") : "";
+    const sale = v.forSale && str(v.salePrice) ? moneyWords(v.salePrice) : "";
     const lines = [
       ["Tên căn", str(v.name)],
       ["Dự án", label(lookups.projects, v.projectId)],

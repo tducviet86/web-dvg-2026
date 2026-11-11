@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
 import { apiAs, credentials, expectErrorPopup, login } from "./helpers";
+import { moneyWords } from "../src/lib/utils";
 
 const SHOTS =
   "/private/tmp/claude-501/-Users-tranducviet-Documents-DVG-WEB/d7e4d8d3-4b31-4315-9fe7-c92d90618232/scratchpad";
@@ -1034,4 +1035,16 @@ test("a unit page is not counted as a view while signed in to Admin", async ({
   await page.goto(url);
   await page.waitForLoadState("networkidle");
   expect(fromStaff).toHaveLength(0);
+});
+
+test("prices go to the AI writer in words it cannot misread", () => {
+  // Once sent as "19.000.000 đ/tháng", read back as "19 đ/tháng".
+  expect(moneyWords("19.000.000", "/tháng")).toBe(
+    "19 triệu đồng/tháng (19.000.000 đ/tháng)",
+  );
+  expect(moneyWords("16500000", "/tháng")).toBe(
+    "16,5 triệu đồng/tháng (16.500.000 đ/tháng)",
+  );
+  expect(moneyWords("3.200.000.000")).toBe("3,2 tỷ đồng (3.200.000.000 đ)");
+  expect(moneyWords("")).toBe("");
 });
