@@ -5685,6 +5685,11 @@
 .seo-setup h3 {
   margin: 0 0 8px;
 }
+.seo-setup ol {
+  margin: 0;
+  padding-left: 22px;
+  list-style: decimal;
+}
 .seo-setup li {
   margin-bottom: 8px;
   line-height: 1.55;

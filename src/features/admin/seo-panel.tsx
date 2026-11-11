@@ -364,7 +364,8 @@ function SetupGuide() {
           email của service account, quyền <b>Bị hạn chế</b>.
         </li>
         <li>
-          Trên máy chủ API, thêm vào file <code>.env</code>:{" "}
+          Trên máy chủ API <b>đang chạy website này</b>, thêm vào file{" "}
+          <code>.env</code> (mỗi biến một dòng, không có dấu phẩy cuối dòng):{" "}
           <code>GSC_SITE</code> (tên thuộc tính, vd{" "}
           <code>sc-domain:datvanggroup.vn</code>), <code>GSC_CLIENT_EMAIL</code>{" "}
           và <code>GSC_PRIVATE_KEY</code> (lấy từ file JSON), rồi khởi động lại
