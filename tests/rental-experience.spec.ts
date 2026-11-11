@@ -1858,3 +1858,26 @@ test("Capital Square's page has no payment and loan block", async ({
   await expect(page.locator("#thanh-toan")).toHaveCount(0);
   await expect(page.locator('a[href="#thanh-toan"]')).toHaveCount(0);
 });
+
+test("the rentals page's heading says what its title says", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Cho thuê căn hộ tại Đà Nẵng",
+  );
+  await page.goto("/cho-thue?nhu-cau=mua");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Mua bán căn hộ tại Đà Nẵng",
+  );
+});
+
+test("a typed SEO title never ends with the brand twice", async () => {
+  const { pageTitle } = await import("../src/i18n/metadata");
+  expect(pageTitle("Bán căn 2PN tầng 4 | Đất Vàng")).toBe("Bán căn 2PN tầng 4");
+  expect(pageTitle("Căn 2PN view biển - đất vàng")).toBe("Căn 2PN view biển");
+  expect(pageTitle("Căn 2PN | Đất Vàng Group")).toEqual({
+    absolute: "Căn 2PN | Đất Vàng Group",
+  });
+  expect(pageTitle("Căn 2PN view sông")).toBe("Căn 2PN view sông");
+});

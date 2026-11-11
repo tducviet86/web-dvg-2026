@@ -17,6 +17,10 @@ const times = Tinos({
   subsets: ["latin", "vietnamese"],
   variable: "--font-tinos",
   display: "swap",
+  // Not preloaded: its 8 files (2 weights × 2 styles × 2 subsets) would take
+  // a slow phone connection from the page's main picture. Text shows at once
+  // in the size-matched fallback and changes to Tinos when it arrives.
+  preload: false,
 });
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

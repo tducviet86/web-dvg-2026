@@ -3,11 +3,14 @@
 import { useT } from "@/i18n/client";
 import { getImageProps } from "next/image";
 import { useEffect, useState } from "react";
+import { preload } from "react-dom";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Link from "@/components/page-navigation";
 import { canOptimizeImage, type ResolvedBanner } from "@/lib/banners";
+
+const PHONE = "(max-width: 768px)";
 
 function BannerPicture({
   slide,
@@ -30,22 +33,36 @@ function BannerPicture({
     src: slide.image,
     unoptimized: !canOptimizeImage(slide.image),
   });
-  const mobile = slide.mobileImage
-    ? getImageProps({
-        ...common,
-        src: slide.mobileImage,
-        unoptimized: !canOptimizeImage(slide.mobileImage),
-      }).props
-    : null;
+  // Phones get their own copy (the phone photo, else the same one) a little
+  // more compressed: on a slow connection it is the page's main picture.
+  const phoneSrc = slide.mobileImage || slide.image;
+  const mobile = getImageProps({
+    ...common,
+    quality: 60,
+    src: phoneSrc,
+    unoptimized: !canOptimizeImage(phoneSrc),
+  }).props;
+  if (first) {
+    // Requested from the <head>, before the page's styles and scripts.
+    for (const [copy, media] of [
+      [mobile, PHONE],
+      [props, `not all and ${PHONE}`],
+    ] as const)
+      preload(copy.src, {
+        as: "image",
+        imageSrcSet: copy.srcSet,
+        imageSizes: copy.sizes,
+        fetchPriority: "high",
+        media,
+      });
+  }
   return (
     <picture>
-      {mobile && (
-        <source
-          media="(max-width: 768px)"
-          srcSet={mobile.srcSet || mobile.src}
-          sizes={mobile.sizes}
-        />
-      )}
+      <source
+        media={PHONE}
+        srcSet={mobile.srcSet || mobile.src}
+        sizes={mobile.sizes}
+      />
       {/* getImageProps supplies Next.js optimised src/srcSet; <picture> is needed for art direction. */}
       {/* eslint-disable-next-line jsx-a11y/alt-text -- alt comes from getImageProps */}
       <img
@@ -69,10 +86,25 @@ export function CorporateBanner({ slides }: { slides: ResolvedBanner[] }) {
     duration: reduced ? 0 : 35,
   });
   const playing = !paused && !reduced;
+  // The other slides' photos wait until the page has loaded, so the first
+  // one (the page's main picture) has the connection to itself.
+  const [later, setLater] = useState(false);
+  useEffect(() => {
+    const go = () => setLater(true);
+    if (document.readyState === "complete") {
+      go();
+      return;
+    }
+    window.addEventListener("load", go, { once: true });
+    return () => window.removeEventListener("load", go);
+  }, []);
   useEffect(() => {
     if (!api) return;
     const select = () => setActive(api.selectedScrollSnap());
-    const down = () => setInteracting(true);
+    const down = () => {
+      setInteracting(true);
+      setLater(true);
+    };
     const up = () => setInteracting(false);
     api
       .on("select", select)
@@ -155,10 +187,14 @@ export function CorporateBanner({ slides }: { slides: ResolvedBanner[] }) {
                   draggable={false}
                   aria-label={`${t("Xem chi tiết dự án")} ${item.projectName}`}
                 >
-                  <BannerPicture slide={item} first={index === 0} />
+                  {(index === 0 || later) && (
+                    <BannerPicture slide={item} first={index === 0} />
+                  )}
                 </Link>
               ) : (
-                <BannerPicture slide={item} first={index === 0} />
+                (index === 0 || later) && (
+                  <BannerPicture slide={item} first={index === 0} />
+                )
               )}
             </div>
           ))}

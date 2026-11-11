@@ -208,8 +208,9 @@ export function RentalGallery({
                   alt=""
                   fill
                   sizes="(max-width: 800px) 120px, 20vw"
-                  // The thumbnails shown beside the photo load with it.
-                  loading={index < 4 ? "eager" : "lazy"}
+                  // After the main photo, never competing with it.
+                  loading="lazy"
+                  fetchPriority="low"
                 />
               ) : (
                 <span>

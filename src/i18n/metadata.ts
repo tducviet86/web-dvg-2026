@@ -42,8 +42,11 @@ const plain = (value: string) =>
 
 /**
  * Title for the root "%s | Đất Vàng Group" template. A title that already
- * names the brand (SEO titles typed in Admin often do) is used as it is, so
- * the brand never shows twice.
+ * names the brand (SEO titles typed in Admin often do) is used as it is, and
+ * a short "| Đất Vàng" at its end gives way to the full one, so the brand
+ * never shows twice.
  */
 export const pageTitle = (title: string) =>
-  plain(title).includes("dat vang group") ? { absolute: title } : title;
+  plain(title).includes("dat vang group")
+    ? { absolute: title }
+    : title.replace(/\s*[|\-–—·]\s*đất\s+vàng\s*$/iu, "");

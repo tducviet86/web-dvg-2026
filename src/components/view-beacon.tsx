@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { visitSource } from "@/lib/visit-source";
 
 /**
  * Counts one visit of a unit page per browser session; the server turns
@@ -17,10 +18,13 @@ export function ViewBeacon({ slug }: { slug: string }) {
     } catch {
       /* storage blocked: count the visit anyway */
     }
-    fetch(`/api/v1/properties/${encodeURIComponent(slug)}/view`, {
-      method: "POST",
-      keepalive: true,
-    }).catch(() => {});
+    fetch(
+      `/api/v1/properties/${encodeURIComponent(slug)}/view?source=${visitSource()}`,
+      {
+        method: "POST",
+        keepalive: true,
+      },
+    ).catch(() => {});
   }, [slug]);
   return null;
 }

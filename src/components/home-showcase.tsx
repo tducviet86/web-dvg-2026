@@ -17,7 +17,6 @@ export function HomeShowcase({
   lead,
   more,
   projects,
-  eager = false,
   compact = false,
 }: {
   id: string;
@@ -28,8 +27,6 @@ export function HomeShowcase({
   lead: string;
   more: { href: string; label: string };
   projects: PortfolioProject[];
-  /** First row on the page: its first photos load at once (they are the LCP on phones). */
-  eager?: boolean;
   /** Shorter photos, so the row takes less of the screen. */
   compact?: boolean;
 }) {
@@ -70,8 +67,16 @@ export function HomeShowcase({
                     src={p.image}
                     alt=""
                     fill
-                    loading={eager && i < 2 ? "eager" : "lazy"}
-                    sizes="(max-width: 700px) 78vw, (max-width: 1200px) 34vw, 26vw"
+                    loading="lazy"
+                    // After the banner: it is the page's main picture.
+                    fetchPriority="low"
+                    // As wide as drawn: 66% / 76% of a phone, a third of a
+                    // tablet, a quarter (compact: a third) of a computer.
+                    sizes={
+                      compact
+                        ? "(max-width: 760px) 66vw, 34vw"
+                        : "(max-width: 760px) 76vw, (max-width: 1200px) 34vw, 26vw"
+                    }
                   />
                 </span>
                 <span className="showcase-number">

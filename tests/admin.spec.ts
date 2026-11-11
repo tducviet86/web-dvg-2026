@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
 import { apiAs, credentials, expectErrorPopup, login } from "./helpers";
 import { moneyWords } from "../src/lib/utils";
+import { sourceOf } from "../src/lib/visit-source";
 
 const SHOTS =
   "/private/tmp/claude-501/-Users-tranducviet-Documents-DVG-WEB/d7e4d8d3-4b31-4315-9fe7-c92d90618232/scratchpad";
@@ -1006,28 +1007,51 @@ test("a unit page is not counted as a view while signed in to Admin", async ({
   browser,
   page,
 }) => {
+  // A published rental of its own, so the test needs nothing seeded.
   const api = await apiAs();
-  const list = (await api.get("/properties?pageSize=20")) as {
-    data: { slug: string; forRent?: boolean; isDemo?: boolean }[];
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; name: string }[];
   };
-  const unit = list.data.find((p) => p.forRent && !p.isDemo);
-  expect(unit).toBeTruthy();
-  const url = `/cho-thue/${unit!.slug}`;
+  const res = await api.send("post", "/admin/properties", {
+    name: "Căn đếm lượt xem QA",
+    projectId: projects.data.find((p) => p.name.includes("Monarchy"))!.id,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn hộ kiểm tra cách đếm lượt xem trang chi tiết.",
+    rentPriceVnd: "16000000",
+    status: "PUBLISHED",
+  });
+  expect(res.ok()).toBeTruthy();
+  const unit = ((await res.json()) as { data: { id: string; slug: string } })
+    .data;
+  const url = `/cho-thue/${unit.slug}`;
   const counted = (p: typeof page) => {
     const sent: string[] = [];
     p.on("request", (r) => {
-      if (r.method() === "POST" && r.url().endsWith("/view"))
+      if (r.method() === "POST" && new URL(r.url()).pathname.endsWith("/view"))
         sent.push(r.url());
     });
     return sent;
   };
 
-  // A visitor: one view.
+  // A visitor: one view, with where the visit came from.
   const visitor = await browser.newPage();
   const fromVisitor = counted(visitor);
   await visitor.goto(url);
   await expect.poll(() => fromVisitor.length).toBe(1);
+  expect(fromVisitor[0]).toContain("source=direct");
   await visitor.close();
+  // Sent by ChatGPT: the source is kept for the rest of the visit.
+  const fromAi = await browser.newPage();
+  const aiViews = counted(fromAi);
+  await fromAi.goto(`/?utm_source=chatgpt.com`);
+  await fromAi.goto(url);
+  await expect.poll(() => aiViews.length).toBe(1);
+  expect(aiViews[0]).toContain("source=ai");
+  await fromAi.close();
 
   // Staff signed in: none.
   await login(page);
@@ -1035,6 +1059,7 @@ test("a unit page is not counted as a view while signed in to Admin", async ({
   await page.goto(url);
   await page.waitForLoadState("networkidle");
   expect(fromStaff).toHaveLength(0);
+  await api.send("delete", `/admin/properties/${unit.id}`);
 });
 
 test("prices go to the AI writer in words it cannot misread", () => {
@@ -1047,4 +1072,18 @@ test("prices go to the AI writer in words it cannot misread", () => {
   );
   expect(moneyWords("3.200.000.000")).toBe("3,2 tỷ đồng (3.200.000.000 đ)");
   expect(moneyWords("")).toBe("");
+});
+
+test("a visit's source, from its link or the page that sent it", () => {
+  const own = "datvanggroup.vn";
+  expect(sourceOf("", "https://www.google.com/", own)).toBe("google");
+  expect(sourceOf("", "https://www.google.com.vn/", own)).toBe("google");
+  expect(sourceOf("chatgpt.com", "", own)).toBe("ai");
+  expect(sourceOf("", "https://gemini.google.com/app", own)).toBe("ai");
+  expect(sourceOf("", "https://search.naver.com/", own)).toBe("search");
+  expect(sourceOf("zalo", "", own)).toBe("zalo");
+  expect(sourceOf("", "https://l.facebook.com/", own)).toBe("facebook");
+  expect(sourceOf("", "", own)).toBe("direct");
+  expect(sourceOf("", "https://datvanggroup.vn/cho-thue", own)).toBe("direct");
+  expect(sourceOf("", "https://batdongsan.com.vn/", own)).toBe("other");
 });

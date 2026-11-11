@@ -139,9 +139,11 @@ export function RentalPage({
         locations={[...new Set(content.properties.map((p) => p.location))]}
         project={project && { slug: project.slug, name: project.name }}
         title={
+          // The page's subject, as its title says: apartments (or the kind
+          // the visitor chose) for rent, or for sale.
           project
             ? `Căn hộ tại ${project.name}`
-            : "Bất động sản cho thuê & mua bán tại Đà Nẵng"
+            : `${sale ? "Mua bán" : "Cho thuê"} ${filters.loai ? noun.toLowerCase() : "căn hộ"} tại Đà Nẵng`
         }
         units={scope}
         crumbs={

@@ -3567,6 +3567,9 @@
   color: var(--admin-muted);
   font-size: 12px;
 }
+.dash-unit-name small.dash-unit-sources {
+  color: #2f6b55;
+}
 .dash-sub {
   margin: 4px 0 0;
   font-size: 13px;

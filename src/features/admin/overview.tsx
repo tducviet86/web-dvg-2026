@@ -59,6 +59,8 @@ type Unit = {
   cover: string | null;
   views: number;
   leads: number;
+  /** Top units only: their views by source, most first. */
+  sources?: { source: string; views: number }[];
 };
 type Summary = {
   range: { days: number; from: string; to: string };
@@ -69,6 +71,7 @@ type Summary = {
     leads: number | null;
     prevLeads: number | null;
     conversion: number | null;
+    bySource: { source: string; views: number }[];
   };
   inventory: {
     total: number;
@@ -188,6 +191,18 @@ function activityHref(entityType: string | null, id: string | null) {
 }
 
 const nf = (value: number) => value.toLocaleString("vi-VN");
+/** Where unit views come from (the page reports it; see lib/visit-source). */
+const VIEW_SOURCES: Record<string, string> = {
+  google: "Google",
+  search: "Bing, Naver, Yandex…",
+  ai: "ChatGPT & AI",
+  zalo: "Zalo",
+  facebook: "Facebook",
+  direct: "Vào thẳng",
+  other: "Trang khác",
+  unknown: "Chưa rõ (trước khi đo nguồn)",
+};
+const viewSource = (key: string) => VIEW_SOURCES[key] ?? key;
 const percent = (value: number) =>
   `${(value * 100).toLocaleString("vi-VN", { maximumFractionDigits: value < 0.1 ? 1 : 0 })}%`;
 const million = (vnd: number) =>
@@ -714,6 +729,20 @@ export function Overview({
           ) : (
             <div className="skeleton dash-chart-skeleton" />
           )}
+          <h3 className="dash-sub">Lượt xem căn hộ theo nguồn</h3>
+          {t?.bySource.length ? (
+            <SourceDonut
+              unit="lượt xem"
+              sources={t.bySource.map((s) => ({
+                source: viewSource(s.source),
+                count: s.views,
+              }))}
+            />
+          ) : (
+            <p className="dash-empty">
+              {t ? `Chưa có lượt xem nào trong ${period} qua.` : "Đang tải…"}
+            </p>
+          )}
         </section>
         {leads ? (
           <section className="dash-panel">
@@ -865,6 +894,16 @@ export function Overview({
                           .filter(Boolean)
                           .join(" · ")}
                       </small>
+                      {!!u.sources?.length && (
+                        <small className="dash-unit-sources">
+                          {u.sources
+                            .slice(0, 3)
+                            .map(
+                              (s) => `${viewSource(s.source)} ${nf(s.views)}`,
+                            )
+                            .join(" · ")}
+                        </small>
+                      )}
                     </span>
                     <span className="dash-unit-stats">
                       <span>

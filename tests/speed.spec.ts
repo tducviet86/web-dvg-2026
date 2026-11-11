@@ -18,7 +18,8 @@ test("unit page: title, photo and price show at once; the first photos load firs
   );
   const first = gallery.locator(".rental-gallery-slide img").first();
   await expect(first).toHaveAttribute("fetchpriority", "high");
+  // Thumbnails come after it, never competing with it on a slow phone.
   const thumbs = gallery.locator(".rental-gallery-thumbs img");
   if ((await thumbs.count()) > 1)
-    await expect(thumbs.nth(1)).toHaveAttribute("loading", "eager");
+    await expect(thumbs.nth(1)).toHaveAttribute("fetchpriority", "low");
 });

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { track, type TrackingIds } from "@/lib/analytics";
+import { visitSource } from "@/lib/visit-source";
 
 const CONSENT_KEY = "dvg:consent";
 type Choice = "granted" | "denied";
@@ -59,6 +60,10 @@ export function Analytics({ ids }: { ids: TrackingIds }) {
     };
   }, [google, wake]);
 
+  // The visit's source is read on its first page, before the address changes.
+  useEffect(() => {
+    visitSource();
+  }, []);
   // Calls, Zalo and WhatsApp anywhere on the site count as leads.
   useEffect(() => {
     const onClick = (event: MouseEvent) => {

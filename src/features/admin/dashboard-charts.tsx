@@ -121,8 +121,11 @@ const SOURCE_COLORS = [
 /** Where requests came from in the period. */
 export function SourceDonut({
   sources,
+  unit = "yêu cầu",
 }: {
   sources: { source: string; count: number }[];
+  /** What is counted: "yêu cầu", "lượt xem". */
+  unit?: string;
 }) {
   const total = sources.reduce((s, x) => s + x.count, 0);
   const top = sources.slice(0, 5);
@@ -158,7 +161,7 @@ export function SourceDonut({
         </ResponsiveContainer>
         <span className="dash-donut-total">
           <strong>{total}</strong>
-          <small>yêu cầu</small>
+          <small>{unit}</small>
         </span>
       </div>
       <ul className="dash-legend">
