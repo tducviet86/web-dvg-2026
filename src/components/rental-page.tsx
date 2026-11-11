@@ -15,6 +15,7 @@ import type { PortfolioProject, Property } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { rentalFaqs } from "@/data/rental-content";
 import { listingFaqs } from "@/lib/faq";
+import { tf } from "@/i18n/server";
 import {
   landingPrice,
   landingSummary,
@@ -460,7 +461,11 @@ export function RentalPage({
                   ...(landing.facts.total
                     ? [
                         [
-                          `${landing.h1}: hiện có bao nhiêu căn, giá thế nào?`,
+                          // The heading is already translated: translate the
+                          // question around it, not the two glued together.
+                          tf("{name}: hiện có bao nhiêu căn, giá thế nào?", {
+                            name: landing.h1,
+                          }),
                           landingSummary(landing.facts),
                         ] as [string, string],
                       ]

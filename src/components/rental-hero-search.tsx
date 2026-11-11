@@ -84,7 +84,8 @@ export function RentalHeroSearch({
   /** [slug, name] of projects with units, for the "Dự án" select. */
   projects: Options;
   /** Districts with units ("Khu vực" filter). */
-  locations?: string[];
+  /** [value, label] pairs. */
+  locations?: [string, string][];
   /** On a project page the project is fixed. */
   projectSlug?: string;
   projectName?: string;
@@ -329,12 +330,7 @@ export function RentalHeroSearch({
             </div>
             <div id={`${id}-more`} className="hero-more" hidden={!more}>
               {locations.length > 1 &&
-                field(
-                  "location",
-                  "Khu vực",
-                  locations.map((x) => [x, x]),
-                  "Mọi khu vực",
-                )}
+                field("location", "Khu vực", locations, "Mọi khu vực")}
               {field("area", "Diện tích", AREA, "Mọi diện tích")}
               {field("furniture", "Nội thất", FURNITURE, "Tất cả")}
               {mode === "thue" &&

@@ -187,6 +187,12 @@ test("the search box labels and slider are translated too", async ({
   );
   await expect(page.locator(".hero-submit")).toContainText("EN: Tim kiem");
   await expect(page.locator(".price-range output")).toContainText("EN: ");
+  // Addresses in the area list: the label is translated, the value kept.
+  const area = page.locator('[id$="-location-o1"]');
+  if (await area.count())
+    await reloadUntil(page, async () =>
+      (await area.textContent())!.startsWith("EN: "),
+    );
 });
 
 test("a new unit is translated, prices kept apart from the words", async ({
@@ -227,6 +233,12 @@ test("a new unit is translated, prices kept apart from the words", async ({
   await expect(
     page.locator("main").getByText("KO: Can ho kiem tra dich gia thue."),
   ).toBeVisible();
+  // The costs the rent leaves out, listed side by side, are translated too.
+  const out = page.locator(".room-fees-out");
+  await reloadUntil(page, async () =>
+    (await out.innerText()).includes("KO: Nuoc"),
+  );
+  await expect(out).toContainText("KO: Phi quan ly");
   await api.send("delete", `/admin/properties/${id}`);
 });
 

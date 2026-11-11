@@ -613,7 +613,7 @@ export function RoomDetail({
           </div>
         ) : (
           <div>
-            <strong>{vndFull(rentVnd)} đ</strong>
+            <strong>{vndFull(rentVnd)} ₫</strong>
             <span>/ tháng{r.isDemo ? " · Giá mẫu" : ""}</span>
           </div>
         )}

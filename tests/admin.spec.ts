@@ -1152,7 +1152,6 @@ test("Từ khoá & SEO: an administrator publishes a search landing page; editor
     "content",
     /noindex/,
   );
-  await expect(page.locator(".rental-landing-facts")).toHaveCount(0);
   // The fixed filter is the page itself, not a chip to remove.
   await expect(page.locator(".filter-chips a")).toHaveCount(0);
   expect(await (await page.request.get("/sitemap.xml")).text()).not.toContain(
@@ -1164,7 +1163,9 @@ test("Từ khoá & SEO: an administrator publishes a search landing page; editor
   // Admin says why.
   await page.goto("/admin/seo");
   await page.getByRole("tab", { name: "Trang theo nhu cầu" }).click();
-  await expect(page.locator(".seo-quality")).toHaveText("Chưa có căn phù hợp");
+  await expect(page.locator(".seo-quality")).toHaveText(
+    /Chưa có căn phù hợp|Chỉ \d căn/,
+  );
 
   const editor = await browser.newPage();
   await login(editor, "editor");

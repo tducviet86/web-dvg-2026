@@ -126,15 +126,14 @@ export function localizeProps(type: unknown, props: Props): Props {
     if (v !== props[k]) (out ??= { ...props })[k] = v;
   };
   const children = props.children;
+  // Text in nested arrays too ({list.map(…)} next to other children).
+  const kids = (c: unknown): unknown =>
+    typeof c === "string" ? tr(c) : Array.isArray(c) ? c.map(kids) : c;
+  const hasText = (c: unknown): boolean =>
+    typeof c === "string" || (Array.isArray(c) && c.some(hasText));
   if (typeof children === "string") set("children", tr(children));
-  else if (
-    Array.isArray(children) &&
-    children.some((c) => typeof c === "string")
-  )
-    set(
-      "children",
-      children.map((c) => (typeof c === "string" ? tr(c) : c)),
-    );
+  else if (Array.isArray(children) && children.some(hasText))
+    set("children", children.map(kids));
   if (typeof type === "string") {
     for (const attr of HOST_ATTRS)
       if (typeof props[attr] === "string") set(attr, tr(props[attr] as string));

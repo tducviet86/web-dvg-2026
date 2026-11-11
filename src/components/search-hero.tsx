@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { ArrowDown } from "lucide-react";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
-import { href } from "@/i18n/server";
+import { href, t } from "@/i18n/server";
 import { RentalHeroSearch, type HeroMode } from "./rental-hero-search";
 import { saleRange, searchFacets } from "@/lib/filter";
 import type { Property } from "@/types";
@@ -124,7 +124,8 @@ export function SearchHero({
         mode={mode}
         values={values}
         projects={projects}
-        locations={locations}
+        // The value filters the search; only the label is translated.
+        locations={locations.map((l) => [l, t(l)])}
         projectSlug={project?.slug}
         projectName={project?.name}
         hotline={companyHotline}

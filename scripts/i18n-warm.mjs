@@ -50,9 +50,13 @@ async function waitForServer() {
 const pages = new Set(await sitemapUrls());
 console.log(`${pages.size} pages in ${locales.join(", ")}`);
 let previous = -1;
+let stalls = 0;
+/** The Vietnamese strings still found, with how many pages show each. */
+const stuck = new Map();
 for (let pass = 1; pass <= passes; pass++) {
   let left = 0;
   const report = [];
+  stuck.clear();
   const queue = [...pages];
   await Promise.all(
     Array.from({ length: 4 }, async () => {
@@ -65,6 +69,7 @@ for (let pass = 1; pass <= passes; pass++) {
         const strings = leftovers(html);
         left += strings.length;
         if (strings.length) report.push([path, strings.length]);
+        for (const s of strings) stuck.set(s, (stuck.get(s) ?? 0) + 1);
         // Follow internal links of the same language (units, filters…).
         const prefix = path.split("/")[1];
         for (const m of html.matchAll(/href="(\/[a-z]{2}\/[^"#?]*)"/g))
@@ -87,6 +92,15 @@ for (let pass = 1; pass <= passes; pass++) {
   for (const [path, n] of report.sort((a, b) => b[1] - a[1]).slice(0, 8))
     console.log(`   ${n}\t${path}`);
   if (!left) break;
+  stalls = stalled ? stalls + 1 : 0;
+  // Twice without progress: these strings never reach the translator (or it
+  // keeps them as they are). Say which, instead of looping on.
+  if (stalls >= 2) {
+    console.log("\nNo progress: these strings are not being translated:");
+    for (const [s, n] of [...stuck].sort((a, b) => b[1] - a[1]).slice(0, 20))
+      console.log(`   ${n}\t${s.slice(0, 100)}`);
+    break;
+  }
   await waitForServer();
   // No progress: strings that failed are retried by the server after ~2 min.
   if (stalled) await sleep(130_000);
