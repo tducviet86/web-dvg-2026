@@ -5534,28 +5534,13 @@
   align-items: center;
   gap: 10px;
 }
-.seo-toolbar .admin-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 340px;
-  padding: 0 12px;
-}
-.seo-toolbar .admin-search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: none;
-  background: none;
-}
 .seo-range {
   display: inline-flex;
   overflow: hidden;
   border: 1px solid #d6e0d9;
   border-radius: 8px;
 }
-.seo-range button,
-.seo-near {
+.seo-range button {
   min-height: 42px;
   padding: 0 14px;
   border: 0;
@@ -5566,17 +5551,6 @@
 .seo-range button[aria-pressed="true"] {
   background: #1d4d3f;
   color: #fff;
-}
-.seo-near {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid #d6e0d9;
-  border-radius: 8px;
-}
-.seo-near[aria-pressed="true"] {
-  border-color: #c8962f;
-  background: #fbf3df;
 }
 .seo-muted {
   margin: 0;
@@ -5590,49 +5564,264 @@
   background: #fdf1ed;
   color: #8a2f17;
 }
-.seo-table td:first-child {
+/* What the table tells, in a sentence, above it. */
+.seo-help {
+  padding: 12px 16px;
+  border-left: 3px solid #c8962f;
+  border-radius: 8px;
+  background: #fbf7ec;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.seo-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.seo-cards > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid #e3e9e4;
+  border-radius: 12px;
+  background: #fff;
+}
+.seo-cards > div > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--admin-muted, #5f6f66);
+  font-size: 13px;
+}
+.seo-cards b {
+  font-size: 24px;
+  color: #173e34;
+}
+.seo-views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.seo-views > button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #d6e0d9;
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.seo-views > button small {
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #eef2ef;
+  font-size: 12px;
+}
+.seo-views > button[aria-selected="true"] {
+  border-color: #1d4d3f;
+  background: #1d4d3f;
+  color: #fff;
+}
+.seo-views > button[aria-selected="true"] small {
+  background: #ffffff33;
+}
+.seo-views .admin-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px;
+  margin-left: auto;
+  padding: 0 12px;
+}
+.seo-views .admin-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+}
+.seo-table th {
+  white-space: nowrap;
+}
+.seo-table td {
+  vertical-align: middle;
+}
+.seo-table .seo-query {
   font-weight: 600;
 }
-.seo-table td a {
+.seo-table tr[data-near="true"] .seo-query {
+  color: #8a5a12;
+}
+.seo-table td:last-child {
+  white-space: nowrap;
+}
+.seo-pages {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+.seo-pages a {
   display: inline-flex;
   align-items: center;
   gap: 3px;
   max-width: 260px;
   overflow: hidden;
   color: #1d4d3f;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.seo-table td:last-child {
-  white-space: nowrap;
+.seo-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--admin-muted, #5f6f66);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
 }
-.seo-pos {
-  display: inline-block;
-  min-width: 42px;
-  padding: 2px 8px;
-  border-radius: 999px;
+/* "Trang 1 · hạng 6,1": green, gold on page 2, grey further down. */
+.seo-place {
+  display: inline-grid;
+  gap: 1px;
+  min-width: 74px;
+  padding: 3px 10px;
+  border-radius: 8px;
   background: #eef2ef;
-  text-align: center;
-  font-weight: 600;
+  color: #5f6f66;
+  line-height: 1.2;
 }
-.seo-pos[data-near="true"] {
-  background: #fbf3df;
+.seo-place small {
+  font-size: 11.5px;
+}
+.seo-place[data-page="1"] {
+  background: #e3f3ea;
+  color: #1d6b45;
+}
+.seo-place[data-page="2"] {
+  background: #fbf0d6;
   color: #8a5a12;
 }
-.seo-proposal {
+/* "(i)": a short explanation that opens on click (or hover). */
+.seo-info {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+.seo-info > button {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #7d8c84;
+  cursor: help;
+}
+.seo-info > button:hover,
+.seo-info > button[aria-expanded="true"] {
+  background: #eef2ef;
+  color: #173e34;
+}
+.seo-info-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 20;
+  display: block;
+  width: min(280px, 80vw);
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #173e34;
+  box-shadow: 0 12px 30px #0b1f193d;
+  color: #f2f6f3;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  translate: -50% 0;
+}
+.seo-info-pop strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #f2c14e;
+}
+.seo-info-pop > span {
+  display: block;
+  margin-top: 6px;
+}
+/* "Viết lại bằng AI": a window over the table. */
+.admin-dialog.seo-dialog {
   display: grid;
   gap: 12px;
-  padding: 18px;
-  border: 1px solid #e7dcbf;
-  border-radius: 12px;
-  background: #fffaf0;
+  width: min(820px, calc(100vw - 32px));
 }
-.seo-proposal h3 {
+.seo-dialog h2 {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-size: 16px;
+  padding-right: 36px;
+}
+.seo-dialog label {
+  margin-bottom: 0;
+}
+.seo-writing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 18px;
+  border-radius: 10px;
+  background: #f7faf8;
+  color: #173e34;
+}
+.seo-writing svg {
+  animation: seo-pulse 1.2s ease-in-out infinite;
+}
+@keyframes seo-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seo-writing svg {
+    animation: none;
+  }
+}
+/* A result as Google shows it. */
+.seo-serp {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid #e3e9e4;
+  border-radius: 10px;
+  background: #fff;
+  font-family: arial, sans-serif;
+}
+.seo-serp small {
+  overflow: hidden;
+  color: #4d5156;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seo-serp b {
+  color: #1a0dab;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+.seo-serp span {
+  color: #4d5156;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .seo-compare {
   display: grid;
@@ -5644,24 +5833,19 @@
   font-size: 13px;
   color: var(--admin-muted, #5f6f66);
 }
-.seo-compare p {
-  margin: 0 0 6px;
-}
-.seo-compare label,
-.seo-landing-form label,
-.seo-paste label {
+.seo-dialog label,
+.seo-landing-form label {
   display: grid;
   gap: 4px;
   margin-bottom: 8px;
   font-size: 13px;
   font-weight: 600;
 }
-.seo-compare input,
-.seo-compare textarea,
+.seo-dialog input,
+.seo-dialog textarea,
 .seo-landing-form input,
 .seo-landing-form select,
-.seo-landing-form textarea,
-.seo-paste input {
+.seo-landing-form textarea {
   width: 100%;
   min-height: 42px;
   padding: 8px 10px;
@@ -5766,28 +5950,245 @@
   width: auto;
   min-height: 0;
 }
-.seo-paste {
+/* "Trang theo nhu cầu": what it is, the pages, and ready-made ideas. */
+.seo-example {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
-  background: #f7faf8;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
 }
-.seo-paste label {
-  flex: 1 1 280px;
+.seo-example > span {
+  display: grid;
+  flex: 1 1 200px;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff;
+}
+.seo-example small {
+  color: var(--admin-muted, #5f6f66);
+  font-size: 12px;
+}
+.seo-example b {
+  overflow-wrap: anywhere;
+  font-size: 13.5px;
+}
+.seo-example > svg {
+  flex: none;
+  color: #c8962f;
+}
+.seo-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}
+.seo-section-head h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
+  font-size: 17px;
+}
+.seo-section-head h3 small {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #eef2ef;
+  font-size: 12px;
+}
+.seo-landing-list li > div small {
+  display: block;
+}
+.seo-ideas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.seo-ideas li {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #e3e9e4;
+  border-radius: 12px;
+  background: #fff;
+}
+.seo-ideas li[data-empty="true"] {
+  opacity: 0.7;
+}
+.seo-ideas small {
+  color: var(--admin-muted, #5f6f66);
+}
+.seo-idea-count {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e3f3ea;
+  color: #1d6b45;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.seo-ideas li[data-empty="true"] .seo-idea-count {
+  background: #eef2ef;
+  color: #5f6f66;
+}
+.seo-ideas .button {
+  justify-self: start;
+  margin-top: 4px;
+}
+/* The form, in four numbered steps. */
+.seo-landing-form fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #e3e9e4;
+  border-radius: 12px;
+}
+.seo-landing-form legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #173e34;
+}
+.seo-landing-form .seo-step {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #1d4d3f;
+  color: #fff;
+  font-size: 13px;
+}
+.seo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.seo-fit {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #e3f3ea;
+  color: #1d6b45;
+  font-size: 13.5px;
+}
+.seo-fit[data-empty="true"] {
+  background: #fdf1ed;
+  color: #8a2f17;
+}
+.seo-paste summary {
+  color: #1d4d3f;
+  font-size: 13px;
+  cursor: pointer;
+}
+.seo-paste > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.seo-paste input {
+  flex: 1 1 260px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #d6e0d9;
+  border-radius: 8px;
+  font: inherit;
 }
 @media (max-width: 760px) {
+  .seo-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .seo-views .admin-search {
+    max-width: none;
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .seo-info-pop {
+    position: fixed;
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    translate: none;
+  }
   .seo-compare {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .seo-toolbar .admin-search {
-    max-width: none;
-    flex-basis: 100%;
   }
   .seo-slug {
     flex-wrap: wrap;
   }
+}
+/* A landing page's worth for search: fine, or thin / near-duplicate. */
+.seo-quality {
+  color: #1d6b45 !important;
+  font-weight: 600;
+}
+.seo-quality[data-weak="true"] {
+  color: #8a5a00 !important;
+}
+/* A keyword whose page was already rewritten: when, and a quiet redo. */
+.seo-done {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+.seo-done span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e3f3ea;
+  color: #1d6b45;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.seo-done button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1d4d3f;
+  font-size: 12.5px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* The landing tab: room between help, list, ideas (the head's button no
+   longer sits on the list's border). */
+.seo-landings {
+  display: grid;
+  gap: 14px;
+}
+.seo-landings .seo-section-head {
+  margin-top: 10px;
+}
+.seo-landings .empty-state {
+  padding: 28px 16px;
+}
+.seo-landing-list .seo-quality {
+  white-space: normal;
+}
+/* A long "not yet" note reads as a box, not a stretched pill. */
+.seo-idea-count {
+  border-radius: 8px;
+  line-height: 1.45;
+}
+.seo-idea-count b {
+  display: block;
 }

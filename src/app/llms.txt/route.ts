@@ -5,6 +5,14 @@ import {
   getSiteContent,
 } from "@/lib/api/content";
 import { listingFaqs, rentalUnits } from "@/lib/faq";
+import {
+  MIN_LANDING_UNITS,
+  landingFacts,
+  landingPath,
+  landingSummary,
+  landingUnits,
+  readLandings,
+} from "@/lib/landings";
 import { siteUrl } from "@/lib/utils";
 
 // Built per request from cached API data, like the sitemap.
@@ -70,6 +78,17 @@ export async function GET() {
     settings["social.facebook"] && `- Facebook: ${settings["social.facebook"]}`,
   ].filter(Boolean);
 
+  // Search landing pages with enough units to be indexed (Admin › SEO).
+  const landings = readLandings(settings["seo.landings"])
+    .filter((l) => l.published)
+    .map((l) => ({ l, units: landingUnits(l, content.properties) }))
+    .filter(({ units }) => units.length >= MIN_LANDING_UNITS)
+    .map(
+      ({ l, units }) =>
+        `- [${l.h1}](${siteUrl}${landingPath(l)}): ${line(
+          landingSummary(landingFacts(l, units)),
+        )}`,
+    );
   const faqs = listingFaqs(content.properties, undefined, rentProjects);
   const body = [
     `# ${brand}`,
@@ -93,6 +112,7 @@ export async function GET() {
     "## Mua bán căn hộ",
     `- [Căn hộ đang bán và căn mẫu tại Đà Nẵng](${siteUrl}/mua-ban)`,
     "",
+    ...(landings.length ? ["## Tìm căn theo nhu cầu", ...landings, ""] : []),
     "## Dự án khác",
     ...content.portfolio
       .filter((p) => !p.categories.includes("rent"))

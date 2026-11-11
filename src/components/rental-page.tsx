@@ -11,10 +11,15 @@ import {
   KeyRound,
   Facebook,
 } from "lucide-react";
-import type { PortfolioProject } from "@/types";
+import type { PortfolioProject, Property } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { rentalFaqs } from "@/data/rental-content";
 import { listingFaqs } from "@/lib/faq";
+import {
+  landingPrice,
+  landingSummary,
+  type landingFacts,
+} from "@/lib/landings";
 import { FaqSection } from "./faq-section";
 import { Reviews } from "./reviews-section";
 import {
@@ -45,7 +50,15 @@ export function RentalPage({
    * A search landing page (lib/landings): its address, heading and text,
    * and the filters it fixes (already in `filters`, never offered for removal).
    */
-  landing?: { path: string; h1: string; intro: string; fixed: Filters };
+  landing?: {
+    path: string;
+    h1: string;
+    intro: string;
+    fixed: Filters;
+    /** The units it stands for, and what they add up to. */
+    units: Property[];
+    facts: ReturnType<typeof landingFacts>;
+  };
 }) {
   const locations = content.portfolio.filter((p) =>
     p.categories.includes("rent"),
@@ -203,7 +216,7 @@ export function RentalPage({
         }
       />
       <div className="container">
-        {landing?.intro && (
+        {landing && (
           <div className="rental-landing-intro">
             {landing.intro
               .split(/\n{2,}/)
@@ -212,6 +225,30 @@ export function RentalPage({
               .map((text) => (
                 <p key={text}>{text}</p>
               ))}
+            {landing.facts.total > 0 && (
+              <dl className="rental-landing-facts">
+                <div>
+                  <dt>Căn phù hợp</dt>
+                  <dd>{landing.facts.total}</dd>
+                </div>
+                <div>
+                  <dt>Còn trống</dt>
+                  <dd>{landing.facts.free}</dd>
+                </div>
+                {landing.facts.low > 0 && (
+                  <div>
+                    <dt>{sale ? "Giá bán" : "Giá thuê"}</dt>
+                    <dd>{landingPrice(landing.facts)}</dd>
+                  </div>
+                )}
+                {landing.facts.projects.length > 0 && (
+                  <div>
+                    <dt>Dự án</dt>
+                    <dd>{landing.facts.projects.join(", ")}</dd>
+                  </div>
+                )}
+              </dl>
+            )}
           </div>
         )}
         <section
@@ -417,7 +454,20 @@ export function RentalPage({
         <Reviews project={project?.slug} limit={3} />
         <FaqSection
           faqs={[
-            ...listingFaqs(content.properties, project, locations),
+            // A landing page answers for its own units, not the whole list.
+            ...(landing
+              ? [
+                  ...(landing.facts.total
+                    ? [
+                        [
+                          `${landing.h1}: hiện có bao nhiêu căn, giá thế nào?`,
+                          landingSummary(landing.facts),
+                        ] as [string, string],
+                      ]
+                    : []),
+                  ...(sale ? [] : listingFaqs(landing.units)),
+                ]
+              : listingFaqs(content.properties, project, locations)),
             ...rentalFaqs,
           ]}
         />

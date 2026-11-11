@@ -4,6 +4,14 @@ import { readFileSync } from "node:fs";
 import { apiAs, credentials, expectErrorPopup, login } from "./helpers";
 import { moneyWords } from "../src/lib/utils";
 import { sourceOf } from "../src/lib/visit-source";
+import {
+  MIN_LANDING_UNITS,
+  landingFacts,
+  landingSummary,
+  landingUnits,
+  type Landing,
+} from "../src/lib/landings";
+import type { Property } from "../src/types";
 
 const SHOTS =
   "/private/tmp/claude-501/-Users-tranducviet-Documents-DVG-WEB/d7e4d8d3-4b31-4315-9fe7-c92d90618232/scratchpad";
@@ -1103,13 +1111,17 @@ test("Từ khoá & SEO: an administrator publishes a search landing page; editor
   ).toBeVisible();
 
   await page.getByRole("tab", { name: "Trang theo nhu cầu" }).click();
-  await page.getByRole("button", { name: "Thêm trang" }).click();
+  // Ready-made ideas, and an empty page to start from.
+  await expect(
+    page.getByRole("button", { name: "Dùng mẫu này" }).first(),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Tạo trang trống" }).click();
   await page
-    .getByLabel("Tiêu đề trang (H1) *")
+    .getByLabel(/Tiêu đề trang \(H1\)/)
     .fill("Cho thuê căn hộ 2 phòng ngủ Đà Nẵng QA");
   await page.getByLabel("Phòng ngủ").selectOption("2");
   await page
-    .getByLabel(/Đoạn giới thiệu/)
+    .getByRole("textbox", { name: "Đoạn giới thiệu", exact: true })
     .fill("Các căn 2 phòng ngủ đang cho thuê tại Đà Nẵng.");
   await page.getByLabel(/Hiển thị trên website/).check();
   await page.getByRole("button", { name: "Lưu trang" }).click();
@@ -1117,7 +1129,9 @@ test("Từ khoá & SEO: an administrator publishes a search landing page; editor
   const path = "/cho-thue/nhu-cau/cho-thue-can-ho-2-phong-ngu-da-nang-qa";
   await expect(page.getByText(path)).toBeVisible();
 
-  // The public page: its heading, text and units, indexable at its own address.
+  // The public page: its heading, text and units at its own address. The
+  // test data holds only sample units, which do not count: too thin to be
+  // indexed, so it stays out of search, the sitemap and llms.txt.
   await expect
     .poll(async () => (await page.request.get(path)).status(), {
       timeout: 15_000,
@@ -1134,10 +1148,23 @@ test("Từ khoá & SEO: an administrator publishes a search landing page; editor
     "href",
     new RegExp(`${path}$`),
   );
-  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    /noindex/,
+  );
+  await expect(page.locator(".rental-landing-facts")).toHaveCount(0);
   // The fixed filter is the page itself, not a chip to remove.
   await expect(page.locator(".filter-chips a")).toHaveCount(0);
-  expect(await (await page.request.get("/sitemap.xml")).text()).toContain(path);
+  expect(await (await page.request.get("/sitemap.xml")).text()).not.toContain(
+    path,
+  );
+  expect(await (await page.request.get("/llms.txt")).text()).not.toContain(
+    path,
+  );
+  // Admin says why.
+  await page.goto("/admin/seo");
+  await page.getByRole("tab", { name: "Trang theo nhu cầu" }).click();
+  await expect(page.locator(".seo-quality")).toHaveText("Chưa có căn phù hợp");
 
   const editor = await browser.newPage();
   await login(editor, "editor");
@@ -1153,5 +1180,42 @@ test("Từ khoá & SEO: an administrator publishes a search landing page; editor
   await page
     .getByRole("button", { name: "Xoá Cho thuê căn hộ 2 phòng ngủ Đà Nẵng QA" })
     .click();
-  await expect(page.getByText("Chưa có trang theo nhu cầu nào.")).toBeVisible();
+  await expect(page.getByText("Chưa có trang nào.")).toBeVisible();
+});
+
+test("Từ khoá & SEO: a landing page counts real units only and sums them up", () => {
+  const unit = (slug: string, extra: Partial<Property> = {}) =>
+    ({
+      id: slug,
+      slug,
+      status: "Còn trống",
+      bedrooms: 2,
+      rentVnd: 15e6,
+      projectName: "Monarchy",
+      ...extra,
+    }) as Property;
+  const landing: Landing = {
+    slug: "qa",
+    purpose: "rent",
+    h1: "QA",
+    seoTitle: "",
+    seoDescription: "",
+    intro: "",
+    filters: { bedrooms: "2" },
+    published: true,
+  };
+  const units = landingUnits(landing, [
+    unit("a"),
+    unit("b", { rentVnd: 22e6, projectName: "Sun Ponte" }),
+    unit("c", { status: "Đã cho thuê" }),
+    unit("mau", { isDemo: true }),
+    unit("go", { delisted: true }),
+    unit("1pn", { bedrooms: 1 }),
+  ]);
+  expect(units.map((u) => u.slug).sort()).toEqual(["a", "b", "c"]);
+  expect(units.length).toBeGreaterThanOrEqual(MIN_LANDING_UNITS);
+  const facts = landingFacts(landing, units);
+  expect(facts).toMatchObject({ total: 3, low: 15, high: 22 });
+  expect(landingSummary(facts)).toContain("giá 15 – 22 triệu/tháng");
+  expect(landingSummary(facts)).toContain("tại Monarchy, Sun Ponte");
 });

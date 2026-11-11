@@ -54,6 +54,8 @@ export default defineConfig({
         GEMINI_API_BASE: "http://127.0.0.1:4299",
         FRONTEND_REVALIDATE_URL: `${SITE_URL}/api/revalidate`,
         LOG_LEVEL: "warn",
+        // No Search Console calls from tests, whatever the developer's .env has.
+        GSC_SITE: "",
         // Uploads stay on this machine, never in the developer's R2 bucket.
         STORAGE_DRIVER: "local",
         LOCAL_MEDIA_DIR: "./.local/e2e-media",

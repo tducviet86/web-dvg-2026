@@ -55,7 +55,14 @@ import { href, setRequestLocale, t } from "@/i18n/server";
 import type { PortfolioProject, Post, Property } from "@/types";
 import { ProjectProductPage } from "@/components/project-product-page";
 import { productPath } from "@/lib/project-products";
-import { landingFilters, landingPath, readLandings } from "@/lib/landings";
+import {
+  MIN_LANDING_UNITS,
+  landingFacts,
+  landingFilters,
+  landingPath,
+  landingUnits,
+  readLandings,
+} from "@/lib/landings";
 
 type Props = {
   params: Promise<{ locale: string; slug: string[] }>;
@@ -227,8 +234,12 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     if (!landing) notFound();
     const content = await getSiteContent();
     const fixed = landingFilters(landing);
+    // Too few units: open for visitors, kept out of search (thin page).
+    const units = landingUnits(landing, content.properties);
+    const thin = units.length < MIN_LANDING_UNITS;
     return {
       title: landing.seoTitle || landing.h1,
+      noindex: thin,
       description: landing.seoDescription || landing.intro.slice(0, 300),
       parents: [
         purpose === "sale"
@@ -244,6 +255,8 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
             h1: t(landing.h1),
             intro: landing.intro ? t(landing.intro) : "",
             fixed,
+            units,
+            facts: landingFacts(landing, units),
           }}
         />
       ),

@@ -4,7 +4,12 @@ import {
   getSitemap,
   getSiteContent,
 } from "@/lib/api/content";
-import { landingPath, readLandings } from "@/lib/landings";
+import {
+  MIN_LANDING_UNITS,
+  landingPath,
+  landingUnits,
+  readLandings,
+} from "@/lib/landings";
 import { siteUrl } from "@/lib/utils";
 import { HTML_LANG, LOCALES, localizeHref } from "@/i18n/config";
 
@@ -53,7 +58,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .map((p) => ({ path: `mua-ban/${p.slug}`, lastModified: p.updatedAt })),
     // Search landing pages (Admin › Từ khoá & SEO).
     ...readLandings(settings["seo.landings"])
-      .filter((l) => l.published)
+      .filter(
+        (l) =>
+          l.published &&
+          landingUnits(l, properties).length >= MIN_LANDING_UNITS,
+      )
       .map((l) => ({ path: landingPath(l).slice(1) })),
     ...data.posts.map((p) => ({
       path: `blog/${p.slug}`,

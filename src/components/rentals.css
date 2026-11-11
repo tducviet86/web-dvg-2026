@@ -3681,3 +3681,30 @@
 .rental-landing-intro p {
   margin: 0 0 12px;
 }
+/* Its units in numbers: count, free, price, projects. */
+.rental-landing-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 18px 0 0;
+}
+.rental-landing-facts > div {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(23, 62, 52, 0.14);
+  border-radius: 10px;
+  background: #fff;
+}
+.rental-landing-facts dt {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.rental-landing-facts dd {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
