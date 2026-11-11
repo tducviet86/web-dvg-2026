@@ -27,6 +27,7 @@ import {
   Files,
   BriefcaseBusiness,
   UserCheck,
+  ChartNoAxesColumnIncreasing,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import {
   type ProjectBannerRecord,
 } from "./banners";
 import { MediaLibraryPanel } from "./media-library";
+import { SeoPanel } from "./seo-panel";
 import { ReviewsPanel } from "./reviews";
 import { LoginForm } from "./login";
 import { UsersPanel } from "./users";
@@ -83,7 +85,8 @@ type Tab =
   | "applications"
   | "settings"
   | "users"
-  | "translations";
+  | "translations"
+  | "seo";
 /** Sidebar entries, grouped (the heading shows before the first of a group). */
 const tabs: { id: Tab; label: string; icon: typeof House; group: string }[] = [
   { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard, group: "" },
@@ -122,6 +125,12 @@ const tabs: { id: Tab; label: string; icon: typeof House; group: string }[] = [
     label: "Ứng viên",
     icon: UserCheck,
     group: "Khách & tuyển dụng",
+  },
+  {
+    id: "seo",
+    label: "Từ khoá & SEO",
+    icon: ChartNoAxesColumnIncreasing,
+    group: "Hệ thống",
   },
   { id: "users", label: "Người dùng", icon: UserCog, group: "Hệ thống" },
   { id: "settings", label: "Cài đặt", icon: Settings, group: "Hệ thống" },
@@ -666,6 +675,8 @@ function Workspace() {
             <UsersPanel currentUserId={session.id} />
           ) : tab === "settings" ? (
             <SettingsPanel />
+          ) : tab === "seo" ? (
+            <SeoPanel />
           ) : tab === "dashboard" ? (
             <Overview
               permissions={session.permissions}

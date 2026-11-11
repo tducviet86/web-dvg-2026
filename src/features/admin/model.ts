@@ -63,6 +63,8 @@ export const sectionPermission: Record<string, string> = {
   settings: "settings:write",
   users: "users:manage",
   translations: "content:read",
+  // Search Console data and landing pages: administrators only.
+  seo: "settings:write",
   // The library is the administrator's: editors add photos inside the forms.
   media: "settings:write",
   reviews: "content:read",

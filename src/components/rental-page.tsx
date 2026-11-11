@@ -36,15 +36,26 @@ export function RentalPage({
   filters,
   project,
   content,
+  landing,
 }: {
   filters: Filters;
   project?: PortfolioProject;
   content: SiteContent;
+  /**
+   * A search landing page (lib/landings): its address, heading and text,
+   * and the filters it fixes (already in `filters`, never offered for removal).
+   */
+  landing?: { path: string; h1: string; intro: string; fixed: Filters };
 }) {
   const locations = content.portfolio.filter((p) =>
     p.categories.includes("rent"),
   );
-  const base = project ? `/cho-thue/du-an/${project.slug}` : "/cho-thue";
+  const base =
+    landing?.path ??
+    (project ? `/cho-thue/du-an/${project.slug}` : "/cho-thue");
+  /** A filter the landing page itself stands for. */
+  const isFixed = (key: string, value?: string) =>
+    !!landing && landing.fixed[key] === value;
   const effective: Filters = {
     ...filters,
     ...(project ? { project: project.slug } : {}),
@@ -93,7 +104,7 @@ export function RentalPage({
     const q = new URLSearchParams(
       Object.entries({ ...filters, ...changes }).filter(
         (e): e is [string, string] =>
-          !!e[1] && !(project && e[0] === "project"),
+          !!e[1] && !(project && e[0] === "project") && !isFixed(e[0], e[1]),
       ),
     );
     return `${base}${q.size ? `?${q}` : ""}#can-ho`;
@@ -106,33 +117,51 @@ export function RentalPage({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            name: project
-              ? `Cho thuê căn hộ ${project.name} Đà Nẵng`
-              : "Cho thuê căn hộ Đà Nẵng",
+            name: landing
+              ? landing.h1
+              : project
+                ? `Cho thuê căn hộ ${project.name} Đà Nẵng`
+                : "Cho thuê căn hộ Đà Nẵng",
             url: `${siteUrl}${base}`,
             inLanguage: "vi-VN",
             description:
+              landing?.intro ||
               guide?.intro ||
               "Tìm hiểu căn hộ cho thuê tại Monarchy, Sun Panoma, Sun Ponte Residence, Sam Tower và Hiyori Garden Tower.",
-            ...(!project
+            // A landing page lists its own units; the rentals page its projects.
+            ...(landing
               ? {
                   mainEntity: {
                     "@type": "ItemList",
-                    itemListElement: locations.map((p, index) => ({
+                    numberOfItems: result.length,
+                    itemListElement: result.slice(0, 20).map((p, index) => ({
                       "@type": "ListItem",
                       position: index + 1,
-                      name: `Cho thuê ${p.name}`,
-                      url: `${siteUrl}/cho-thue/du-an/${p.slug}`,
+                      name: p.name,
+                      url: `${siteUrl}/${sale ? "mua-ban" : "cho-thue"}/${p.slug}`,
                     })),
                   },
                 }
-              : {}),
+              : !project
+                ? {
+                    mainEntity: {
+                      "@type": "ItemList",
+                      itemListElement: locations.map((p, index) => ({
+                        "@type": "ListItem",
+                        position: index + 1,
+                        name: `Cho thuê ${p.name}`,
+                        url: `${siteUrl}/cho-thue/du-an/${p.slug}`,
+                      })),
+                    },
+                  }
+                : {}),
           }).replace(/</g, "\\u003c"),
         }}
       />
       <SearchHero
         slides={slides}
-        action={base}
+        // A landing page's search box searches everything, from its filters.
+        action={landing ? (sale ? "/mua-ban" : "/cho-thue") : base}
         mode={sale ? "mua" : "thue"}
         values={effective}
         projects={heroProjects}
@@ -141,9 +170,11 @@ export function RentalPage({
         title={
           // The page's subject, as its title says: apartments (or the kind
           // the visitor chose) for rent, or for sale.
-          project
-            ? `Căn hộ tại ${project.name}`
-            : `${sale ? "Mua bán" : "Cho thuê"} ${filters.loai ? noun.toLowerCase() : "căn hộ"} tại Đà Nẵng`
+          landing
+            ? landing.h1
+            : project
+              ? `Căn hộ tại ${project.name}`
+              : `${sale ? "Mua bán" : "Cho thuê"} ${filters.loai ? noun.toLowerCase() : "căn hộ"} tại Đà Nẵng`
         }
         units={scope}
         crumbs={
@@ -151,7 +182,15 @@ export function RentalPage({
             <BackButton />
             <Link href="/">Trang chủ</Link>
             <span>/</span>
-            {project ? (
+            {landing ? (
+              <>
+                <Link href={sale ? "/mua-ban" : "/cho-thue"}>
+                  {sale ? "Mua bán" : "Cho thuê"}
+                </Link>
+                <span>/</span>
+                <span aria-current="page">{landing.h1}</span>
+              </>
+            ) : project ? (
               <>
                 <Link href="/cho-thue">Cho thuê</Link>
                 <span>/</span>
@@ -164,6 +203,17 @@ export function RentalPage({
         }
       />
       <div className="container">
+        {landing?.intro && (
+          <div className="rental-landing-intro">
+            {landing.intro
+              .split(/\n{2,}/)
+              .map((text) => text.trim())
+              .filter(Boolean)
+              .map((text) => (
+                <p key={text}>{text}</p>
+              ))}
+          </div>
+        )}
         <section
           id="can-ho"
           className="rental-results"
@@ -211,7 +261,8 @@ export function RentalPage({
                     "limit",
                     "view",
                     ...(project ? ["project"] : []),
-                  ].includes(k),
+                  ].includes(k) &&
+                  !isFixed(k, v),
               )
               .map(([k, v]) => (
                 <Link

@@ -55,6 +55,7 @@ import { href, setRequestLocale, t } from "@/i18n/server";
 import type { PortfolioProject, Post, Property } from "@/types";
 import { ProjectProductPage } from "@/components/project-product-page";
 import { productPath } from "@/lib/project-products";
+import { landingFilters, landingPath, readLandings } from "@/lib/landings";
 
 type Props = {
   params: Promise<{ locale: string; slug: string[] }>;
@@ -207,6 +208,45 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       title: "Mua bán căn hộ Đà Nẵng",
       description: `Căn hộ đang bán và căn mẫu tại Đà Nẵng${names.length ? `: ${names.join(", ")}` : ""}. Xem thông số, mặt bằng và liên hệ Đất Vàng Group để được tư vấn.`,
       render: () => <SalePage content={content} />,
+    };
+  }
+  // Search landing pages (Admin › Từ khoá & SEO): a fixed search with its
+  // own heading and text, indexed like the other listing pages.
+  if (
+    (slug[0] === "cho-thue" || slug[0] === "mua-ban") &&
+    slug[1] === "nhu-cau" &&
+    slug.length === 3
+  ) {
+    const purpose = slug[0] === "mua-ban" ? "sale" : "rent";
+    const settings = await getPublicSettings().catch(
+      () => ({}) as Record<string, string>,
+    );
+    const landing = readLandings(settings["seo.landings"]).find(
+      (l) => l.published && l.purpose === purpose && l.slug === slug[2],
+    );
+    if (!landing) notFound();
+    const content = await getSiteContent();
+    const fixed = landingFilters(landing);
+    return {
+      title: landing.seoTitle || landing.h1,
+      description: landing.seoDescription || landing.intro.slice(0, 300),
+      parents: [
+        purpose === "sale"
+          ? { name: "Mua bán căn hộ Đà Nẵng", path: "/mua-ban" }
+          : { name: "Cho thuê căn hộ Đà Nẵng", path: "/cho-thue" },
+      ],
+      render: (filters) => (
+        <RentalPage
+          filters={{ ...filters, ...fixed }}
+          content={content}
+          landing={{
+            path: landingPath(landing),
+            h1: t(landing.h1),
+            intro: landing.intro ? t(landing.intro) : "",
+            fixed,
+          }}
+        />
+      ),
     };
   }
   if (slug[0] === "cho-thue" && slug[1] === "du-an" && slug.length === 3) {

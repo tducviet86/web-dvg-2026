@@ -1,5 +1,10 @@
 import type { MetadataRoute } from "next";
-import { getSitemap, getSiteContent } from "@/lib/api/content";
+import {
+  getPublicSettings,
+  getSitemap,
+  getSiteContent,
+} from "@/lib/api/content";
+import { landingPath, readLandings } from "@/lib/landings";
 import { siteUrl } from "@/lib/utils";
 import { HTML_LANG, LOCALES, localizeHref } from "@/i18n/config";
 
@@ -10,9 +15,10 @@ export const revalidate = 0;
 type Entry = { path: string; lastModified?: string };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [data, { properties }] = await Promise.all([
+  const [data, { properties }, settings] = await Promise.all([
     getSitemap(),
     getSiteContent(),
+    getPublicSettings().catch(() => ({}) as Record<string, string>),
   ]);
   const units = new Map(properties.map((p) => [p.slug, p]));
   const latest = (dates: string[]) => dates.sort().at(-1);
@@ -45,6 +51,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...data.properties
       .filter((p) => units.get(p.slug)?.forSale)
       .map((p) => ({ path: `mua-ban/${p.slug}`, lastModified: p.updatedAt })),
+    // Search landing pages (Admin › Từ khoá & SEO).
+    ...readLandings(settings["seo.landings"])
+      .filter((l) => l.published)
+      .map((l) => ({ path: landingPath(l).slice(1) })),
     ...data.posts.map((p) => ({
       path: `blog/${p.slug}`,
       lastModified: p.updatedAt,

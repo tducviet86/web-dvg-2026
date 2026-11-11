@@ -27,6 +27,7 @@ export default async function Admin({
       "settings",
       "users",
       "translations",
+      "seo",
       "applications",
       "media",
       "reviews",

@@ -1087,3 +1087,71 @@ test("a visit's source, from its link or the page that sent it", () => {
   expect(sourceOf("", "https://datvanggroup.vn/cho-thue", own)).toBe("direct");
   expect(sourceOf("", "https://batdongsan.com.vn/", own)).toBe("other");
 });
+
+test("Từ khoá & SEO: an administrator publishes a search landing page; editors never see it", async ({
+  browser,
+  page,
+}) => {
+  await login(page);
+  await nav(page).getByRole("link", { name: "Từ khoá & SEO" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Từ khoá & SEO",
+  );
+  // Without a Search Console account the table explains how to connect one.
+  await expect(
+    page.getByRole("heading", { name: "Kết nối Google Search Console" }),
+  ).toBeVisible();
+
+  await page.getByRole("tab", { name: "Trang theo nhu cầu" }).click();
+  await page.getByRole("button", { name: "Thêm trang" }).click();
+  await page
+    .getByLabel("Tiêu đề trang (H1) *")
+    .fill("Cho thuê căn hộ 2 phòng ngủ Đà Nẵng QA");
+  await page.getByLabel("Phòng ngủ").selectOption("2");
+  await page
+    .getByLabel(/Đoạn giới thiệu/)
+    .fill("Các căn 2 phòng ngủ đang cho thuê tại Đà Nẵng.");
+  await page.getByLabel(/Hiển thị trên website/).check();
+  await page.getByRole("button", { name: "Lưu trang" }).click();
+  await expect(page.getByText("Đã lưu.")).toBeVisible();
+  const path = "/cho-thue/nhu-cau/cho-thue-can-ho-2-phong-ngu-da-nang-qa";
+  await expect(page.getByText(path)).toBeVisible();
+
+  // The public page: its heading, text and units, indexable at its own address.
+  await expect
+    .poll(async () => (await page.request.get(path)).status(), {
+      timeout: 15_000,
+    })
+    .toBe(200);
+  await page.goto(path);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Cho thuê căn hộ 2 phòng ngủ Đà Nẵng QA",
+  );
+  await expect(page.locator(".rental-landing-intro")).toContainText(
+    "Các căn 2 phòng ngủ",
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    new RegExp(`${path}$`),
+  );
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  // The fixed filter is the page itself, not a chip to remove.
+  await expect(page.locator(".filter-chips a")).toHaveCount(0);
+  expect(await (await page.request.get("/sitemap.xml")).text()).toContain(path);
+
+  const editor = await browser.newPage();
+  await login(editor, "editor");
+  await expect(
+    nav(editor).getByRole("link", { name: "Từ khoá & SEO" }),
+  ).toHaveCount(0);
+  await editor.close();
+
+  // Clean up through the same screen.
+  await page.goto("/admin/seo");
+  await page.getByRole("tab", { name: "Trang theo nhu cầu" }).click();
+  page.once("dialog", (d) => d.accept());
+  await page
+    .getByRole("button", { name: "Xoá Cho thuê căn hộ 2 phòng ngủ Đà Nẵng QA" })
+    .click();
+  await expect(page.getByText("Chưa có trang theo nhu cầu nào.")).toBeVisible();
+});
