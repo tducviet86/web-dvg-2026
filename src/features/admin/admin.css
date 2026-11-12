@@ -6193,52 +6193,11 @@
   display: block;
 }
 
-/* Lượt xem theo căn: every viewed unit, adding up to the chart's total. */
 .dash-kinds {
   margin-top: -4px;
 }
-.dash-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.dash-table th,
-.dash-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--admin-border);
-  text-align: left;
-  white-space: nowrap;
-}
-.dash-table thead th {
-  color: var(--admin-muted);
-  font-weight: 500;
-  font-size: 12px;
-}
-.dash-table .num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.dash-table tfoot th,
-.dash-table tfoot td {
-  border-bottom: 0;
-  font-weight: 600;
-  color: #173e34;
-}
-.dash-table td small {
-  color: var(--admin-muted);
-}
 .dash-more {
   justify-self: start;
-}
-/* Phones: unit, status and views only, wrapping inside the panel. */
-@media (max-width: 640px) {
-  .dash-table .dash-col-extra {
-    display: none;
-  }
-  .dash-table th,
-  .dash-table td {
-    white-space: normal;
-  }
 }
 
 /* ── Tổng quan in the shadcn/ui style ────────────────────────────────────
@@ -6646,47 +6605,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Lượt xem theo căn: shadcn Table. */
-.dash-table th,
-.dash-table td {
-  padding: 8px 10px;
-  border-bottom: 0;
-}
-.dash-table thead th {
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-weight: 500;
-}
-.dash-table tfoot td {
-  border-bottom: 0;
-  font-weight: 600;
-  color: var(--foreground);
-}
-.dash-unit-cell button,
-.dash-unit-cell > span {
-  display: block;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--foreground);
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-}
-.dash-unit-cell button:hover {
-  color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.dash-unit-cell small {
-  display: block;
-  color: var(--muted-foreground);
-  font-size: 12px;
-}
-.dash-sources {
-  color: var(--muted-foreground);
-  white-space: normal;
-}
 .dash-footnote {
   color: var(--muted-foreground);
   font-size: 12px;
@@ -6728,14 +6646,200 @@
   height: 28px;
   margin-top: 2px;
 }
-/* Phones: the admin's wide-table minimum is not for this small table. */
-@media (max-width: 760px) {
-  .admin-shell .dash-table {
-    min-width: 0;
-  }
+
+/* Lượt xem theo căn: a ranked list, one bar per unit split by source. */
+.dash-uv-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
 }
-/* The site-wide cell minimum (globals.css) would push this table off phones. */
-.dash-table td {
+.dash-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: fit-content;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--muted);
+}
+.dash-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+}
+.dash-seg button span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.dash-seg button[aria-pressed="true"] {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.08),
+    0 0 0 1px var(--border);
+}
+.dash-uv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.dash-uv-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-uv-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.dash-uv {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dash-uv li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--border);
+}
+.dash-uv li:first-child {
+  border-top: 0;
+}
+.dash-uv-rank {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+.dash-uv li:first-child .dash-uv-rank {
+  background: var(--gold-soft);
+  color: var(--gold-strong);
+}
+.dash-uv-main {
+  display: grid;
+  gap: 3px;
   min-width: 0;
-  max-width: none;
+}
+.dash-uv-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.dash-uv-title button,
+.dash-uv-title strong {
+  overflow: hidden;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--foreground);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dash-uv-title strong {
+  cursor: default;
+}
+.dash-uv-title button:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dash-uv-main > small {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-uv-bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--muted);
+}
+.dash-uv-bar i {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dash-uv-stats {
+  display: grid;
+  justify-items: end;
+  min-width: 64px;
+  line-height: 1.2;
+}
+.dash-uv-stats strong {
+  color: var(--foreground);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.dash-uv-stats small {
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+}
+.dash-uv-stats .dash-uv-leads {
+  margin-top: 2px;
+  color: var(--gold-strong);
+  font-weight: 500;
+}
+.dash-uv-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.dash-uv-total {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.dash-uv-total strong {
+  color: var(--foreground);
+}
+@media (max-width: 760px) {
+  .dash-uv li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .dash-uv-rank {
+    display: none;
+  }
 }

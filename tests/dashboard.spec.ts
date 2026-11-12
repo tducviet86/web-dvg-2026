@@ -187,12 +187,23 @@ test("Lượt xem theo căn: every viewed unit, adding up to the chart, and the 
   await expect(
     panel.getByRole("heading", { name: "Lượt xem theo căn" }),
   ).toBeVisible();
-  const row = panel.locator("tbody tr", { hasText: "Căn lượt xem QA" });
+  const row = panel.locator(".dash-uv li", { hasText: "Căn lượt xem QA" });
   await expect(row).toContainText("LX-QA");
   await expect(row).toContainText("Đã ẩn");
-  await expect(row.locator("td.num").first()).toHaveText("4");
+  await expect(row.locator(".dash-uv-stats strong")).toHaveText("4");
+  // Its 4 views came before sources were kept: one grey "Chưa rõ" bar.
+  await expect(row.locator(".dash-uv-bar")).toHaveAttribute(
+    "aria-label",
+    "Chưa rõ (trước khi đo nguồn): 4",
+  );
+  // A unit off the site is under "Đã ẩn/xoá", not under "Đang bán/thuê".
+  const groups = panel.getByRole("group", { name: "Lọc theo tình trạng căn" });
+  await groups.getByRole("button", { name: /Đang bán\/thuê/ }).click();
+  await expect(row).toHaveCount(0);
+  await groups.getByRole("button", { name: /Đã ẩn\/xoá/ }).click();
+  await expect(row).toHaveCount(1);
   // The rows add up to the total of the chart, said in its split line.
-  const total = await panel.locator("tfoot td.num").first().innerText();
+  const total = await panel.locator(".dash-uv-total strong").innerText();
   await expect(page.locator(".dash-kinds")).toContainText(
     `${total} lượt trong 7 ngày`,
   );

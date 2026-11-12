@@ -32,15 +32,6 @@ import type { SceneProject } from "./portfolio-scene";
 import { RANGES, RANGE_KEY, savedRange, type Range } from "./dashboard-range";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { groupActivity } from "./activity";
 
 // three.js and the charts are only downloaded for this screen.
@@ -264,7 +255,44 @@ const KIND_TONE: Record<ViewKind, "success" | "gold" | "muted"> = {
 /** Lines of "Hoạt động gần đây" shown before "Xem thêm". */
 const ACTIVITY_SHOWN = 5;
 /** Rows of "Lượt xem theo căn" shown before "Xem tất cả". */
-const UNIT_VIEWS_SHOWN = 15;
+const UNIT_VIEWS_SHOWN = 10;
+/** Groups of "Lượt xem theo căn": hidden and deleted units go together. */
+type ViewFilter = "all" | "live" | "model" | "off";
+const VIEW_FILTERS: [ViewFilter, string][] = [
+  ["all", "Tất cả"],
+  ["live", "Đang bán/thuê"],
+  ["model", "Căn mẫu"],
+  ["off", "Đã ẩn/xoá"],
+];
+const inFilter = (kind: ViewKind, filter: ViewFilter) =>
+  filter === "all" ||
+  kind === filter ||
+  (filter === "off" && (kind === "hidden" || kind === "deleted"));
+/** One colour per source, the same on every bar; unknown is grey. */
+const UV_SOURCES: [string, string][] = [
+  ["google", "var(--chart-1)"],
+  ["ai", "var(--chart-3)"],
+  ["zalo", "#3b82c4"],
+  ["facebook", "var(--chart-2)"],
+  ["search", "var(--chart-4)"],
+  ["direct", "var(--chart-6)"],
+  ["other", "#9fb3ab"],
+  ["unknown", "#c3cec9"],
+];
+const sourceColor = (key: string) =>
+  UV_SOURCES.find(([k]) => k === key)?.[1] ?? "#9fb3ab";
+/** A unit's views by source, those from before sources were kept as "unknown". */
+const withUnknown = (u: {
+  views: number;
+  sources: { source: string; views: number }[];
+}) => {
+  const known = u.sources.reduce((n, x) => n + x.views, 0);
+  const order = (key: string) => UV_SOURCES.findIndex(([k]) => k === key);
+  return [
+    ...[...u.sources].sort((a, b) => order(a.source) - order(b.source)),
+    ...(u.views > known ? [{ source: "unknown", views: u.views - known }] : []),
+  ];
+};
 const percent = (value: number) =>
   `${(value * 100).toLocaleString("vi-VN", { maximumFractionDigits: value < 0.1 ? 1 : 0 })}%`;
 const million = (vnd: number) =>
@@ -456,6 +484,7 @@ export function Overview({
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [feed, setFeed] = useState<"leads" | "applications">("leads");
   const [allUnitViews, setAllUnitViews] = useState(false);
+  const [viewFilter, setViewFilter] = useState<ViewFilter>("all");
   const [allActivity, setAllActivity] = useState(false);
   const request = useRef(0);
 
@@ -677,6 +706,12 @@ export function Overview({
     },
   ].filter(Boolean) as { label: string; href: string; icon: typeof House }[];
 
+  // Viewed units of the chosen group, the longest bar for the most viewed.
+  const unitRows = (data?.unitViews ?? []).filter((u) =>
+    inFilter(u.kind, viewFilter),
+  );
+  const maxUnitViews = Math.max(1, ...unitRows.map((u) => u.views));
+
   // Alike changes in a row are one line; the newest few are shown.
   const activity = data?.activity ? groupActivity(data.activity) : [];
 
@@ -802,7 +837,7 @@ export function Overview({
                     `${nf(t.byKind[k] ?? 0)} ${label.toLowerCase()}`,
                 )
                 .join(" · ")}
-              . Từng căn ở bảng “Lượt xem theo căn”.
+              . Từng căn ở khung “Lượt xem theo căn”.
             </p>
           )}
           <h3 className="dash-sub">Lượt xem căn hộ theo nguồn</h3>
@@ -881,81 +916,145 @@ export function Overview({
           </CardTitle>
           <span>
             {period} qua
-            {data ? ` · ${nf(data.unitViews.length)} căn` : ""}
+            {data
+              ? ` · ${nf(data.unitViews.length)} căn · ${nf(t?.views ?? 0)} lượt`
+              : ""}
           </span>
         </CardHeader>
         {data?.unitViews.length ? (
           <>
-            <Table className="dash-table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Căn</TableHead>
-                  <TableHead className="dash-col-extra">Dự án</TableHead>
-                  <TableHead>Tình trạng</TableHead>
-                  <TableHead className="num">Lượt xem</TableHead>
-                  <TableHead className="dash-col-extra">Nguồn</TableHead>
-                  {leads && <TableHead className="num">Yêu cầu</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(allUnitViews
-                  ? data.unitViews
-                  : data.unitViews.slice(0, UNIT_VIEWS_SHOWN)
-                ).map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="dash-unit-cell">
-                      {u.kind === "deleted" ? (
-                        <span>{u.name ?? "Căn đã xoá"}</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => goTo(`/admin/properties/${u.id}/edit`)}
-                        >
-                          {u.name}
-                        </button>
-                      )}
-                      {u.unitCode && <small>{u.unitCode}</small>}
-                    </TableCell>
-                    <TableCell className="dash-col-extra">
-                      {u.project ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={KIND_TONE[u.kind]} data-kind={u.kind}>
-                        {kindLabel(u.kind)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="num">{nf(u.views)}</TableCell>
-                    <TableCell className="dash-col-extra dash-sources">
-                      {u.sources
-                        .map((x) => `${viewSource(x.source)} ${x.views}`)
-                        .join(", ") || "—"}
-                    </TableCell>
-                    {leads && <TableCell className="num">{u.leads}</TableCell>}
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell>Tổng</TableCell>
-                  <TableCell className="dash-col-extra" />
-                  <TableCell />
-                  <TableCell className="num">{nf(t?.views ?? 0)}</TableCell>
-                  <TableCell className="dash-col-extra" />
-                  {leads && <TableCell />}
-                </TableRow>
-              </TableFooter>
-            </Table>
-            {data.unitViews.length > UNIT_VIEWS_SHOWN && (
-              <button
-                type="button"
-                className="text-link dash-more"
-                onClick={() => setAllUnitViews(!allUnitViews)}
+            <div className="dash-uv-tools">
+              <div
+                className="dash-seg"
+                role="group"
+                aria-label="Lọc theo tình trạng căn"
               >
-                {allUnitViews
-                  ? "Thu gọn"
-                  : `Xem tất cả ${nf(data.unitViews.length)} căn`}
-              </button>
+                {VIEW_FILTERS.map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={viewFilter === key}
+                    onClick={() => {
+                      setViewFilter(key);
+                      setAllUnitViews(false);
+                    }}
+                  >
+                    {label}
+                    <span>
+                      {
+                        data.unitViews.filter((u) => inFilter(u.kind, key))
+                          .length
+                      }
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <ul className="dash-uv-legend" aria-label="Màu theo nguồn">
+                {UV_SOURCES.filter(
+                  ([key]) =>
+                    key === "unknown" ||
+                    data.unitViews.some((u) =>
+                      u.sources.some((x) => x.source === key),
+                    ),
+                ).map(([key, color]) => (
+                  <li key={key}>
+                    <i style={{ background: color }} />
+                    {viewSource(key).replace(" (trước khi đo nguồn)", "")}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {unitRows.length ? (
+              <ol className="dash-uv">
+                {(allUnitViews
+                  ? unitRows
+                  : unitRows.slice(0, UNIT_VIEWS_SHOWN)
+                ).map((u, i) => {
+                  const parts = withUnknown(u);
+                  return (
+                    <li key={u.id}>
+                      <span className="dash-uv-rank">{i + 1}</span>
+                      <div className="dash-uv-main">
+                        <div className="dash-uv-title">
+                          {u.kind === "deleted" ? (
+                            <strong>{u.name ?? "Căn đã xoá"}</strong>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                goTo(`/admin/properties/${u.id}/edit`)
+                              }
+                            >
+                              {u.name}
+                            </button>
+                          )}
+                          {u.kind !== "live" && (
+                            <Badge
+                              variant={KIND_TONE[u.kind]}
+                              data-kind={u.kind}
+                            >
+                              {kindLabel(u.kind)}
+                            </Badge>
+                          )}
+                        </div>
+                        <small>
+                          {[u.unitCode, u.project].filter(Boolean).join(" · ")}
+                        </small>
+                        <div
+                          className="dash-uv-bar"
+                          role="img"
+                          aria-label={parts
+                            .map((x) => `${viewSource(x.source)}: ${x.views}`)
+                            .join(", ")}
+                          title={parts
+                            .map((x) => `${viewSource(x.source)}: ${x.views}`)
+                            .join("\n")}
+                        >
+                          {parts.map((x) => (
+                            <i
+                              key={x.source}
+                              style={{
+                                width: `${(x.views / maxUnitViews) * 100}%`,
+                                background: sourceColor(x.source),
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="dash-uv-stats">
+                        <strong>{nf(u.views)}</strong>
+                        <small>lượt xem</small>
+                        {leads && u.leads > 0 && (
+                          <small className="dash-uv-leads">
+                            {u.leads} yêu cầu
+                          </small>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <p className="dash-empty">Không có căn nào trong nhóm này.</p>
             )}
+            <div className="dash-uv-foot">
+              {unitRows.length > UNIT_VIEWS_SHOWN ? (
+                <button
+                  type="button"
+                  className="text-link dash-more"
+                  onClick={() => setAllUnitViews(!allUnitViews)}
+                >
+                  {allUnitViews
+                    ? "Thu gọn"
+                    : `Xem tất cả ${nf(unitRows.length)} căn`}
+                </button>
+              ) : (
+                <span />
+              )}
+              <p className="dash-uv-total">
+                Tổng {period}: <strong>{nf(t?.views ?? 0)}</strong> lượt xem
+              </p>
+            </div>
           </>
         ) : (
           <p className="dash-empty">
