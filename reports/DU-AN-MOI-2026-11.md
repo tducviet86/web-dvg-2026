@@ -170,3 +170,13 @@ Khung "Toàn cảnh" của bản đồ (`rental-map.tsx`) nay tự thu nhỏ khi
 - `Mặt bằng Căn mẫu …` (lỗi có từ trước): nhãn hình cắt căn (`PlanCutout`) được viết bằng JSX thường nên không bao giờ được gửi đi dịch. Nay dịch tại `UnitLayoutCrop` trước khi truyền xuống.
 - `đ` sau giá tiền và tên mẫu trong form: không cần dịch. `i18n-check` nay bỏ qua để `i18n:warm` không báo kẹt mãi.
 - Tên mẫu trong form đổi từ "Nguyễn Minh Anh" thành "Nguyễn Văn A" theo yêu cầu.
+
+## Đưa dự án lên production: `scripts/copy-projects.mjs`
+
+- Script chép từ dvg_dev sang production:
+  - tạo Saphia, S-Light, FourS, Da Nang Downtown;
+  - với Cora, chỉ cập nhật mặt bằng, loại căn và toạ độ;
+  - mỗi ảnh được tải lại vào thư viện ảnh production.
+- Không thêm `--apply` thì script chỉ chạy thử, không ghi gì.
+- Chạy lại không tạo trùng: dự án đã có thì bỏ qua, Cora đã giống thì cũng bỏ qua.
+- Đã thử với API e2e (database `dvg_e2e`, ảnh lưu trên máy): 5/5 dự án, 47 ảnh; lần chạy sau bỏ qua cả 5.
