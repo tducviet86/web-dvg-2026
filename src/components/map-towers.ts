@@ -7,10 +7,12 @@ import * as THREE from "three";
 import { PLAN_ANCHORS, PLAN_OUTLINES } from "@/lib/floor-plan-outlines";
 import {
   BUILDING_BLOCKS,
+  FIREWORKS,
   FLOOR_METRES,
   blockCentre,
   type MapBlock,
 } from "@/lib/rental-map";
+import { createFireworks } from "./map-fireworks";
 
 /** A tower under the pointer: `level` counts floors from the ground, from 1. */
 export type TowerHit = {
@@ -174,6 +176,20 @@ export function createTowers(map: MapLibre, places: Place[]) {
     const m = MercatorCoordinate.fromLngLat([lng, lat], 0);
     return [(m.x - origin.x) / s, (m.y - origin.y) / s] as const;
   };
+
+  // Fireworks over the river by the project that has them.
+  const show = places.find((p) => p.slug === FIREWORKS.slug);
+  const fireworks =
+    show &&
+    createFireworks(
+      scene,
+      toScene(
+        show.lng +
+          FIREWORKS.east / (111_320 * Math.cos((show.lat * Math.PI) / 180)),
+        show.lat + FIREWORKS.north / 110_574,
+      ),
+      () => map.triggerRepaint(),
+    );
 
   const ambient = new THREE.HemisphereLight("#ffffff", "#c9c2ad", 2.1);
   const sun = new THREE.DirectionalLight("#fff4e0", 2.2);
@@ -578,6 +594,7 @@ export function createTowers(map: MapLibre, places: Place[]) {
       renderer.autoClear = false;
     },
     onRemove() {
+      fireworks?.run(false);
       renderer?.dispose();
     },
   };
@@ -1154,7 +1171,9 @@ export function createTowers(map: MapLibre, places: Place[]) {
       return {
         slug: tower.slug,
         tower: tower.tower,
-        level: Math.max(1, Math.ceil(hit.point.y / FLOOR_METRES)),
+        level: tower.block.crown
+          ? Math.round(tower.block.base / FLOOR_METRES)
+          : Math.max(1, Math.ceil(hit.point.y / FLOOR_METRES)),
         soon: !!tower.block.soon,
       };
     },
@@ -1172,7 +1191,8 @@ export function createTowers(map: MapLibre, places: Place[]) {
       if (level > 0)
         for (const x of towers) {
           if (x.slug !== slug || x.tower !== tower || !x.sides.length) continue;
-          if (level * FLOOR_METRES > x.block.height + 0.1) continue;
+          if (level * FLOOR_METRES > x.block.height + 0.1 || x.block.crown)
+            continue;
           bandOf(x).position.y =
             (level - 1) * FLOOR_METRES +
             (x.block.outline ? 0 : FLOOR_METRES / 2);
@@ -1278,6 +1298,7 @@ export function createTowers(map: MapLibre, places: Place[]) {
         Math.sin(up) * 400,
         -Math.cos(azimuth) * Math.cos(up) * 400,
       );
+      fireworks?.run(night);
       sun.intensity = night ? 0.15 : 2.2;
       ambient.intensity = night ? 0.45 : 2.1;
       for (const x of towers) {

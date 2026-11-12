@@ -48,8 +48,10 @@ import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { towerFloors, unitName, type FloorData } from "@/lib/floor-3d";
 import {
   BUILDING_BLOCKS,
+  PLACE_VIEWS,
   FLOOR_METRES,
   NEARBY_PLACES,
+  planAt,
   blockCentre,
   distance,
   VILLA_METRES,
@@ -98,6 +100,12 @@ export type MapBuilding = {
   units: MapUnit[];
   /** Plans for the 3D floor view, when the project has them. */
   floors?: FloorData;
+  /**
+   * A project being built: no card beside the map; pointing at a floor shows
+   * its plan ("Tòa F1 · Tầng 8-19"; a plan naming no tower is for all).
+   */
+  development?: boolean;
+  plans?: { name: string; image: string }[];
 };
 /** What a shared link opens: /ban-do?du-an=…&toa=…&tang=…&can=… */
 export type MapSelection = {
@@ -136,8 +144,6 @@ const LOOKS = [
   ["Tây", 270],
 ] as const;
 const call = telephoneHref(companyHotline);
-/** Projects whose floors light up under the pointer and open on a click. */
-const FLOOR_HOVER = new Set(["capital-square"]);
 /** The most wanted first: trending, then by views and enquiries. */
 const byHeat = (a: MapUnit, b: MapUnit) =>
   Number(b.trending) - Number(a.trending) || b.hot - a.hot;
@@ -170,6 +176,33 @@ function paintPin(pin: HTMLElement, title: string, lit: boolean) {
 
 function showPin(pin: HTMLElement, shown: boolean) {
   pin.hidden = !shown;
+}
+
+/**
+ * The whole map's view: `overview` at its usual zoom, or wider when the
+ * buildings would not all fit (projects far apart, as in the south of the city).
+ */
+function overviewCamera(
+  made: MapLibre,
+  buildings: MapBuilding[],
+  overview: { center: [number, number]; pitch: number; bearing: number },
+) {
+  const zoom =
+    window.innerWidth > 900 ? OVERVIEW_ZOOM.wide : OVERVIEW_ZOOM.narrow;
+  const lngs = buildings.map((b) => b.lng);
+  const lats = buildings.map((b) => b.lat);
+  const fit = made.cameraForBounds(
+    [
+      [Math.min(...lngs), Math.min(...lats)],
+      [Math.max(...lngs), Math.max(...lats)],
+    ],
+    { bearing: overview.bearing, padding: 40 },
+  );
+  // The fit is for a flat map; tilted, the far side takes less of the screen.
+  const tilted = (fit?.zoom ?? zoom) + 0.4;
+  return fit?.center && tilted < zoom
+    ? { ...overview, center: fit.center, zoom: tilted }
+    : { ...overview, zoom };
 }
 
 /** Pixels from a building's foot to its roof at the map's zoom and tilt. */
@@ -257,6 +290,37 @@ function towerLevels(building: MapBuilding | undefined, tower: string) {
     level: (floor: string) => Number(floor),
     planned: false,
   };
+}
+
+/** The floor's plan beside the pointer, kept inside the map. */
+function placeFloorPlan(
+  el: HTMLElement | null,
+  x: number,
+  y: number,
+  image = "",
+  caption = "",
+) {
+  if (!el) return;
+  el.hidden = !image;
+  if (!image) return;
+  // Made on first use: an empty picture would wait on the page for nothing.
+  let picture = el.querySelector("img");
+  if (!picture) {
+    picture = el.appendChild(document.createElement("img"));
+    picture.alt = el.dataset.alt ?? "";
+  }
+  if (picture.getAttribute("src") !== image) picture.src = image;
+  const heading = el.querySelector("b");
+  if (heading) heading.textContent = caption;
+  const box = el.parentElement;
+  const width = el.offsetWidth;
+  const height = el.offsetHeight;
+  const left =
+    box && x + 24 + width > box.clientWidth ? x - width - 24 : x + 24;
+  const top = box
+    ? Math.min(Math.max(8, y - height / 2), box.clientHeight - height - 8)
+    : y;
+  el.style.transform = `translate(${Math.max(8, left)}px, ${top}px)`;
 }
 
 type Peek = NonNullable<ReturnType<Towers["pickUnit"]>>;
@@ -478,8 +542,14 @@ export function RentalMap({
     (slug: string, tower: string, floor: string) => void
   >(() => {});
   const tip = useRef<HTMLDivElement>(null);
+  const floorPlan = useRef<HTMLDivElement>(null);
   const towers = useRef<Towers | null>(null);
   const focusOn = useRef(false);
+  // The building chosen, for the map's own handlers.
+  const picked = useRef(chosen);
+  useEffect(() => {
+    picked.current = chosen;
+  }, [chosen]);
   const [peek, setPeek] = useState<Peek | null>(null);
   const peekBox = useRef<HTMLDivElement>(null);
   const peekAt = useRef<(unit: Peek | null, x: number, y: number) => void>(
@@ -554,26 +624,33 @@ export function RentalMap({
       const block = BUILDING_BLOCKS[slug ?? ""]?.find(
         (x) => towerName && x.tower === towerName,
       );
+      const look = PLACE_VIEWS[slug ?? ""];
       if (place)
         map.current?.flyTo({
           center: block
             ? blockCentre(place.lat, place.lng, block)
-            : [place.lng, place.lat],
-          zoom: block ? 16.8 : 15.9,
+            : look?.centre
+              ? [
+                  place.lng +
+                    look.centre[0] /
+                      (111_320 * Math.cos((place.lat * Math.PI) / 180)),
+                  place.lat + look.centre[1] / 110_574,
+                ]
+              : [place.lng, place.lat],
+          zoom: block ? 16.8 : (look?.zoom ?? 15.9),
           pitch: 60,
-          bearing: -30,
+          bearing: look?.bearing ?? -30,
           duration: 1500,
           padding: {
             top: 0,
             bottom: 0,
             left: 0,
-            right: wide ? PANEL_WIDTH : 0,
+            right: wide && !place.development ? PANEL_WIDTH : 0,
           },
         });
-      else
-        map.current?.flyTo({
-          ...overview,
-          zoom: wide ? OVERVIEW_ZOOM.wide : OVERVIEW_ZOOM.narrow,
+      else if (map.current)
+        map.current.flyTo({
+          ...overviewCamera(map.current, buildings, overview),
           duration: 1200,
           padding: { top: 0, bottom: 0, left: 0, right: 0 },
         });
@@ -621,6 +698,7 @@ export function RentalMap({
           "top-right",
         );
         map.current = made;
+        made.jumpTo(overviewCamera(made, buildings, overview));
         made.on("error", (e) => {
           if (!made.loaded() && !made.isStyleLoaded()) console.warn(e.error);
         });
@@ -860,7 +938,8 @@ export function RentalMap({
           }
           /** The floor a pointer is on, when the tower has plans for it. */
           const floorOf = (hit: TowerHit | null) => {
-            if (!full || !hit?.tower || hit.soon || !FLOOR_HOVER.has(hit.slug))
+            // Floors show once the building is chosen: the first click flies to it.
+            if (!hit?.tower || hit.soon || hit.slug !== picked.current)
               return "";
             const { floors, planned, first } = towerLevels(
               buildings.find((b) => b.slug === hit.slug),
@@ -903,6 +982,42 @@ export function RentalMap({
               return;
             }
             const hit = models.pick(e.point.x, e.point.y);
+            // A project being built: the floor pointed at and its plan.
+            const building =
+              hit?.soon || hit?.slug !== picked.current
+                ? undefined
+                : buildings.find((b) => b.slug === hit?.slug && b.development);
+            if (hit && building) {
+              const plan = planAt(
+                building.slug,
+                building.plans,
+                hit.tower,
+                hit.level,
+              );
+              const title = hit.tower
+                ? `${t("Tòa")} ${hit.tower} · ${t("Tầng")} ${hit.level}`
+                : `${t("Tầng")} ${hit.level}`;
+              made.getCanvas().style.cursor = "";
+              setHovered(hit.slug);
+              models.markFloor(hit.slug, hit.tower, hit.level);
+              // The plan carries the floor's name; without one, the tip says so.
+              placeTip(
+                tip.current,
+                e.point.x,
+                e.point.y,
+                plan ? "" : title,
+                t("Chưa có mặt bằng tầng này"),
+              );
+              placeFloorPlan(
+                floorPlan.current,
+                e.point.x,
+                e.point.y,
+                plan?.image,
+                title,
+              );
+              return;
+            }
+            placeFloorPlan(floorPlan.current, 0, 0);
             const lotHit = hit
               ? undefined
               : made.queryRenderedFeatures(e.point, {
@@ -939,6 +1054,7 @@ export function RentalMap({
             setHovered(null);
             models.markFloor("", "", 0);
             placeTip(tip.current, 0, 0, "");
+            placeFloorPlan(floorPlan.current, 0, 0);
           });
           made.on("click", (e) => {
             if (focusOn.current) {
@@ -948,6 +1064,29 @@ export function RentalMap({
             }
             const hit = models.pick(e.point.x, e.point.y);
             if (!hit || hit.soon) return;
+            // A finger has no pointer: a tap shows the floor's plan instead.
+            const building = buildings.find(
+              (b) => b.slug === hit.slug && b.development,
+            );
+            if (building && hit.slug === picked.current) {
+              const plan = planAt(
+                building.slug,
+                building.plans,
+                hit.tower,
+                hit.level,
+              );
+              models.markFloor(hit.slug, hit.tower, hit.level);
+              placeFloorPlan(
+                floorPlan.current,
+                e.point.x,
+                e.point.y,
+                plan?.image,
+                hit.tower
+                  ? `${t("Tòa")} ${hit.tower} · ${t("Tầng")} ${hit.level}`
+                  : `${t("Tầng")} ${hit.level}`,
+              );
+              return;
+            }
             const floor = floorOf(hit);
             if (floor) {
               // A mouse opens the floor it points at; a finger chooses the tower first.
@@ -1667,7 +1806,9 @@ export function RentalMap({
       )}
       <div
         className="rmap-body"
-        data-open={Boolean(current && !view && !lot && !focus)}
+        data-open={Boolean(
+          current && !current.development && !view && !lot && !focus,
+        )}
       >
         <div ref={stage} className="rmap-stage">
           <div ref={box} className="rmap-canvas" />
@@ -1790,6 +1931,14 @@ export function RentalMap({
           <div ref={tip} className="rmap-floor-tip" hidden>
             <b />
             <small />
+          </div>
+          <div
+            ref={floorPlan}
+            className="rmap-floor-plan"
+            data-alt={t("Mặt bằng tầng")}
+            hidden
+          >
+            <b />
           </div>
           {full && !view && (
             <div
@@ -1943,21 +2092,24 @@ export function RentalMap({
             </div>
           )}
         </div>
-        <div className="rmap-towers" role="group" aria-label={t("Chọn tòa")}>
-          {found.map((b) => (
-            <button
-              key={b.slug}
-              type="button"
-              aria-pressed={b.slug === chosen}
-              onMouseEnter={() => setHovered(b.slug)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => choose.current(b.slug)}
-            >
-              {b.name}
-            </button>
-          ))}
-        </div>
-        {current && !view && !lot && !focus && (
+        {/* A project's own page shows only that project: no list of the others. */}
+        {(full || !initial.slug) && (
+          <div className="rmap-towers" role="group" aria-label={t("Chọn tòa")}>
+            {found.map((b) => (
+              <button
+                key={b.slug}
+                type="button"
+                aria-pressed={b.slug === chosen}
+                onMouseEnter={() => setHovered(b.slug)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={() => choose.current(b.slug)}
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
+        )}
+        {current && !current.development && !view && !lot && !focus && (
           <aside key={current.slug} className="rmap-panel" data-tab={shownTab}>
             <header className="rmap-head">
               <Image

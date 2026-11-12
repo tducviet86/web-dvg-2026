@@ -1200,13 +1200,14 @@ test("the whole-screen map searches projects and shares what is open", async ({
   await tour.click();
   await expect(tour).toHaveAttribute("aria-pressed", "false");
   // The tour folds the list away; it opens again from its button.
+  // A project in operation opens its card (one being built shows none).
   await page.getByRole("button", { name: "Danh sách dự án" }).click();
-  await rows.first().click();
-  await expect(page.locator(".rmap-head h3")).toHaveText(first);
+  await rows.filter({ hasText: "The Monarchy" }).click();
+  await expect(page.locator(".rmap-head h3")).toHaveText("The Monarchy");
   await expect(page).toHaveURL(/du-an=/);
   // The address opens the same building again.
   await page.reload();
-  await expect(page.locator(".rmap-head h3")).toHaveText(first);
+  await expect(page.locator(".rmap-head h3")).toHaveText("The Monarchy");
   // "Thoát" leaves the full-screen map.
   await page.getByRole("link", { name: "Thoát" }).click();
   await expect(page).not.toHaveURL(/\/ban-do/);
@@ -1850,9 +1851,7 @@ test("model units stay off the sale search: only their project page shows them",
   expect(found.map((p) => p.slug)).toEqual(["a"]);
 });
 
-test("Capital Square's page has no payment and loan block", async ({
-  page,
-}) => {
+test("project pages have no payment and loan block", async ({ page }) => {
   await page.goto("/du-an/capital-square");
   await expect(page.locator("#vi-tri")).toBeAttached();
   await expect(page.locator("#thanh-toan")).toHaveCount(0);

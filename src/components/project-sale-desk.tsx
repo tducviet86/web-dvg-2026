@@ -13,14 +13,11 @@ import { ArrowLeft, MessageCircle, Phone, X } from "lucide-react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { track } from "@/lib/analytics";
-import type { PaymentStep } from "@/lib/api/types";
 import { postPublic } from "@/lib/api/client";
 import { companyHotline, telephoneHref, zaloHref } from "@/lib/company-contact";
 import { planSpots } from "@/lib/floor-plan-spots";
 import type { SiteMap } from "@/lib/project-site-maps";
-import { loanFigures, paymentAmounts } from "@/lib/payment";
 import type { RentalMedia } from "@/lib/property-media";
-import { vndFull } from "@/lib/utils";
 import { PlanCutout, planArea } from "./plan-cutout";
 import { RentalGallery } from "./rental-gallery";
 
@@ -583,141 +580,6 @@ export function UnitBrowser({
           {towerPlanBlock}
         </>
       )}
-    </div>
-  );
-}
-
-const grouped = (n: number) => (n ? n.toLocaleString("vi-VN") : "");
-
-/** Payment steps worked out for a price, and a reducing-balance loan. */
-export function PaymentPlanner({
-  steps,
-  startPrice,
-}: {
-  steps: PaymentStep[];
-  startPrice: number;
-}) {
-  const t = useT();
-  const { picked } = useContext(PickContext);
-  const [price, setPrice] = useState(startPrice);
-  const [seen, setSeen] = useState(picked);
-  if (picked !== seen) {
-    setSeen(picked);
-    if (picked?.price) setPrice(picked.price);
-  }
-  const [share, setShare] = useState(70);
-  const [rate, setRate] = useState("10");
-  const [years, setYears] = useState(20);
-  const amounts = price ? paymentAmounts(price, steps) : [];
-  const loan = Math.round((price * share) / 100);
-  const figures = loanFigures(loan, Number(rate.replace(",", ".")) || 0, years);
-  const money = (n: number) => `${vndFull(Math.round(n))} ${t("đồng")}`;
-  return (
-    <div className="payment-planner">
-      <label className="planner-price">
-        {t("Giá căn hộ (đồng)")}
-        <input
-          inputMode="numeric"
-          value={grouped(price)}
-          placeholder="3.000.000.000"
-          onChange={(e) =>
-            setPrice(Number(e.target.value.replace(/\D/g, "")) || 0)
-          }
-        />
-        {picked?.price === price && (
-          <small>{t("Theo căn {code}", { code: picked.code })}</small>
-        )}
-      </label>
-      <div className="planner-grid">
-        {steps.length > 0 && (
-          <div>
-            <h3>{t("Các đợt thanh toán")}</h3>
-            <div className="payment-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">{t("Đợt thanh toán")}</th>
-                    <th scope="col">{t("Tỷ lệ")}</th>
-                    <th scope="col">{t("Số tiền")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {steps.map((step, i) => (
-                    <tr key={step.label}>
-                      <th scope="row">
-                        {step.label}
-                        {step.timing && <small>{step.timing}</small>}
-                      </th>
-                      <td>{step.percent.toLocaleString("vi-VN")}%</td>
-                      <td>{price ? vndFull(amounts[i]) : "–"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-        <div className="loan-card">
-          <h3>{t("Tính khoản vay ngân hàng")}</h3>
-          <label>
-            {t("Tỷ lệ vay: {n}%", { n: share })}
-            <input
-              type="range"
-              min={0}
-              max={80}
-              step={5}
-              value={share}
-              onChange={(e) => setShare(Number(e.target.value))}
-            />
-          </label>
-          <div className="loan-inputs">
-            <label>
-              {t("Lãi suất (%/năm)")}
-              <input
-                inputMode="decimal"
-                value={rate}
-                onChange={(e) => setRate(e.target.value)}
-              />
-            </label>
-            <label>
-              {t("Thời hạn vay")}
-              <select
-                value={years}
-                onChange={(e) => setYears(Number(e.target.value))}
-              >
-                {[5, 10, 15, 20, 25, 30, 35].map((y) => (
-                  <option key={y} value={y}>
-                    {t("{n} năm", { n: y })}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <dl>
-            <div>
-              <dt>{t("Vốn tự có")}</dt>
-              <dd>{money(price - loan)}</dd>
-            </div>
-            <div>
-              <dt>{t("Số tiền vay")}</dt>
-              <dd>{money(loan)}</dd>
-            </div>
-            <div className="loan-main">
-              <dt>{t("Trả tháng đầu")}</dt>
-              <dd>{money(figures.firstMonth)}</dd>
-            </div>
-            <div>
-              <dt>{t("Tổng tiền lãi")}</dt>
-              <dd>{money(figures.totalInterest)}</dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-      <p className="desk-note">
-        {t(
-          "Kết quả chỉ để tham khảo, tính theo dư nợ giảm dần với lãi suất bạn nhập. Lãi suất và hạn mức thực tế do ngân hàng quyết định.",
-        )}
-      </p>
     </div>
   );
 }

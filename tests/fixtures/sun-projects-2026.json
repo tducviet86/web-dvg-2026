@@ -1,0 +1,393 @@
+[
+  {
+    "slug": "sun-saphia-residence",
+    "name": "Sun Saphia Residence",
+    "stage": "UNDER_DEVELOPMENT",
+    "status": "PUBLISHED",
+    "categories": [
+      "development",
+      "sale"
+    ],
+    "propertyKind": "Căn hộ & bất động sản",
+    "location": "Võ Nguyên Giáp · Đà Nẵng",
+    "address": "Ngã ba Võ Nguyên Giáp – Nguyễn Đức Thuận – Trường Sa, phường Ngũ Hành Sơn, Đà Nẵng",
+    "intro": "Tháp căn hộ cách biển khoảng 300 m, dự án căn hộ mặt biển đầu tiên của Sun Group tại Đà Nẵng.",
+    "overview": [
+      "Sun Saphia Residence nằm ngay ngã ba Võ Nguyên Giáp – Nguyễn Đức Thuận – Trường Sa, phường Ngũ Hành Sơn, cách biển khoảng 300 m. Tháp căn hộ cao 30 tầng nổi với 2 tầng hầm, cung cấp gần 800 căn hộ gồm Studio, 1 phòng ngủ +1 và 2 phòng ngủ.",
+      "Kiến trúc được Sun Property giới thiệu với cảm hứng từ điêu khắc Chăm Pa và hình tượng vũ nữ Apsara, sắc đỏ gạch gợi nhớ Mỹ Sơn. Từ dự án có thể nhìn ra biển Mỹ Khê, sông Đô Tỏa và danh thắng Ngũ Hành Sơn.",
+      "Tiện ích trong tòa tháp gồm bể bơi, phòng gym, yoga, spa, sauna, quán cà phê, nhà hàng và chuỗi shophouse khối đế. Dự án hướng tới cả nhu cầu an cư, nghỉ dưỡng và cho thuê lưu trú."
+    ],
+    "products": [
+      "Studio",
+      "Căn 1PN+1",
+      "Căn 2PN",
+      "Shophouse khối đế"
+    ],
+    "developer": "Sun Group",
+    "scale": "1 tháp căn hộ 30 tầng nổi, 2 tầng hầm, gần 800 căn",
+    "latitude": 16.021,
+    "longitude": 108.2579,
+    "imageCredit": "Phối cảnh dự án",
+    "sourceUrl": "https://sunpropertygroup.vn/cac-du-an/sun-saphia-residence-13808",
+    "unitTypes": [
+      {
+        "name": "Studio",
+        "area": "Khoảng 30–31 m² thông thủy"
+      },
+      {
+        "name": "Studio lớn",
+        "area": "Khoảng 40 m² thông thủy"
+      },
+      {
+        "name": "Căn 1PN+",
+        "area": "Khoảng 49–51,1 m² thông thủy"
+      },
+      {
+        "name": "Căn 2PN",
+        "area": "Khoảng 60,3–70,2 m² thông thủy"
+      }
+    ],
+    "amenities": [
+      "Bể bơi",
+      "Phòng gym",
+      "Phòng yoga",
+      "Spa và sauna",
+      "Quán cà phê",
+      "Nhà hàng",
+      "Shophouse khối đế"
+    ],
+    "highlights": [
+      {
+        "title": "Cách biển khoảng 300 m",
+        "text": "Ngay ngã ba Võ Nguyên Giáp – Nguyễn Đức Thuận – Trường Sa, nhìn ra biển Mỹ Khê."
+      },
+      {
+        "title": "Kiến trúc Chăm Pa",
+        "text": "Cảm hứng từ điêu khắc Chăm Pa, vũ nữ Apsara và sắc đỏ gạch Mỹ Sơn."
+      },
+      {
+        "title": "Tiện ích trong tháp",
+        "text": "Bể bơi, gym, yoga, spa, sauna, cà phê và nhà hàng cho cư dân."
+      }
+    ],
+    "seoTitle": "Sun Saphia Residence Đà Nẵng | Căn Hộ Cách Biển 300 m",
+    "seoDescription": "Sun Saphia Residence – tháp căn hộ 30 tầng của Sun Group tại ngã ba Võ Nguyên Giáp – Trường Sa, Đà Nẵng, cách biển khoảng 300 m. Xem mặt bằng và loại căn.",
+    "sortOrder": 9,
+    "coverImageAlt": "Phối cảnh Sun Saphia Residence",
+    "photos": [
+      {
+        "group": "Phối cảnh",
+        "image": "UPLOAD"
+      }
+    ],
+    "floorPlans": [
+      {
+        "name": "Tòa Saphia · Tầng 3A-28",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Phối cảnh mặt bằng · Tầng 3A-28",
+        "image": "UPLOAD"
+      }
+    ]
+  },
+  {
+    "slug": "s-light-tower",
+    "name": "S-Light Tower",
+    "stage": "UNDER_DEVELOPMENT",
+    "status": "PUBLISHED",
+    "categories": [
+      "development",
+      "sale"
+    ],
+    "propertyKind": "Căn hộ & bất động sản",
+    "location": "Nam Hòa Xuân · Đà Nẵng",
+    "address": "Ngã tư Nguyễn Đình Thi – 29/3, khu đô thị Sun NeO City, Hòa Xuân, Đà Nẵng",
+    "intro": "Tháp đôi 22 tầng nơi giao nhau của sông Hàn, Cẩm Lệ và Đô Tỏa, cửa ngõ khu đô thị Sun NeO City.",
+    "overview": [
+      "S-Light Tower nằm ngay ngã tư Nguyễn Đình Thi – 29/3, cửa ngõ khu đô thị Sun NeO City ở phía Nam Đà Nẵng. Dự án gồm 2 tòa tháp SL1 và SL2 cao 22 tầng, 3 tầng hầm, tổng cộng gần 800 căn hộ.",
+      "Hai tòa đứng hai bên đường 29/3, mặt trước nhìn ra sông Hàn; xung quanh chủ yếu là nhà thấp tầng nên tầm nhìn mở về ba dòng sông, danh thắng Ngũ Hành Sơn và biển ở các tầng cao.",
+      "Theo Sun Property, khối đế là dãy shophouse, tầng 2 dành cho tiện ích chăm sóc sức khỏe. Căn hộ từ Studio, 1–3 phòng ngủ đến penthouse; pháp lý sở hữu lâu dài."
+    ],
+    "products": [
+      "Studio",
+      "Căn 1–3 phòng ngủ",
+      "Penthouse",
+      "Shophouse khối đế"
+    ],
+    "developer": "Sun Group",
+    "legalStatus": "Sở hữu lâu dài (theo Sun Property).",
+    "scale": "2 tòa tháp SL1, SL2 cao 22 tầng, 3 tầng hầm, gần 800 căn",
+    "latitude": 16.02458,
+    "longitude": 108.23441,
+    "imageCredit": "Phối cảnh dự án",
+    "sourceUrl": "https://sunpropertygroup.vn/cac-du-an/s-light-tower-11399",
+    "towers": [
+      {
+        "name": "SL1"
+      },
+      {
+        "name": "SL2"
+      }
+    ],
+    "unitTypes": [
+      {
+        "name": "Studio",
+        "area": "Khoảng 33,3 m²",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Căn 1PN+",
+        "area": "Khoảng 49,3 m²",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Căn 1PN+ lớn",
+        "area": "Khoảng 59 m²",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Căn 2PN 2WC",
+        "area": "Khoảng 76 m²",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Căn 3PN",
+        "area": "Khoảng 95,1 m²",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Penthouse duplex",
+        "area": "Tầng 22"
+      }
+    ],
+    "amenities": [
+      "Shophouse khối đế",
+      "Tiện ích chăm sóc sức khỏe tại tầng 2"
+    ],
+    "connections": [
+      {
+        "place": "Bãi biển Mỹ Khê",
+        "time": "Khoảng 2,5 km"
+      },
+      {
+        "place": "Sân bay quốc tế Đà Nẵng",
+        "time": "Khoảng 5 km"
+      },
+      {
+        "place": "Trung tâm thành phố",
+        "time": "Khoảng 5,5 km"
+      },
+      {
+        "place": "Phố cổ Hội An",
+        "time": "Khoảng 18,6 km"
+      }
+    ],
+    "highlights": [
+      {
+        "title": "Ngã ba sông",
+        "text": "Nơi giao nhau của sông Hàn, Cẩm Lệ và Đô Tỏa, cửa ngõ Sun NeO City."
+      },
+      {
+        "title": "Tháp đôi 22 tầng",
+        "text": "Hai tòa SL1, SL2 bố cục đối xứng hai bên đường 29/3."
+      },
+      {
+        "title": "Nhìn ra pháo hoa",
+        "text": "Tầm nhìn về sông Hàn, nơi diễn ra Lễ hội Pháo hoa Quốc tế Đà Nẵng."
+      }
+    ],
+    "seoTitle": "S-Light Tower Đà Nẵng | Tháp Đôi Bên Ngã Ba Sông",
+    "seoDescription": "S-Light Tower – tháp đôi 22 tầng của Sun Group tại ngã tư Nguyễn Đình Thi – 29/3, Sun NeO City, Đà Nẵng. Xem mặt bằng tầng điển hình và loại căn.",
+    "sortOrder": 10,
+    "coverImageAlt": "Phối cảnh S-Light Tower",
+    "photos": [
+      {
+        "group": "Phối cảnh",
+        "image": "UPLOAD"
+      }
+    ],
+    "floorPlans": [
+      {
+        "name": "Tòa SL1, SL2 · Tầng 1",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa SL1, SL2 · Tầng 2",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa SL1, SL2 · Tầng 3",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa SL1, SL2 · Tầng 3A-6",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa SL1, SL2 · Tầng 7-21",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa SL1, SL2 · Tầng 22",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Căn duplex, phần dưới · Tầng 22",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Căn duplex, phần trên · Tầng 22",
+        "image": "UPLOAD"
+      }
+    ]
+  },
+  {
+    "slug": "fours-tower",
+    "name": "FourS Tower",
+    "stage": "UNDER_DEVELOPMENT",
+    "status": "PUBLISHED",
+    "categories": [
+      "development",
+      "sale"
+    ],
+    "propertyKind": "Căn hộ & bất động sản",
+    "location": "Sun Riverpolis · Đà Nẵng",
+    "address": "Ngã tư Nguyễn Phước Lan – Minh Mạng, Ngũ Hành Sơn, Đà Nẵng",
+    "intro": "Bốn tòa tháp lấy cảm hứng từ Tùng – Cúc – Trúc – Mai ở trung tâm khu đô thị Sun Riverpolis.",
+    "overview": [
+      "FourS Tower (Tháp Bốn Mùa) là phân khu cao tầng đầu tiên ở trung tâm khu đô thị sinh thái Sun Riverpolis, tại ngã tư Nguyễn Phước Lan – Minh Mạng, Ngũ Hành Sơn, Đà Nẵng.",
+      "Dự án gồm 4 tòa tháp lấy cảm hứng từ bốn loài cây tứ bình ứng với bốn mùa: Mai (Xuân), Trúc (Hạ), Cúc (Thu), Tùng (Đông). Mỗi tòa cao 20 tầng nổi với 2 tầng hầm; tòa F2 là Tháp Mùa Xuân.",
+      "Tầng 1 là shophouse; toàn bộ tầng 2 dành cho tiện ích: Kids Club, gym, yoga, spa, hồ bơi bốn mùa, khu sinh hoạt cộng đồng và Phòng khám Mặt Trời."
+    ],
+    "products": [
+      "Studio",
+      "Căn 1PN và 1PN+",
+      "Căn 2PN và 3PN",
+      "Shophouse tầng 1"
+    ],
+    "developer": "Sun Group",
+    "legalStatus": "Sở hữu lâu dài (theo Sun Property).",
+    "scale": "4 tòa tháp 20 tầng nổi, 2 tầng hầm",
+    "latitude": 16.0096361,
+    "longitude": 108.2424993,
+    "imageCredit": "Phối cảnh dự án",
+    "sourceUrl": "https://sunpropertygroup.vn/cac-du-an/fours-tower-10804",
+    "towers": [
+      {
+        "name": "F1"
+      },
+      {
+        "name": "F2",
+        "note": "Tháp Mùa Xuân"
+      },
+      {
+        "name": "F5"
+      }
+    ],
+    "unitTypes": [
+      {
+        "name": "Studio",
+        "area": "Khoảng 30,6–35,4 m² thông thủy"
+      },
+      {
+        "name": "Căn 1 phòng ngủ",
+        "area": "Khoảng 45,3 m² thông thủy"
+      },
+      {
+        "name": "Căn 1 phòng ngủ +",
+        "area": "Khoảng 45,2–56,4 m² thông thủy"
+      },
+      {
+        "name": "Căn 2 phòng ngủ",
+        "area": "Khoảng 63,8–73,1 m² thông thủy"
+      },
+      {
+        "name": "Căn 3 phòng ngủ",
+        "area": "Khoảng 91,6–92,8 m² thông thủy"
+      }
+    ],
+    "amenities": [
+      "Shophouse tầng 1",
+      "Kids Club",
+      "Phòng gym",
+      "Phòng yoga",
+      "Spa",
+      "Hồ bơi bốn mùa",
+      "Khu sinh hoạt cộng đồng",
+      "Phòng khám Mặt Trời"
+    ],
+    "connections": [
+      {
+        "place": "Biển Mỹ Khê",
+        "time": "8 km · khoảng 15 phút"
+      },
+      {
+        "place": "Phố cổ Hội An",
+        "time": "22 km · khoảng 35 phút"
+      }
+    ],
+    "highlights": [
+      {
+        "title": "Trung tâm Sun Riverpolis",
+        "text": "Phân khu cao tầng đầu tiên ở lõi khu đô thị ven sông phía Nam Đà Nẵng."
+      },
+      {
+        "title": "Bốn tòa, bốn mùa",
+        "text": "Kiến trúc lấy cảm hứng từ Tùng – Cúc – Trúc – Mai."
+      },
+      {
+        "title": "Tiện ích tầng 2",
+        "text": "Hồ bơi bốn mùa, gym, yoga, spa, Kids Club và phòng khám."
+      }
+    ],
+    "seoTitle": "FourS Tower Đà Nẵng | Tháp Bốn Mùa – Sun Riverpolis",
+    "seoDescription": "FourS Tower – 4 tòa tháp 20 tầng của Sun Group tại ngã tư Nguyễn Phước Lan – Minh Mạng, Sun Riverpolis, Đà Nẵng. Xem mặt bằng các tòa F1, F5 và loại căn.",
+    "sortOrder": 11,
+    "coverImageAlt": "Phối cảnh FourS Tower",
+    "photos": [
+      {
+        "group": "Phối cảnh",
+        "image": "UPLOAD"
+      }
+    ],
+    "floorPlans": [
+      {
+        "name": "Tòa F1 · Tầng 2",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F1 · Tầng 3",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F1 · Tầng 4-7",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F1 · Tầng 8-19",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F5 · Tầng 2",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F5 · Tầng 3",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F5 · Tầng 8-15",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F5 · Tầng 16",
+        "image": "UPLOAD"
+      },
+      {
+        "name": "Tòa F5 · Tầng 17-19",
+        "image": "UPLOAD"
+      }
+    ]
+  }
+]

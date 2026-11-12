@@ -474,10 +474,12 @@ export default function FloorPlan3D({
                     <dt>{t("Diện tích")}</dt>
                     <dd>{t("khoảng {n} m²", { n: kind.area })}</dd>
                   </div>
-                  <div>
-                    <dt>{t("Hướng nhìn")}</dt>
-                    <dd>{kind.view}</dd>
-                  </div>
+                  {kind.view && (
+                    <div>
+                      <dt>{t("Hướng nhìn")}</dt>
+                      <dd>{kind.view}</dd>
+                    </div>
+                  )}
                 </>
               )}
               {/* Both areas only where the drawing gives both. */}

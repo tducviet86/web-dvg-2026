@@ -12,14 +12,3 @@ export function paymentAmounts(price: number, steps: PaymentStep[]) {
     return amount;
   });
 }
-
-/** Reducing-balance loan: the first month is the highest. */
-export function loanFigures(loan: number, ratePerYear: number, years: number) {
-  const months = years * 12;
-  const monthlyRate = ratePerYear / 100 / 12;
-  return {
-    principalPerMonth: loan / months,
-    firstMonth: loan / months + loan * monthlyRate,
-    totalInterest: (loan * monthlyRate * (months + 1)) / 2,
-  };
-}

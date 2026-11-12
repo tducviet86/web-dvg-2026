@@ -28,6 +28,8 @@ export type MapBlock = {
   soon?: boolean;
   /** No roof room on top, as for the link between two towers. */
   bare?: boolean;
+  /** A crown above the top floor: pointing at it means the top floor. */
+  crown?: boolean;
 };
 
 const M_PER_DEG = 110_574;
@@ -152,6 +154,36 @@ const symphonyTower = (
   floors: number,
   corners: [number, number][],
 ) => outlined(tower, 0, floors * FLOOR_METRES, corners.map(symphonyAt));
+
+/** Da Nang Downtown's planned towers: name, floors, corners from Aurora's pin. */
+// prettier-ignore
+const DOWNTOWN_TOWERS: [string, number, [number, number][]][] = [
+    ["Ven sông 1", 32, [[-232.5, 730.2], [-222.5, 691.5], [-195.4, 698.5], [-205.4, 737.3]]],
+    ["Ven sông 2", 32, [[-209.0, 632.9], [-199.0, 594.1], [-171.9, 601.2], [-181.9, 639.9]]],
+    ["Ven sông 3", 32, [[-183.3, 535.5], [-173.3, 496.8], [-146.1, 503.8], [-156.2, 542.5]]],
+    ["Ven sông 4", 32, [[-157.6, 438.1], [-147.5, 399.4], [-120.4, 406.4], [-130.5, 445.1]]],
+    ["Ven sông 5", 32, [[-131.9, 340.7], [-121.8, 302.0], [-94.7, 309.0], [-104.8, 347.7]]],
+    ["Ven sông 6", 32, [[-108.2, 249.8], [-98.1, 211.1], [-71.0, 218.1], [-81.1, 256.8]]],
+    ["Trung tâm 1", 26, [[-319.4, 696.6], [-309.7, 661.9], [-284.7, 668.8], [-294.3, 703.5]]],
+    ["Trung tâm 2", 26, [[-295.9, 594.9], [-286.3, 560.2], [-261.2, 567.2], [-270.9, 601.8]]],
+    ["Trung tâm 3", 26, [[-268.2, 491.0], [-258.6, 456.3], [-233.5, 463.3], [-243.2, 498.0]]],
+    ["Trung tâm 4", 26, [[-238.3, 387.1], [-228.7, 352.4], [-203.6, 359.4], [-213.3, 394.1]]],
+    ["Trung tâm 5", 26, [[-206.1, 289.6], [-196.4, 255.0], [-171.4, 261.9], [-181.0, 296.6]]],
+    ["Trung tâm 6", 30, [[-455.1, 672.5], [-429.9, 646.7], [-411.3, 664.8], [-436.4, 690.6]]],
+    ["Khán đài Sun Galaxy", 4, [[370.7, 617.5], [451.2, 370.2], [489.2, 382.6], [408.7, 629.8]]],
+    ["Sun Galaxy", 6, [[534.0, 500.0], [532.3, 510.7], [527.4, 520.3], [519.8, 527.9], [510.2, 532.8], [499.5, 534.5], [488.9, 532.8], [479.2, 527.9], [471.6, 520.3], [466.7, 510.7], [465.0, 500.0], [466.7, 489.4], [471.6, 479.8], [479.2, 472.1], [488.9, 467.2], [499.5, 465.5], [510.2, 467.2], [519.8, 472.1], [527.4, 479.8], [532.3, 489.4]]],
+    ["Sun Galaxy 1", 45, [[527.9, 664.5], [544.9, 612.2], [578.2, 623.0], [561.1, 675.3]]],
+    ["Sun Galaxy 2", 45, [[613.4, 377.0], [630.5, 324.7], [663.8, 335.6], [646.7, 387.9]]],
+];
+/** Its shophouse rows between the lagoons, three floors. */
+// prettier-ignore
+const DOWNTOWN_SHOPS: [string, number, [number, number][]][] = [
+    ["Phố 1", 3, [[-497.4, 612.3], [-477.6, 555.7], [-460.6, 561.6], [-480.4, 618.2]]],
+    ["Phố 2", 3, [[-477.9, 525.7], [-458.1, 469.1], [-441.1, 475.1], [-461.0, 531.7]]],
+    ["Phố 3", 3, [[-447.6, 439.1], [-427.7, 382.5], [-410.8, 388.4], [-430.6, 445.1]]],
+    ["Phố 4", 3, [[-417.2, 352.5], [-397.4, 295.9], [-380.4, 301.8], [-400.2, 358.4]]],
+    ["Phố 5", 3, [[-386.6, 276.6], [-366.7, 220.0], [-349.8, 226.0], [-369.6, 282.6]]],
+];
 
 export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
   // The towers on sale first; floors as the plan and the floor plans say.
@@ -474,6 +506,211 @@ export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
       height: 95,
       angle: -16,
     },
+  ],
+  // Sun Property's own outline of the site (sunpropertygroup.vn), turned 37°:
+  // four towers of 20 floors over shops and a floor of amenities.
+  // One tower on each corner of the Nguyễn Phước Lan × Minh Mạng crossing, along
+  // both roads (satellite imagery), inside Sun Property's own site outline:
+  // 20 floors over shops and a floor of amenities. F1 east and F5 west, from
+  // the key plans on their floor plans; the other two are not named yet.
+  "fours-tower": (
+    [
+      [
+        "F1",
+        [
+          [67.2, 31.5],
+          [78.7, 17.0],
+          [73.0, 12.5],
+          [79.5, 4.1],
+          [85.2, 8.6],
+          [96.7, -5.9],
+          [66.5, -29.7],
+          [55.0, -15.2],
+          [65.3, -7.1],
+          [58.7, 1.2],
+          [48.5, -6.9],
+          [37.0, 7.6],
+        ],
+      ],
+      [
+        "",
+        [
+          [8.8, -33.7],
+          [44.4, -55.9],
+          [13.9, -84.8],
+          [-21.8, -62.5],
+        ],
+      ],
+      [
+        "F5",
+        [
+          [-81.5, -31.8],
+          [-70.1, -16.7],
+          [-64.0, -21.3],
+          [-52.0, -5.2],
+          [-65.6, 5.1],
+          [-70.7, -1.8],
+          [-79.5, 4.8],
+          [-62.1, 27.9],
+          [-21.9, -2.2],
+          [-57.6, -49.7],
+        ],
+      ],
+      [
+        "",
+        [
+          [-5.0, 30.6],
+          [-38.6, 55.8],
+          [-5.7, 81.9],
+          [28.0, 56.6],
+        ],
+      ],
+    ] as [string, [number, number][]][]
+  ).map(([tower, corners]) => ({
+    ...outlined(tower, 0, 20 * FLOOR_METRES, corners),
+    lowFloors: ["shop", "shop"],
+  })),
+  // SL1 west and SL2 east of 29/3, fronting Nguyễn Đình Thi, as on the
+  // developer's floor plans and the two building sites on satellite imagery:
+  // 22 floors, shophouses at the foot.
+  "s-light-tower": (
+    [
+      ["SL1", -37, 0],
+      ["SL2", 45.3, -1.8],
+    ] as [string, number, number][]
+  ).map(([tower, east, north]) => ({
+    tower,
+    east,
+    north,
+    width: 33,
+    depth: 45,
+    base: 0,
+    height: 22 * FLOOR_METRES,
+    angle: 33,
+    lowFloors: ["shop", "shop"],
+  })),
+  // A1 north-west and A2 south-east of 29/3's park strip, their bent ends on
+  // the Nguyễn Phước Lan roundabout: each the outline of its typical floor
+  // plan, sized by the units' areas and laid as the developer's site plan
+  // shows, on the two building sites of satellite imagery; 25 floors.
+  "cora-tower": (
+    [
+      [
+        "A1",
+        [
+          [-91.9, -15.3],
+          [-69.3, 10.3],
+          [-62.4, 5.4],
+          [-44.6, 25.9],
+          [-39.3, 45.5],
+          [-35.7, 49.5],
+          [-11.9, 43.9],
+          [-22.8, 14.1],
+          [-65.5, -33.8],
+        ],
+      ],
+      [
+        "A2",
+        [
+          [-27.5, -74.5],
+          [15.2, -27.5],
+          [19.9, -25.4],
+          [50.5, -12.5],
+          [62.0, -30.6],
+          [54.6, -34.7],
+          [39.9, -39.3],
+          [32.1, -43.1],
+          [13.5, -62.7],
+          [21.0, -67.4],
+          [-1.9, -93.2],
+        ],
+      ],
+    ] as [string, [number, number][]][]
+  ).map(([tower, corners]) => ({
+    ...outlined(tower, 0, 25 * FLOOR_METRES, corners),
+    lowFloors: ["shop", "shop"],
+  })),
+  // The tower on the corner of Nguyễn Đức Thuận and Trường Sa: the L of the
+  // owner's typical floor plan (3A–28), its sea-side units sticking out east,
+  // laid in the empty lot on satellite imagery; 30 floors.
+  "sun-saphia-residence": [
+    outlined("Saphia", 0, 30 * FLOOR_METRES, [
+      [-7.6, 27.3],
+      [11.0, -7.6],
+      [18.7, -3.5],
+      [28.9, -22.6],
+      [19.9, -27.4],
+      [15.2, -18.4],
+      [8.3, -22.1],
+      [13.0, -31.0],
+      [0.8, -37.5],
+      [-17.5, -3.1],
+      [-36.6, -13.2],
+      [-47.0, 6.3],
+    ]),
+  ].map((b) => ({ ...b, lowFloors: ["shop", "shop"] })),
+  // Da Nang Downtown, from the developer's site plan laid on satellite imagery
+  // (its stadium, island and Phan Đăng Lưu's river end), built as the renders
+  // show: Aurora Tower (69 floors, its crown to 408 m) on the river south of
+  // Phan Đăng Lưu, the opera house on the north tip, high-rises along the river,
+  // shophouses between the lagoons; across the river on
+  // Chương Dương, Sun Galaxy Complex: its grandstand, the 69 m round hall and
+  // two towers. Floors of the planned towers are estimates from the renders.
+  "da-nang-downtown": [
+    outlined("Aurora Tower", 0, 69 * FLOOR_METRES, [
+      [-20.6, -15.2],
+      [10.3, -23.5],
+      [18.9, -18.5],
+      [25.6, 6.6],
+      [20.6, 15.2],
+      [-10.3, 23.5],
+      [-18.9, 18.5],
+      [-25.6, -6.6],
+    ]),
+    {
+      ...outlined("Aurora Tower", 0, 408, [
+        [-15.5, -11.4],
+        [7.7, -17.6],
+        [15.1, -13.4],
+        [19.7, 4.0],
+        [15.5, 11.4],
+        [-7.7, 17.6],
+        [-15.1, 13.4],
+        [-19.7, -4.0],
+      ]),
+      base: 69 * FLOOR_METRES,
+      bare: true,
+      crown: true,
+    },
+    outlined("Nhà hát Opera", 0, 10 * FLOOR_METRES, [
+      [-310.3, 865.9],
+      [-322.8, 874.3],
+      [-338.3, 877.8],
+      [-355.2, 875.9],
+      [-371.9, 868.9],
+      [-386.6, 857.4],
+      [-398.1, 842.7],
+      [-405.1, 826.0],
+      [-407.0, 809.1],
+      [-403.5, 793.6],
+      [-395.1, 781.1],
+      [-382.6, 772.6],
+      [-367.1, 769.2],
+      [-350.2, 771.1],
+      [-333.5, 778.1],
+      [-318.8, 789.5],
+      [-307.3, 804.3],
+      [-300.3, 821.0],
+      [-298.4, 837.9],
+      [-301.9, 853.3],
+    ]),
+    ...DOWNTOWN_TOWERS.map(([name, floors, corners]) =>
+      outlined(name, 0, floors * FLOOR_METRES, corners),
+    ),
+    ...DOWNTOWN_SHOPS.map(([name, floors, corners]) => ({
+      ...outlined(name, 0, floors * FLOOR_METRES, corners),
+      low: true,
+    })),
   ],
   "sam-tower": [
     {
@@ -844,7 +1081,68 @@ export const BUILDING_PLACES: Record<string, { lat: number; lng: number }> = {
   "sun-symphony-residence": { lat: 16.0855, lng: 108.2283 },
   "hiyori-garden-tower": { lat: 16.06126, lng: 108.23562 },
   "sam-tower": { lat: 16.0912, lng: 108.22 },
+  // The middle of Sun Property's site outline.
+  "fours-tower": { lat: 16.0096361, lng: 108.2424993 },
+  // On 29/3 between the two towers; from satellite imagery.
+  "s-light-tower": { lat: 16.02458, lng: 108.23441 },
+  // On 29/3 between the two towers, south-west of the roundabout.
+  "cora-tower": { lat: 16.01803, lng: 108.22968 },
+  // The building site on the corner, from satellite imagery.
+  "sun-saphia-residence": { lat: 16.021, lng: 108.2579 },
+  // Aurora Tower, on the site plan laid on satellite imagery.
+  "da-nang-downtown": { lat: 16.038278, lng: 108.233431 },
 };
+
+/**
+ * Fireworks over the Hàn at night, before Sun Galaxy's grandstand: metres east
+ * and north of a project's pin.
+ */
+export const FIREWORKS = {
+  slug: "da-nang-downtown",
+  east: 115,
+  north: 412,
+};
+
+/**
+ * How the camera opens on a project, where not from -30° at zoom 15.9 on its
+ * pin: `bearing`, `zoom`, and `centre` metres east and north of the pin.
+ */
+export const PLACE_VIEWS: Record<
+  string,
+  { bearing: number; zoom?: number; centre?: [number, number] }
+> = {
+  // Up 29/3 to the roundabout, a tower on each side of the road.
+  "cora-tower": { bearing: 53 },
+  // From afar, across Downtown and the Hàn to Sun Galaxy and the sea.
+  "da-nang-downtown": { bearing: 75, zoom: 14.9, centre: [-300, 380] },
+};
+
+/**
+ * The plan of a tower's floor `level` among a project's plans, by their names:
+ * "Tòa F1 · Tầng 8-19" is for F1 only, a name with no tower of the project is
+ * for all of them; "3A-28" starts at 3 (a plan listed first wins).
+ */
+export function planAt<T extends { name: string }>(
+  slug: string,
+  plans: T[] | undefined,
+  tower: string,
+  level: number,
+) {
+  const named = (BUILDING_BLOCKS[slug] ?? []).flatMap((b) =>
+    b.tower ? [b.tower] : [],
+  );
+  return plans?.find((plan) => {
+    const [head, floors = ""] = plan.name.split("Tầng ");
+    const towers = named.filter((x) =>
+      new RegExp(`(^|[^\\w])${x}([^\\w]|$)`).test(head),
+    );
+    if (towers.length && !towers.includes(tower)) return false;
+    return floors.split(",").some((part) => {
+      const [from, to = from] = part.split("-").map((n) => parseInt(n, 10));
+      return level >= from && level <= to;
+    });
+  });
+}
 
 /** A block's corners as [lng, lat], closed for GeoJSON. */
 export function blockRing(lat: number, lng: number, b: MapBlock) {
@@ -897,6 +1195,11 @@ export const BUILDING_AREAS: Record<string, string> = {
   "hiyori-garden-tower": "Sơn Trà",
   "sun-symphony-residence": "Sơn Trà",
   "sam-tower": "Hải Châu",
+  "s-light-tower": "Cẩm Lệ",
+  "cora-tower": "Cẩm Lệ",
+  "fours-tower": "Ngũ Hành Sơn",
+  "sun-saphia-residence": "Ngũ Hành Sơn",
+  "da-nang-downtown": "Hải Châu",
 };
 
 /** Landmarks; coordinates from OpenStreetMap. */

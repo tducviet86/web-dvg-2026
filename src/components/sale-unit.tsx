@@ -225,13 +225,6 @@ export function SaleUnitBody({
                   <p className="project-sale-note">{api.priceNote}</p>
                 )
               )}
-              <Link
-                href={`${projectPage}#thanh-toan`}
-                className="sale-unit-link"
-              >
-                Tính khoản vay ngân hàng
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </Link>
             </section>
           ) : null}
           <section id="mo-ta">

@@ -3651,27 +3651,28 @@
 /* Buildings by name, on the map where there is room for them. */
 .rmap-towers {
   position: absolute;
-  bottom: 34px;
+  bottom: 14px;
   left: 50%;
   z-index: 3;
   display: flex;
-  gap: 4px;
-  max-width: calc(100% - 32px);
-  padding: 4px;
+  gap: 2px;
+  max-width: min(720px, calc(100% - 32px));
+  padding: 3px;
   overflow-x: auto;
   border-radius: 999px;
-  background: #0b2a22eb;
+  background: #0b2a22b8;
+  backdrop-filter: blur(6px);
   scrollbar-width: none;
   translate: -50% 0;
 }
 .rmap-towers button {
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 30px;
+  padding: 0 11px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: #fff;
-  font-size: 13.5px;
+  font-size: 12.5px;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -5302,4 +5303,37 @@ a.rmap-reset {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* A floor's plan beside the pointer (projects being built). */
+.rmap-floor-plan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: min(360px, 70%);
+  padding: 6px;
+  border-radius: 12px;
+  background: #fffdf8;
+  box-shadow: 0 16px 40px #06140f47;
+  pointer-events: none;
+}
+.rmap-floor-plan[hidden] {
+  display: none;
+}
+.rmap-floor-plan b {
+  display: block;
+  padding: 2px 4px 6px;
+  color: var(--c-green-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+.rmap-floor-plan img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.414;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f4f1ea;
 }

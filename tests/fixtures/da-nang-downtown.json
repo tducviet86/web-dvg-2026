@@ -1,0 +1,65 @@
+{
+  "slug": "da-nang-downtown",
+  "name": "Da Nang Downtown",
+  "stage": "UNDER_DEVELOPMENT",
+  "status": "PUBLISHED",
+  "categories": [
+    "development"
+  ],
+  "propertyKind": "Tổ hợp đô thị & tháp 69 tầng",
+  "location": "Hòa Cường · Đà Nẵng",
+  "address": "01 Phan Đăng Lưu, phường Hòa Cường, Đà Nẵng (khu Công viên Châu Á cũ, giữa cầu Trần Thị Lý và cầu Tiên Sơn)",
+  "intro": "Tổ hợp văn hóa, giải trí, thương mại 76,92 ha bên sông Hàn của Sun Group, điểm nhấn là tháp 69 tầng cao 408 m.",
+  "overview": [
+    "Da Nang Downtown rộng 76,92 ha tại khu Công viên Châu Á cũ, phường Hòa Cường, nằm ven sông Hàn giữa cầu Trần Thị Lý và cầu Tiên Sơn. Dự án do Sun Group đầu tư với tổng vốn gần 80.000 tỷ đồng, khởi công ngày 19/8/2025.",
+    "Điểm nhấn là tháp 69 tầng cao 408 m bên bờ sông, dự kiến cao thứ hai Việt Nam sau Landmark 81. Thân tháp lấy cảm hứng từ tà áo dài trắng và ngũ hành; đỉnh tháp là không gian triển lãm hình ngọn lửa. Tháp gồm khách sạn 5 sao, văn phòng hạng A, căn hộ cao cấp, trung tâm thương mại, nhà hàng, bar và đài quan sát.",
+    "Khu công viên văn hóa có nhà hát hơn 9.000 m² với 4.000 chỗ (phòng opera và phòng đa năng), bảo tàng, trung tâm triển lãm, phố thương mại ven sông, mặt nước và kênh uốn lượn. Dự án nằm cạnh khu vực trình diễn Lễ hội pháo hoa quốc tế Đà Nẵng."
+  ],
+  "products": [
+    "Căn hộ cao cấp trong tháp 69 tầng",
+    "Phòng lưu trú khách sạn 5 sao",
+    "Phố thương mại ven sông"
+  ],
+  "developer": "Sun Group",
+  "scale": "76,92 ha; tháp 69 tầng cao 408 m; nhà hát 4.000 chỗ",
+  "latitude": 16.038278,
+  "longitude": 108.233431,
+  "imageCredit": "Phối cảnh và mặt bằng tổng thể dự án",
+  "sourceUrl": "https://vnexpress.net/hinh-dang-toa-thap-hinh-ao-dai-cao-thu-2-viet-nam-sap-khoi-cong-4928490.html",
+  "photos": [
+    {
+      "group": "Phối cảnh",
+      "image": "UPLOAD"
+    }
+  ],
+  "floorPlans": [
+    {
+      "name": "Mặt bằng tổng thể",
+      "image": "UPLOAD"
+    }
+  ],
+  "amenities": [
+    "Nhà hát 4.000 chỗ",
+    "Bảo tàng và trung tâm triển lãm",
+    "Đài quan sát",
+    "Phố thương mại ven sông",
+    "Công viên và mặt nước"
+  ],
+  "highlights": [
+    {
+      "title": "Tháp 69 tầng, cao 408 m",
+      "text": "Dự kiến cao thứ hai Việt Nam, bên bờ sông Hàn cạnh đại lộ Phan Đăng Lưu."
+    },
+    {
+      "title": "76,92 ha bên sông Hàn",
+      "text": "Giữa cầu Trần Thị Lý và cầu Tiên Sơn, trên khu Công viên Châu Á cũ."
+    },
+    {
+      "title": "Cạnh sân khấu pháo hoa",
+      "text": "Nhìn ra khu vực trình diễn Lễ hội pháo hoa quốc tế Đà Nẵng trên sông Hàn."
+    }
+  ],
+  "seoTitle": "Da Nang Downtown | Tháp 69 Tầng Bên Sông Hàn Của Sun Group",
+  "seoDescription": "Da Nang Downtown – tổ hợp 76,92 ha của Sun Group bên sông Hàn, Đà Nẵng, với tháp 69 tầng cao 408 m và nhà hát 4.000 chỗ. Xem vị trí và mặt bằng tổng thể.",
+  "sortOrder": 13
+}

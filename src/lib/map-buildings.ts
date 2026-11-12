@@ -272,6 +272,131 @@ function ponteKinds(): Record<string, UnitKind> {
   );
 }
 
+const SAPHIA = "/images/projects/sun-saphia-residence/";
+/**
+ * Sun Saphia's typical floor, from the owner's drawing: type and the side each
+ * unit looks out of. The drawing's top faces the sea (east-north-east).
+ */
+// prettier-ignore
+const SAPHIA_UNITS: Record<string, [string, string]> = {
+  "11": ["2BR", "sea"], "12": ["STU", "sea"], "12A": ["STU", "sea"], "12B": ["1BR+", "sea"], "15": ["STU", "sea"], "16": ["STU", "sea"], "17": ["1BR+", "sea"], "18": ["2BR", "sea"], "19": ["2BR", "sea"],
+  "20": ["STU", "se"], "01": ["STU", "se"], "02": ["STU", "se"],
+  "21": ["STU", "sw"], "22": ["STU", "sw"], "23": ["STU", "sw"], "24": ["STU", "sw"], "25": ["STU", "sw"], "26": ["STU", "sw"], "27": ["STU", "sw"], "28": ["1BR+", "sw"], "03": ["2BR", "sw"], "03A": ["2BR", "sw"],
+  "10": ["1BR+", "nw"], "09": ["STU", "nw"], "08": ["STU", "nw"], "07": ["STU", "nw"], "06": ["STU", "nw"], "05": ["STU", "nw"],
+};
+function saphiaKinds(): Record<string, UnitKind> {
+  const file = "saphia-tang-3a-28.webp";
+  const types: Record<string, [string, number, string]> = {
+    STU: ["Studio", 1, "can/studio.webp"],
+    "1BR+": ["1PN+1", 1, "can/1pn-1.webp"],
+    "2BR": ["2PN", 2, "can/2pn.webp"],
+  };
+  const sides: Record<string, string> = {
+    sea: t("Hướng Đông Bắc · biển"),
+    se: t("Hướng Đông Nam"),
+    sw: t("Hướng Tây Nam"),
+    nw: t("Hướng Tây Bắc"),
+  };
+  return Object.fromEntries(
+    Object.entries(SAPHIA_UNITS).map(([n, [type, side]]) => {
+      const [rooms, bedrooms, picture] = types[type];
+      return [
+        `${file}/${n}`,
+        {
+          rooms: t(rooms),
+          bedrooms,
+          area: PLAN_OUTLINES[file]?.units[n]?.inner ?? 0,
+          view: sides[side],
+          // The developer's model unit of the type, furnished, seen from above.
+          picture: SAPHIA + picture,
+          flat: true,
+        },
+      ];
+    }),
+  );
+}
+
+/** Unit types as the developers' drawings name them: rooms, bedrooms. */
+const DRAWN_TYPES: Record<string, [string, number]> = {
+  STU: ["Studio", 1],
+  "1BR": ["1PN", 1],
+  "1BR+": ["1PN+1", 1],
+  "2BR": ["2PN", 2],
+  "2BR+": ["2PN+1", 2],
+  "3BR": ["3PN", 3],
+};
+/**
+ * The units of a traced drawing, by type (and the picture of the type, or of
+ * the unit itself), with the areas the drawing prints.
+ */
+function drawnKinds(
+  file: string,
+  types: Record<string, string>,
+  picture: (unit: string, type: string) => string | undefined,
+): Record<string, UnitKind> {
+  return Object.fromEntries(
+    Object.entries(types).map(([n, type]) => {
+      const [rooms, bedrooms] = DRAWN_TYPES[type];
+      const shown = picture(n, type);
+      return [
+        `${file}/${n}`,
+        {
+          rooms: t(rooms),
+          bedrooms,
+          area: PLAN_OUTLINES[file]?.units[n]?.inner ?? 0,
+          view: "",
+          ...(shown && { picture: shown, flat: true }),
+        },
+      ];
+    }),
+  );
+}
+/** "STU 15 16 …" → each unit's type. */
+const typed = (spec: string) =>
+  Object.fromEntries(
+    spec.split(";").flatMap((part) => {
+      const [type, ...units] = part.trim().split(/\s+/);
+      return units.map((n) => [n, type]);
+    }),
+  );
+
+const CORA = "/images/projects/cora-tower/";
+// prettier-ignore
+const CORA_UNITS = {
+  A1: typed("2BR 01 05 11 17 27; 1BR+ 02 03 03A 06 07 08 09 10 12A 12B 19 20 21 24 25 28; 3BR 12; STU 15 16 18 22 23 26"),
+  A2: typed("2BR 01 17 23 27; STU 02 05 06 10 12 12A; 1BR+ 03 03A 07 08 09 12B 15 18 19 20 21 22 24 25 26 28; 2BR+ 11; 3BR 16"),
+};
+/** Cora's unit layouts: some units' own, else one of the type. */
+const CORA_LAYOUTS: Record<string, string> = {
+  "A1/01": "layout-a10801-2pn.webp",
+  "A1/05": "layout-a10805-2pn.webp",
+  "A1/17": "layout-a10817-2pn.webp",
+  "A1/28": "layout-a10828-1pn1.webp",
+  "A2/27": "layout-a20827-2pn.webp",
+  STU: "layout-a10823-stu.webp",
+  "1BR+": "layout-a10803-1pn1.webp",
+  "2BR": "layout-a10801-2pn.webp",
+  "3BR": "layout-a10812-3pn.webp",
+};
+const SLIGHT = "/images/projects/s-light-tower/";
+// prettier-ignore
+const SLIGHT_UNITS = typed("3BR 05; STU 06 07 09 16 19; 1BR+ 08 17 18 01 02 03 03A 11 12 12A 12B; 2BR 10 15 20");
+/** S-Light's layouts by net area. */
+const SLIGHT_LAYOUTS: Record<number, string> = {
+  33.3: "can/stu.webp",
+  49.3: "can/1br-b.webp",
+  57.6: "can/1br-a.webp",
+  59: "can/1br-a.webp",
+  76: "can/2br-2wc-1.webp",
+  95.1: "can/3br.webp",
+};
+const FOURS = "/images/projects/fours-tower/mat-bang/";
+// prettier-ignore
+const FOURS_UNITS = {
+  F1: typed("2BR 22 24 01 03 17 15 10 08; STU 23 26 02 12B 11 16 09; 1BR+ 25 27 21 20 19 18 03A 05 06 07; 1BR 12A 12"),
+  F5: typed("3BR 09 12; 1BR+ 10 12B 15 16 17 21 22 23 24 25 26 27 30 31 08 07 05 01; STU 11 12A 18 19 29 34 03 03A 02; 2BR 20 28 32 33; 1BR 06"),
+};
+
 /**
  * Floor plans kept with the site for projects that have none in Admin. The
  * Monarchy: floors 5–17 of A are typical; B's plan of floor 3 stands in for
@@ -339,6 +464,128 @@ const SITE_PLANS: Record<
   // Sun Ponte: the podium's two floors of shophouses under both towers; T1 and
   // T2 on the developer's typical floors from 4, joined by their middle units
   // on 19–24. 3 and 3A, between 3 and 4 (amenities, events, play): no drawing.
+  // Sun Saphia: one drawing for floors 3A–28; the shops below and the top two
+  // floors have none yet.
+  "sun-saphia-residence": {
+    towers: ["Saphia"],
+    plans: [
+      { tower: "Saphia", image: "", floors: ["1", "2", "3"] },
+      {
+        tower: "Saphia",
+        image: `${SAPHIA}saphia-tang-3a-28.webp`,
+        floors: ["3A", ...range(5, 28)],
+      },
+      { tower: "Saphia", image: "", floors: ["29", "30"] },
+    ],
+    kinds: saphiaKinds(),
+    // As on the drawings: SP0812 is floor 8, unit 12.
+    naming: "SP{floor}{unit}",
+  },
+  // Cora: each tower's drawings from the owner; floors 3A–24 have their units
+  // traced, the others show their drawing.
+  "cora-tower": {
+    towers: ["A1", "A2"],
+    plans: (["A1", "A2"] as const).flatMap((tower) => {
+      const own = `${CORA}mat-bang/cora-${tower.toLowerCase()}-tang-`;
+      return [
+        { tower, image: `${own}1.webp`, floors: ["1"] },
+        { tower, image: `${own}2.webp`, floors: ["2"] },
+        {
+          tower,
+          image: `${own}${tower === "A2" ? "3-chsv" : "3"}.webp`,
+          floors: ["3"],
+        },
+        { tower, image: `${own}3a-24.webp`, floors: ["3A", ...range(5, 24)] },
+        { tower, image: `${own}25-ph.webp`, floors: ["25"] },
+      ];
+    }),
+    kinds: Object.assign(
+      {},
+      ...(["A1", "A2"] as const).map((tower) =>
+        drawnKinds(
+          `cora-${tower.toLowerCase()}-tang-3a-24.webp`,
+          CORA_UNITS[tower],
+          (n, type) => {
+            const own = CORA_LAYOUTS[`${tower}/${n}`] ?? CORA_LAYOUTS[type];
+            return own && `${CORA}can/${own}`;
+          },
+        ),
+      ),
+    ),
+    // As on the drawings: A10801 is A1, floor 8, unit 01.
+    naming: "{tower}{floor}{unit}",
+  },
+  // S-Light: one sheet per floor group for both towers, split per tower.
+  "s-light-tower": {
+    towers: ["SL1", "SL2"],
+    plans: ["SL1", "SL2"].flatMap((tower) => {
+      const own = `${SLIGHT}mat-bang/slight-${tower.toLowerCase()}-tang-`;
+      return [
+        { tower, image: `${own}1.webp`, floors: ["1"] },
+        { tower, image: `${own}2.webp`, floors: ["2"] },
+        { tower, image: `${own}3.webp`, floors: ["3"] },
+        { tower, image: `${own}3a-6.webp`, floors: ["3A", "5", "6"] },
+        { tower, image: `${own}7-21.webp`, floors: range(7, 21) },
+        { tower, image: `${own}22.webp`, floors: ["22"] },
+      ];
+    }),
+    kinds: Object.assign(
+      {},
+      ...["sl1", "sl2"].flatMap((tower) =>
+        ["3a-6", "7-21"].map((floors) => {
+          const file = `slight-${tower}-tang-${floors}.webp`;
+          return drawnKinds(file, SLIGHT_UNITS, (n) => {
+            const area = PLAN_OUTLINES[file]?.units[n]?.inner ?? 0;
+            return SLIGHT_LAYOUTS[area] && SLIGHT + SLIGHT_LAYOUTS[area];
+          });
+        }),
+      ),
+    ),
+    // As on the drawings: SL1-18-06 is SL1, floor 18, unit 06.
+    naming: "{tower}-{floor}-{unit}",
+  },
+  // FourS: F1's and F5's drawings; the other two towers have none yet.
+  "fours-tower": {
+    towers: ["F1", "F5"],
+    plans: [
+      { tower: "F1", image: "", floors: ["1"] },
+      { tower: "F1", image: `${FOURS}fours-f1-tang-2.webp`, floors: ["2"] },
+      { tower: "F1", image: `${FOURS}fours-f1-tang-3.webp`, floors: ["3"] },
+      {
+        tower: "F1",
+        image: `${FOURS}fours-f1-tang-4-7.webp`,
+        floors: range(4, 7),
+      },
+      {
+        tower: "F1",
+        image: `${FOURS}fours-f1-tang-8-19.webp`,
+        floors: range(8, 19),
+      },
+      { tower: "F1", image: "", floors: ["20"] },
+      { tower: "F5", image: "", floors: ["1"] },
+      { tower: "F5", image: `${FOURS}fours-f5-tang-2.webp`, floors: ["2"] },
+      { tower: "F5", image: `${FOURS}fours-f5-tang-3.webp`, floors: ["3"] },
+      { tower: "F5", image: "", floors: range(4, 7) },
+      {
+        tower: "F5",
+        image: `${FOURS}fours-f5-tang-8-15.webp`,
+        floors: range(8, 15),
+      },
+      { tower: "F5", image: `${FOURS}fours-f5-tang-16.webp`, floors: ["16"] },
+      {
+        tower: "F5",
+        image: `${FOURS}fours-f5-tang-17-19.webp`,
+        floors: range(17, 19),
+      },
+      { tower: "F5", image: "", floors: ["20"] },
+    ],
+    kinds: {
+      ...drawnKinds("fours-f1-tang-8-19.webp", FOURS_UNITS.F1, () => undefined),
+      ...drawnKinds("fours-f5-tang-8-15.webp", FOURS_UNITS.F5, () => undefined),
+    },
+    // As on the drawings: F1-08-22 is F1, floor 8, unit 22.
+    naming: "{tower}-{floor}-{unit}",
+  },
   "sun-ponte-residence": {
     towers: ["T1", "T2"],
     plans: ["T1", "T2"].flatMap((tower) => {
@@ -538,6 +785,10 @@ export function mapBuildings(
     const all = filterProperties(content.properties, {
       project: b.slug,
     }).filter((p) => !p.isDemo);
+    const floors = rentalsOnly ? undefined : floorData(content, b.slug, all);
+    const plans = content.apiProjects.find(
+      (p) => p.slug === b.slug,
+    )?.floorPlans;
     return [
       {
         slug: b.slug,
@@ -572,7 +823,13 @@ export function mapBuildings(
             hot: p.interestScore ?? 0,
             trending: !!p.trending,
           })),
-        floors: rentalsOnly ? undefined : floorData(content, b.slug, all),
+        floors,
+        // Being built and without the 3D floors: its plans, floor by floor.
+        ...(!floors &&
+          b.categories.includes("development") && {
+            development: true,
+            plans: (plans ?? []).map((x) => ({ name: x.name, image: x.image })),
+          }),
       },
     ];
   });

@@ -310,7 +310,8 @@ test("a development project shows towers and model units without prices", async 
     .toBe(1);
   await expect(section).not.toContainText("tỷ");
   await expect(page.locator(".price-table, .sample-units")).toHaveCount(0);
-  await expect(page.locator("#thanh-toan")).toContainText("Đợt QA 2");
+  // No payment and loan block on a project's page, whatever its schedule.
+  await expect(page.locator("#thanh-toan")).toHaveCount(0);
   // A tower with no plan yet asks for a call.
   await page.locator(".tower-tabs button", { hasText: "QA2" }).click();
   await expect(
