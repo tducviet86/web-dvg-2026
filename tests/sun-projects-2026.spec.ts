@@ -22,6 +22,7 @@ type Fixture = {
   latitude: number;
   longitude: number;
   unitTypes: { name: string; area?: string; image?: string }[];
+  towers?: { name: string }[];
   floorPlans: { name: string; image: string }[];
 };
 // A picture that ships with the site stands in for the developer's.
@@ -97,9 +98,16 @@ for (const p of PROJECTS)
     await expect(main).not.toContainText("Ước tính dòng tiền");
     const gallery = page.getByRole("group", { name: p.name, exact: true });
     await gallery.getByRole("button", { name: "Mặt bằng" }).click();
-    await expect(
-      main.locator(`img[alt="${p.floorPlans[0].name}"]`).first(),
-    ).toBeVisible();
+    // Plans entered without a tower give way to the ones kept with the site,
+    // named for one tower ("Tòa SL1 · Tầng 1").
+    const plan = main.locator('img[alt^="Tòa "]').first();
+    await expect(plan).toBeVisible();
+    await expect(plan).toHaveAttribute(
+      "alt",
+      p.towers?.length
+        ? new RegExp(`^Tòa (${p.towers.map((x) => x.name).join("|")}) · Tầng `)
+        : p.floorPlans[0].name,
+    );
     const map = page.getByRole("region", { name: "Bản đồ và chỉ đường" });
     await map.scrollIntoViewIfNeeded();
     // Their units traced: the card opens the 3D floor plans, as Capital's.

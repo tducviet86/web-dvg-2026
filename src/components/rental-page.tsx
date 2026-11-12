@@ -275,6 +275,7 @@ export function RentalPage({
             <div className="view-toggle">
               <Link
                 aria-label="Xem dạng lưới"
+                rel="nofollow"
                 aria-current={filters.view !== "list" ? "page" : undefined}
                 href={nextUrl({ view: "grid" })}
               >
@@ -282,6 +283,7 @@ export function RentalPage({
               </Link>
               <Link
                 aria-label="Xem dạng danh sách"
+                rel="nofollow"
                 aria-current={filters.view === "list" ? "page" : undefined}
                 href={nextUrl({ view: "list" })}
               >
@@ -390,6 +392,7 @@ export function RentalPage({
                   "",
                 )}
                 scroll={false}
+                rel="nofollow"
                 className="button button-outline"
               >
                 Xem thêm căn hộ

@@ -55,32 +55,96 @@ const S4_TOP_RIGHT: Row[2] = [
   ["09", 982, 1146],
 ];
 
-const C1_TOP: Row[2] = [["06", 150, 247], ["06A", 247, 339], ["08", 389, 562], ["09", 562, 732], ["10", 732, 892]];
+const C1_TOP: Row[2] = [
+  ["06", 150, 247],
+  ["06A", 247, 339],
+  ["08", 389, 562],
+  ["09", 562, 732],
+  ["10", 732, 892],
+];
 
 const PLANS: Record<string, Plan> = {
   "mat-bang-c3-tang-5-23.webp": {
     width: 1160,
     height: 755,
     label: 125,
-    rows: [[125, 352, [["06", 23, 170], ["06A", 170, 315], ["08", 383, 640], ["09", 640, 895], ["10", 895, 1135]]], [402, 629, [["05", 23, 383], ["03", 383, 640], ["02", 640, 895], ["01", 895, 1135]]]],
+    rows: [
+      [
+        125,
+        352,
+        [
+          ["06", 23, 170],
+          ["06A", 170, 315],
+          ["08", 383, 640],
+          ["09", 640, 895],
+          ["10", 895, 1135],
+        ],
+      ],
+      [
+        402,
+        629,
+        [
+          ["05", 23, 383],
+          ["03", 383, 640],
+          ["02", 640, 895],
+          ["01", 895, 1135],
+        ],
+      ],
+    ],
   },
   "mat-bang-c1-tang-9-25.webp": {
     width: 960,
     height: 530,
     label: 88,
-    rows: [[100, 244, C1_TOP], [287, 430, [["05", 150, 389], ["03", 389, 562], ["02", 562, 732], ["01", 732, 892]]]],
+    rows: [
+      [100, 244, C1_TOP],
+      [
+        287,
+        430,
+        [
+          ["05", 150, 389],
+          ["03", 389, 562],
+          ["02", 562, 732],
+          ["01", 732, 892],
+        ],
+      ],
+    ],
   },
   "mat-bang-c1-tang-5-8.webp": {
     width: 960,
     height: 530,
     label: 88,
-    rows: [[100, 244, C1_TOP], [285, 429, [["05", 150, 296], ["03A", 296, 390], ["03", 390, 560], ["02", 560, 730], ["01", 730, 890]]]],
+    rows: [
+      [100, 244, C1_TOP],
+      [
+        285,
+        429,
+        [
+          ["05", 150, 296],
+          ["03A", 296, 390],
+          ["03", 390, 560],
+          ["02", 560, 730],
+          ["01", 730, 890],
+        ],
+      ],
+    ],
   },
   "mat-bang-c1-tang-12a.webp": {
     width: 960,
     height: 530,
     label: 88,
-    rows: [[100, 244, C1_TOP], [287, 430, [["05", 150, 389], ["02", 562, 732], ["01", 732, 892]]]],
+    rows: [
+      [100, 244, C1_TOP],
+      [
+        287,
+        430,
+        [
+          ["05", 150, 389],
+          ["02", 562, 732],
+          ["01", 732, 892],
+        ],
+      ],
+    ],
   },
   "mat-bang-c4-tang-11-27.webp": {
     width: 1646,
@@ -292,8 +356,8 @@ export type PlanSpot = {
 export function planSpots(image: string) {
   const file = image.split("/").pop() ?? "";
   const plan = PLANS[file];
-  if (!plan) return null;
   const traced = PLAN_OUTLINES[file];
+  if (!plan) return traced ? tracedSpots(traced) : null;
   const spots: PlanSpot[] = plan.rows.flatMap(([top, bottom, units], row) =>
     units.map(([unit, left, right]) => {
       // The label sits above the first row and below the second.
@@ -316,6 +380,35 @@ export function planSpots(image: string) {
         cropRatio: (right - left) / (cropBottom - cropTop),
       };
     }),
+  );
+  return { spots, ratio: plan.width / plan.height };
+}
+
+/**
+ * Spots of a drawing known only by its traced units (no rows of labels): each
+ * unit's box, with a little room around it when it is shown enlarged.
+ */
+function tracedSpots(plan: (typeof PLAN_OUTLINES)[string]) {
+  const spots: PlanSpot[] = Object.entries(plan.units).map(
+    ([unit, outline]) => {
+      const xs = outline.points.map((q) => q[0]);
+      const ys = outline.points.map((q) => q[1]);
+      const [left, right] = [Math.min(...xs), Math.max(...xs)];
+      const [top, bottom] = [Math.min(...ys), Math.max(...ys)];
+      const box = {
+        left: (left / plan.width) * 100,
+        top: (top / plan.height) * 100,
+        width: ((right - left) / plan.width) * 100,
+        height: ((bottom - top) / plan.height) * 100,
+      };
+      return {
+        unit,
+        outline,
+        ...box,
+        crop: box,
+        cropRatio: (right - left) / (bottom - top),
+      };
+    },
   );
   return { spots, ratio: plan.width / plan.height };
 }

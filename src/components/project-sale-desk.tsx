@@ -42,7 +42,19 @@ export type DeskUnit = {
   state: "available" | "reserved" | "sold";
 };
 export type DeskTower = { name: string; status: string; note: string };
-export type DeskPlan = { name: string; tower: string; image: string };
+export type DeskPlan = {
+  name: string;
+  tower: string;
+  image: string;
+  /**
+   * What each traced unit of the drawing is, when no listing says (plans
+   * kept with the site): the unit opens with its cut-out and its layout.
+   */
+  units?: Record<
+    string,
+    { rooms: string; area: number | string; picture?: string }
+  >;
+};
 
 /** The unit the visitor last chose: the calculator and the form follow it. */
 const PickContext = createContext<{
@@ -136,8 +148,10 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
     clearTimeout(closing.current);
     setChosen(spot);
     setOpen(true);
-    setShow3d(false);
-    pick(unitAt(spot) ?? null);
+    const listed = unitAt(spot);
+    // A unit known only from the drawing opens on its model picture.
+    setShow3d(!listed && !!plan.units?.[spot]?.picture);
+    pick(listed ?? null);
   };
   const close = () => {
     setOpen(false);
@@ -170,6 +184,9 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
     );
   const zoom = map.spots.find((spot) => spot.unit === chosen);
   const unit = chosen ? unitAt(chosen) : undefined;
+  // A unit with no listing, known from the drawing: its type and layout.
+  const kind = !unit && chosen ? plan.units?.[chosen] : undefined;
+  const picture = unit?.model3d ?? kind?.picture;
   return (
     <>
       <div
@@ -186,7 +203,7 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
                   key={spot.unit}
                   type="button"
                   className="plan-spot"
-                  disabled={!here}
+                  disabled={!here && !(spot.outline && plan.units?.[spot.unit])}
                   aria-pressed={open && chosen === spot.unit}
                   aria-label={t("Xem căn {unit}", {
                     unit: here ? shownCode(here.code) : spot.unit,
@@ -206,7 +223,7 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
         {zoom && (
           <div
             key={zoom.unit}
-            className={`${open ? "plan-zoom" : "plan-zoom closing"}${unit?.model3d ? " with-model" : ""}`}
+            className={`${open ? "plan-zoom" : "plan-zoom closing"}${picture ? " with-model" : ""}`}
           >
             <button
               type="button"
@@ -216,7 +233,7 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
             >
               <X size={16} aria-hidden="true" />
             </button>
-            {unit?.model3d && (
+            {picture && (
               <div className="plan-zoom-switch" role="group">
                 <button
                   type="button"
@@ -230,15 +247,19 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
                   aria-pressed={show3d}
                   onClick={() => setShow3d(true)}
                 >
-                  3D
+                  {unit?.model3d ? "3D" : t("Nhà mẫu 3D")}
                 </button>
               </div>
             )}
-            {show3d && unit?.model3d ? (
+            {show3d && picture ? (
               <Image
                 className="plan-zoom-model"
-                src={unit.model3d}
-                alt={t("Căn mẫu 3D {unit}", { unit: shownCode(unit.code) })}
+                src={picture}
+                alt={
+                  t("Căn mẫu 3D {unit}", {
+                    unit: unit ? shownCode(unit.code) : (chosen ?? ""),
+                  })
+                }
                 width={1600}
                 height={1192}
                 sizes="(max-width: 900px) 100vw, 500px"
@@ -298,6 +319,26 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
       </div>
       <div className={open ? "plan-floors-fold open" : "plan-floors-fold"}>
         <div>
+          {kind && chosen && (
+            <div className="plan-floors" aria-live="polite">
+              <div>
+                <small>
+                  {t("Căn {unit} · {floors}", { unit: chosen, floors })}
+                </small>
+                <h4>
+                  {kind.rooms}
+                  {kind.area !== "" &&
+                    ` · ${kind.area.toLocaleString("vi-VN")} m²`}
+                </h4>
+              </div>
+              <nav aria-label={t("Căn {unit}", { unit: chosen })}>
+                <a href={call}>
+                  <Phone size={15} aria-hidden="true" />
+                  {t("Gọi tư vấn")}
+                </a>
+              </nav>
+            </div>
+          )}
           {unit && (
             <div className="plan-floors" aria-live="polite">
               <div>
@@ -350,7 +391,13 @@ export function UnitBrowser({
   const [tower, setTower] = useState(
     tabs.find((x) => count(x.name) > 0)?.name ?? tabs[0]?.name ?? "",
   );
-  const [plan, setPlan] = useState(0);
+  // A tower opens on its first plan with clickable units, when one has them.
+  const firstPlan = (name: string) =>
+    Math.max(
+      0,
+      plans.filter((p) => p.tower === name).findIndex((p) => p.units),
+    );
+  const [plan, setPlan] = useState(() => firstPlan(tower));
   // With a site plan: pick a tower, the view dives in and its plan appears.
   const [view, setView] = useState<"site" | "tower">(
     siteMap ? "site" : "tower",
@@ -403,7 +450,7 @@ export function UnitBrowser({
   }, [view]);
   const pickTower = (name: string) => {
     setTower(name);
-    setPlan(0);
+    setPlan(firstPlan(name));
     setEntered(true);
     if (view === "site") moveTo("tower");
   };

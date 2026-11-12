@@ -264,6 +264,12 @@ test("rental SEO distinguishes project pages, filters and unpublished sample uni
     "content",
     /noindex/,
   );
+  // Grid/list and "Xem thêm" only re-show the same units: not for crawlers.
+  for (const link of await page
+    .locator(".view-toggle a, .load-more a")
+    .all())
+    await expect(link).toHaveAttribute("rel", "nofollow");
+  await expect(page.locator(".view-toggle a")).toHaveCount(2);
   await page.goto(room);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
     "content",

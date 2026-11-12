@@ -11,6 +11,68 @@ export type SiteMap = {
 };
 
 const MAPS: Record<string, SiteMap> = {
+  // Cora: the developer's site plan, A1 and A2 either side of 29/3.
+  "cora-tower": {
+    image: "/images/projects/cora-tower/mat-bang-tong-the.webp",
+    width: 2400,
+    height: 1533,
+    towers: [
+      {
+        tower: "A1",
+        points: [
+          [780, 271],
+          [1083, 300],
+          [1083, 377],
+          [1277, 394],
+          [1560, 334],
+          [1611, 429],
+          [1603, 523],
+          [1363, 586],
+          [789, 549],
+        ],
+      },
+      {
+        tower: "A2",
+        points: [
+          [797, 1037],
+          [1294, 1025],
+          [1594, 1106],
+          [1629, 1260],
+          [1551, 1303],
+          [1286, 1217],
+          [1106, 1226],
+          [1106, 1311],
+          [797, 1311],
+        ],
+      },
+    ],
+  },
+  // S-Light: the floor plan sheet that shows both towers across 29/3.
+  "s-light-tower": {
+    image: "/images/projects/s-light-tower/so-do-hai-toa.webp",
+    width: 2400,
+    height: 1698,
+    towers: [
+      {
+        tower: "SL1",
+        points: [
+          [426, 642],
+          [979, 642],
+          [979, 1381],
+          [426, 1381],
+        ],
+      },
+      {
+        tower: "SL2",
+        points: [
+          [1411, 642],
+          [1964, 642],
+          [1964, 1381],
+          [1411, 1381],
+        ],
+      },
+    ],
+  },
   "capital-square": {
     image: "/images/projects/capital-square/so-do-toan-khu-c3-gan.webp",
     width: 1190,

@@ -20,6 +20,7 @@ import { paymentAmounts } from "@/lib/payment";
 import { videoSource, type RentalMedia } from "@/lib/property-media";
 import { modelUnit } from "@/lib/model-units";
 import { projectSiteMap } from "@/lib/project-site-maps";
+import type { FloorData } from "@/lib/floor-3d";
 import { roomsLabel, hasRooms } from "@/lib/property-groups";
 import { unitRef, vndFull } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
@@ -35,6 +36,7 @@ import {
   ProjectLeadForm,
   UnitBrowser,
   type DeskUnit,
+  type DeskPlan,
 } from "./project-sale-desk";
 import { PhotoHero } from "./search-hero";
 import { TourShowcase } from "./tour-360";
@@ -119,6 +121,49 @@ export const toDeskUnit = (r: Property): DeskUnit => ({
 });
 
 /**
+ * A project's towers and floor plans kept with the site (lib/map-buildings),
+ * one plan per drawing with the floors it covers, and what each traced unit
+ * is: "Tòa A1 · Tầng 3A-24".
+ */
+function keptPlans(floors?: FloorData) {
+  if (!floors?.plans.some((x) => x.image)) return null;
+  const plans: DeskPlan[] = [];
+  for (const tower of floors.towers) {
+    const drawings = new Map<string, string[]>();
+    for (const x of floors.plans)
+      if (x.tower === tower.name && x.image)
+        drawings.set(x.image, [...(drawings.get(x.image) ?? []), ...x.floors]);
+    for (const [image, list] of drawings) {
+      const file = image.split("/").pop() ?? "";
+      const range =
+        list.length > 1 ? `${list[0]}-${list.at(-1)}` : (list[0] ?? "");
+      const units = Object.fromEntries(
+        Object.entries(floors.kinds ?? {})
+          .filter(([key]) => key.startsWith(`${file}/`))
+          .map(([key, kind]) => [
+            key.slice(file.length + 1),
+            { rooms: kind.rooms, area: kind.area, picture: kind.picture },
+          ]),
+      );
+      plans.push({
+        name: t(`Tòa ${tower.name} · Tầng ${range}`),
+        tower: tower.name,
+        image,
+        ...(Object.keys(units).length && { units }),
+      });
+    }
+  }
+  return {
+    towers: floors.towers.map((x) => ({
+      name: x.name,
+      status: t("Xem mặt bằng"),
+      note: x.note,
+    })),
+    plans,
+  };
+}
+
+/**
  * A project under development, as a sales page: hero, overview, photos, tower
  * → floor → unit, price list, policies, payment and loan, location, sign-up.
  * Everything is entered in Admin › Dự án; a block with no data stays away.
@@ -147,16 +192,25 @@ export function ProjectSalePage({
 }) {
   const units = rawUnits.map(toDeskUnit);
   const call = telephoneHref(companyHotline);
-  const towers = (api?.towers ?? []).map((x) => ({
-    name: x.name,
-    status: x.status ? t(x.status) : "",
-    note: x.note ? t(x.note) : "",
-  }));
-  const plans = (api?.floorPlans ?? []).map((x) => ({
-    name: t(x.name),
-    tower: x.tower ?? "",
-    image: x.image,
-  }));
+  // Towers and floor plans from Admin; without plans tied to a tower there,
+  // the ones kept with the site (its units traced) stand in.
+  const kept = (api?.floorPlans ?? []).some((x) => x.tower)
+    ? null
+    : keptPlans(buildings.find((b) => b.slug === p.slug)?.floors);
+  const towers =
+    kept?.towers ??
+    (api?.towers ?? []).map((x) => ({
+      name: x.name,
+      status: x.status ? t(x.status) : "",
+      note: x.note ? t(x.note) : "",
+    }));
+  const plans =
+    kept?.plans ??
+    (api?.floorPlans ?? []).map((x) => ({
+      name: t(x.name),
+      tower: x.tower ?? "",
+      image: x.image,
+    }));
   const types = api?.unitTypes ?? [];
   const policies = api?.salesPolicies ?? [];
   const connections = api?.connections ?? [];

@@ -1,4 +1,4 @@
-import type { UnitOutline } from "@/lib/floor-plan-outlines";
+import { PLAN_OUTLINES, type UnitOutline } from "@/lib/floor-plan-outlines";
 
 /** The unit's own sharp picture, cut from the developer's drawing. */
 const unitPicture = (plan: string, unit: string) =>
@@ -28,6 +28,11 @@ export function PlanCutout({
   const height = Math.max(...ys) - top;
   const points = outline.points.map((q) => q.join(",")).join(" ");
   const clip = `plan-cut-${unit}`;
+  // Drawings with no picture per unit (named otherwise than "mat-bang-…").
+  const whole =
+    unitPicture(image, unit) === image
+      ? PLAN_OUTLINES[image.split("/").pop() ?? ""]
+      : undefined;
   return (
     <svg
       className="plan-cut-shape"
@@ -38,15 +43,28 @@ export function PlanCutout({
       <clipPath id={clip}>
         <polygon points={points} />
       </clipPath>
-      <image
-        href={unitPicture(image, unit)}
-        x={left}
-        y={top}
-        width={width}
-        height={height}
-        preserveAspectRatio="none"
-        clipPath={`url(#${clip})`}
-      />
+      {/* The unit's own picture where one was cut, else the whole drawing
+          in place (the view box shows the unit). */}
+      {whole ? (
+        <image
+          href={image}
+          x={0}
+          y={0}
+          width={whole.width}
+          height={whole.height}
+          clipPath={`url(#${clip})`}
+        />
+      ) : (
+        <image
+          href={unitPicture(image, unit)}
+          x={left}
+          y={top}
+          width={width}
+          height={height}
+          preserveAspectRatio="none"
+          clipPath={`url(#${clip})`}
+        />
+      )}
       <polygon className="plan-cut-edge" points={points} />
     </svg>
   );
