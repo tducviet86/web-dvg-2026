@@ -24,11 +24,12 @@ const times = Tinos({
 });
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  // Google Search Console, Bing Webmaster Tools and Naver Search Advisor
-  // ownership (keep them, even after verification; Bing also reads
-  // /BingSiteAuth.xml).
+  // Google Search Console, Bing Webmaster Tools, Naver Search Advisor and
+  // Yandex Webmaster ownership (keep them, even after verification; Bing
+  // also reads /BingSiteAuth.xml).
   verification: {
     google: "7QndLoCvARPuQRIfxGAmp244agtGdNpdbDs8Dv-g9jE",
+    yandex: "13d39811a8106647",
     other: {
       "msvalidate.01": "EDE7796E0A03190449BB1CD1C13A1E9D",
       "naver-site-verification": "e8b035660777208b3b8e5058f37454f63b8a76b6",
