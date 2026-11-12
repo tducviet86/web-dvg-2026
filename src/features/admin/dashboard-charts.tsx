@@ -5,13 +5,18 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
+  Label,
   Pie,
   PieChart,
-  ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 
 type Day = { day: string; views: number; leads: number };
 const dayLabel = (iso: string) => {
@@ -21,6 +26,11 @@ const dayLabel = (iso: string) => {
 const still = () =>
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const trafficConfig = {
+  views: { label: "Lượt xem căn hộ", color: "var(--chart-1)" },
+  leads: { label: "Yêu cầu tư vấn", color: "var(--chart-2)" },
+} satisfies ChartConfig;
 
 /** Views per day (area) and requests per day (bars) on one timeline. */
 export function TrafficChart({
@@ -38,30 +48,43 @@ export function TrafficChart({
       role="img"
       aria-label={`Từ ${dayLabel(series[0]?.day ?? "")} đến ${dayLabel(series.at(-1)?.day ?? "")}: ${totalViews} lượt xem căn hộ${withLeads ? `, ${totalLeads} yêu cầu tư vấn` : ""}.`}
     >
-      <ResponsiveContainer width="100%" height={280}>
-        <ComposedChart data={series} margin={{ top: 8, right: 4, left: -8 }}>
+      <ChartContainer
+        config={trafficConfig}
+        className="aspect-auto h-[260px] w-full"
+      >
+        <ComposedChart
+          data={series}
+          margin={{ top: 8, right: 4, left: -12, bottom: 0 }}
+        >
           <defs>
             <linearGradient id="dashViews" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1d5446" stopOpacity={0.32} />
-              <stop offset="100%" stopColor="#1d5446" stopOpacity={0} />
+              <stop
+                offset="5%"
+                stopColor="var(--color-views)"
+                stopOpacity={0.35}
+              />
+              <stop
+                offset="95%"
+                stopColor="var(--color-views)"
+                stopOpacity={0.02}
+              />
             </linearGradient>
           </defs>
-          <CartesianGrid vertical={false} stroke="#e9eeeb" />
+          <CartesianGrid vertical={false} strokeDasharray="3 3" />
           <XAxis
             dataKey="day"
             tickFormatter={dayLabel}
             axisLine={false}
             tickLine={false}
-            minTickGap={18}
-            tick={{ fontSize: 12, fill: "#596b64" }}
+            tickMargin={8}
+            minTickGap={24}
           />
           <YAxis
             yAxisId="views"
             allowDecimals={false}
             axisLine={false}
             tickLine={false}
-            width={36}
-            tick={{ fontSize: 12, fill: "#596b64" }}
+            width={40}
           />
           {withLeads && (
             <YAxis
@@ -71,54 +94,54 @@ export function TrafficChart({
               axisLine={false}
               tickLine={false}
               width={28}
-              tick={{ fontSize: 12, fill: "#9a7a3a" }}
             />
           )}
-          <Tooltip
-            labelFormatter={(value) => `Ngày ${dayLabel(String(value))}`}
-            formatter={(value, name) => [
-              Number(value).toLocaleString("vi-VN"),
-              name === "views" ? "Lượt xem căn hộ" : "Yêu cầu tư vấn",
-            ]}
-            contentStyle={{ borderRadius: 10, borderColor: "#dfe5e2" }}
+          <ChartTooltip
+            cursor={{ strokeDasharray: "3 3" }}
+            content={
+              <ChartTooltipContent
+                labelFormatter={(value) => `Ngày ${dayLabel(value)}`}
+              />
+            }
           />
           <Area
             yAxisId="views"
             type="monotone"
             dataKey="views"
-            stroke="#1d5446"
-            strokeWidth={2.2}
+            stroke="var(--color-views)"
+            strokeWidth={2}
             fill="url(#dashViews)"
+            activeDot={{ r: 4, strokeWidth: 0 }}
             isAnimationActive={!still()}
-            animationDuration={900}
+            animationDuration={800}
           />
           {withLeads && (
             <Bar
               yAxisId="leads"
               dataKey="leads"
-              fill="#c6a76b"
+              fill="var(--color-leads)"
               radius={[4, 4, 0, 0]}
-              maxBarSize={14}
+              maxBarSize={12}
               isAnimationActive={!still()}
-              animationDuration={900}
+              animationDuration={800}
             />
           )}
         </ComposedChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }
 
 const SOURCE_COLORS = [
-  "#1d5446",
-  "#c6a76b",
-  "#5f8f7d",
-  "#e2c37f",
-  "#8aa79b",
-  "#9a7a3a",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
 ];
 
-/** Where requests came from in the period. */
+/** Where requests (or views) came from in the period: a donut and its legend. */
 export function SourceDonut({
   sources,
   unit = "yêu cầu",
@@ -130,7 +153,13 @@ export function SourceDonut({
   const total = sources.reduce((s, x) => s + x.count, 0);
   const top = sources.slice(0, 5);
   const rest = sources.slice(5).reduce((s, x) => s + x.count, 0);
-  const data = rest ? [...top, { source: "Khác", count: rest }] : top;
+  const data = (rest ? [...top, { source: "Khác", count: rest }] : top).map(
+    (d, i) => ({ ...d, fill: SOURCE_COLORS[i % SOURCE_COLORS.length] }),
+  );
+  // Keys safe for CSS variable names; the tooltip shows the source's name.
+  const config = Object.fromEntries(
+    data.map((d, i) => [`s${i}`, { label: d.source, color: d.fill }]),
+  ) satisfies ChartConfig;
   return (
     <div className="dash-donut">
       <div
@@ -138,40 +167,56 @@ export function SourceDonut({
         role="img"
         aria-label={data.map((d) => `${d.source}: ${d.count}`).join(", ")}
       >
-        <ResponsiveContainer width="100%" height={150}>
+        <ChartContainer config={config} className="aspect-square h-[150px]">
           <PieChart>
+            <ChartTooltip content={<ChartTooltipContent />} />
             <Pie
               data={data}
               dataKey="count"
               nameKey="source"
-              innerRadius={46}
+              innerRadius={48}
               outerRadius={70}
               paddingAngle={2}
+              cornerRadius={4}
               stroke="none"
               isAnimationActive={!still()}
             >
-              {data.map((d, i) => (
-                <Cell
-                  key={d.source}
-                  fill={SOURCE_COLORS[i % SOURCE_COLORS.length]}
-                />
+              {data.map((d) => (
+                <Cell key={d.source} fill={d.fill} />
               ))}
+              <Label
+                content={({ viewBox }) => {
+                  if (!viewBox || !("cx" in viewBox)) return null;
+                  return (
+                    <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
+                      <tspan
+                        x={viewBox.cx}
+                        dy="-0.1em"
+                        className="fill-foreground text-xl font-semibold"
+                      >
+                        {total.toLocaleString("vi-VN")}
+                      </tspan>
+                      <tspan
+                        x={viewBox.cx}
+                        dy="1.5em"
+                        className="fill-muted-foreground text-[11px]"
+                      >
+                        {unit}
+                      </tspan>
+                    </text>
+                  );
+                }}
+              />
             </Pie>
           </PieChart>
-        </ResponsiveContainer>
-        <span className="dash-donut-total">
-          <strong>{total}</strong>
-          <small>{unit}</small>
-        </span>
+        </ChartContainer>
       </div>
       <ul className="dash-legend">
-        {data.map((d, i) => (
+        {data.map((d) => (
           <li key={d.source}>
-            <i
-              style={{ background: SOURCE_COLORS[i % SOURCE_COLORS.length] }}
-            />
+            <i style={{ background: d.fill }} />
             <span>{d.source}</span>
-            <strong>{d.count}</strong>
+            <strong>{d.count.toLocaleString("vi-VN")}</strong>
           </li>
         ))}
       </ul>

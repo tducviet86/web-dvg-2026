@@ -6192,3 +6192,550 @@
 .seo-idea-count b {
   display: block;
 }
+
+/* Lượt xem theo căn: every viewed unit, adding up to the chart's total. */
+.dash-kinds {
+  margin-top: -4px;
+}
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dash-table th,
+.dash-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--admin-border);
+  text-align: left;
+  white-space: nowrap;
+}
+.dash-table thead th {
+  color: var(--admin-muted);
+  font-weight: 500;
+  font-size: 12px;
+}
+.dash-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dash-table tfoot th,
+.dash-table tfoot td {
+  border-bottom: 0;
+  font-weight: 600;
+  color: #173e34;
+}
+.dash-table td small {
+  color: var(--admin-muted);
+}
+.dash-more {
+  justify-self: start;
+}
+/* Phones: unit, status and views only, wrapping inside the panel. */
+@media (max-width: 640px) {
+  .dash-table .dash-col-extra {
+    display: none;
+  }
+  .dash-table th,
+  .dash-table td {
+    white-space: normal;
+  }
+}
+
+/* ── Tổng quan in the shadcn/ui style ────────────────────────────────────
+   shadcn tokens (Card, Badge, Table, Chart read them) in the brand's green
+   and gold, a sans-serif face, white cards with hairline borders. Later than
+   the rules above, so these win; layout hooks (.dash-*) are kept for tests. */
+.dash {
+  --background: #ffffff;
+  --foreground: #0d201b;
+  --card: #ffffff;
+  --card-foreground: #0d201b;
+  --muted: #f3f5f4;
+  --muted-foreground: #5b6863;
+  --border: #e5e9e7;
+  --primary: #1d5446;
+  --primary-foreground: #ffffff;
+  --secondary: #eef3f1;
+  --secondary-foreground: #1d5446;
+  --gold-soft: #f7efdc;
+  --gold-strong: #87651f;
+  --success: #15803d;
+  --success-soft: #e3f6e9;
+  --danger: #b42318;
+  --danger-soft: #fdebe9;
+  --chart-1: #1d5446;
+  --chart-2: #c9a45c;
+  --chart-3: #5b9a83;
+  --chart-4: #e6cf98;
+  --chart-5: #a6c2b7;
+  --chart-6: #8d6b2a;
+  --dash-gold: #c9a45c;
+  gap: 16px;
+  color: var(--foreground);
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+}
+.dash button {
+  font-family: inherit;
+}
+
+/* Header: a light card; the 3D map sits in its own dark frame. */
+.dash-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 8px;
+  min-height: 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.04),
+    0 1px 3px rgb(16 24 40 / 0.06);
+}
+.dash-hero::after {
+  display: none;
+}
+.dash-hero-copy {
+  gap: 16px;
+  padding: 28px 24px 28px 28px;
+}
+.dash-hero .eyebrow {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+.dash-hero h2 {
+  font-family: inherit;
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+.dash-hero p {
+  max-width: 52ch;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+.dash-hero-scene {
+  min-height: 340px;
+  overflow: hidden;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 70% 25%, #2c6a58 0%, transparent 60%), #0f2c24;
+}
+
+/* Period: a segmented control, as shadcn's Tabs. */
+.dash-range {
+  gap: 8px;
+}
+.dash-range button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+}
+.dash-range button[aria-pressed="true"] {
+  background: var(--card);
+  color: var(--foreground);
+  font-weight: 600;
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.08),
+    0 0 0 1px var(--border);
+}
+.dash-range button:hover:not([aria-pressed="true"]) {
+  background: transparent;
+  color: var(--foreground);
+}
+.dash-range {
+  width: fit-content;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--muted);
+  gap: 2px;
+}
+.dash-range .dash-refresh {
+  width: 32px;
+  color: var(--muted-foreground);
+}
+.dash-range small {
+  margin: 0 8px 0 4px;
+  color: var(--muted-foreground);
+}
+
+/* Quick actions: shadcn buttons (primary first, then outline). */
+.dash-actions {
+  gap: 8px;
+}
+.dash-actions button,
+.dash-actions a {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+}
+.dash-actions button:first-child {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 500;
+}
+.dash-actions button:hover,
+.dash-actions a:hover {
+  transform: none;
+  background: var(--muted);
+}
+.dash-actions button:first-child:hover {
+  background: #16443a;
+}
+
+/* KPI cards. */
+.dash-kpis {
+  gap: 12px;
+}
+.dash-kpi {
+  gap: 6px;
+  padding: 16px 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.04),
+    0 1px 3px rgb(16 24 40 / 0.06);
+}
+.dash-kpi:hover {
+  transform: none;
+  border-color: #cfd8d4;
+  box-shadow: 0 4px 12px rgb(16 24 40 / 0.08);
+}
+.dash-kpi[data-tone="gold"] {
+  background: var(--card);
+}
+.dash-kpi-head {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+}
+.dash-kpi-icon {
+  border-radius: 8px;
+  background: var(--secondary);
+  color: var(--primary);
+}
+.dash-kpi[data-tone="gold"] .dash-kpi-icon {
+  background: var(--gold-soft);
+  color: var(--gold-strong);
+}
+.dash-kpi strong {
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+.dash-kpi small {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.dash-delta {
+  padding: 1px 6px;
+  font-size: 11.5px;
+}
+.dash-spark-line {
+  stroke: var(--chart-1);
+}
+.dash-spark-fill {
+  fill: color-mix(in srgb, var(--chart-1) 10%, transparent);
+}
+
+/* Panels: shadcn Cards. */
+.dash-row {
+  gap: 16px;
+}
+.dash-panel {
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.04),
+    0 1px 3px rgb(16 24 40 / 0.06);
+}
+.dash-panel h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+.dash-panel h2 svg {
+  color: var(--muted-foreground);
+}
+.dash-panel > header > span {
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+}
+.dash-sub {
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+.dash-muted,
+.dash-kinds {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.dash-empty {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.dash-key {
+  color: var(--muted-foreground);
+}
+.dash-key i[data-kind="views"] {
+  background: var(--chart-1);
+}
+.dash-key i[data-kind="leads"] {
+  background: var(--chart-2);
+}
+.text-link {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* Lists inside cards: quiet rows that light up on hover. */
+.dash-stock button,
+.dash-units button,
+.dash-cold button,
+.dash-todo button,
+.dash-feed button,
+.dash-timeline button,
+.dash-timeline li > div {
+  border-radius: 8px;
+}
+.dash-stock button:hover,
+.dash-units button:hover,
+.dash-cold button:hover,
+.dash-todo button:hover,
+.dash-feed button:hover,
+.dash-timeline button:hover {
+  background: var(--muted);
+}
+.dash-stock-name strong,
+.dash-unit-name strong,
+.dash-feed-name strong,
+.dash-cold strong {
+  color: var(--foreground);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.dash-stock-name small,
+.dash-unit-name small,
+.dash-feed-name small,
+.dash-cold small {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.dash-unit-name small.dash-unit-sources {
+  color: var(--primary);
+}
+.dash-stock-bar {
+  border-radius: 999px;
+  background: var(--muted);
+}
+.dash-stock-free {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.dash-rank {
+  border-radius: 7px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+.dash-units li:first-child .dash-rank {
+  background: var(--gold-soft);
+  color: var(--gold-strong);
+}
+.dash-units img,
+.dash-thumb-empty {
+  border-radius: 8px;
+}
+.dash-unit-stats {
+  color: var(--muted-foreground);
+}
+.dash-funnel i {
+  background: var(--chart-3);
+}
+.dash-funnel i[data-kind="NEW"] {
+  background: var(--chart-2);
+}
+.dash-ring-value {
+  stroke: var(--primary);
+}
+.dash-ring-track {
+  stroke: var(--muted);
+}
+.dash-todo button {
+  border: 1px solid var(--border);
+}
+.dash-todo button[data-urgent] {
+  border-color: #f2d9a6;
+  background: #fffaf0;
+}
+.dash-timeline li::before {
+  background: var(--chart-2);
+}
+.dash-tabs {
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--muted);
+}
+.dash-tabs button {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+.dash-tabs button[aria-selected="true"] {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.08),
+    0 0 0 1px var(--border);
+}
+.dash-avatar {
+  background: var(--secondary);
+  color: var(--primary);
+}
+.dash-avatar.gold {
+  background: var(--gold-soft);
+  color: var(--gold-strong);
+}
+.dash-legend li {
+  color: var(--muted-foreground);
+}
+.dash-legend strong {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lượt xem theo căn: shadcn Table. */
+.dash-table th,
+.dash-table td {
+  padding: 8px 10px;
+  border-bottom: 0;
+}
+.dash-table thead th {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+}
+.dash-table tfoot td {
+  border-bottom: 0;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.dash-unit-cell button,
+.dash-unit-cell > span {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--foreground);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.dash-unit-cell button:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dash-unit-cell small {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.dash-sources {
+  color: var(--muted-foreground);
+  white-space: normal;
+}
+.dash-footnote {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .dash-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dash-hero-copy {
+    padding: 20px 18px 8px;
+  }
+  .dash-hero-scene {
+    min-height: 300px;
+  }
+}
+@media (max-width: 760px) {
+  .dash-hero-copy {
+    padding: 16px 12px 4px;
+  }
+  .dash-hero-scene {
+    min-height: 240px;
+  }
+  .dash-kpi strong {
+    font-size: 24px;
+  }
+  .dash-panel {
+    padding: 16px;
+  }
+}
+/* One sans-serif face throughout, headings and SVG numbers included. */
+.dash :is(h1, h2, h3, h4, p, span, strong, small, em, b, li, button, a, text) {
+  font-family: inherit;
+}
+/* The trend line under a KPI sits below its note, not over it. */
+.dash-kpi .dash-spark {
+  position: static;
+  width: 100%;
+  height: 28px;
+  margin-top: 2px;
+}
+/* Phones: the admin's wide-table minimum is not for this small table. */
+@media (max-width: 760px) {
+  .admin-shell .dash-table {
+    min-width: 0;
+  }
+}
+/* The site-wide cell minimum (globals.css) would push this table off phones. */
+.dash-table td {
+  min-width: 0;
+  max-width: none;
+}

@@ -29,6 +29,19 @@ import { availabilityOptions } from "./adapters";
 import { leadStatusOptions, sectionPermission } from "./model";
 import { fileSize } from "./media-library";
 import type { SceneProject } from "./portfolio-scene";
+import { RANGES, RANGE_KEY, savedRange, type Range } from "./dashboard-range";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { groupActivity } from "./activity";
 
 // three.js and the charts are only downloaded for this screen.
 const PortfolioScene = dynamic(() => import("./portfolio-scene"), {
@@ -72,7 +85,20 @@ type Summary = {
     prevLeads: number | null;
     conversion: number | null;
     bySource: { source: string; views: number }[];
+    /** The total split by where the viewed units stand now. */
+    byKind: Partial<Record<ViewKind, number>>;
   };
+  /** Every unit viewed in the period, most first; they add up to the total. */
+  unitViews: {
+    id: string;
+    name: string | null;
+    unitCode: string | null;
+    project: string | null;
+    kind: ViewKind;
+    views: number;
+    leads: number;
+    sources: { source: string; views: number }[];
+  }[];
   inventory: {
     total: number;
     availability: Record<string, number>;
@@ -133,8 +159,6 @@ type Summary = {
     | null;
 };
 
-const RANGES = [7, 30, 90] as const;
-const RANGE_KEY = "dvg:admin-dashboard-days";
 const labelOf = (options: [string, string][], key: string) =>
   options.find(([k]) => k === key)?.[1] ?? key;
 const APPLICATION_STATUS: [string, string][] = [
@@ -144,6 +168,20 @@ const APPLICATION_STATUS: [string, string][] = [
   ["HIRED", "Đã tuyển"],
   ["REJECTED", "Từ chối"],
 ];
+/** Badge tone of a lead's or an application's status. */
+const STATUS_TONE: Record<
+  string,
+  "gold" | "secondary" | "success" | "muted" | "danger"
+> = {
+  NEW: "gold",
+  CONTACTING: "secondary",
+  REVIEWING: "secondary",
+  INTERVIEW: "secondary",
+  DONE: "success",
+  HIRED: "success",
+  UNQUALIFIED: "muted",
+  REJECTED: "danger",
+};
 const VERB: Record<string, string> = {
   create: "đã thêm",
   update: "đã cập nhật",
@@ -180,7 +218,11 @@ const EDIT: Record<string, string> = {
 };
 function activityHref(entityType: string | null, id: string | null) {
   if (!entityType) return null;
-  if (EDIT[entityType] && id) return `/admin/${EDIT[entityType]}/${id}/edit`;
+  // Several records at once (a folded line): their list.
+  if (EDIT[entityType])
+    return id
+      ? `/admin/${EDIT[entityType]}/${id}/edit`
+      : `/admin/${EDIT[entityType]}`;
   return (
     {
       media: "/admin/media",
@@ -203,6 +245,26 @@ const VIEW_SOURCES: Record<string, string> = {
   unknown: "Chưa rõ (trước khi đo nguồn)",
 };
 const viewSource = (key: string) => VIEW_SOURCES[key] ?? key;
+/** Where a viewed unit stands now. */
+type ViewKind = "live" | "model" | "hidden" | "deleted";
+const VIEW_KINDS: [ViewKind, string][] = [
+  ["live", "Đang bán/thuê"],
+  ["model", "Căn mẫu"],
+  ["hidden", "Đã ẩn"],
+  ["deleted", "Đã xoá"],
+];
+const kindLabel = (kind: ViewKind) =>
+  VIEW_KINDS.find(([k]) => k === kind)?.[1] ?? kind;
+const KIND_TONE: Record<ViewKind, "success" | "gold" | "muted"> = {
+  live: "success",
+  model: "gold",
+  hidden: "muted",
+  deleted: "muted",
+};
+/** Lines of "Hoạt động gần đây" shown before "Xem thêm". */
+const ACTIVITY_SHOWN = 5;
+/** Rows of "Lượt xem theo căn" shown before "Xem tất cả". */
+const UNIT_VIEWS_SHOWN = 15;
 const percent = (value: number) =>
   `${(value * 100).toLocaleString("vi-VN", { maximumFractionDigits: value < 0.1 ? 1 : 0 })}%`;
 const million = (vnd: number) =>
@@ -312,14 +374,18 @@ function KpiCard({
       <strong>{ready ? format(shown) : <i className="skeleton-text" />}</strong>
       <span className="dash-kpi-foot">
         {kpi.delta != null && Number.isFinite(kpi.delta) && (
-          <span className="dash-delta" data-up={kpi.delta >= 0}>
+          <Badge
+            variant={kpi.delta >= 0 ? "success" : "danger"}
+            className="dash-delta"
+            data-up={kpi.delta >= 0}
+          >
             {kpi.delta >= 0 ? (
               <ArrowUpRight size={13} />
             ) : (
               <ArrowDownRight size={13} />
             )}
             {percent(Math.abs(kpi.delta))}
-          </span>
+          </Badge>
         )}
         <small>{ready ? kpi.note : " "}</small>
       </span>
@@ -384,18 +450,13 @@ export function Overview({
   goTo: (href: string) => void;
 }) {
   const can = (p: string) => permissions.includes(p);
-  const [days, setDays] = useState<(typeof RANGES)[number]>(() => {
-    try {
-      const saved = Number(localStorage.getItem(RANGE_KEY));
-      return RANGES.includes(saved as never) ? (saved as 30) : 30;
-    } catch {
-      return 30;
-    }
-  });
+  const [days, setDays] = useState<Range>(savedRange);
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [feed, setFeed] = useState<"leads" | "applications">("leads");
+  const [allUnitViews, setAllUnitViews] = useState(false);
+  const [allActivity, setAllActivity] = useState(false);
   const request = useRef(0);
 
   const load = useCallback(
@@ -616,6 +677,9 @@ export function Overview({
     },
   ].filter(Boolean) as { label: string; href: string; icon: typeof House }[];
 
+  // Alike changes in a row are one line; the newest few are shown.
+  const activity = data?.activity ? groupActivity(data.activity) : [];
+
   const pipeline = leads
     ? (["NEW", "CONTACTING", "DONE"] as const).map((s) => ({
         key: s,
@@ -709,12 +773,12 @@ export function Overview({
       </div>
 
       <div className="dash-row dash-row-main">
-        <section className="dash-panel">
-          <header>
-            <h2>
+        <Card className="dash-panel">
+          <CardHeader>
+            <CardTitle>
               <Activity size={17} /> Lượt xem{leads ? " & yêu cầu" : ""} theo
               ngày
-            </h2>
+            </CardTitle>
             <span className="dash-key">
               <i data-kind="views" /> Lượt xem
               {leads && (
@@ -723,11 +787,23 @@ export function Overview({
                 </>
               )}
             </span>
-          </header>
+          </CardHeader>
           {t ? (
             <TrafficChart series={t.series} withLeads={!!leads} />
           ) : (
             <div className="skeleton dash-chart-skeleton" />
+          )}
+          {t && t.views > 0 && (
+            <p className="dash-muted dash-kinds">
+              {nf(t.views)} lượt trong {period}:{" "}
+              {VIEW_KINDS.filter(([k]) => t.byKind[k])
+                .map(
+                  ([k, label]) =>
+                    `${nf(t.byKind[k] ?? 0)} ${label.toLowerCase()}`,
+                )
+                .join(" · ")}
+              . Từng căn ở bảng “Lượt xem theo căn”.
+            </p>
           )}
           <h3 className="dash-sub">Lượt xem căn hộ theo nguồn</h3>
           {t?.bySource.length ? (
@@ -743,13 +819,13 @@ export function Overview({
               {t ? `Chưa có lượt xem nào trong ${period} qua.` : "Đang tải…"}
             </p>
           )}
-        </section>
+        </Card>
         {leads ? (
-          <section className="dash-panel">
-            <header>
-              <h2>
+          <Card className="dash-panel">
+            <CardHeader>
+              <CardTitle>
                 <Users size={17} /> Khách hàng tiềm năng
-              </h2>
+              </CardTitle>
               <button
                 type="button"
                 className="text-link"
@@ -757,7 +833,7 @@ export function Overview({
               >
                 Mở <ArrowUpRight size={15} />
               </button>
-            </header>
+            </CardHeader>
             <ol className="dash-funnel" aria-label="Trạng thái yêu cầu tư vấn">
               {pipeline.map((p, i) => (
                 <li key={p.key} style={{ "--i": i } as React.CSSProperties}>
@@ -782,30 +858,120 @@ export function Overview({
             ) : (
               <p className="dash-empty">Chưa có yêu cầu trong {period} qua.</p>
             )}
-          </section>
+          </Card>
         ) : (
-          <section className="dash-panel">
-            <header>
-              <h2>
+          <Card className="dash-panel">
+            <CardHeader>
+              <CardTitle>
                 <BriefcaseBusiness size={17} /> Tuyển dụng
-              </h2>
-            </header>
+              </CardTitle>
+            </CardHeader>
             <p className="dash-big">{data?.jobs.open ?? "–"}</p>
             <p className="dash-muted">
               tin đang tuyển · {data?.jobs.expired ?? 0} hết hạn
             </p>
-          </section>
+          </Card>
         )}
       </div>
 
+      <Card className="dash-panel dash-unit-views">
+        <CardHeader>
+          <CardTitle>
+            <Eye size={17} /> Lượt xem theo căn
+          </CardTitle>
+          <span>
+            {period} qua
+            {data ? ` · ${nf(data.unitViews.length)} căn` : ""}
+          </span>
+        </CardHeader>
+        {data?.unitViews.length ? (
+          <>
+            <Table className="dash-table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Căn</TableHead>
+                  <TableHead className="dash-col-extra">Dự án</TableHead>
+                  <TableHead>Tình trạng</TableHead>
+                  <TableHead className="num">Lượt xem</TableHead>
+                  <TableHead className="dash-col-extra">Nguồn</TableHead>
+                  {leads && <TableHead className="num">Yêu cầu</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(allUnitViews
+                  ? data.unitViews
+                  : data.unitViews.slice(0, UNIT_VIEWS_SHOWN)
+                ).map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="dash-unit-cell">
+                      {u.kind === "deleted" ? (
+                        <span>{u.name ?? "Căn đã xoá"}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => goTo(`/admin/properties/${u.id}/edit`)}
+                        >
+                          {u.name}
+                        </button>
+                      )}
+                      {u.unitCode && <small>{u.unitCode}</small>}
+                    </TableCell>
+                    <TableCell className="dash-col-extra">
+                      {u.project ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={KIND_TONE[u.kind]} data-kind={u.kind}>
+                        {kindLabel(u.kind)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="num">{nf(u.views)}</TableCell>
+                    <TableCell className="dash-col-extra dash-sources">
+                      {u.sources
+                        .map((x) => `${viewSource(x.source)} ${x.views}`)
+                        .join(", ") || "—"}
+                    </TableCell>
+                    {leads && <TableCell className="num">{u.leads}</TableCell>}
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell>Tổng</TableCell>
+                  <TableCell className="dash-col-extra" />
+                  <TableCell />
+                  <TableCell className="num">{nf(t?.views ?? 0)}</TableCell>
+                  <TableCell className="dash-col-extra" />
+                  {leads && <TableCell />}
+                </TableRow>
+              </TableFooter>
+            </Table>
+            {data.unitViews.length > UNIT_VIEWS_SHOWN && (
+              <button
+                type="button"
+                className="text-link dash-more"
+                onClick={() => setAllUnitViews(!allUnitViews)}
+              >
+                {allUnitViews
+                  ? "Thu gọn"
+                  : `Xem tất cả ${nf(data.unitViews.length)} căn`}
+              </button>
+            )}
+          </>
+        ) : (
+          <p className="dash-empty">
+            {data ? `Chưa có lượt xem nào trong ${period} qua.` : "Đang tải…"}
+          </p>
+        )}
+      </Card>
+
       <div className="dash-row">
-        <section className="dash-panel">
-          <header>
-            <h2>
+        <Card className="dash-panel">
+          <CardHeader>
+            <CardTitle>
               <Building2 size={17} /> Tồn kho theo dự án
-            </h2>
+            </CardTitle>
             <span>{inv ? `${nf(inv.total)} căn` : "…"}</span>
-          </header>
+          </CardHeader>
           {inv?.projects.length ? (
             <ul className="dash-stock">
               {inv.projects.map((p, i) => (
@@ -857,15 +1023,15 @@ export function Overview({
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section className="dash-panel">
-          <header>
-            <h2>
+        <Card className="dash-panel">
+          <CardHeader>
+            <CardTitle>
               <Flame size={17} /> Căn được quan tâm nhất
-            </h2>
+            </CardTitle>
             <span>{period} qua</span>
-          </header>
+          </CardHeader>
           {data?.topUnits.length ? (
             <ol className="dash-units">
               {data.topUnits.map((u, i) => (
@@ -924,17 +1090,17 @@ export function Overview({
               {data ? `Chưa có lượt xem nào trong ${period} qua.` : "Đang tải…"}
             </p>
           )}
-        </section>
+        </Card>
       </div>
 
       <div className="dash-row dash-row-three">
-        <section className="dash-panel">
-          <header>
-            <h2>
+        <Card className="dash-panel">
+          <CardHeader>
+            <CardTitle>
               <CircleAlert size={17} /> Cần xử lý
-            </h2>
+            </CardTitle>
             <span>{data ? `${todo.length} việc` : "…"}</span>
-          </header>
+          </CardHeader>
           <div className="dash-health">
             <Ring value={Math.max(0, completeness)} />
             <p>
@@ -962,15 +1128,15 @@ export function Overview({
               ))}
             </ul>
           )}
-        </section>
+        </Card>
 
-        <section className="dash-panel">
-          <header>
-            <h2>
+        <Card className="dash-panel">
+          <CardHeader>
+            <CardTitle>
               <Snowflake size={17} /> Chưa ai xem
-            </h2>
+            </CardTitle>
             <span>{data ? `${data.coldCount} căn` : "…"}</span>
-          </header>
+          </CardHeader>
           <p className="dash-muted">
             Căn còn trống, đang hiển thị nhưng chưa có lượt xem trong {period}.
             Thử thêm ảnh đẹp, gắn nhãn hoặc chạy quảng cáo.
@@ -997,44 +1163,67 @@ export function Overview({
               {data ? "Căn nào cũng có người xem." : "Đang tải…"}
             </p>
           )}
-        </section>
+        </Card>
 
-        <section className="dash-panel">
-          <header>
-            <h2>
+        <Card className="dash-panel">
+          <CardHeader>
+            <CardTitle>
               <Activity size={17} /> Hoạt động gần đây
-            </h2>
-          </header>
+            </CardTitle>
+          </CardHeader>
           {data?.activity ? (
             data.activity.length ? (
-              <ol className="dash-timeline">
-                {data.activity.map((a) => {
-                  const [entity, verb] = a.action.split(".");
-                  const href = activityHref(a.entityType, a.entityId);
-                  const text = (
-                    <>
-                      <strong>{a.actor?.name ?? "Hệ thống"}</strong>{" "}
-                      {VERB[verb] ?? verb} {NOUN[entity] ?? entity}
-                      {a.label ? <em> {a.label}</em> : null}
-                    </>
-                  );
-                  return (
-                    <li key={a.id}>
-                      {href ? (
-                        <button type="button" onClick={() => goTo(href)}>
-                          <span>{text}</span>
-                          <small>{ago(a.createdAt)}</small>
-                        </button>
-                      ) : (
-                        <div>
-                          <span>{text}</span>
-                          <small>{ago(a.createdAt)}</small>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
+              <>
+                <ol className="dash-timeline">
+                  {(allActivity
+                    ? activity
+                    : activity.slice(0, ACTIVITY_SHOWN)
+                  ).map((a) => {
+                    const [entity, verb] = a.action.split(".");
+                    const href = activityHref(a.entityType, a.entityId);
+                    // "đã tải lên 4 tệp"; the same record changed again: "· 3 lần".
+                    const many = a.count > 1 && !a.sameRecord;
+                    const text = (
+                      <>
+                        <strong>{a.actor?.name ?? "Hệ thống"}</strong>{" "}
+                        {VERB[verb] ?? verb} {many ? `${a.count} ` : ""}
+                        {NOUN[entity] ?? entity}
+                        {a.label ? <em> {a.label}</em> : null}
+                        {a.count > 1 && a.sameRecord
+                          ? ` · ${a.count} lần`
+                          : null}
+                      </>
+                    );
+                    return (
+                      <li key={a.id}>
+                        {href ? (
+                          <button type="button" onClick={() => goTo(href)}>
+                            <span>{text}</span>
+                            <small>{ago(a.createdAt)}</small>
+                          </button>
+                        ) : (
+                          <div>
+                            <span>{text}</span>
+                            <small>{ago(a.createdAt)}</small>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+                {activity.length > ACTIVITY_SHOWN && (
+                  <button
+                    type="button"
+                    className="text-link dash-more"
+                    aria-expanded={allActivity}
+                    onClick={() => setAllActivity(!allActivity)}
+                  >
+                    {allActivity
+                      ? "Thu gọn"
+                      : `Xem thêm ${activity.length - ACTIVITY_SHOWN}`}
+                  </button>
+                )}
+              </>
             ) : (
               <p className="dash-empty">Chưa có hoạt động nào.</p>
             )
@@ -1043,12 +1232,12 @@ export function Overview({
               {data ? "Bạn không có quyền xem nhật ký." : "Đang tải…"}
             </p>
           )}
-        </section>
+        </Card>
       </div>
 
       {(leads || data?.applications) && (
-        <section className="dash-panel">
-          <header>
+        <Card className="dash-panel">
+          <CardHeader>
             <div className="dash-tabs" role="tablist" aria-label="Mới nhận">
               <button
                 type="button"
@@ -1078,7 +1267,7 @@ export function Overview({
             >
               Xem tất cả <ArrowUpRight size={15} />
             </button>
-          </header>
+          </CardHeader>
           <div
             role="tabpanel"
             aria-label={feed === "leads" ? "Yêu cầu tư vấn" : "Hồ sơ ứng viên"}
@@ -1103,9 +1292,12 @@ export function Overview({
                             ].join(" · ")}
                           </small>
                         </span>
-                        <span className="status-pill" data-status={l.status}>
+                        <Badge
+                          variant={STATUS_TONE[l.status] ?? "muted"}
+                          data-status={l.status}
+                        >
                           {labelOf(leadStatusOptions, l.status)}
-                        </span>
+                        </Badge>
                       </button>
                     </li>
                   ))
@@ -1125,9 +1317,12 @@ export function Overview({
                             {ago(a.createdAt)}
                           </small>
                         </span>
-                        <span className="status-pill" data-status={a.status}>
+                        <Badge
+                          variant={STATUS_TONE[a.status] ?? "muted"}
+                          data-status={a.status}
+                        >
                           {labelOf(APPLICATION_STATUS, a.status)}
-                        </span>
+                        </Badge>
                       </button>
                     </li>
                   ))}
@@ -1139,15 +1334,7 @@ export function Overview({
                 )}
             </ul>
           </div>
-        </section>
-      )}
-
-      {data && (
-        <p className="dash-footnote">
-          {can(sectionPermission.media) &&
-            `Thư viện: ${nf(data.media.total)} tệp · ${fileSize(data.media.bytes)}. `}
-          Lượt xem tính theo ngày UTC; căn mẫu không được tính.
-        </p>
+        </Card>
       )}
     </div>
   );

@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { api, errorMessage } from "./api";
 import { availabilityOptions, type AdminDto } from "./adapters";
+import { savedRange } from "./dashboard-range";
 import { ConfirmDialog } from "./error-dialog";
 import {
   highlightLabel,
@@ -136,6 +137,7 @@ export function PropertiesList({
 }) {
   const [filters, setFilters] = useState<Filters>(savedFilters);
   const [page, setPage] = useState(1);
+  const [interestDays] = useState(savedRange);
   const [rows, setRows] = useState<Unit[] | null>(null);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -174,6 +176,8 @@ export function PropertiesList({
       pageSize: String(filters.pageSize),
       sort: filters.sort,
       kind: filters.kind,
+      // Views over the period chosen on "Tổng quan", so both agree.
+      interestDays: String(interestDays),
     });
     for (const key of [
       "q",
@@ -204,7 +208,7 @@ export function PropertiesList({
       toast.error(errorMessage(error));
       setRows([]);
     }
-  }, [filters, page]);
+  }, [filters, page, interestDays]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), filters.q ? 250 : 0);
     return () => window.clearTimeout(timer);
@@ -551,7 +555,9 @@ export function PropertiesList({
                 <th>Dự án · Loại</th>
                 <th>Giá</th>
                 <th>Tình trạng · Đăng</th>
-                <th>Quan tâm (14 ngày)</th>
+                <th title="Cùng khoảng thời gian đã chọn ở Tổng quan">
+                  Quan tâm ({interestDays} ngày)
+                </th>
                 <th>Người đăng · Cập nhật</th>
                 <th>
                   <span className="units-sr">Thao tác</span>

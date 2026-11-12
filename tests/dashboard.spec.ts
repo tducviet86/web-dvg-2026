@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { createRequire } from "node:module";
+import { BE_DIR, E2E_DATABASE_URL } from "../playwright.config";
 import { apiAs, login } from "./helpers";
+import { groupActivity } from "../src/features/admin/activity";
 
 const SHOTS =
   "/private/tmp/claude-501/-Users-tranducviet-Documents-DVG-WEB/d7e4d8d3-4b31-4315-9fe7-c92d90618232/scratchpad";
@@ -140,4 +143,102 @@ test("Tổng quan: 3D project map, numbers for a chosen period, panels that fit"
     });
   }
   for (const id of created) await api.send("delete", `/admin/properties/${id}`);
+});
+
+test("Lượt xem theo căn: every viewed unit, adding up to the chart, and the unit list counts the same period", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get(
+    "/admin/projects?pageSize=100",
+  )) as unknown as { data: { id: string; name: string }[] };
+  const projectId = projects.data.find((p) => p.name.includes("Monarchy"))!.id;
+  const res = await api.send("post", "/admin/properties", {
+    name: "Căn lượt xem QA",
+    unitCode: "LX-QA",
+    projectId,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn hộ kiểm tra bảng lượt xem theo căn trong Admin.",
+    rentPriceVnd: "16000000",
+    status: "DRAFT",
+  });
+  expect(res.ok()).toBeTruthy();
+  const id = ((await res.json()) as { data: { id: string } }).data.id;
+  // 4 views today (Vietnamese day) on a unit off the site: counted as "Đã ẩn".
+  const { Client } = createRequire(`${BE_DIR}/package.json`)("pg");
+  const db = new Client({ connectionString: E2E_DATABASE_URL });
+  await db.connect();
+  await db.query(
+    `INSERT INTO property_view_days (property_id, day, views)
+     VALUES ($1, (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date, 4)`,
+    [id],
+  );
+  await db.end();
+
+  await login(page);
+  await page.goto("/admin");
+  const range = page.getByRole("group", { name: "Khoảng thời gian" });
+  await range.getByRole("button", { name: "7 ngày" }).click();
+  const panel = page.locator(".dash-unit-views");
+  await expect(
+    panel.getByRole("heading", { name: "Lượt xem theo căn" }),
+  ).toBeVisible();
+  const row = panel.locator("tbody tr", { hasText: "Căn lượt xem QA" });
+  await expect(row).toContainText("LX-QA");
+  await expect(row).toContainText("Đã ẩn");
+  await expect(row.locator("td.num").first()).toHaveText("4");
+  // The rows add up to the total of the chart, said in its split line.
+  const total = await panel.locator("tfoot td.num").first().innerText();
+  await expect(page.locator(".dash-kinds")).toContainText(
+    `${total} lượt trong 7 ngày`,
+  );
+  await expect(page.locator(".dash-kinds")).toContainText("đã ẩn");
+  // The unit list counts views over the same 7 days.
+  await page.goto("/admin/properties");
+  await expect(
+    page.getByRole("columnheader", { name: "Quan tâm (7 ngày)" }),
+  ).toBeVisible();
+  await api.send("delete", `/admin/properties/${id}`);
+});
+
+test("Hoạt động gần đây folds alike changes in a row into one line", () => {
+  const entry = (
+    id: string,
+    action: string,
+    entityId: string | null,
+    label: string | null,
+    actor = "Quản trị",
+  ) => ({
+    id,
+    action,
+    entityType: action.split(".")[0],
+    entityId,
+    label,
+    createdAt: "2026-11-12T07:00:00Z",
+    actor: { name: actor },
+  });
+  const lines = groupActivity([
+    entry("1", "media.upload", "m1", null),
+    entry("2", "media.upload", "m2", null),
+    entry("3", "media.upload", "m3", null),
+    entry("4", "project.update", "cora", "Cora Tower"),
+    entry("5", "project.update", "cora", "Cora Tower"),
+    entry("6", "project.update", "slight", "S-Light Tower"),
+    entry("7", "media.upload", "m4", null, "Biên tập"),
+  ]);
+  expect(
+    lines.map((l) => [l.action, l.label, l.count, l.sameRecord, l.actor?.name]),
+  ).toEqual([
+    // Three uploads in a row: "đã tải lên 3 tệp" (another person's stays apart).
+    ["media.upload", null, 3, false, "Quản trị"],
+    // The same project twice: one line, "· 2 lần".
+    ["project.update", "Cora Tower", 2, true, "Quản trị"],
+    // Another named project keeps its own line.
+    ["project.update", "S-Light Tower", 1, true, "Quản trị"],
+    ["media.upload", null, 1, true, "Biên tập"],
+  ]);
 });
