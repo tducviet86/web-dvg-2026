@@ -163,3 +163,10 @@ Khung "Toàn cảnh" của bản đồ (`rental-map.tsx`) nay tự thu nhỏ khi
   - Bên kia sông trên đường Chương Dương là Sun Galaxy Complex: khán đài, khối tròn 69 m và hai tháp.
   - Số tầng của các tháp quy hoạch là ước theo phối cảnh.
   - Pháo hoa nổ giữa sông, trước khán đài Sun Galaxy.
+
+## Sửa i18n:warm báo "No progress" (12/11/2026)
+
+- `Mặt bằng tầng` (111 trang): chữ trong component phía trình duyệt của bản đồ chưa có trong `client-strings.json`, vì đợt trước quên chạy `npm run i18n:extract`. Đã chạy; danh sách cũng bỏ các chữ của mục "Thanh toán & vay" đã gỡ.
+- `Mặt bằng Căn mẫu …` (lỗi có từ trước): nhãn hình cắt căn (`PlanCutout`) được viết bằng JSX thường nên không bao giờ được gửi đi dịch. Nay dịch tại `UnitLayoutCrop` trước khi truyền xuống.
+- `đ` sau giá tiền và tên mẫu trong form: không cần dịch. `i18n-check` nay bỏ qua để `i18n:warm` không báo kẹt mãi.
+- Tên mẫu trong form đổi từ "Nguyễn Minh Anh" thành "Nguyễn Văn A" theo yêu cầu.

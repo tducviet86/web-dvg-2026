@@ -102,6 +102,20 @@ test("its page: facts and a map without the card, on any screen", async ({
   }
 });
 
+test("the floor plan card of the map is labelled in English on /en", async ({
+  page,
+}) => {
+  // A Client Component's words must be listed in client-strings.json.
+  await page.goto(`/en/du-an/${PROJECT.slug}`);
+  const card = page.locator(".rmap-floor-plan");
+  for (let i = 0; i < 20; i++) {
+    if (((await card.getAttribute("data-alt")) ?? "").startsWith("EN: ")) break;
+    await page.waitForTimeout(1500);
+    await page.reload();
+  }
+  await expect(card).toHaveAttribute("data-alt", /^EN: /);
+});
+
 test("the night view over Downtown turns on without errors", async ({
   page,
 }) => {

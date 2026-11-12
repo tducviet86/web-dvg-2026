@@ -137,7 +137,7 @@ export function JobApplyForm({
             name="name"
             autoComplete="name"
             maxLength={80}
-            placeholder="Nguyễn Minh Anh"
+            placeholder="Nguyễn Văn A"
             aria-invalid={!!errors.name}
             aria-describedby={described("name")}
           />

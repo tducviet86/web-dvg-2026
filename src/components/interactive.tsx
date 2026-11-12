@@ -158,7 +158,7 @@ export function ContactForm({
               }
               placeholder={
                 field === "name"
-                  ? "Nguyễn Minh Anh"
+                  ? "Nguyễn Văn A"
                   : field === "phone"
                     ? t("Số di động của bạn")
                     : "ban@example.com"

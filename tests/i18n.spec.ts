@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { apiAs } from "./helpers";
+import { execFileSync } from "node:child_process";
 
 /*
  * The e2e Gemini stand-in "translates" by removing accents and prefixing the
@@ -353,4 +354,22 @@ test.describe("first visit language", () => {
     ).toBe(true);
     await context.close();
   });
+});
+
+test("the warm-up check leaves the đồng sign and the sample name alone", () => {
+  const html = `<body><p>27.300.000 đ</p><b>5.000.000 vnđ</b>
+    <input placeholder="Nguyễn Văn A"><p>Đồng hồ</p><img alt="Mặt bằng tầng"></body>`;
+  // The check is an ES module of the scripts: asked through Node itself.
+  const found = execFileSync(
+    "node",
+    [
+      "--input-type=module",
+      "-e",
+      `import { leftovers } from "./scripts/i18n-check.mjs";
+       process.stdout.write(JSON.stringify(leftovers(process.argv[1])));`,
+      html,
+    ],
+    { encoding: "utf8" },
+  );
+  expect(JSON.parse(found)).toEqual(["Đồng hồ", "@Mặt bằng tầng"]);
 });

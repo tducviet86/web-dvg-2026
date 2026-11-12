@@ -1,4 +1,5 @@
 /** @jsxImportSource @/i18n/jsx */
+import { t } from "@/i18n/server";
 import { towerHandover } from "@/lib/handover";
 import Image from "next/image";
 import { ArrowUpRight, MapPin, MessageCircle } from "lucide-react";
@@ -51,7 +52,8 @@ export function UnitLayoutCrop({
           image={plan.image}
           unit={spot.unit}
           outline={spot.outline}
-          label={alt}
+          // PlanCutout renders plain JSX: its label is translated here.
+          label={t(alt)}
         />
         <dl className="plan-cut-facts">
           <div>

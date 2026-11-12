@@ -26,10 +26,16 @@ export function leftovers(html) {
     const text = decode(m[1]).trim();
     if (VI.test(text)) found.add(`@${text}`);
   }
-  // The brand name is kept in every language; the language switcher is bilingual.
+  // Kept in every language: the brand name, the bilingual language switcher,
+  // the sample name in forms and the đồng sign ("đ", "vnđ") after prices.
   return [...found].filter((t) =>
     VI.test(
-      t.replace(/Đất Vàng|ĐẤT VÀNG|Ngôn ngữ \/ Language|Tiếng Việt/g, ""),
+      t
+        .replace(
+          /Đất Vàng|ĐẤT VÀNG|Ngôn ngữ \/ Language|Tiếng Việt|Nguyễn Văn A/g,
+          "",
+        )
+        .replace(/(?<!\p{L})(?:vn)?đ(?!\p{L})/giu, ""),
     ),
   );
 }

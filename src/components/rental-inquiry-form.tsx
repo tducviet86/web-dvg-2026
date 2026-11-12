@@ -330,7 +330,7 @@ export function InquiryDialogForm({
                     {...register("name")}
                     autoComplete="name"
                     maxLength={80}
-                    placeholder="Nguyễn Minh Anh"
+                    placeholder="Nguyễn Văn A"
                     aria-invalid={!!errors.name}
                     aria-describedby={
                       errors.name ? `${formId}-name-error` : undefined

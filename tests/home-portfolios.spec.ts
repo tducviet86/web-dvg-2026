@@ -454,6 +454,20 @@ test("Capital Square shows its 360° tour and a unit's layout or 3D model", asyn
   await page.locator(".tour-plan-toggle").click();
   await expect(page.locator(".tour-plan-dot").first()).toBeVisible();
   await expect(page.locator(".tour-types")).toHaveCount(0);
+  // In English the unit cut from the drawing is labelled in English too: its
+  // label goes through plain JSX and used to stay Vietnamese for good.
+  await page.goto(new URL(page.url()).pathname.replace(/^\//, "/en/"));
+  const cut = page.locator("svg.plan-cut-shape");
+  await expect(cut).toHaveCount(1);
+  await expect
+    .poll(
+      async () => {
+        await page.reload();
+        return (await cut.getAttribute("aria-label")) ?? "";
+      },
+      { timeout: 40_000 },
+    )
+    .toMatch(/^EN: /);
   await api.send("delete", `/admin/properties/${unit.id}`);
   await api.send("patch", `/admin/projects/${project.id}`, {
     towers: project.towers,
