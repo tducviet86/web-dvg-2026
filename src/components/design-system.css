@@ -350,17 +350,34 @@ textarea {
     display: inline-flex;
     flex: none;
     min-height: 40px;
-    padding: 0 12px;
-    gap: 6px;
+    padding: 0 10px;
+    gap: 5px;
+    font-size: 12px;
+  }
+  /* A long translation wraps to two lines instead of pushing the logo. */
+  .corporate-site-header .header-cta-short {
+    max-width: 92px;
+    white-space: normal;
+    line-height: 1.1;
   }
   .corporate-site-header .header-cta-full,
-  .corporate-site-header .header-cta-arrow {
+  .corporate-site-header .header-cta-arrow,
+  .site-header .lang-globe,
+  .site-header .lang-chevron {
     display: none;
+  }
+  .site-header .lang-trigger {
+    gap: 4px;
+  }
+  .site-header .lang-flag {
+    font-size: 16px;
+    line-height: 1;
   }
 }
 @media (min-width: 1081px) {
   .header-cta-icon,
-  .header-cta-short {
+  .header-cta-short,
+  .lang-flag {
     display: none;
   }
 }

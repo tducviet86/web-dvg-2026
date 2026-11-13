@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { apiAs } from "./helpers";
 
 test("header opens on hover, closes on leave, and parent links navigate", async ({
   page,
@@ -118,3 +119,62 @@ test("desktop header keeps the full search label", async ({ page }) => {
   ).toBeVisible();
   await expect(header.getByText("Tìm BĐS")).toBeHidden();
 });
+
+async function reloadUntil(page: Page, check: () => Promise<boolean>) {
+  for (let i = 0; i < 20; i++) {
+    if (await check()) return;
+    await page.waitForTimeout(1500);
+    await page.reload();
+  }
+  throw new Error("translation did not appear");
+}
+
+// Long but realistic translations of "Tìm BĐS" must not break the header.
+const longLabels = {
+  en: "Find real estate",
+  ko: "부동산 찾기",
+  zh: "查找房地产",
+} as const;
+for (const [locale, text] of Object.entries(longLabels)) {
+  test(`phone header fits a long search label in ${locale}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 760 });
+    await page.goto(`/${locale}/cho-thue`);
+    const label = page.locator(".site-header .header-cta-short");
+    const tag = locale.toUpperCase() + ": ";
+    await reloadUntil(page, async () =>
+      (await label.innerText()).startsWith(tag),
+    );
+    const admin = await apiAs("editor");
+    const list = (await admin.get(
+      `/admin/translations?locale=${locale}&pageSize=100&q=${encodeURIComponent("Tìm BĐS")}`,
+    )) as unknown as {
+      data: { id: string; source: string; updatedAt: string }[];
+    };
+    const row = list.data.find((r) => r.source === "Tìm BĐS")!;
+    const res = await admin.send("patch", `/admin/translations/${row.id}`, {
+      text,
+      expectedUpdatedAt: row.updatedAt,
+    });
+    expect(res.ok()).toBeTruthy();
+    await reloadUntil(page, async () => (await label.innerText()) === text);
+    // Logo, language, search and menu sit side by side without overlapping.
+    const boxes = await page
+      .locator(
+        ".site-header :is(.logo, .lang-trigger, .header-cta, .mobile-toggle)",
+      )
+      .evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
+    expect(boxes).toHaveLength(4);
+    for (let i = 1; i < boxes.length; i++)
+      expect(boxes[i].left).toBeGreaterThanOrEqual(boxes[i - 1].right);
+    expect(boxes[3].right).toBeLessThanOrEqual(375);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(375);
+    // The rent/buy tabs of the search box are translated too ("Mua").
+    await reloadUntil(page, async () =>
+      (await page.locator(".hero-tabs").innerText()).includes(tag + "Mua"),
+    );
+  });
+}

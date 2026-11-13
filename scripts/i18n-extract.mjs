@@ -21,10 +21,17 @@ const files = [];
 
 const VIETNAMESE = /[À-ỹđĐ]/;
 const strings = new Set();
-const add = (raw) => {
+// Words without accents ("Mua") count when they are passed to t() / tf().
+const add = (raw, wrapped = false) => {
   const text = raw.replace(/\s+/g, " ").trim();
-  if (text && VIETNAMESE.test(text) && text.length <= 500) strings.add(text);
+  if (text && (wrapped || VIETNAMESE.test(text)) && text.length <= 500)
+    strings.add(text);
 };
+const isTCall = (node) =>
+  ts.isCallExpression(node.parent) &&
+  node.parent.arguments[0] === node &&
+  ts.isIdentifier(node.parent.expression) &&
+  ["t", "tf"].includes(node.parent.expression.text);
 for (const file of files) {
   const code = readFileSync(file, "utf8");
   if (!/^["']use client["']/m.test(code)) continue;
@@ -41,7 +48,7 @@ for (const file of files) {
       ts.isNoSubstitutionTemplateLiteral(node) ||
       ts.isJsxText(node)
     )
-      add(node.text);
+      add(node.text, !ts.isJsxText(node) && isTCall(node));
     ts.forEachChild(node, visit);
   })(source);
 }

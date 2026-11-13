@@ -105,9 +105,9 @@ export function RentalHeroSearch({
   // Loại hình: Căn hộ / Nhà phố / Mặt bằng ("" = all).
   const [kind, setKind] = useState(values.loai ?? "");
   const tabs: { key: HeroMode; label: string; icon: typeof KeyRound }[] = [
-    { key: "thue", label: "Thuê", icon: KeyRound },
-    { key: "mua", label: "Mua", icon: HandCoins },
-    { key: "ky-gui", label: "Ký gửi", icon: Building2 },
+    { key: "thue", label: t("Thuê"), icon: KeyRound },
+    { key: "mua", label: t("Mua"), icon: HandCoins },
+    { key: "ky-gui", label: t("Ký gửi"), icon: Building2 },
   ];
   const target = projectSlug
     ? { projectSlug, label: projectName ?? projectSlug }
@@ -217,7 +217,7 @@ export function RentalHeroSearch({
             }}
           >
             <tab.icon size={16} aria-hidden="true" />
-            {t(tab.label)}
+            {tab.label}
           </button>
         ))}
       </div>

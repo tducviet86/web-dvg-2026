@@ -25,6 +25,13 @@ const SHORT: Record<Locale, string> = {
   ko: "KO",
   zh: "中文",
 };
+/** Shown on phones in place of the globe (emoji flags render there). */
+const FLAG: Record<Locale, string> = {
+  vi: "🇻🇳",
+  en: "🇬🇧",
+  ko: "🇰🇷",
+  zh: "🇨🇳",
+};
 const NOTE: Record<Locale, string> = {
   vi: "Bản tiếng Việt là bản gốc.",
   en: "Translated from Vietnamese with AI.",
@@ -142,9 +149,12 @@ export function LanguageSwitcher() {
         onFocus={switchTo.prefetch}
         onClick={() => setOpen((v) => !v)}
       >
-        <Globe size={15} aria-hidden="true" />
+        <Globe className="lang-globe" size={15} aria-hidden="true" />
+        <span className="lang-flag" aria-hidden="true">
+          {FLAG[lang]}
+        </span>
         <span>{SHORT[lang]}</span>
-        <ChevronDown size={12} aria-hidden="true" />
+        <ChevronDown className="lang-chevron" size={12} aria-hidden="true" />
       </button>
       {open && (
         <div className="lang-menu">
