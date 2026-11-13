@@ -165,6 +165,8 @@ export type Lookups = {
   propertyTypeGroups?: Record<string, string>;
   blogCategories: [string, string][];
   users: [string, string][];
+  /** The other projects, in display order (for "Vị trí hiển thị"). */
+  projectOrder?: [string, string][];
   /** Project address and map, used to pre-fill a unit's location. */
   projectPlaces: Record<
     string,
@@ -303,11 +305,18 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             maxLength: 120,
             default: "Căn hộ & bất động sản",
           }),
-          f("sortOrder", "Thứ tự trong danh mục", {
-            type: "number",
-            integer: true,
-            default: 0,
-            hint: "Số nhỏ hiển thị trước.",
+          f("position", "Vị trí hiển thị trên website", {
+            type: "select",
+            options: [
+              ["1", "1 · Đứng đầu"],
+              ...(lookups.projectOrder ?? []).map(
+                ([, name], i): [string, string] => [
+                  String(i + 2),
+                  `${i + 2} · Ngay sau “${name}”`,
+                ],
+              ),
+            ],
+            hint: "Thứ tự của dự án trong các danh sách dự án trên website. Các dự án khác tự lùi xuống.",
           }),
         ],
       },

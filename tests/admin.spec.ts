@@ -1060,6 +1060,36 @@ test("project form: payment steps total 100%, are saved and stay editable", asyn
   });
 });
 
+test("a project's place on the website is picked by the project it follows", async ({
+  page,
+}) => {
+  await login(page);
+  const api = await apiAs();
+  const order = async () =>
+    (
+      (await api.get("/admin/projects?pageSize=100")) as {
+        data: { id: string; name: string }[];
+      }
+    ).data;
+  const before = await order();
+  const last = before[before.length - 1];
+  await page.goto(`/admin/projects/${last.id}/edit`);
+  const place = page.getByLabel("Vị trí hiển thị trên website");
+  await expect(place).toHaveValue(String(before.length));
+  await expect(place.locator("option").first()).toHaveText("1 · Đứng đầu");
+  await expect(place.locator("option").nth(1)).toHaveText(
+    `2 · Ngay sau “${before[0].name}”`,
+  );
+  await place.selectOption("1");
+  await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+  await expect.poll(async () => (await order())[0].id).toBe(last.id);
+  // Back where it was, for the other tests.
+  await api.send("patch", `/admin/projects/${last.id}`, {
+    position: before.length,
+  });
+  expect((await order()).map((p) => p.id)).toEqual(before.map((p) => p.id));
+});
+
 test("a unit page is not counted as a view while signed in to Admin", async ({
   browser,
   page,

@@ -194,6 +194,12 @@ test("the search box labels and slider are translated too", async ({
     await reloadUntil(page, async () =>
       (await area.textContent())!.startsWith("EN: "),
     );
+  // Projects too ("Azura Đà Nẵng"): the label is translated, the slug kept.
+  const project = page.locator('[id$="-project-o1"]');
+  await expect(project).toHaveCount(1);
+  await reloadUntil(page, async () =>
+    (await project.textContent())!.startsWith("EN: "),
+  );
 });
 
 test("a new unit is translated, prices kept apart from the words", async ({

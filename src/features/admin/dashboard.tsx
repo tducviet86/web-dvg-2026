@@ -369,7 +369,25 @@ function Workspace() {
                 )
               ).data;
         let banner: EditorState["banner"];
+        let position: string | undefined;
         if (kind === "projects") {
+          // Display order (the API's default sort) for "Vị trí hiển thị".
+          const order = (
+            await api<{ data: { id: string; name: string }[] }>(
+              "GET",
+              "/admin/projects?pageSize=100",
+            )
+          ).data;
+          const others = order.filter((p) => p.id !== dto?.id);
+          position = String(
+            dto
+              ? order.findIndex((p) => p.id === dto.id) + 1 || others.length + 1
+              : others.length + 1,
+          );
+          setLookups((current) => ({
+            ...current,
+            projectOrder: others.map((p) => [p.id, p.name]),
+          }));
           const all = await api<{ data: unknown[] }>("GET", "/admin/banners");
           const record =
             (dto?.banner as
@@ -397,7 +415,7 @@ function Workspace() {
           kind,
           isNew: !dto,
           dto,
-          values: { ...formValues(kind, dto), id: dto?.id },
+          values: { ...formValues(kind, dto), id: dto?.id, position },
           media: mediaState(kind, dto),
           banner,
         });

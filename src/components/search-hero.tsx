@@ -123,8 +123,8 @@ export function SearchHero({
         action={href(action)}
         mode={mode}
         values={values}
-        projects={projects}
         // The value filters the search; only the label is translated.
+        projects={projects.map(([slug, name]) => [slug, t(name)])}
         locations={locations.map((l) => [l, t(l)])}
         projectSlug={project?.slug}
         projectName={project?.name}
