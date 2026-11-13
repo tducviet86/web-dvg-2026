@@ -178,3 +178,23 @@ for (const [locale, text] of Object.entries(longLabels)) {
     );
   });
 }
+
+test("phone fields are at least 16px so iPhone does not zoom in on tap", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ["/cho-thue", "/mua-ban", "/tuyen-dung", "/lien-he"]) {
+    await page.goto(path);
+    const small = await page.evaluate(() =>
+      [...document.querySelectorAll("input, select, textarea")]
+        .filter(
+          (el) =>
+            !["hidden", "range", "checkbox", "radio", "submit"].includes(
+              (el as HTMLInputElement).type,
+            ) && parseFloat(getComputedStyle(el).fontSize) < 16,
+        )
+        .map((el) => el.outerHTML.slice(0, 80)),
+    );
+    expect(small, path).toEqual([]);
+  }
+});

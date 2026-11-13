@@ -4976,7 +4976,12 @@ html[lang="zh-Hans"] body {
 html[lang="ko"] :is(h1, h2, h3, em),
 html[lang="zh-Hans"] :is(h1, h2, h3, em) {
   letter-spacing: 0;
+}
+/* Korean keeps words whole (they are spaced); Chinese has no spaces, so
+   keep-all would stop a heading from wrapping and widen the page. */
+html[lang="ko"] :is(h1, h2, h3, em) {
   word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 /* ── Floating contact dock (contact-dock.tsx) ── */

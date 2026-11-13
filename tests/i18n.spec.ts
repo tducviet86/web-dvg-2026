@@ -379,3 +379,31 @@ test("the warm-up check leaves the đồng sign and the sample name alone", () =
   );
   expect(JSON.parse(found)).toEqual(["Đồng hồ", "@Mặt bằng tầng"]);
 });
+
+test("long Chinese headings wrap on phones instead of widening the page", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 760 });
+  for (const locale of ["zh", "ko"]) {
+    await page.goto(`/${locale}/cho-thue`);
+    const heading = page.locator("h1").first();
+    await heading.evaluate(
+      (el, text) => (el.textContent = text),
+      {
+        zh: "岘港精美江景全配家具两卧室公寓长期出租欢迎随时联系我们预约看房",
+        ko: "다낭시내중심가고급풀옵션리버뷰투룸아파트장기임대문의환영합니다",
+      }[locale]!,
+    );
+    const box = await heading.evaluate((el) => ({
+      right: el.getBoundingClientRect().right,
+      overflow: el.scrollWidth - el.clientWidth,
+      break: getComputedStyle(el).wordBreak,
+    }));
+    expect(box.right).toBeLessThanOrEqual(375);
+    expect(box.overflow).toBeLessThanOrEqual(0);
+    expect(box.break).toBe(locale === "ko" ? "keep-all" : "normal");
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(375);
+  }
+});
