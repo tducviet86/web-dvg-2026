@@ -345,7 +345,22 @@ textarea {
     width: 52px;
     height: 49px;
   }
+  /* Phones and tablets: a short search link stays on the header. */
   .corporate-site-header .header-cta {
+    display: inline-flex;
+    flex: none;
+    min-height: 40px;
+    padding: 0 12px;
+    gap: 6px;
+  }
+  .corporate-site-header .header-cta-full,
+  .corporate-site-header .header-cta-arrow {
+    display: none;
+  }
+}
+@media (min-width: 1081px) {
+  .header-cta-icon,
+  .header-cta-short {
     display: none;
   }
 }
@@ -3142,4 +3157,153 @@ textarea {
 }
 .banner-caption-spacer {
   visibility: hidden;
+}
+
+/* ── Lead forms: need chips, alerts and the sent state ─────────────────
+   Shared by ContactForm (interactive.tsx), the rental/consign dialog
+   (rental-inquiry-form.tsx) and the project sign-up (project-sale-desk.tsx). */
+.lead-chips {
+  min-width: 0;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  border: 0;
+}
+.lead-chips legend {
+  margin-bottom: var(--space-3);
+  padding: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--c-green-800);
+}
+.lead-chips legend span {
+  color: #a5462f;
+}
+.lead-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.lead-chips .lead-chip {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.lead-chips .lead-chip > input[type="radio"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.lead-chip > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 8px 16px;
+  border: 1px solid var(--c-line-strong);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--c-ink-600);
+  line-height: 1.3;
+  transition:
+    border-color var(--dur-2) var(--ease-out),
+    background-color var(--dur-2) var(--ease-out),
+    color var(--dur-2) var(--ease-out);
+}
+.lead-chip > span svg {
+  display: none;
+  flex: none;
+}
+.lead-chip:hover > span {
+  border-color: var(--c-green-600);
+  color: var(--c-green-800);
+}
+.lead-chip > input:checked + span {
+  border-color: var(--c-green-700);
+  background: var(--c-green-700);
+  color: #fff;
+}
+.lead-chip > input:checked + span svg {
+  display: block;
+  color: var(--c-gold-300);
+}
+.lead-chip > input:focus-visible + span {
+  outline: 2px solid var(--c-gold-500);
+  outline-offset: 2px;
+}
+.lead-chips:has(.field-error) .lead-chip > span {
+  border-color: #c96a55;
+}
+.lead-chips > .field-error {
+  margin-top: var(--space-2);
+}
+/* Project named in the link (/lien-he?project=…). */
+.lead-context {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-5);
+  padding: 10px 14px;
+  border-left: 3px solid var(--c-green-700);
+  border-radius: var(--radius-sm);
+  background: var(--c-ivory-100);
+  font-size: var(--fs-sm);
+  color: var(--c-ink-600);
+}
+.lead-context strong {
+  color: var(--c-green-800);
+}
+/* The server refused or the network failed: stays next to the button. */
+.lead-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 var(--space-4);
+  padding: 12px 14px;
+  border: 1px solid #efc9bd;
+  border-radius: var(--radius-md);
+  background: #fdf1ed;
+  color: #8f2f1b;
+}
+.lead-alert svg {
+  flex: none;
+  margin-top: 2px;
+}
+.lead-alert p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+.lead-form .lead-alert {
+  margin: 0;
+}
+/* Sent: replaces the fields in place (dialogs use .inquiry-result too). */
+.lead-result {
+  padding: var(--space-5) var(--space-2);
+}
+.lead-result h3 {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  color: var(--c-green-800);
+}
+.lead-result .inquiry-actions .button {
+  width: auto;
+}
+.contact-form .lead-chips .lead-chip {
+  font-size: var(--fs-sm);
+}
+@media (max-width: 560px) {
+  .lead-chip > span {
+    padding: 8px 14px;
+  }
+  .lead-result .inquiry-actions {
+    flex-direction: column;
+  }
 }

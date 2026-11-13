@@ -74,3 +74,47 @@ test("mobile drawer still closes after selecting a destination", async ({
   await expect(page).toHaveURL(/\/du-an\/van-hanh$/);
   await expect(drawer).toBeHidden();
 });
+
+for (const width of [375, 390]) {
+  test(`phone header keeps a short search link at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    for (const path of ["/", "/du-an"]) {
+      await page.goto(path);
+      const header = page.locator(".site-header");
+      const search = header.getByRole("link", { name: "Tìm BĐS", exact: true });
+      await expect(search).toBeVisible();
+      await expect(
+        header.getByRole("button", { name: "Mở menu", exact: true }),
+      ).toBeVisible();
+      await expect(
+        header.getByRole("link", { name: "Đất Vàng Group — Trang chủ" }),
+      ).toBeVisible();
+      // Everything fits: nothing in the header passes the right edge.
+      const right = await header
+        .locator(".header-inner > *")
+        .evaluateAll((els) =>
+          Math.max(...els.map((el) => el.getBoundingClientRect().right)),
+        );
+      expect(right).toBeLessThanOrEqual(width);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width);
+    }
+    await page
+      .locator(".site-header")
+      .getByRole("link", { name: "Tìm BĐS" })
+      .click();
+    await expect(page).toHaveURL(/\/cho-thue$/);
+  });
+}
+
+test("desktop header keeps the full search label", async ({ page }) => {
+  await page.goto("/du-an");
+  const header = page.locator(".site-header");
+  await expect(
+    header.getByRole("link", { name: "Tìm kiếm bất động sản", exact: true }),
+  ).toBeVisible();
+  await expect(header.getByText("Tìm BĐS")).toBeHidden();
+});

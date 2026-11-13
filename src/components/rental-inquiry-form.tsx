@@ -20,6 +20,7 @@ import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { useT } from "@/i18n/client";
 import { track } from "@/lib/analytics";
 import type { InquiryMode, InquiryTarget } from "./rental-inquiry";
+import { LeadChips } from "./lead-chips";
 
 /**
  * What the visitor asks for. Each mode sends a lead to `POST /inquiries`
@@ -75,7 +76,6 @@ const schema = z.object({
     ),
   email: z.email("Email chưa đúng định dạng.").max(120),
   budget: z.string().optional(),
-  note: z.string().max(1000, "Tối đa 1.000 ký tự.").optional(),
   consent: z
     .boolean()
     .refine((v) => v, "Bạn cần đồng ý để Đất Vàng Group liên hệ lại."),
@@ -107,16 +107,13 @@ function compose(mode: InquiryMode, target: InquiryTarget, v: Values) {
     lines.push(`Tư vấn chọn căn hộ thuê${unit ? ` tại ${unit}` : ""}.`);
     if (v.budget) lines.push(`Ngân sách: ${v.budget}.`);
   } else if (mode === "buy") {
-    lines.push(
-      `Muốn nhận bảng giá và mặt bằng${unit ? ` tại ${unit}` : ""}.`,
-    );
+    lines.push(`Muốn nhận bảng giá và mặt bằng${unit ? ` tại ${unit}` : ""}.`);
     if (v.budget) lines.push(`Ngân sách: ${v.budget}.`);
   } else {
     lines.push(
       `Chủ sở hữu muốn ký gửi căn hộ cho thuê${unit ? ` tại ${unit}` : ""}.`,
     );
   }
-  if (v.note?.trim()) lines.push(`Ghi chú: ${v.note.trim()}`);
   return lines.join("\n").slice(0, 1500);
 }
 
@@ -318,6 +315,22 @@ export function InquiryDialogForm({
                 aria-hidden="true"
                 className="sr-only"
               />
+              {mode !== "consign" && (
+                <LeadChips
+                  legend="Ngân sách mỗi tháng"
+                  options={[
+                    ["", "Chưa xác định"],
+                    "Dưới 10 triệu",
+                    "10–15 triệu",
+                    "15–25 triệu",
+                    "Trên 25 triệu",
+                  ]}
+                  input={(value) => ({
+                    ...register("budget"),
+                    defaultChecked: value === "",
+                  })}
+                />
+              )}
               <div className="inquiry-grid">
                 <Field
                   id={`${formId}-name`}
@@ -375,47 +388,6 @@ export function InquiryDialogForm({
                     aria-describedby={
                       errors.email ? `${formId}-email-error` : undefined
                     }
-                  />
-                </Field>
-                {mode !== "consign" && (
-                  <Field
-                    id={`${formId}-budget`}
-                    label="Ngân sách mỗi tháng"
-                    full
-                  >
-                    <select id={`${formId}-budget`} {...register("budget")}>
-                      <option value="">{t("Chưa xác định")}</option>
-                      {[
-                        "Dưới 10 triệu",
-                        "10–15 triệu",
-                        "15–25 triệu",
-                        "Trên 25 triệu",
-                      ].map((budget) => (
-                        <option key={budget} value={budget}>
-                          {t(budget)}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
-                <Field
-                  id={`${formId}-note`}
-                  label={
-                    mode === "consign" ? "Thông tin căn hộ" : "Ghi chú thêm"
-                  }
-                  error={errors.note?.message}
-                  full
-                >
-                  <textarea
-                    id={`${formId}-note`}
-                    {...register("note")}
-                    rows={3}
-                    maxLength={1000}
-                    placeholder={t(
-                      mode === "consign"
-                        ? "Dự án, mã căn, diện tích, nội thất, giá mong muốn…"
-                        : "Số người ở, số phòng ngủ, khu vực mong muốn, ngày chuyển vào…",
-                    )}
                   />
                 </Field>
               </div>

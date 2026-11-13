@@ -4,7 +4,14 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Menu, X, ArrowUpRight, ChevronDown, Phone } from "lucide-react";
+import {
+  Menu,
+  X,
+  ArrowUpRight,
+  ChevronDown,
+  Phone,
+  Search,
+} from "lucide-react";
 import { Progress } from "../client-basics";
 import { LanguageSwitcher } from "../translator";
 import { BackTrail } from "./back-button";
@@ -272,9 +279,18 @@ export function SiteHeader({ services = [] }: { services?: NavLink[] }) {
           <DesktopNavigation key={path} path={path} items={items} />
           <div className="header-actions">
             <LanguageSwitcher />
+            {/* Phones show the icon and the short label instead. */}
             <Link className="header-cta" href="/cho-thue">
-              {t("Tìm kiếm bất động sản")}
-              <ArrowUpRight size={15} />
+              <Search
+                className="header-cta-icon"
+                size={16}
+                aria-hidden="true"
+              />
+              <span className="header-cta-full">
+                {t("Tìm kiếm bất động sản")}
+              </span>
+              <span className="header-cta-short">{t("Tìm BĐS")}</span>
+              <ArrowUpRight className="header-cta-arrow" size={15} />
             </Link>
             <Dialog.Root open={open} onOpenChange={setOpen}>
               <Dialog.Trigger

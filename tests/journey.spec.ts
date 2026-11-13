@@ -133,11 +133,8 @@ test("admin → database → public site → search engines → leads", async ({
   await contact.locator("[name=phone]").fill("0901234567");
   await contact.locator("[name=email]").fill("hanh-trinh@example.com");
   await contact
-    .locator("select[name=intent]")
-    .selectOption({ label: "Tư vấn mua bán bất động sản" });
-  await contact
-    .locator("[name=message]")
-    .fill("Tôi muốn tìm hiểu Dự án Hành Trình QA.");
+    .getByRole("radio", { name: "Tư vấn mua bán bất động sản" })
+    .check();
   await contact.locator("[name=consent]").check();
   await humanPause(page);
   await contact.getByRole("button", { name: "Đăng ký tư vấn" }).click();

@@ -2,36 +2,59 @@
 import { useState, useId, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, X, Check, ArrowUpRight } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  X,
+  Check,
+  ArrowUpRight,
+  Phone,
+} from "lucide-react";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { postPublic } from "@/lib/api/client";
 import { Button } from "./ui/button";
 import { useT } from "@/i18n/client";
 import { track } from "@/lib/analytics";
+import { companyHotline, telephoneHref } from "@/lib/company-contact";
+import { LeadChips } from "./lead-chips";
 const schema = z.object({
   intent: z.string(),
   name: z
     .string()
+    .trim()
     .min(2, "Vui lòng nhập họ tên (ít nhất 2 ký tự).")
     .max(80, "Tối đa 80 ký tự."),
   email: z.email("Email chưa đúng định dạng.").max(120),
   phone: z
     .string()
-    .regex(/^(0|\+84)(3|5|7|8|9)\d{8}$/, "Nhập số di động Việt Nam hợp lệ."),
-  message: z
-    .string()
-    .min(10, "Vui lòng mô tả nhu cầu ít nhất 10 ký tự.")
-    .max(1500, "Tối đa 1.500 ký tự."),
+    .refine(
+      (v) => /^(0|\+84)(3|5|7|8|9)\d{8}$/.test(digits(v)),
+      "Nhập số di động Việt Nam hợp lệ.",
+    ),
+  message: z.string(),
   consent: z
     .boolean()
     .refine((v) => v, "Bạn cần đồng ý để Đất Vàng Group liên hệ lại."),
   website: z.string().optional(),
+  /** Project named in the link (?project=…), sent with the request. */
+  project: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 const now = () => Date.now();
+/** "0911 29 69 79" → "0911296979" (the API accepts digits only). */
+const digits = (phone: string) => phone.replace(/[\s.()-]/g, "");
+/** Values stay Vietnamese: they are stored on the lead as its intent. */
+const intents = [
+  "Tư vấn mua bán bất động sản",
+  "Tìm thuê bất động sản",
+  "Cho thuê bất động sản",
+  "Ký gửi bán hoặc cho thuê",
+  "Hợp tác và nhu cầu khác",
+] as const;
 export function ContactForm({
   source = "Liên hệ",
   compact = false,
@@ -41,24 +64,36 @@ export function ContactForm({
 }) {
   const formId = useId();
   const t = useT();
+  // Job applications still describe the applicant; requests only pick a need.
+  const career = source.startsWith("Ứng tuyển");
   const [done, setDone] = useState(false);
+  const [failure, setFailure] = useState("");
   // Anti-spam signal: humans take a few seconds to fill the form.
   const [renderedAt] = useState(now);
+  const call = telephoneHref(companyHotline);
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(
       schema.extend({
-        intent: source.startsWith("Ứng tuyển")
+        intent: career
           ? z.string()
           : z.string().min(1, "Vui lòng chọn nhu cầu tư vấn."),
+        message: career
+          ? z
+              .string()
+              .trim()
+              .min(10, "Vui lòng mô tả nhu cầu ít nhất 10 ký tự.")
+              .max(1500, "Tối đa 1.500 ký tự.")
+          : z.string().max(1500, "Tối đa 1.500 ký tự."),
       }),
     ),
-    defaultValues: { consent: false, intent: "" },
+    defaultValues: { consent: false, intent: "", message: "" },
   });
   useEffect(() => {
     if (source !== "Liên hệ") return;
@@ -70,180 +105,204 @@ export function ContactForm({
       "ky-gui": "Ký gửi bán hoặc cho thuê",
     };
     if (intent && options[intent]) setValue("intent", options[intent]);
-    const project = query.get("project");
-    if (project)
-      setValue(
-        "message",
-        `Tôi muốn được tư vấn về dự án ${project.slice(0, 120)}.`,
-      );
+    const name = query.get("project");
+    if (name) setValue("project", name.slice(0, 120));
   }, [source, setValue]);
+  const project = useWatch({ control, name: "project" });
   async function submit(values: FormValues) {
-    const { intent, ...data } = values;
+    const { intent, message, project, ...data } = values;
     // Contact/partnership/career forms vs. requests about a project or unit.
     const contact = /^(Liên hệ|Hợp tác|Ứng tuyển)/.test(source);
+    setFailure("");
     const result = await postPublic(contact ? "/contact" : "/inquiries", {
       ...data,
+      name: data.name.trim(),
+      phone: digits(data.phone),
+      email: data.email.trim(),
+      // Empty: the API writes the request from the need picked.
+      message:
+        message?.trim() ||
+        (project ? `${intent} · Dự án ${project}` : undefined),
       intent: intent || undefined,
       source: source.slice(0, 80),
       elapsedMs: now() - renderedAt,
     });
     if (!result.ok) {
-      toast.error(t(result.message));
+      setFailure(
+        result.code === "RATE_LIMITED"
+          ? "Bạn đã gửi nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau vài phút hoặc gọi hotline."
+          : result.code === "NETWORK"
+            ? "Mất kết nối. Vui lòng kiểm tra mạng và gửi lại."
+            : result.message,
+      );
       return;
     }
     track("generate_lead", { form: contact ? "contact" : "inquiry", source });
-    toast.success(t("Đã gửi yêu cầu. Đất Vàng Group sẽ liên hệ lại với bạn."));
     setDone(true);
     reset();
   }
   return (
     <form
-      className={`contact-form ${compact ? "compact" : ""}`}
+      className={`contact-form lead-form-v2 ${compact ? "compact" : ""}`}
       onSubmit={handleSubmit(submit, () =>
         toast.error(t("Vui lòng kiểm tra các trường được đánh dấu.")),
       )}
       noValidate
     >
       <span className="eyebrow">{t("KẾT NỐI CÙNG ĐẤT VÀNG")}</span>
-      <h3>
-        {t(
-          source.startsWith("Ứng tuyển")
-            ? "Chia sẻ về bạn"
-            : "Bắt đầu một cuộc trò chuyện",
-        )}
-      </h3>
+      <h3>{t(career ? "Chia sẻ về bạn" : "Bắt đầu một cuộc trò chuyện")}</h3>
       <p className="muted">
         {t(
-          "Thông tin được gửi trực tiếp đến đội ngũ Đất Vàng Group và chỉ dùng để liên hệ tư vấn.",
+          career
+            ? "Thông tin được gửi trực tiếp đến đội ngũ Đất Vàng Group và chỉ dùng để liên hệ tư vấn."
+            : "Chọn nhu cầu và để lại số điện thoại, tư vấn viên sẽ gọi lại cho bạn.",
         )}
       </p>
-      {done && (
-        <div className="confirmation" role="status">
-          <Check size={18} />{" "}
-          {t(
-            "Yêu cầu đã được ghi nhận. Chúng tôi sẽ liên hệ trong thời gian sớm nhất.",
-          )}
-        </div>
-      )}
-      {/* Honeypot: hidden from people and assistive tech, filled by bots. */}
-      <input
-        {...register("website")}
-        type="text"
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        className="sr-only"
-      />
-      <div className="form-grid">
-        {(["name", "phone", "email"] as const).map((field) => (
-          <label key={field} className={field === "email" ? "full" : ""}>
+      {done ? (
+        <div className="inquiry-result success lead-result" role="status">
+          <span className="inquiry-result-icon">
+            <Check size={30} />
+          </span>
+          <h3>{t("Đã nhận yêu cầu của bạn")}</h3>
+          <p>
             {t(
-              { name: "Họ và tên", phone: "Số điện thoại", email: "Email" }[
-                field
-              ],
-            )}{" "}
-            <span aria-hidden="true">*</span>
-            <input
-              {...register(field)}
-              type={
-                field === "email" ? "email" : field === "phone" ? "tel" : "text"
-              }
-              autoComplete={
-                field === "name" ? "name" : field === "phone" ? "tel" : "email"
-              }
-              maxLength={field === "email" ? 120 : 80}
-              aria-invalid={!!errors[field]}
-              aria-describedby={
-                errors[field] ? `${formId}-${field}-error` : undefined
-              }
-              placeholder={
-                field === "name"
-                  ? "Nguyễn Văn A"
-                  : field === "phone"
-                    ? t("Số di động của bạn")
-                    : "ban@example.com"
-              }
-            />
-            {errors[field] && (
-              <span id={`${formId}-${field}-error`} className="field-error">
-                {t(errors[field]?.message ?? "")}
-              </span>
+              "Yêu cầu đã được ghi nhận. Chúng tôi sẽ liên hệ trong thời gian sớm nhất.",
             )}
-          </label>
-        ))}
-        {!source.startsWith("Ứng tuyển") && (
-          <label className="full">
-            {t("Nhu cầu tư vấn")} <span aria-hidden="true">*</span>
-            <select
-              {...register("intent")}
-              defaultValue=""
-              aria-invalid={!!errors.intent}
-              aria-describedby={
-                errors.intent ? `${formId}-intent-error` : undefined
-              }
+          </p>
+          <div className="inquiry-actions">
+            <button
+              type="button"
+              className="button button-outline"
+              onClick={() => setDone(false)}
             >
-              <option value="" disabled>
-                {t("Chọn nhu cầu của bạn")}
-              </option>
-              {/* Values stay Vietnamese: they are stored on the lead. */}
-              {[
-                "Tư vấn mua bán bất động sản",
-                "Tìm thuê bất động sản",
-                "Cho thuê bất động sản",
-                "Ký gửi bán hoặc cho thuê",
-                "Hợp tác và nhu cầu khác",
-              ].map((option) => (
-                <option key={option} value={option}>
-                  {t(option)}
-                </option>
-              ))}
-            </select>
-            {errors.intent && (
-              <span id={`${formId}-intent-error`} className="field-error">
-                {t(errors.intent.message ?? "")}
-              </span>
+              {t("Gửi yêu cầu khác")}
+            </button>
+            {call && (
+              <a className="inquiry-call" href={call}>
+                <Phone size={16} /> {t("Gọi")} {companyHotline}
+              </a>
             )}
-          </label>
-        )}
-        <label className="full">
-          {t(
-            source.startsWith("Ứng tuyển")
-              ? "Kinh nghiệm và vị trí mong muốn"
-              : "Thông tin chi tiết",
-          )}{" "}
-          <span aria-hidden="true">*</span>
-          <textarea
-            {...register("message")}
-            rows={4}
-            maxLength={1500}
-            aria-invalid={!!errors.message}
-            aria-describedby={
-              errors.message ? `${formId}-message-error` : undefined
-            }
-            placeholder={t(
-              source.startsWith("Ứng tuyển")
-                ? "Chia sẻ kinh nghiệm và vị trí bạn muốn ứng tuyển…"
-                : "Tên dự án, ngân sách, loại căn hộ hoặc thông tin tài sản cần ký gửi…",
-            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Honeypot: hidden from people and assistive tech, filled by bots. */}
+          <input
+            {...register("website")}
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="sr-only"
           />
-          {errors.message && (
-            <span id={`${formId}-message-error`} className="field-error">
-              {t(errors.message.message ?? "")}
-            </span>
+          {!career && (
+            <LeadChips
+              legend="Bạn cần tư vấn gì?"
+              options={intents}
+              input={() => register("intent")}
+              required
+              error={errors.intent?.message}
+              errorId={`${formId}-intent-error`}
+            />
           )}
-        </label>
-      </div>
-      <label className="checkbox">
-        <input type="checkbox" {...register("consent")} />{" "}
-        {t("Tôi đồng ý để Đất Vàng Group lưu thông tin và liên hệ tư vấn.")}
-      </label>
-      {errors.consent && (
-        <p className="field-error">{t(errors.consent.message ?? "")}</p>
+          {project && (
+            <p className="lead-context">
+              {t("Dự án")}: <strong>{project}</strong>
+            </p>
+          )}
+          <div className="form-grid">
+            {(["name", "phone", "email"] as const).map((field) => (
+              <label key={field} className={field === "email" ? "full" : ""}>
+                {t(
+                  { name: "Họ và tên", phone: "Số điện thoại", email: "Email" }[
+                    field
+                  ],
+                )}{" "}
+                <span aria-hidden="true">*</span>
+                <input
+                  {...register(field)}
+                  type={
+                    field === "email"
+                      ? "email"
+                      : field === "phone"
+                        ? "tel"
+                        : "text"
+                  }
+                  inputMode={field === "phone" ? "tel" : undefined}
+                  autoComplete={
+                    field === "name"
+                      ? "name"
+                      : field === "phone"
+                        ? "tel"
+                        : "email"
+                  }
+                  maxLength={
+                    field === "email" ? 120 : field === "phone" ? 16 : 80
+                  }
+                  aria-invalid={!!errors[field]}
+                  aria-describedby={
+                    errors[field] ? `${formId}-${field}-error` : undefined
+                  }
+                  placeholder={
+                    field === "name"
+                      ? "Nguyễn Văn A"
+                      : field === "phone"
+                        ? "09xx xxx xxx"
+                        : "ban@example.com"
+                  }
+                />
+                {errors[field] && (
+                  <span id={`${formId}-${field}-error`} className="field-error">
+                    {t(errors[field]?.message ?? "")}
+                  </span>
+                )}
+              </label>
+            ))}
+            {career && (
+              <label className="full">
+                {t("Kinh nghiệm và vị trí mong muốn")}{" "}
+                <span aria-hidden="true">*</span>
+                <textarea
+                  {...register("message")}
+                  rows={4}
+                  maxLength={1500}
+                  aria-invalid={!!errors.message}
+                  aria-describedby={
+                    errors.message ? `${formId}-message-error` : undefined
+                  }
+                  placeholder={t(
+                    "Chia sẻ kinh nghiệm và vị trí bạn muốn ứng tuyển…",
+                  )}
+                />
+                {errors.message && (
+                  <span id={`${formId}-message-error`} className="field-error">
+                    {t(errors.message.message ?? "")}
+                  </span>
+                )}
+              </label>
+            )}
+          </div>
+          <label className="checkbox">
+            <input type="checkbox" {...register("consent")} />{" "}
+            {t("Tôi đồng ý để Đất Vàng Group lưu thông tin và liên hệ tư vấn.")}
+          </label>
+          {errors.consent && (
+            <p className="field-error">{t(errors.consent.message ?? "")}</p>
+          )}
+          {failure && (
+            <div className="lead-alert" role="alert">
+              <AlertTriangle size={18} aria-hidden="true" />
+              <p>
+                <strong>{t("Chưa gửi được yêu cầu")}</strong> {t(failure)}
+              </p>
+            </div>
+          )}
+          <Button disabled={isSubmitting} type="submit">
+            {t(isSubmitting ? "Đang gửi…" : "Đăng ký tư vấn")}
+            <ArrowUpRight size={18} />
+          </Button>
+        </>
       )}
-      <Button disabled={isSubmitting} type="submit">
-        {t(isSubmitting ? "Đang gửi…" : "Đăng ký tư vấn")}
-        <ArrowUpRight size={18} />
-      </Button>
     </form>
   );
 }

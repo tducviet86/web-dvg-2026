@@ -9,7 +9,14 @@ import {
   type ReactNode,
 } from "react";
 import Image from "next/image";
-import { ArrowLeft, MessageCircle, Phone, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  MessageCircle,
+  Phone,
+  X,
+} from "lucide-react";
 import Link from "@/components/page-navigation";
 import { useT } from "@/i18n/client";
 import { track } from "@/lib/analytics";
@@ -18,6 +25,7 @@ import { companyHotline, telephoneHref, zaloHref } from "@/lib/company-contact";
 import { planSpots } from "@/lib/floor-plan-spots";
 import type { SiteMap } from "@/lib/project-site-maps";
 import type { RentalMedia } from "@/lib/property-media";
+import { LeadChips } from "./lead-chips";
 import { PlanCutout, planArea } from "./plan-cutout";
 import { RentalGallery } from "./rental-gallery";
 
@@ -255,11 +263,9 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
               <Image
                 className="plan-zoom-model"
                 src={picture}
-                alt={
-                  t("Căn mẫu 3D {unit}", {
-                    unit: unit ? shownCode(unit.code) : (chosen ?? ""),
-                  })
-                }
+                alt={t("Căn mẫu 3D {unit}", {
+                  unit: unit ? shownCode(unit.code) : (chosen ?? ""),
+                })}
                 width={1600}
                 height={1192}
                 sizes="(max-width: 900px) 100vw, 500px"
@@ -631,6 +637,13 @@ export function UnitBrowser({
   );
 }
 
+/** What a buyer asks for (stored in the lead's message). */
+const projectNeeds = [
+  "Nhận bảng giá và mặt bằng",
+  "Chính sách thanh toán",
+  "Đặt lịch xem nhà mẫu",
+] as const;
+
 /** The sign-up form: it carries the unit the visitor chose. */
 export function ProjectLeadForm({
   units,
@@ -669,13 +682,12 @@ export function ProjectLeadForm({
       phone,
       email: text("email"),
       message: [
+        text("need") || projectNeeds[0],
         unit
-          ? `Quan tâm căn ${unit.code}${unit.tower ? ` tòa ${unit.tower}` : ""} tại ${projectName}.`
-          : `Muốn nhận bảng giá và mặt bằng tại ${projectName}.`,
-        text("note") && `Ghi chú: ${text("note")}`,
-      ]
-        .filter(Boolean)
-        .join("\n"),
+          ? `Căn ${unit.code}${unit.tower ? ` tòa ${unit.tower}` : ""}`
+          : "Chưa chọn căn",
+        `Dự án ${projectName}`,
+      ].join(" · "),
       consent: true,
       intent: "Mua căn hộ",
       source: "Trang dự án",
@@ -730,9 +742,24 @@ export function ProjectLeadForm({
         </div>
       </div>
       {sent ? (
-        <div className="lead-sent" role="status">
+        <div
+          className="lead-sent inquiry-result success lead-result"
+          role="status"
+        >
+          <span className="inquiry-result-icon">
+            <Check size={30} />
+          </span>
           <h3>{t("Đã gửi yêu cầu tới Đất Vàng Group.")}</h3>
           <p>{t("Tư vấn viên sẽ liên hệ với bạn sớm.")}</p>
+          <div className="inquiry-actions">
+            <button
+              type="button"
+              className="button button-outline"
+              onClick={() => setSent(false)}
+            >
+              {t("Gửi yêu cầu khác")}
+            </button>
+          </div>
         </div>
       ) : (
         <form
@@ -743,6 +770,16 @@ export function ProjectLeadForm({
             void submit(e.currentTarget);
           }}
         >
+          <div className="wide">
+            <LeadChips
+              legend="Bạn cần tư vấn gì?"
+              options={projectNeeds}
+              input={(value) => ({
+                name: "need",
+                defaultChecked: value === projectNeeds[0],
+              })}
+            />
+          </div>
           <label>
             {t("Họ và tên")}
             <input name="name" autoComplete="name" maxLength={80} />
@@ -782,10 +819,6 @@ export function ProjectLeadForm({
               ))}
             </select>
           </label>
-          <label className="wide">
-            {t("Ghi chú")}
-            <textarea name="note" rows={3} maxLength={800} />
-          </label>
           <input
             className="lead-trap"
             name="website"
@@ -798,9 +831,10 @@ export function ProjectLeadForm({
             {t("Tôi đồng ý để Đất Vàng Group liên hệ tư vấn.")}
           </label>
           {error && (
-            <p className="lead-error wide" role="alert">
-              {error}
-            </p>
+            <div className="lead-alert lead-error wide" role="alert">
+              <AlertTriangle size={18} aria-hidden="true" />
+              <p>{error}</p>
+            </div>
           )}
           <button
             type="submit"

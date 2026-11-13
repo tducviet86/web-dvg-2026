@@ -352,7 +352,8 @@ test("advice request popup validates, reaches the API with the project, and repo
   await dialog.getByLabel("Họ và tên").fill("Khách Kiểm Thử");
   await dialog.getByLabel("Số điện thoại").fill("0911 222 333");
   await dialog.getByLabel("Email").fill("khach.e2e@example.test");
-  await dialog.getByLabel("Ngân sách mỗi tháng").selectOption("10–15 triệu");
+  await expect(dialog.locator("textarea")).toHaveCount(0);
+  await dialog.getByRole("radio", { name: "10–15 triệu" }).check();
   await dialog.getByLabel(/Tôi đồng ý/).check();
   // Real API call; the anti-spam timer needs a human-like delay.
   await humanPause(page);
