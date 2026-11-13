@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { api, errorMessage } from "./api";
 import { categoryOptions, type AdminDto } from "./adapters";
 import { ConfirmDialog } from "./error-dialog";
+import { useListView, ViewToggle } from "./list-view";
 import {
   endpoints,
   leadStatusOptions,
@@ -76,13 +77,13 @@ const SORTS_CONTENT: Option[] = [
   ["name", "Tên A → Z"],
 ];
 const author: Column = {
-  head: "Người đăng · Cập nhật",
+  head: "Cập nhật",
   className: "units-author",
   cell: (d) => (
     <>
-      {str(d.createdBy) || "—"}
+      {day(d.updatedAt)}
       <small>
-        {day(d.updatedAt)}
+        {str(d.createdBy) || "—"}
         {d.updatedBy && d.updatedBy !== d.createdBy
           ? ` · sửa: ${str(d.updatedBy)}`
           : ""}
@@ -154,10 +155,9 @@ const CONFIG: Record<Exclude<Kind, "properties">, Config> = {
     ],
     thumb: cover,
     title: (d) => str(d.title),
-    sub: (d) => str(d.slug),
+    sub: (d) => name(d.category) || "Chưa có chuyên mục",
     badges: (d) => [!!d.isDemo && "Minh họa"],
     columns: [
-      { head: "Chuyên mục", cell: (d) => name(d.category) },
       {
         head: "Ngày đăng",
         className: "units-date",
@@ -337,6 +337,9 @@ export function ContentList({
   /** When the rows were loaded: tells scheduled posts from published ones. */
   const [loadedAt, setLoadedAt] = useState(0);
   const [bulkRemove, setBulkRemove] = useState(false);
+  const [view, setView] = useListView();
+  /** Lists with photos can be shown as cards. */
+  const grid = !!config.thumb && view === "grid";
   const request = useRef(0);
 
   const set = (patch: Partial<Filters>) => {
@@ -436,6 +439,15 @@ export function ContentList({
   const pages = Math.max(1, Math.ceil(total / filters.pageSize));
   const active = !!(filters.q || filters.status || filters.extra);
   const allChecked = !!rows?.length && rows.every((r) => selected.has(r.id));
+  const toggleAll = () =>
+    setSelected(allChecked ? new Set() : new Set(rows?.map((r) => r.id)));
+  const toggle = (id: string) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const ids = [...selected];
   const all = Object.values(counts).reduce((n, v) => n + v, 0);
   const selectable = canWrite || canDelete;
@@ -443,7 +455,7 @@ export function ContentList({
   return (
     <div className="units">
       <div
-        className="units-stats"
+        className="units-stats units-chips"
         role="group"
         aria-label={`Tóm tắt ${config.noun}`}
         style={{ "--cols": config.statuses.length + 1 } as CSSProperties}
@@ -482,18 +494,6 @@ export function ContentList({
               onChange={(e) => set({ q: e.target.value })}
             />
           </label>
-          <select
-            aria-label="Lọc trạng thái"
-            value={filters.status}
-            onChange={(e) => set({ status: e.target.value })}
-          >
-            <option value="">Tất cả trạng thái</option>
-            {config.statuses.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
           {config.filter && (
             <select
               aria-label={config.filter.label}
@@ -531,6 +531,7 @@ export function ContentList({
           <span className="units-count" role="status">
             {rows ? `${total} mục` : "Đang tải…"}
           </span>
+          {config.thumb && <ViewToggle view={view} onChange={setView} />}
           {kind === "leads" && canExport && (
             <LeadsExport status={filters.status} />
           )}
@@ -598,37 +599,24 @@ export function ContentList({
           </div>
         )}
 
-        <div className="table-scroll units-scroll">
-          <table className="units-table content-table">
-            <thead>
-              <tr>
-                {selectable && (
-                  <th className="units-check">
-                    <input
-                      type="checkbox"
-                      aria-label="Chọn tất cả mục trên trang"
-                      checked={allChecked}
-                      onChange={() =>
-                        setSelected(
-                          allChecked
-                            ? new Set()
-                            : new Set(rows?.map((r) => r.id)),
-                        )
-                      }
-                    />
-                  </th>
-                )}
-                <th>{kind === "leads" ? "Khách hàng" : "Tên"}</th>
-                {config.columns.map((c) => (
-                  <th key={c.head}>{c.head}</th>
-                ))}
-                <th>Trạng thái</th>
-                <th>
-                  <span className="units-sr">Thao tác</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+        {grid ? (
+          <>
+            {selectable && !!rows?.length && (
+              <label className="ucards-all">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả mục trên trang"
+                  checked={allChecked}
+                  onChange={toggleAll}
+                />
+                Chọn tất cả trên trang
+              </label>
+            )}
+            <ul
+              className="ucards"
+              data-kind={kind}
+              aria-label={`Danh sách ${config.noun}`}
+            >
               {(rows ?? []).map((d) => {
                 const title = config.title(d);
                 const badges = (config.badges?.(d) ?? []).filter(
@@ -643,147 +631,310 @@ export function ContentList({
                   published && !!goesLive && goesLive.getTime() > loadedAt;
                 const href = config.view?.(d);
                 const thumb = config.thumb?.(d);
+                const edit = () => goTo(`/admin/${kind}/${d.id}/edit`);
                 return (
-                  <tr
+                  <li
                     key={d.id}
+                    className="ucard"
                     data-selected={selected.has(d.id) || undefined}
+                    data-draft={!published || undefined}
                   >
-                    {selectable && (
-                      <td className="units-check">
+                    <div className="ucard-media">
+                      <button
+                        type="button"
+                        className="ucard-img"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        onClick={edit}
+                      >
+                        {thumb ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={thumb} alt="" loading="lazy" />
+                        ) : (
+                          <ImageOff size={28} />
+                        )}
+                      </button>
+                      {selectable && (
                         <input
                           type="checkbox"
+                          className="ucard-check"
                           aria-label={`Chọn ${title}`}
                           checked={selected.has(d.id)}
-                          onChange={() =>
-                            setSelected((current) => {
-                              const next = new Set(current);
-                              if (next.has(d.id)) next.delete(d.id);
-                              else next.add(d.id);
-                              return next;
-                            })
-                          }
+                          onChange={() => toggle(d.id)}
                         />
-                      </td>
-                    )}
-                    <td>
-                      <div className="units-name">
-                        {config.thumb && (
-                          <span className="units-thumb">
-                            {thumb ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={thumb} alt="" loading="lazy" />
-                            ) : (
-                              <ImageOff size={18} aria-hidden="true" />
-                            )}
-                          </span>
-                        )}
-                        <span>
-                          <button
-                            type="button"
-                            className="units-title"
-                            onClick={() => goTo(`/admin/${kind}/${d.id}/edit`)}
-                          >
-                            {title}
-                          </button>
-                          <small>{config.sub(d)}</small>
-                          {badges.length > 0 && (
-                            <span className="units-badges">
-                              {badges.map((b) => (
-                                <em key={b}>{b}</em>
-                              ))}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </td>
-                    {config.columns.map((c) => (
-                      <td key={c.head} className={c.className}>
-                        {c.cell(d)}
-                      </td>
-                    ))}
-                    <td>
-                      {config.mode === "lead" ? (
-                        <select
-                          className="units-availability"
-                          data-value={status === "NEW" ? "AVAILABLE" : status}
-                          aria-label={`Trạng thái ${title}`}
-                          value={status}
-                          disabled={!canWrite || busy}
-                          onChange={(e) =>
-                            change([d.id], { status: e.target.value })
-                          }
-                        >
-                          {leadStatusOptions.map(([value, label]) => (
-                            <option key={value} value={value}>
-                              {label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : status === "ARCHIVED" ? (
-                        <span className="units-publish">Lưu trữ</span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="units-publish"
-                          data-on={published}
-                          data-scheduled={scheduled || undefined}
-                          disabled={!canWrite || busy}
-                          aria-label={
-                            published
-                              ? `Chuyển ${title} về bản nháp`
-                              : `Xuất bản ${title}`
-                          }
-                          onClick={() =>
-                            change([d.id], {
-                              status: published ? "DRAFT" : "PUBLISHED",
-                            })
-                          }
-                        >
-                          <span aria-hidden="true" />
-                          {scheduled
-                            ? `Hẹn đăng ${goesLive!.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}`
-                            : published
-                              ? "Đã xuất bản"
-                              : "Bản nháp"}
-                        </button>
                       )}
-                    </td>
-                    <td>
-                      <div className="table-actions units-actions">
-                        <button
-                          type="button"
-                          aria-label={`Sửa ${title}`}
-                          onClick={() => goTo(`/admin/${kind}/${d.id}/edit`)}
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        {href && published && !d.isDemo && (
-                          <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`Xem ${title} trên website`}
-                          >
-                            <ArrowUpRight size={16} />
-                          </a>
-                        )}
-                        {canDelete && (
+                      {config.sub(d) && (
+                        <span className="ucard-tag">{config.sub(d)}</span>
+                      )}
+                    </div>
+                    <div className="ucard-body">
+                      <button
+                        type="button"
+                        className="units-title ucard-title"
+                        onClick={edit}
+                      >
+                        {title}
+                      </button>
+                      <dl className="ucard-meta">
+                        {config.columns.map((c) => (
+                          <div key={c.head} className={c.className}>
+                            <dt>{c.head}</dt>
+                            <dd>{c.cell(d)}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      {badges.length > 0 && (
+                        <span className="units-badges">
+                          {badges.map((b) => (
+                            <em key={b}>{b}</em>
+                          ))}
+                        </span>
+                      )}
+                      <div className="ucard-foot">
+                        {status === "ARCHIVED" ? (
+                          <span className="units-publish">Lưu trữ</span>
+                        ) : (
                           <button
                             type="button"
-                            aria-label={`Xóa ${title}`}
-                            onClick={() => onRemove({ id: d.id, name: title })}
+                            className="units-publish"
+                            data-on={published}
+                            data-scheduled={scheduled || undefined}
+                            disabled={!canWrite || busy}
+                            aria-label={
+                              published
+                                ? `Chuyển ${title} về bản nháp`
+                                : `Xuất bản ${title}`
+                            }
+                            onClick={() =>
+                              change([d.id], {
+                                status: published ? "DRAFT" : "PUBLISHED",
+                              })
+                            }
                           >
-                            <Trash2 size={16} />
+                            <span aria-hidden="true" />
+                            {scheduled
+                              ? `Hẹn đăng ${goesLive!.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}`
+                              : published
+                                ? "Đã xuất bản"
+                                : "Bản nháp"}
                           </button>
                         )}
+                        <div className="table-actions units-actions">
+                          <button
+                            type="button"
+                            aria-label={`Sửa ${title}`}
+                            onClick={edit}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          {href && published && !d.isDemo && (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Xem ${title} trên website`}
+                            >
+                              <ArrowUpRight size={16} />
+                            </a>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              aria-label={`Xóa ${title}`}
+                              onClick={() =>
+                                onRemove({ id: d.id, name: title })
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </li>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+          </>
+        ) : (
+          <div className="table-scroll units-scroll">
+            <table className="units-table content-table">
+              <thead>
+                <tr>
+                  {selectable && (
+                    <th className="units-check">
+                      <input
+                        type="checkbox"
+                        aria-label="Chọn tất cả mục trên trang"
+                        checked={allChecked}
+                        onChange={toggleAll}
+                      />
+                    </th>
+                  )}
+                  <th>{kind === "leads" ? "Khách hàng" : "Tên"}</th>
+                  {config.columns.map((c) => (
+                    <th key={c.head}>{c.head}</th>
+                  ))}
+                  <th>Trạng thái</th>
+                  <th>
+                    <span className="units-sr">Thao tác</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(rows ?? []).map((d) => {
+                  const title = config.title(d);
+                  const badges = (config.badges?.(d) ?? []).filter(
+                    Boolean,
+                  ) as string[];
+                  const status = str(d.status);
+                  const published = status === "PUBLISHED";
+                  const goesLive = d.publishedAt
+                    ? new Date(String(d.publishedAt))
+                    : null;
+                  const scheduled =
+                    published && !!goesLive && goesLive.getTime() > loadedAt;
+                  const href = config.view?.(d);
+                  const thumb = config.thumb?.(d);
+                  return (
+                    <tr
+                      key={d.id}
+                      data-selected={selected.has(d.id) || undefined}
+                    >
+                      {selectable && (
+                        <td className="units-check">
+                          <input
+                            type="checkbox"
+                            aria-label={`Chọn ${title}`}
+                            checked={selected.has(d.id)}
+                            onChange={() => toggle(d.id)}
+                          />
+                        </td>
+                      )}
+                      <td className="units-main">
+                        <div className="units-name">
+                          {config.thumb && (
+                            <span className="units-thumb">
+                              {thumb ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={thumb} alt="" loading="lazy" />
+                              ) : (
+                                <ImageOff size={18} aria-hidden="true" />
+                              )}
+                            </span>
+                          )}
+                          <span>
+                            <button
+                              type="button"
+                              className="units-title"
+                              onClick={() =>
+                                goTo(`/admin/${kind}/${d.id}/edit`)
+                              }
+                            >
+                              {title}
+                            </button>
+                            <small>{config.sub(d)}</small>
+                            {badges.length > 0 && (
+                              <span className="units-badges">
+                                {badges.map((b) => (
+                                  <em key={b}>{b}</em>
+                                ))}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                      {config.columns.map((c) => (
+                        <td key={c.head} className={c.className}>
+                          {c.cell(d)}
+                        </td>
+                      ))}
+                      <td className="units-pub">
+                        {config.mode === "lead" ? (
+                          <select
+                            className="units-availability"
+                            data-value={status === "NEW" ? "AVAILABLE" : status}
+                            aria-label={`Trạng thái ${title}`}
+                            value={status}
+                            disabled={!canWrite || busy}
+                            onChange={(e) =>
+                              change([d.id], { status: e.target.value })
+                            }
+                          >
+                            {leadStatusOptions.map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : status === "ARCHIVED" ? (
+                          <span className="units-publish">Lưu trữ</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="units-publish"
+                            data-on={published}
+                            data-scheduled={scheduled || undefined}
+                            disabled={!canWrite || busy}
+                            aria-label={
+                              published
+                                ? `Chuyển ${title} về bản nháp`
+                                : `Xuất bản ${title}`
+                            }
+                            onClick={() =>
+                              change([d.id], {
+                                status: published ? "DRAFT" : "PUBLISHED",
+                              })
+                            }
+                          >
+                            <span aria-hidden="true" />
+                            {scheduled
+                              ? `Hẹn đăng ${goesLive!.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}`
+                              : published
+                                ? "Đã xuất bản"
+                                : "Bản nháp"}
+                          </button>
+                        )}
+                      </td>
+                      <td className="units-act">
+                        <div className="table-actions units-actions">
+                          <button
+                            type="button"
+                            aria-label={`Sửa ${title}`}
+                            onClick={() => goTo(`/admin/${kind}/${d.id}/edit`)}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          {href && published && !d.isDemo && (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Xem ${title} trên website`}
+                            >
+                              <ArrowUpRight size={16} />
+                            </a>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              aria-label={`Xóa ${title}`}
+                              onClick={() =>
+                                onRemove({ id: d.id, name: title })
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
         {rows && !rows.length && (
           <div className="empty-state">
             <h3>Chưa có kết quả</h3>

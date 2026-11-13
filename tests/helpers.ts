@@ -22,6 +22,8 @@ export async function login(page: Page, role: Role = "admin") {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Tổng quan quản trị",
   );
+  // Lists open as tables in tests; the card grid has its own test.
+  await page.evaluate(() => localStorage.setItem("dvg:admin-view", "table"));
 }
 
 /** Direct API session (bearer token) for arranging and asserting data. */

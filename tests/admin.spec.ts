@@ -696,6 +696,8 @@ test("the unit list filters, sorts, pages and changes units in bulk", async ({
   await expect(bulk).toContainText("Đã chọn 2 căn");
   await bulk.getByRole("button", { name: "Chuyển nháp" }).click();
   await expect(page.getByText("Đã cập nhật 2 căn.")).toBeVisible();
+  // The less used filters sit behind "Bộ lọc".
+  await page.getByRole("button", { name: /^Bộ lọc/ }).click();
   await page.getByLabel("Lọc trạng thái đăng").selectOption("PUBLISHED");
   await expect(count).toHaveText("0 căn");
   await page.getByLabel("Lọc trạng thái đăng").selectOption("DRAFT");
@@ -717,6 +719,53 @@ test("the unit list filters, sorts, pages and changes units in bulk", async ({
   );
   const results = await new AxeBuilder({ page })
     .include(".units")
+    .withTags(["wcag2a", "wcag2aa"])
+    .analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test("units and posts open as photo cards; the choice of grid or table is kept", async ({
+  page,
+}) => {
+  await login(page);
+  await page.evaluate(() => localStorage.removeItem("dvg:admin-view"));
+  await page.goto("/admin/properties");
+  const cards = page.locator(".ucard");
+  await expect(cards).toHaveCount(20);
+  const first = cards.first();
+  await expect(first.locator(".ucard-price")).toContainText("tr/tháng");
+  const name = (await first.locator(".ucard-title").innerText()).trim();
+  await expect(first.getByLabel(`Tình trạng ${name}`)).toBeVisible();
+  // A card can be selected for bulk actions.
+  await first.getByRole("checkbox", { name: `Chọn ${name}` }).check();
+  await expect(
+    page.getByRole("region", { name: "Thao tác hàng loạt" }),
+  ).toContainText("Đã chọn 1 căn");
+  await page.screenshot({ path: `${SHOTS}/admin-units-grid.png` });
+  // No sideways scrolling on a phone.
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  // Table view, kept for the next list.
+  const views = page.getByRole("group", { name: "Kiểu hiển thị" });
+  await views.getByRole("button", { name: "Bảng" }).click();
+  await expect(page.locator(".units-table tbody tr")).toHaveCount(20);
+  await page.goto("/admin/posts");
+  await expect(page.locator(".units-table")).toBeVisible();
+  await views.getByRole("button", { name: "Lưới" }).click();
+  await expect(
+    page.locator(".ucard").first().locator(".ucard-tag"),
+  ).toBeVisible();
+  // Contrast is checked once the cards have faded in.
+  await page
+    .locator(".ucards")
+    .evaluate((el) =>
+      Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)),
+    );
+  const results = await new AxeBuilder({ page })
+    .include(".ucards")
     .withTags(["wcag2a", "wcag2aa"])
     .analyze();
   expect(results.violations).toEqual([]);

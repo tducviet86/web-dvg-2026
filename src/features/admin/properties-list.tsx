@@ -8,8 +8,10 @@ import {
   Eye,
   ImageOff,
   KeyRound,
+  MessageSquare,
   Pencil,
   Search,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -18,6 +20,7 @@ import { api, errorMessage } from "./api";
 import { availabilityOptions, type AdminDto } from "./adapters";
 import { savedRange } from "./dashboard-range";
 import { ConfirmDialog } from "./error-dialog";
+import { useListView, ViewToggle } from "./list-view";
 import {
   highlightLabel,
   highlightOptions,
@@ -101,6 +104,11 @@ const saleText = (value: unknown) => {
     v.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
   return n >= 1e9 ? `${fmt(n / 1e9)} tỷ` : `${fmt(n / 1e6)} triệu`;
 };
+/** Rent on a photo: "17,5 tr/tháng". */
+const rentShort = (value: unknown) =>
+  value
+    ? `${(Number(value) / 1e6).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} tr/tháng`
+    : "Chưa có giá thuê";
 const shortDate = (value: unknown) =>
   value
     ? new Date(String(value)).toLocaleDateString("vi-VN", {
@@ -153,6 +161,9 @@ export function PropertiesList({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [bulkArchive, setBulkArchive] = useState(false);
+  /** The less used filters sit behind "Bộ lọc". */
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [view, setView] = useListView();
   const request = useRef(0);
 
   const set = (patch: Partial<Filters>) => {
@@ -266,7 +277,19 @@ export function PropertiesList({
       !["kind", "sort", "pageSize"].includes(key) &&
       value !== EMPTY[key as keyof Filters],
   );
+  const extra = (
+    ["status", "availability", "listing", "highlight"] as const
+  ).filter((key) => filters[key]).length;
   const allChecked = !!rows?.length && rows.every((r) => selected.has(r.id));
+  const toggleAll = () =>
+    setSelected(allChecked ? new Set() : new Set(rows?.map((r) => r.id)));
+  const toggle = (id: string) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const ids = [...selected];
   const cards: {
     label: string;
@@ -331,7 +354,11 @@ export function PropertiesList({
           </button>
         ))}
       </div>
-      <div className="units-stats" role="group" aria-label="Tóm tắt căn hộ">
+      <div
+        className="units-stats units-chips"
+        role="group"
+        aria-label="Tóm tắt căn hộ"
+      >
         {cards.map((c) => (
           <button
             key={c.label}
@@ -402,49 +429,17 @@ export function PropertiesList({
               </option>
             ))}
           </select>
-          <select
-            aria-label="Lọc trạng thái đăng"
-            value={filters.status}
-            onChange={(e) => set({ status: e.target.value })}
+          <button
+            type="button"
+            className="units-more"
+            aria-expanded={moreOpen}
+            aria-controls="units-more"
+            onClick={() => setMoreOpen(!moreOpen)}
           >
-            <option value="">Mọi trạng thái đăng</option>
-            <option value="PUBLISHED">Đã xuất bản</option>
-            <option value="DRAFT">Bản nháp</option>
-          </select>
-          <select
-            aria-label="Lọc tình trạng"
-            value={filters.availability}
-            onChange={(e) => set({ availability: e.target.value })}
-          >
-            <option value="">Mọi tình trạng</option>
-            {availabilityOptions.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label="Lọc hình thức"
-            value={filters.listing}
-            onChange={(e) => set({ listing: e.target.value })}
-          >
-            <option value="">Thuê & bán</option>
-            <option value="rent">Cho thuê</option>
-            <option value="sale">Bán</option>
-          </select>
-          <select
-            aria-label="Lọc nhãn"
-            value={filters.highlight}
-            onChange={(e) => set({ highlight: e.target.value })}
-          >
-            <option value="">Mọi nhãn</option>
-            {highlightOptions.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-            <option value="none">Chưa gắn nhãn</option>
-          </select>
+            <SlidersHorizontal size={15} aria-hidden="true" />
+            Bộ lọc
+            {extra > 0 && <b>{extra}</b>}
+          </button>
           <select
             aria-label="Sắp xếp"
             value={filters.sort}
@@ -475,7 +470,56 @@ export function PropertiesList({
           <span className="units-count" role="status">
             {rows ? `${total} căn` : "Đang tải…"}
           </span>
+          <ViewToggle view={view} onChange={setView} />
         </div>
+
+        {moreOpen && (
+          <div id="units-more" className="units-toolbar units-more-row">
+            <select
+              aria-label="Lọc trạng thái đăng"
+              value={filters.status}
+              onChange={(e) => set({ status: e.target.value })}
+            >
+              <option value="">Mọi trạng thái đăng</option>
+              <option value="PUBLISHED">Đã xuất bản</option>
+              <option value="DRAFT">Bản nháp</option>
+            </select>
+            <select
+              aria-label="Lọc tình trạng"
+              value={filters.availability}
+              onChange={(e) => set({ availability: e.target.value })}
+            >
+              <option value="">Mọi tình trạng</option>
+              {availabilityOptions.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Lọc hình thức"
+              value={filters.listing}
+              onChange={(e) => set({ listing: e.target.value })}
+            >
+              <option value="">Thuê & bán</option>
+              <option value="rent">Cho thuê</option>
+              <option value="sale">Bán</option>
+            </select>
+            <select
+              aria-label="Lọc nhãn"
+              value={filters.highlight}
+              onChange={(e) => set({ highlight: e.target.value })}
+            >
+              <option value="">Mọi nhãn</option>
+              {highlightOptions.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+              <option value="none">Chưa gắn nhãn</option>
+            </select>
+          </div>
+        )}
 
         {canWrite && ids.length > 0 && (
           <div
@@ -531,40 +575,20 @@ export function PropertiesList({
           </div>
         )}
 
-        <div className="table-scroll units-scroll">
-          <table className="units-table">
-            <thead>
-              <tr>
-                {canWrite && (
-                  <th className="units-check">
-                    <input
-                      type="checkbox"
-                      aria-label="Chọn tất cả căn trên trang"
-                      checked={allChecked}
-                      onChange={() =>
-                        setSelected(
-                          allChecked
-                            ? new Set()
-                            : new Set(rows?.map((r) => r.id)),
-                        )
-                      }
-                    />
-                  </th>
-                )}
-                <th>Căn hộ</th>
-                <th>Dự án · Loại</th>
-                <th>Giá</th>
-                <th>Tình trạng · Đăng</th>
-                <th title="Cùng khoảng thời gian đã chọn ở Tổng quan">
-                  Quan tâm ({interestDays} ngày)
-                </th>
-                <th>Người đăng · Cập nhật</th>
-                <th>
-                  <span className="units-sr">Thao tác</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+        {view === "grid" ? (
+          <>
+            {canWrite && !!rows?.length && (
+              <label className="ucards-all">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả căn trên trang"
+                  checked={allChecked}
+                  onChange={toggleAll}
+                />
+                Chọn tất cả trên trang
+              </label>
+            )}
+            <ul className="ucards" aria-label="Danh sách căn hộ">
               {(rows ?? []).map((u) => {
                 const project = u.project as { name: string } | undefined;
                 const cover = u.coverImage as { url: string } | null;
@@ -579,92 +603,42 @@ export function PropertiesList({
                 const href = u.forRent
                   ? `/cho-thue/${u.slug}`
                   : `/mua-ban/${u.slug}`;
+                const note = siteNote(u, stats?.hideDays ?? 5);
+                const edit = () => goTo(`/admin/properties/${u.id}/edit`);
                 return (
-                  <tr
+                  <li
                     key={u.id}
+                    className="ucard"
                     data-selected={selected.has(u.id) || undefined}
+                    data-draft={!published || undefined}
                   >
-                    {canWrite && (
-                      <td className="units-check">
+                    <div className="ucard-media">
+                      <button
+                        type="button"
+                        className="ucard-img"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        onClick={edit}
+                      >
+                        {cover?.url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={cover.url} alt="" loading="lazy" />
+                        ) : (
+                          <ImageOff size={28} />
+                        )}
+                      </button>
+                      {canWrite && (
                         <input
                           type="checkbox"
+                          className="ucard-check"
                           aria-label={`Chọn ${u.name}`}
                           checked={selected.has(u.id)}
-                          onChange={() =>
-                            setSelected((current) => {
-                              const next = new Set(current);
-                              if (next.has(u.id)) next.delete(u.id);
-                              else next.add(u.id);
-                              return next;
-                            })
-                          }
+                          onChange={() => toggle(u.id)}
                         />
-                      </td>
-                    )}
-                    <td>
-                      <div className="units-name">
-                        <span className="units-thumb">
-                          {cover?.url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={cover.url} alt="" loading="lazy" />
-                          ) : (
-                            <ImageOff size={18} aria-hidden="true" />
-                          )}
-                        </span>
-                        <span>
-                          <button
-                            type="button"
-                            className="units-title"
-                            onClick={() =>
-                              goTo(`/admin/properties/${u.id}/edit`)
-                            }
-                          >
-                            {u.name}
-                          </button>
-                          <small>
-                            <b>{String(u.unitCode ?? "")}</b>
-                            {u.slug}
-                          </small>
-                          {badges.length > 0 && (
-                            <span className="units-badges">
-                              {badges.map((b) => (
-                                <em key={b}>{b}</em>
-                              ))}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="units-project">
-                      {project?.name}
-                      <small>
-                        {Number(u.bedrooms) > 0
-                          ? `${u.bedrooms} PN`
-                          : ((u.propertyType as { name?: string } | undefined)
-                              ?.name ?? "Studio")}{" "}
-                        · {Number(u.areaM2)} m²
-                      </small>
-                    </td>
-                    <td className="units-price">
-                      {!!u.forRent && (
-                        <span>
-                          <KeyRound size={12} aria-hidden="true" />
-                          {vnd(u.rentPriceVnd) || "Chưa có giá"}
-                        </span>
                       )}
-                      {!!u.forSale && (
-                        <span data-mode="sale">
-                          <BadgeDollarSign size={12} aria-hidden="true" />
-                          {u.salePriceVnd
-                            ? saleText(u.salePriceVnd)
-                            : "Chưa có giá"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="units-state">
                       {canWrite ? (
                         <select
-                          className="units-availability"
+                          className="units-availability ucard-avail"
                           data-value={u.availability}
                           aria-label={`Tình trạng ${u.name}`}
                           value={u.availability}
@@ -680,87 +654,344 @@ export function PropertiesList({
                           ))}
                         </select>
                       ) : (
-                        availabilityLabel(u.availability)
-                      )}
-                      {siteNote(u, stats?.hideDays ?? 5) && (
-                        <small className="units-site-note">
-                          {siteNote(u, stats?.hideDays ?? 5)}
-                        </small>
-                      )}
-                      <button
-                        type="button"
-                        className="units-publish"
-                        data-on={published}
-                        disabled={!canWrite || busy}
-                        aria-label={
-                          published
-                            ? `Chuyển ${u.name} về bản nháp`
-                            : `Xuất bản ${u.name}`
-                        }
-                        onClick={() =>
-                          change([u.id], {
-                            status: published ? "DRAFT" : "PUBLISHED",
-                          })
-                        }
-                      >
-                        <span aria-hidden="true" />
-                        {published ? "Đã xuất bản" : "Bản nháp"}
-                      </button>
-                    </td>
-                    <td className="units-interest">
-                      <span>
-                        <Eye size={13} aria-hidden="true" />
-                        {interest?.views ?? 0} lượt xem
-                      </span>
-                      <small>{interest?.leads ?? 0} yêu cầu</small>
-                    </td>
-                    <td className="units-author">
-                      {u.createdBy ? String(u.createdBy) : "—"}
-                      <small>
-                        {shortDate(u.updatedAt)}
-                        {u.updatedBy && u.updatedBy !== u.createdBy
-                          ? ` · sửa: ${String(u.updatedBy)}`
-                          : ""}
-                      </small>
-                    </td>
-                    <td>
-                      <div className="table-actions units-actions">
-                        <button
-                          type="button"
-                          aria-label={`Sửa ${u.name}`}
-                          onClick={() => goTo(`/admin/properties/${u.id}/edit`)}
+                        <span
+                          className="units-availability ucard-avail"
+                          data-value={u.availability}
                         >
-                          <Pencil size={16} />
-                        </button>
-                        {published && !u.isDemo && (
-                          <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`Xem ${u.name} trên website`}
-                          >
-                            <ArrowUpRight size={16} />
-                          </a>
+                          {availabilityLabel(u.availability)}
+                        </span>
+                      )}
+                      <div className="ucard-price">
+                        {!!u.forRent && (
+                          <strong>{rentShort(u.rentPriceVnd)}</strong>
                         )}
-                        {canWrite && (
-                          <button
-                            type="button"
-                            aria-label={`Xóa ${u.name}`}
-                            onClick={() =>
-                              onArchive({ id: u.id, name: u.name })
-                            }
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                        {!!u.forSale && (
+                          <strong data-mode="sale">
+                            {u.salePriceVnd
+                              ? `Bán ${saleText(u.salePriceVnd)}`
+                              : "Chưa có giá bán"}
+                          </strong>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                    <div className="ucard-body">
+                      <button
+                        type="button"
+                        className="units-title ucard-title"
+                        onClick={edit}
+                      >
+                        {u.name}
+                      </button>
+                      <p className="ucard-sub">
+                        {!!u.unitCode && <b>{String(u.unitCode)}</b>}
+                        {project?.name}
+                      </p>
+                      <p className="ucard-specs">
+                        <span>
+                          {Number(u.bedrooms) > 0
+                            ? `${u.bedrooms} PN`
+                            : ((u.propertyType as { name?: string } | undefined)
+                                ?.name ?? "Studio")}
+                        </span>
+                        <span>{Number(u.areaM2)} m²</span>
+                        <span title={`Lượt xem trong ${interestDays} ngày`}>
+                          <Eye size={13} aria-hidden="true" />
+                          {interest?.views ?? 0}
+                        </span>
+                        <span title={`Yêu cầu trong ${interestDays} ngày`}>
+                          <MessageSquare size={13} aria-hidden="true" />
+                          {interest?.leads ?? 0}
+                        </span>
+                      </p>
+                      {(badges.length > 0 || note) && (
+                        <span className="units-badges">
+                          {badges.map((b) => (
+                            <em key={b}>{b}</em>
+                          ))}
+                          {note && <em className="ucard-note">{note}</em>}
+                        </span>
+                      )}
+                      <div className="ucard-foot">
+                        <button
+                          type="button"
+                          className="units-publish"
+                          data-on={published}
+                          disabled={!canWrite || busy}
+                          aria-label={
+                            published
+                              ? `Chuyển ${u.name} về bản nháp`
+                              : `Xuất bản ${u.name}`
+                          }
+                          onClick={() =>
+                            change([u.id], {
+                              status: published ? "DRAFT" : "PUBLISHED",
+                            })
+                          }
+                        >
+                          <span aria-hidden="true" />
+                          {published ? "Đã xuất bản" : "Bản nháp"}
+                        </button>
+                        <div className="table-actions units-actions">
+                          <button
+                            type="button"
+                            aria-label={`Sửa ${u.name}`}
+                            onClick={edit}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          {published && !u.isDemo && (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Xem ${u.name} trên website`}
+                            >
+                              <ArrowUpRight size={16} />
+                            </a>
+                          )}
+                          {canWrite && (
+                            <button
+                              type="button"
+                              aria-label={`Xóa ${u.name}`}
+                              onClick={() =>
+                                onArchive({ id: u.id, name: u.name })
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+          </>
+        ) : (
+          <div className="table-scroll units-scroll">
+            <table className="units-table">
+              <thead>
+                <tr>
+                  {canWrite && (
+                    <th className="units-check">
+                      <input
+                        type="checkbox"
+                        aria-label="Chọn tất cả căn trên trang"
+                        checked={allChecked}
+                        onChange={toggleAll}
+                      />
+                    </th>
+                  )}
+                  <th>Căn hộ</th>
+                  <th>Giá</th>
+                  <th>Tình trạng</th>
+                  <th>Đăng</th>
+                  <th title="Cùng khoảng thời gian đã chọn ở Tổng quan">
+                    Quan tâm · {interestDays} ngày
+                  </th>
+                  <th>Cập nhật</th>
+                  <th>
+                    <span className="units-sr">Thao tác</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(rows ?? []).map((u) => {
+                  const project = u.project as { name: string } | undefined;
+                  const cover = u.coverImage as { url: string } | null;
+                  const interest = u.interest as
+                    { views: number; leads: number } | undefined;
+                  const badges = [
+                    u.isDemo && "Căn mẫu",
+                    highlightLabel(u.highlight as string),
+                    u.trending && TRENDING_LABEL,
+                  ].filter(Boolean) as string[];
+                  const published = u.status === "PUBLISHED";
+                  const href = u.forRent
+                    ? `/cho-thue/${u.slug}`
+                    : `/mua-ban/${u.slug}`;
+                  return (
+                    <tr
+                      key={u.id}
+                      data-selected={selected.has(u.id) || undefined}
+                    >
+                      {canWrite && (
+                        <td className="units-check">
+                          <input
+                            type="checkbox"
+                            aria-label={`Chọn ${u.name}`}
+                            checked={selected.has(u.id)}
+                            onChange={() => toggle(u.id)}
+                          />
+                        </td>
+                      )}
+                      <td className="units-main">
+                        <div className="units-name">
+                          <span className="units-thumb">
+                            {cover?.url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={cover.url} alt="" loading="lazy" />
+                            ) : (
+                              <ImageOff size={18} aria-hidden="true" />
+                            )}
+                          </span>
+                          <span>
+                            <button
+                              type="button"
+                              className="units-title"
+                              onClick={() =>
+                                goTo(`/admin/properties/${u.id}/edit`)
+                              }
+                            >
+                              {u.name}
+                            </button>
+                            <small>
+                              {!!u.unitCode && <b>{String(u.unitCode)}</b>}
+                              {[
+                                project?.name,
+                                Number(u.bedrooms) > 0
+                                  ? `${u.bedrooms} PN`
+                                  : ((
+                                      u.propertyType as
+                                        { name?: string } | undefined
+                                    )?.name ?? "Studio"),
+                                `${Number(u.areaM2)} m²`,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </small>
+                            {badges.length > 0 && (
+                              <span className="units-badges">
+                                {badges.map((b) => (
+                                  <em key={b}>{b}</em>
+                                ))}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="units-price">
+                        {!!u.forRent && (
+                          <span>
+                            <KeyRound size={12} aria-hidden="true" />
+                            {vnd(u.rentPriceVnd) || "Chưa có giá"}
+                          </span>
+                        )}
+                        {!!u.forSale && (
+                          <span data-mode="sale">
+                            <BadgeDollarSign size={12} aria-hidden="true" />
+                            {u.salePriceVnd
+                              ? saleText(u.salePriceVnd)
+                              : "Chưa có giá"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="units-state">
+                        {canWrite ? (
+                          <select
+                            className="units-availability"
+                            data-value={u.availability}
+                            aria-label={`Tình trạng ${u.name}`}
+                            value={u.availability}
+                            disabled={busy}
+                            onChange={(e) =>
+                              change([u.id], { availability: e.target.value })
+                            }
+                          >
+                            {availabilityOptions.map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          availabilityLabel(u.availability)
+                        )}
+                        {siteNote(u, stats?.hideDays ?? 5) && (
+                          <small className="units-site-note">
+                            {siteNote(u, stats?.hideDays ?? 5)}
+                          </small>
+                        )}
+                      </td>
+                      <td className="units-pub">
+                        <button
+                          type="button"
+                          className="units-publish"
+                          data-on={published}
+                          disabled={!canWrite || busy}
+                          aria-label={
+                            published
+                              ? `Chuyển ${u.name} về bản nháp`
+                              : `Xuất bản ${u.name}`
+                          }
+                          onClick={() =>
+                            change([u.id], {
+                              status: published ? "DRAFT" : "PUBLISHED",
+                            })
+                          }
+                        >
+                          <span aria-hidden="true" />
+                          {published ? "Đã xuất bản" : "Bản nháp"}
+                        </button>
+                      </td>
+                      <td className="units-interest">
+                        <span>
+                          <Eye size={13} aria-hidden="true" />
+                          {interest?.views ?? 0} xem
+                        </span>
+                        <small>{interest?.leads ?? 0} yêu cầu</small>
+                      </td>
+                      <td className="units-author">
+                        {shortDate(u.updatedAt)}
+                        <small>
+                          {u.createdBy ? String(u.createdBy) : "—"}
+                          {u.updatedBy && u.updatedBy !== u.createdBy
+                            ? ` · sửa: ${String(u.updatedBy)}`
+                            : ""}
+                        </small>
+                      </td>
+                      <td className="units-act">
+                        <div className="table-actions units-actions">
+                          <button
+                            type="button"
+                            aria-label={`Sửa ${u.name}`}
+                            onClick={() =>
+                              goTo(`/admin/properties/${u.id}/edit`)
+                            }
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          {published && !u.isDemo && (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Xem ${u.name} trên website`}
+                            >
+                              <ArrowUpRight size={16} />
+                            </a>
+                          )}
+                          {canWrite && (
+                            <button
+                              type="button"
+                              aria-label={`Xóa ${u.name}`}
+                              onClick={() =>
+                                onArchive({ id: u.id, name: u.name })
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
         {rows && !rows.length && (
           <div className="empty-state">
             <h3>Chưa có căn hộ phù hợp</h3>
