@@ -15,8 +15,10 @@ import {
   Flame,
   House,
   Images,
+  MessageCircle,
   MousePointerClick,
   PenLine,
+  Phone,
   Plus,
   RefreshCw,
   Snowflake,
@@ -33,6 +35,7 @@ import { RANGES, RANGE_KEY, savedRange, type Range } from "./dashboard-range";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { groupActivity } from "./activity";
+import { ReportExport } from "./report-export";
 
 // three.js and the charts are only downloaded for this screen.
 const PortfolioScene = dynamic(() => import("./portfolio-scene"), {
@@ -69,7 +72,7 @@ type Unit = {
 type Summary = {
   range: { days: number; from: string; to: string };
   traffic: {
-    series: { day: string; views: number; leads: number }[];
+    series: { day: string; views: number; leads: number; clicks: number }[];
     views: number;
     prevViews: number;
     leads: number | null;
@@ -127,6 +130,22 @@ type Summary = {
     }[];
     overdue: number;
   } | null;
+  /** Taps on the site's call / Zalo / WhatsApp links. */
+  contactClicks: {
+    total: number;
+    prevTotal: number;
+    byKind: Partial<Record<ClickKind, number>>;
+    bySource: { source: string; clicks: number }[];
+    recent: {
+      id: string;
+      kind: ClickKind;
+      source: string;
+      path: string;
+      target: string | null;
+      createdAt: string;
+      property: { name: string; unitCode: string | null } | null;
+    }[];
+  };
   applications: {
     byStatus: Record<string, number>;
     recent: {
@@ -236,6 +255,20 @@ const VIEW_SOURCES: Record<string, string> = {
   unknown: "Chưa rõ (trước khi đo nguồn)",
 };
 const viewSource = (key: string) => VIEW_SOURCES[key] ?? key;
+type ClickKind = "call" | "zalo" | "whatsapp";
+const CLICK_KINDS: Record<ClickKind, string> = {
+  call: "Bấm gọi",
+  zalo: "Bấm Zalo",
+  whatsapp: "Bấm WhatsApp",
+};
+/** A page path as people read it (/cho-thue/căn-…). */
+const readablePath = (path: string) => {
+  try {
+    return decodeURI(path);
+  } catch {
+    return path;
+  }
+};
 /** Where a viewed unit stands now. */
 type ViewKind = "live" | "model" | "hidden" | "deleted";
 const VIEW_KINDS: [ViewKind, string][] = [
@@ -553,6 +586,7 @@ export function Overview({
   const newLeads = leads?.byStatus.NEW ?? 0;
   const newApps = data?.applications?.byStatus.NEW ?? 0;
   const period = `${days} ngày`;
+  const clicks = data?.contactClicks;
 
   const kpis: Kpi[] = [
     {
@@ -598,11 +632,15 @@ export function Overview({
       tone: "gold",
     },
     {
-      label: "Dự án",
-      value: data?.projects.total,
-      note: `${data?.projects.published ?? 0} đang hiển thị`,
-      icon: Building2,
-      href: "/admin/projects",
+      label: `Khách bấm gọi · ${period}`,
+      value: data?.contactClicks.total,
+      note: data
+        ? `${nf(clicks?.byKind.call ?? 0)} gọi · ${nf((clicks?.byKind.zalo ?? 0) + (clicks?.byKind.whatsapp ?? 0))} Zalo/WhatsApp`
+        : "",
+      delta: growth(clicks?.total, clicks?.prevTotal),
+      spark: t?.series.map((d) => d.clicks),
+      icon: Phone,
+      href: "#dash-calls",
     },
     {
       label: "Bài viết đã đăng",
@@ -782,6 +820,7 @@ export function Overview({
                 {a.label}
               </button>
             ))}
+            <ReportExport canContacts={can("leads:export")} />
             <a href="/" target="_blank" rel="noopener noreferrer">
               Xem website <ArrowUpRight size={15} />
             </a>
@@ -802,7 +841,13 @@ export function Overview({
             key={k.label}
             kpi={k}
             index={i}
-            onOpen={() => goTo(k.href)}
+            onOpen={() =>
+              k.href.startsWith("#")
+                ? document
+                    .querySelector(k.href)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                : goTo(k.href)
+            }
           />
         ))}
       </div>
@@ -908,6 +953,77 @@ export function Overview({
           </Card>
         )}
       </div>
+
+      <Card className="dash-panel dash-calls" id="dash-calls">
+        <CardHeader>
+          <CardTitle>
+            <Phone size={17} /> Khách bấm gọi / Zalo
+          </CardTitle>
+          <span>
+            {period} qua{clicks ? ` · ${nf(clicks.total)} lượt` : ""}
+          </span>
+        </CardHeader>
+        {clicks?.total ? (
+          <p className="dash-muted">
+            {(Object.keys(CLICK_KINDS) as ClickKind[])
+              .filter((k) => clicks.byKind[k])
+              .map((k) => `${CLICK_KINDS[k]}: ${nf(clicks.byKind[k]!)}`)
+              .join(" · ")}
+            {" — từ "}
+            {clicks.bySource
+              .map((s) => `${viewSource(s.source)} ${nf(s.clicks)}`)
+              .join(", ")}
+          </p>
+        ) : null}
+        {clicks?.recent.length ? (
+          <ul className="dash-feed">
+            {clicks.recent.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  title="Mở trang khách đã bấm"
+                  onClick={() =>
+                    window.open(c.path, "_blank", "noopener,noreferrer")
+                  }
+                >
+                  <span
+                    className={`dash-avatar${c.kind === "call" ? "" : " gold"}`}
+                  >
+                    {c.kind === "call" ? (
+                      <Phone size={16} />
+                    ) : (
+                      <MessageCircle size={16} />
+                    )}
+                  </span>
+                  <span className="dash-feed-name">
+                    <strong>
+                      {c.property
+                        ? `${c.property.name}${c.property.unitCode ? ` (${c.property.unitCode})` : ""}`
+                        : readablePath(c.path)}
+                    </strong>
+                    <small>
+                      {[
+                        CLICK_KINDS[c.kind] ?? c.kind,
+                        c.target,
+                        `từ ${viewSource(c.source)}`,
+                        ago(c.createdAt),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </small>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="dash-empty">
+            {data
+              ? "Chưa có khách bấm gọi / Zalo nào trong kỳ."
+              : "Đang tải…"}
+          </p>
+        )}
+      </Card>
 
       <Card className="dash-panel dash-unit-views">
         <CardHeader>

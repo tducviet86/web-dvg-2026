@@ -90,6 +90,40 @@ export async function api<T = unknown>(
   return json as T;
 }
 
+/** Downloads a file the API sends (a report…) under the name it gives. */
+export async function downloadFile(path: string) {
+  let res: Response;
+  try {
+    res = await send("GET", path);
+  } catch {
+    throw new AdminApiError(0, "NETWORK", "Không kết nối được máy chủ.");
+  }
+  if (!res.ok) {
+    const json = await res.json().catch(() => null);
+    throw new AdminApiError(
+      res.status,
+      json?.error?.code ?? "UNKNOWN",
+      json?.error?.message ?? "Đã có lỗi xảy ra.",
+    );
+  }
+  // The UTF-8 name (filename*) when given, else the plain one.
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1];
+  const name = utf8
+    ? decodeURIComponent(utf8)
+    : (/filename="([^"]+)"/.exec(disposition)?.[1] ?? "bao-cao.xlsx");
+  const url = URL.createObjectURL(await res.blob());
+  const link = Object.assign(document.createElement("a"), {
+    href: url,
+    download: name,
+  });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return name;
+}
+
 /** Turns an API error into a readable message (with validation details). */
 /** One invalid field as reported by the API (VALIDATION_FAILED / slug conflict). */
 export type ApiFieldError = {

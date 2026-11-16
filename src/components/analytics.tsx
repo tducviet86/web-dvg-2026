@@ -17,6 +17,26 @@ function readChoice(): Choice | null {
     return null;
   }
 }
+/**
+ * Tells Admin › Tổng quan about a tap on a call, Zalo or WhatsApp link (and
+ * the unit, on a unit page — see ViewBeacon). Staff signed in to Admin are
+ * not counted.
+ */
+function countContactClick(kind: string, href: string) {
+  if (/(?:^|;\s*)dvg_csrf=/.test(document.cookie)) return;
+  fetch("/api/v1/contact-clicks", {
+    method: "POST",
+    keepalive: true,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      kind,
+      source: visitSource(),
+      path: location.pathname.slice(0, 300),
+      unit: document.documentElement.dataset.unit || undefined,
+      target: href.slice(0, 64),
+    }),
+  }).catch(() => {});
+}
 /** Only the real site is measured: not local copies, tests or previews. */
 const onLiveSite = () => /(^|\.)datvanggroup\.vn$/.test(location.hostname);
 const noSubscribe = () => () => {};
@@ -69,10 +89,16 @@ export function Analytics({ ids }: { ids: TrackingIds }) {
     const onClick = (event: MouseEvent) => {
       const link = (event.target as Element | null)?.closest?.("a[href]");
       const href = link?.getAttribute("href") ?? "";
-      if (href.startsWith("tel:")) track("click_call", { link_url: href });
-      else if (/zalo\.me/.test(href)) track("click_zalo", { link_url: href });
-      else if (/wa\.me|whatsapp/.test(href))
-        track("click_whatsapp", { link_url: href });
+      const kind = href.startsWith("tel:")
+        ? "call"
+        : /zalo\.me/.test(href)
+          ? "zalo"
+          : /wa\.me|whatsapp/.test(href)
+            ? "whatsapp"
+            : null;
+      if (!kind) return;
+      track(`click_${kind}`, { link_url: href });
+      countContactClick(kind, href);
     };
     document.addEventListener("click", onClick, { capture: true });
     return () =>

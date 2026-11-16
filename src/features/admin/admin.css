@@ -3242,6 +3242,107 @@
 .dash-refresh[data-spin] svg {
   animation: dash-spin 0.9s linear infinite;
 }
+/* "Xuất Excel": the report period picker (report-export.tsx). */
+.report-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #e7f0eb;
+  color: #1d5446;
+}
+.report-dialog form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.report-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 10px;
+  background: #eef3f0;
+}
+.report-mode button {
+  min-height: 38px;
+  border-radius: 8px;
+  color: #4b5b51;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.report-mode button[aria-pressed="true"] {
+  background: #fff;
+  color: #123c32;
+  box-shadow: 0 2px 8px #0c2b211a;
+}
+.report-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.report-fields > * {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.report-fields span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5b51;
+}
+.report-fields select {
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid #d5ded8;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 14px;
+  color: #263d35;
+}
+.report-summary {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #f7efdc;
+  color: #5c4513;
+  font-size: 13px;
+  font-weight: 600;
+}
+.report-summary[data-error] {
+  background: #fbeae6;
+  color: #8a2c1a;
+}
+.report-note {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7a74;
+}
+.report-dialog .dialog-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.report-dialog .dialog-actions .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.report-dialog .spin {
+  animation: dash-spin 0.9s linear infinite;
+}
+/* Two calendars side by side would not fit: one under the other on phones. */
+@media (max-width: 560px) {
+  .report-days {
+    grid-template-columns: 1fr;
+  }
+  .report-dialog .dialog-actions .button {
+    flex: 1;
+    justify-content: center;
+    padding-inline: 12px;
+  }
+}
 .dash-range small {
   margin-left: 4px;
   color: #a9bdb2;

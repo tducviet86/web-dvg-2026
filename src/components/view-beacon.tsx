@@ -5,9 +5,17 @@ import { visitSource } from "@/lib/visit-source";
 /**
  * Counts one visit of a unit page per browser session; the server turns
  * recent visits and enquiries into the "Đang được quan tâm" badge. Staff
- * signed in to Admin are not counted.
+ * signed in to Admin are not counted. It also marks the page with the unit,
+ * so taps on its call / Zalo links count for it.
  */
 export function ViewBeacon({ slug }: { slug: string }) {
+  // Taps on the call / Zalo links of this page count for this unit (analytics.tsx).
+  useEffect(() => {
+    document.documentElement.dataset.unit = slug;
+    return () => {
+      delete document.documentElement.dataset.unit;
+    };
+  }, [slug]);
   useEffect(() => {
     // Signed in to Admin (the session's CSRF cookie, gone at sign-out).
     if (/(?:^|;\s*)dvg_csrf=/.test(document.cookie)) return;
