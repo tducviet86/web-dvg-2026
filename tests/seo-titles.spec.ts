@@ -369,3 +369,26 @@ test("main pages have titles and descriptions long enough for Bing and Google", 
     page.locator('.showcase-card img[alt=""], .journal-card img[alt=""]'),
   ).toHaveCount(0);
 });
+
+test("hero photos carry an alt text (Bing: “Alt attribute for images is missing”)", async ({
+  page,
+}) => {
+  for (const path of ["/du-an", "/cho-thue"]) {
+    await page.goto(path);
+    const hero = page.locator(".rental-hero-media img");
+    await expect(hero.first(), path).toBeAttached();
+    for (const alt of await hero.evaluateAll((imgs) =>
+      imgs.map((i) => i.getAttribute("alt") ?? ""),
+    ))
+      expect(alt.trim(), path).not.toBe("");
+  }
+  // The project directory Bing flagged: no image left without one.
+  await page.goto("/du-an");
+  expect(
+    await page
+      .locator("img")
+      .evaluateAll(
+        (imgs) => imgs.filter((i) => !i.getAttribute("alt")?.trim()).length,
+      ),
+  ).toBe(0);
+});

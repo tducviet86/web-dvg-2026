@@ -46,7 +46,9 @@ export function PhotoHero({
           <Image
             key={slide.src}
             src={slide.src}
-            alt=""
+            // Read by search engines (Bing flags images without one); the
+            // slideshow itself stays hidden from screen readers.
+            alt={slide.alt || title}
             fill
             sizes="100vw"
             quality={65}
