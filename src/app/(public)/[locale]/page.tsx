@@ -188,7 +188,7 @@ export default async function Home({ params }: Props) {
                   >
                     <Image
                       src={post.image}
-                      alt=""
+                      alt={post.name}
                       fill
                       sizes="(max-width: 900px) 34vw, 33vw"
                     />
@@ -218,7 +218,10 @@ export default async function Home({ params }: Props) {
             portfolio.find((p) => p.group === "operation")?.image ??
             photos.building
           }
-          alt=""
+          alt={
+            portfolio.find((p) => p.group === "operation")?.name ??
+            "Đất Vàng Group"
+          }
           fill
           sizes="100vw"
         />

@@ -99,7 +99,10 @@ const listDescriptions: Record<string, string> = {
  */
 const SEO_TITLES: Record<string, string> = {
   "gioi-thieu": "Giới thiệu Đất Vàng Group – quản lý, cho thuê căn hộ Đà Nẵng",
-  "gioi-thieu/tam-nhin-su-menh": "Tầm nhìn & sứ mệnh Đất Vàng Group",
+  "gioi-thieu/tam-nhin-su-menh":
+    "Tầm nhìn & sứ mệnh Đất Vàng Group – quản lý căn hộ Đà Nẵng",
+  blog: "Tin tức bất động sản & cẩm nang thuê nhà Đà Nẵng",
+  "dich-vu": "Dịch vụ quản lý, khai thác và cho thuê căn hộ Đà Nẵng",
   "gioi-thieu/doi-ngu": "Đội ngũ tư vấn và vận hành căn hộ – Đất Vàng Group",
   "gioi-thieu/doi-tac":
     "Đối tác & hợp tác bất động sản Đà Nẵng – Đất Vàng Group",
@@ -107,6 +110,9 @@ const SEO_TITLES: Record<string, string> = {
   "hop-tac-chu-so-huu": "Ký gửi căn hộ Đà Nẵng cho thuê và bán",
   "tuyen-dung": "Tuyển dụng Đất Vàng Group – việc làm bất động sản Đà Nẵng",
 };
+/** "Azura Đà Nẵng" stays as it is; "Sun Ponte" becomes "Sun Ponte Đà Nẵng". */
+const inDaNang = (name: string) =>
+  /đà nẵng/i.test(name) ? name : `${name} Đà Nẵng`;
 /** Short descriptions (under ~110 characters) get one line of context. */
 const withContext = (text: string, more: string) =>
   text && text.length >= 110
@@ -165,12 +171,12 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
         ? group === "development"
           ? "Dự án căn hộ đang triển khai tại Đà Nẵng"
           : "Dự án căn hộ đang vận hành tại Đà Nẵng"
-        : "Dự án căn hộ Đà Nẵng",
+        : "Dự án căn hộ Đà Nẵng đang triển khai và vận hành",
       description: group
         ? group === "development"
           ? "Các dự án căn hộ mới đang triển khai tại Đà Nẵng: vị trí, tiến độ, mặt bằng và sản phẩm, cập nhật bởi Đất Vàng Group."
           : "Các tòa căn hộ Đất Vàng Group đang vận hành tại Đà Nẵng: xem căn đang cho thuê, mua bán, tiện ích và vị trí từng dự án."
-        : "Danh mục dự án căn hộ tại Đà Nẵng mà Đất Vàng Group triển khai và vận hành: The Monarchy, Sun Panoma, Sun Ponte, Capital Square…",
+        : "Danh mục dự án căn hộ tại Đà Nẵng mà Đất Vàng Group triển khai và vận hành: The Monarchy, Sun Panoma, Sun Ponte, Capital Square… Xem vị trí, mặt bằng và căn đang có.",
       render: async (filters) => (
         <ProjectDirectory
           group={group}
@@ -198,7 +204,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     return {
       title: "Bản đồ dự án và căn hộ Đà Nẵng",
       description:
-        "Xem các dự án Đất Vàng Group đang giới thiệu trên bản đồ 3D, tìm theo tên hoặc khu vực và xem mặt bằng 3D từng tầng.",
+        "Xem các dự án Đất Vàng Group đang giới thiệu trên bản đồ 3D, tìm theo tên hoặc khu vực, xem mặt bằng 3D từng tầng và chỉ đường từ vị trí của bạn.",
       render: (filters) => <MapPage content={content} filters={filters} />,
     };
   }
@@ -269,10 +275,11 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     const portfolio = content.portfolio.find((p) => p.projectId === project.id);
     if (!portfolio || !portfolio.categories.includes("rent")) notFound();
     return {
-      title: `Cho thuê căn hộ ${project.name} Đà Nẵng`,
-      description:
-        project.rentalGuide?.intro ||
-        `Căn hộ cho thuê tại ${project.name}. Xem thông tin căn và liên hệ Đất Vàng Group.`,
+      title: `Cho thuê căn hộ ${inDaNang(project.name)}`,
+      description: withContext(
+        project.rentalGuide?.intro ?? "",
+        `Căn hộ cho thuê tại ${project.name}: ảnh thật, giá thuê theo tháng, diện tích và tình trạng từng căn. Liên hệ Đất Vàng Group để hẹn xem căn.`,
+      ),
       image: portfolio.image,
       parents: [{ name: "Cho thuê căn hộ Đà Nẵng", path: "/cho-thue" }],
       render: (filters) => (
@@ -319,7 +326,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
         `${room.type} ${room.area}m² tại ${project.name}${room.isDemo ? " · Căn mẫu" : sale ? " đang bán" : " cho thuê"}`,
       description:
         room.seoDescription ||
-        `${room.name} tại ${project.name}, ${room.area}m², ${room.furniture.toLowerCase()}. Xem ảnh, thông số, vị trí và liên hệ ${sale ? "tư vấn mua bán" : "hẹn xem"}.${room.isDemo ? " Nội dung minh họa." : ""}`,
+        `${room.name} tại ${project.name}, ${room.area}m², ${room.furniture.toLowerCase()}${room.floorNote ? `, ${room.floorNote.toLowerCase()}` : ""}. Xem ảnh, thông số, vị trí và liên hệ ${sale ? "Đất Vàng Group để tư vấn mua bán" : "hẹn xem căn"}.${room.isDemo ? " Nội dung minh họa." : ""}`,
       image: room.image,
       // Units rented / sold a while ago only stay reachable from old links.
       noindex: room.isDemo || !!room.delisted,
@@ -379,7 +386,8 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     );
     if (!portfolio) notFound();
     return {
-      title: project.seo.title || `${project.name} Đà Nẵng: căn hộ & tiện ích`,
+      title:
+        project.seo.title || `${inDaNang(project.name)}: căn hộ & tiện ích`,
       description:
         project.seo.description ||
         withContext(
@@ -417,7 +425,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
   }
   if (lists[path])
     return {
-      title: lists[path],
+      title: SEO_TITLES[path] || lists[path],
       description: listDescriptions[path],
       render: async (filters) =>
         path === "blog" ? (
@@ -441,9 +449,10 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     if (!category) return null;
     return {
       title: category.name,
-      description:
-        category.description ||
-        `Các bài viết về ${category.name.toLowerCase()} từ Đất Vàng Group.`,
+      description: withContext(
+        category.description ?? "",
+        `Bài viết ${category.name.toLowerCase()} từ Đất Vàng Group: kinh nghiệm thuê, mua căn hộ và thông tin thị trường bất động sản Đà Nẵng, cập nhật thường xuyên.`,
+      ),
       parents: [{ name: "Tin tức & cẩm nang", path: "/blog" }],
       render: async () => (
         <ListingPage
@@ -479,7 +488,12 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       permanentRedirect(href(service.href));
     return {
       title: service.seoTitle || service.name,
-      description: service.seoDescription || service.description,
+      description:
+        service.seoDescription ||
+        withContext(
+          service.description,
+          "Đất Vàng Group đồng hành cùng chủ sở hữu căn hộ tại Đà Nẵng; liên hệ để được tư vấn cho căn hộ của bạn.",
+        ),
       image: service.image,
       parents: [{ name: "Lĩnh vực hoạt động", path: "/dich-vu" }],
       render: () => <ServiceDetail service={service} services={services} />,

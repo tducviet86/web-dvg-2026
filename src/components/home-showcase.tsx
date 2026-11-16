@@ -65,7 +65,7 @@ export function HomeShowcase({
                 <span className="showcase-photo">
                   <Image
                     src={p.image}
-                    alt=""
+                    alt={p.name}
                     fill
                     loading="lazy"
                     // After the banner: it is the page's main picture.

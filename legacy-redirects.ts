@@ -192,6 +192,28 @@ export const LEGACY_REDIRECTS: [from: string, to: string][] = [
     "/siet-chat-hoat-dong-moi-gioi-bat-dong-san",
     "/blog/danh-muc/thi-truong-bat-dong-san",
   ],
+  // Reported by Bing Webmaster Tools (old articles, now 404).
+  ["/tin-tuc-thi-truong", "/blog/danh-muc/thi-truong-bat-dong-san"],
+  [
+    "/quy-dinh-cap-so-hong-chung-cu-moi-nhat-2024",
+    "/blog/danh-muc/thi-truong-bat-dong-san",
+  ],
+  [
+    "/cap-nhat-thong-tin-lai-xuat-vay-ng-n-hang-moi-nhat-2024",
+    "/blog/danh-muc/thi-truong-bat-dong-san",
+  ],
+  [
+    "/capital-square-dau-tu-gia-tri-dinh-vi-truong-ton",
+    "/du-an/capital-square",
+  ],
+  [
+    "/cac-buoc-de-quy-khach-hang-hop-tac-cung-dat-vang-group-tai-fpt-plaza-2",
+    "/du-an",
+  ],
+  [
+    "/can-ho-kieu-moi-fpt-plaza-2-do-d-t-vang-group-trien-khai-co-gi-dac-biet-khac-biet",
+    "/du-an",
+  ],
   [
     "/tinh-den-thang-3-2023-da-nang-co-16-duong-bay-quoc-te-den-thanh-pho",
     "/blog/danh-muc/thi-truong-bat-dong-san",

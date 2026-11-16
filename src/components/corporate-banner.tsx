@@ -20,7 +20,8 @@ function BannerPicture({
   first: boolean;
 }) {
   const common = {
-    alt: slide.alt,
+    // Admin may leave the alt empty: the slide's title describes it.
+    alt: slide.alt || slide.projectName || slide.title,
     fill: true,
     sizes: "100vw",
     // Full-screen photos: a little less compression than other heroes.

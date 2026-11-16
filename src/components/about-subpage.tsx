@@ -127,7 +127,7 @@ function VisionRows({
                 <span className="about-row-photo">
                   <Image
                     src={photo.image}
-                    alt=""
+                    alt={photo.name}
                     fill
                     sizes="(max-width: 900px) 92vw, 46vw"
                   />
@@ -168,7 +168,7 @@ function TeamGrid({
             <span className="about-team-photo" aria-hidden="true">
               <Image
                 src={photo.image}
-                alt=""
+                alt={photo.name}
                 fill
                 sizes="(max-width: 900px) 92vw, 34vw"
               />

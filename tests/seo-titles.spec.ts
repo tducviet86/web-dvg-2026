@@ -28,6 +28,12 @@ test("old website URLs move permanently to the matching page", async ({
       "/blog/danh-muc/thi-truong-bat-dong-san",
     ],
     ["/cho-thue/can-ho-1-pn", "/cho-thue"],
+    // Reported by Bing Webmaster Tools, November 2026.
+    ["/tin-tuc-thi-truong", "/blog/danh-muc/thi-truong-bat-dong-san"],
+    [
+      "/capital-square-dau-tu-gia-tri-dinh-vi-truong-ton",
+      "/du-an/capital-square",
+    ],
     ["/%E6%9C%88", "/blog"],
     // The same under a language, as the old English pages were.
     ["/en/tags/ve-chung-toi", "/en/gioi-thieu"],
@@ -332,4 +338,34 @@ test("what AI assistants read: company, sales and no empty headings", async ({
   };
   expect(towerHandover(api, "C3")).toBe("Quý IV/2028");
   expect(towerHandover(api, "C4")).toBe("Quý IV/2027");
+});
+
+test("main pages have titles and descriptions long enough for Bing and Google", async ({
+  page,
+}) => {
+  for (const path of [
+    "/du-an",
+    "/blog",
+    "/dich-vu",
+    "/ban-do",
+    "/gioi-thieu/tam-nhin-su-menh",
+  ]) {
+    await page.goto(path);
+    const title = await page.title();
+    const description =
+      (await page
+        .locator('meta[name="description"]')
+        .getAttribute("content")) ?? "";
+    expect(title.length, `${path}: ${title}`).toBeGreaterThanOrEqual(40);
+    expect(
+      description.length,
+      `${path}: ${description}`,
+    ).toBeGreaterThanOrEqual(120);
+    expect(title, path).not.toMatch(/Đà Nẵng Đà Nẵng/);
+  }
+  // Project and article photos on the home page say what they show.
+  await page.goto("/");
+  await expect(
+    page.locator('.showcase-card img[alt=""], .journal-card img[alt=""]'),
+  ).toHaveCount(0);
 });
