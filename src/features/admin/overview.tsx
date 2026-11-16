@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { groupActivity } from "./activity";
 import { ReportExport } from "./report-export";
+import { LinkCopy } from "./link-copy";
 
 // three.js and the charts are only downloaded for this screen.
 const PortfolioScene = dynamic(() => import("./portfolio-scene"), {
@@ -821,6 +822,7 @@ export function Overview({
               </button>
             ))}
             <ReportExport canContacts={can("leads:export")} />
+            <LinkCopy />
             <a href="/" target="_blank" rel="noopener noreferrer">
               Xem website <ArrowUpRight size={15} />
             </a>
@@ -1018,9 +1020,7 @@ export function Overview({
           </ul>
         ) : (
           <p className="dash-empty">
-            {data
-              ? "Chưa có khách bấm gọi / Zalo nào trong kỳ."
-              : "Đang tải…"}
+            {data ? "Chưa có khách bấm gọi / Zalo nào trong kỳ." : "Đang tải…"}
           </p>
         )}
       </Card>

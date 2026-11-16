@@ -3332,6 +3332,92 @@
 .report-dialog .spin {
   animation: dash-spin 0.9s linear infinite;
 }
+/* "Copy link" (link-copy.tsx): site addresses by kind and language. */
+.link-copy-langs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+.link-copy-langs button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d5ded8;
+  border-radius: 999px;
+  background: #fff;
+  color: #4b5b51;
+  font-size: 13px;
+  cursor: pointer;
+}
+.link-copy-langs button[aria-pressed="true"] {
+  border-color: #1d5446;
+  background: #1d5446;
+  color: #fff;
+  font-weight: 600;
+}
+.link-copy-recent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #4b5b51;
+}
+.link-copy-groups {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.link-copy-groups li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f4f7f5;
+}
+.link-copy-groups li.link-copy-all {
+  background: #f7efdc;
+}
+.link-copy-groups span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.link-copy-groups strong {
+  font-size: 14px;
+  color: #173e34;
+}
+.link-copy-groups small {
+  font-size: 12px;
+  color: #6b7a74;
+}
+.link-copy-groups button,
+.link-copy-retry {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid #1d5446;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d5446;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.link-copy-groups button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.link-copy .report-note {
+  margin-top: 14px;
+}
 /* Two calendars side by side would not fit: one under the other on phones. */
 @media (max-width: 560px) {
   .report-days {

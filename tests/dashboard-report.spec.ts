@@ -209,3 +209,43 @@ test("Khách bấm gọi: a tap on a unit page's phone link shows on Tổng quan
     await api.send("delete", `/admin/properties/${unit.id}`);
   }
 });
+
+test("Copy link: the site's addresses by kind and language, one per line", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await login(page);
+  await page.setViewportSize({ width: 375, height: 760 });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Copy link" }).click();
+  const dialog = page.getByRole("dialog", { name: "Copy link website" });
+  const projects = dialog.getByRole("button", {
+    name: /^Copy \d+ link Dự án$/,
+  });
+  await expect(projects).toBeEnabled();
+  await page.waitForTimeout(300); // the dialog fades in
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: `${SHOTS}/link-copy-mobile.png` });
+
+  await projects.click();
+  const read = () =>
+    page
+      .evaluate(() => navigator.clipboard.readText())
+      .then((t) => t.split("\n"));
+  const vi = await read();
+  expect(vi.length).toBeGreaterThan(1);
+  for (const url of vi)
+    expect(new URL(url).pathname).toMatch(/^\/(cho-thue\/)?du-an(\/|$)/);
+  await expect(page.getByText(`Đã copy ${vi.length} link`)).toBeVisible();
+
+  await dialog.getByRole("button", { name: "English" }).click();
+  await dialog.getByRole("button", { name: /^Copy \d+ link Dự án$/ }).click();
+  const en = await read();
+  expect(en).toHaveLength(vi.length);
+  for (const url of en) expect(new URL(url).pathname).toMatch(/^\/en\//);
+});
