@@ -32,6 +32,15 @@ test("AI assistants may read the site; llms.txt and the Bing key are served", as
   for (const rule of ["/cho-thue?", "/cho-thue/*?", "/*/cho-thue?", "/ban-do?"])
     expect(robots).toContain(`Disallow: ${rule}`);
   expect(robots).not.toMatch(/Disallow: \/cho-thue$/m);
+  // Links shared with tracking only (Zalo, Facebook, ads) stay crawlable,
+  // so their previews keep a photo and title.
+  for (const rule of [
+    "/cho-thue/*?utm_",
+    "/cho-thue/*?fbclid=",
+    "/cho-thue/*?zarsrc=",
+    "/*/cho-thue/*?utm_",
+  ])
+    expect(robots).toContain(`Allow: ${rule}`);
   expect(robots).toContain("Sitemap:");
 
   const llms = await request.get("/llms.txt");

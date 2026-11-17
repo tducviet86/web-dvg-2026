@@ -16,10 +16,13 @@ import {
   House,
   Images,
   MessageCircle,
+  Monitor,
   MousePointerClick,
   PenLine,
   Phone,
   Plus,
+  Smartphone,
+  Tablet,
   RefreshCw,
   Snowflake,
   UserCheck,
@@ -131,6 +134,18 @@ type Summary = {
     }[];
     overdue: number;
   } | null;
+  /** The latest unit page views, one by one (newest first, up to 50). */
+  recentViews?: {
+    id: string;
+    at: string;
+    source: string;
+    locale: string;
+    device: string;
+    name: string;
+    unitCode: string | null;
+    project: string | null;
+    path: string;
+  }[];
   /** Taps on the site's call / Zalo / WhatsApp links. */
   contactClicks: {
     total: number;
@@ -261,6 +276,27 @@ const CLICK_KINDS: Record<ClickKind, string> = {
   call: "Bấm gọi",
   zalo: "Bấm Zalo",
   whatsapp: "Bấm WhatsApp",
+};
+/** The language the visitor read the unit page in. */
+const VIEW_LOCALES: Record<string, string> = {
+  vi: "Tiếng Việt",
+  en: "Tiếng Anh",
+  ko: "Tiếng Hàn",
+  zh: "Tiếng Trung",
+};
+const DEVICES: Record<string, [string, typeof Monitor]> = {
+  mobile: ["Điện thoại", Smartphone],
+  tablet: ["Máy tính bảng", Tablet],
+  desktop: ["Máy tính", Monitor],
+};
+/** "14:32 · 17/11" in Vietnamese time. */
+const clock = (iso: string) => {
+  const part = (o: Intl.DateTimeFormatOptions) =>
+    new Date(iso).toLocaleString("en-GB", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      ...o,
+    });
+  return `${part({ hour: "2-digit", minute: "2-digit", hour12: false })} · ${part({ day: "2-digit", month: "2-digit" })}`;
 };
 /** A page path as people read it (/cho-thue/căn-…). */
 const readablePath = (path: string) => {
@@ -518,6 +554,7 @@ export function Overview({
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [feed, setFeed] = useState<"leads" | "applications">("leads");
   const [allUnitViews, setAllUnitViews] = useState(false);
+  const [allRecentViews, setAllRecentViews] = useState(false);
   const [viewFilter, setViewFilter] = useState<ViewFilter>("all");
   const [allActivity, setAllActivity] = useState(false);
   const request = useRef(0);
@@ -1021,6 +1058,82 @@ export function Overview({
         ) : (
           <p className="dash-empty">
             {data ? "Chưa có khách bấm gọi / Zalo nào trong kỳ." : "Đang tải…"}
+          </p>
+        )}
+      </Card>
+
+      <Card className="dash-panel dash-recent-views" id="dash-recent-views">
+        <CardHeader>
+          <CardTitle>
+            <Eye size={17} /> Lượt xem gần đây
+          </CardTitle>
+          <span>Từng lượt, mới nhất trước</span>
+        </CardHeader>
+        <p className="dash-muted">
+          Mỗi dòng là một khách mở trang chi tiết căn: lúc nào, căn nào, đến từ
+          đâu, đọc bằng ngôn ngữ nào và trên thiết bị gì. Không tính lượt của
+          nhân viên đang đăng nhập Admin và của bot.
+        </p>
+        {data?.recentViews?.length ? (
+          <>
+            <ul className="dash-feed">
+              {(allRecentViews
+                ? data.recentViews
+                : data.recentViews.slice(0, 10)
+              ).map((v) => {
+                const [device, DeviceIcon] =
+                  DEVICES[v.device] ?? DEVICES.desktop;
+                return (
+                  <li key={v.id}>
+                    <button
+                      type="button"
+                      title={`Mở trang căn · ${clock(v.at)}`}
+                      onClick={() =>
+                        window.open(v.path, "_blank", "noopener,noreferrer")
+                      }
+                    >
+                      <span className="dash-avatar">
+                        <DeviceIcon size={16} aria-label={device} />
+                      </span>
+                      <span className="dash-feed-name">
+                        <strong>
+                          {v.name}
+                          {v.unitCode ? ` (${v.unitCode})` : ""}
+                        </strong>
+                        <small>
+                          {[
+                            clock(v.at),
+                            `từ ${viewSource(v.source)}`,
+                            VIEW_LOCALES[v.locale] ?? v.locale,
+                            device,
+                            v.project,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </small>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {data.recentViews.length > 10 && (
+              <button
+                type="button"
+                className="text-link dash-more"
+                onClick={() => setAllRecentViews((v) => !v)}
+              >
+                {allRecentViews
+                  ? "Thu gọn"
+                  : `Xem thêm (${data.recentViews.length} lượt gần nhất)`}
+              </button>
+            )}
+          </>
+        ) : (
+          <p className="dash-empty">
+            {data
+              ? "Chưa có lượt xem nào được ghi từng lượt. Danh sách bắt đầu có từ khi bản cập nhật này được đưa lên."
+              : "Đang tải…"}
           </p>
         )}
       </Card>

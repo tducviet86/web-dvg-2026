@@ -35,16 +35,23 @@ const FILTERED = [
   "/*/cho-thue/*?",
   "/*/ban-do?",
 ];
+/**
+ * Links shared on Zalo / Facebook / ads carry tracking only (?utm_source=zalo,
+ * ?fbclid=…, ?zarsrc=…, ?gclid=…): those stay open, so link previews keep
+ * their photo and title. The longer rule wins, so these beat FILTERED.
+ */
+const TRACKING = ["utm_", "fbclid=", "zarsrc=", "gclid="];
+const SHARED = FILTERED.filter((rule) => rule.includes("cho-thue")).flatMap(
+  (rule) => TRACKING.map((param) => rule + param),
+);
 
 export default function robots(): MetadataRoute.Robots {
+  const disallow = [...PRIVATE, ...FILTERED];
+  const allow = ["/", ...SHARED];
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: [...PRIVATE, ...FILTERED] },
-      {
-        userAgent: AI_CRAWLERS,
-        allow: "/",
-        disallow: [...PRIVATE, ...FILTERED],
-      },
+      { userAgent: "*", allow, disallow },
+      { userAgent: AI_CRAWLERS, allow, disallow },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
   };

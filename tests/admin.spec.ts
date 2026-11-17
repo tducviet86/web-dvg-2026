@@ -1132,13 +1132,27 @@ test("a unit page is not counted as a view while signed in to Admin", async ({
   expect(fromVisitor[0]).toContain("source=direct");
   await visitor.close();
   // Sent by ChatGPT: the source is kept for the rest of the visit.
-  const fromAi = await browser.newPage();
+  // (A real browser: headless test browsers are not counted, as bots.)
+  const fromAi = await browser.newPage({
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+  });
   const aiViews = counted(fromAi);
   await fromAi.goto(`/?utm_source=chatgpt.com`);
   await fromAi.goto(url);
   await expect.poll(() => aiViews.length).toBe(1);
   expect(aiViews[0]).toContain("source=ai");
   await fromAi.close();
+  // Read in Korean on a phone: the language goes with the view.
+  const korean = await browser.newPage({
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
+  });
+  const koViews = counted(korean);
+  await korean.goto(`/ko${url}`);
+  await expect.poll(() => koViews.length).toBe(1);
+  expect(koViews[0]).toContain("locale=ko");
+  await korean.close();
 
   // Staff signed in: none.
   await login(page);
@@ -1146,6 +1160,20 @@ test("a unit page is not counted as a view while signed in to Admin", async ({
   await page.goto(url);
   await page.waitForLoadState("networkidle");
   expect(fromStaff).toHaveLength(0);
+
+  // Admin › Tổng quan lists each view: the unit, when, from where, the
+  // language and the device, newest first.
+  await page.goto("/admin");
+  const recent = page.locator("#dash-recent-views");
+  await expect(recent.locator(".dash-feed li").first()).toContainText(
+    "Căn đếm lượt xem QA",
+  );
+  await expect(recent.locator(".dash-feed li").first()).toContainText(
+    "Tiếng Hàn · Điện thoại",
+  );
+  await expect(recent.locator(".dash-feed li").nth(1)).toContainText(
+    "từ ChatGPT & AI · Tiếng Việt · Máy tính",
+  );
   await api.send("delete", `/admin/properties/${unit.id}`);
 });
 

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { visitSource } from "@/lib/visit-source";
+import { useLocale } from "@/i18n/client";
 
 /**
  * Counts one visit of a unit page per browser session; the server turns
@@ -9,6 +10,7 @@ import { visitSource } from "@/lib/visit-source";
  * so taps on its call / Zalo links count for it.
  */
 export function ViewBeacon({ slug }: { slug: string }) {
+  const locale = useLocale();
   // Taps on the call / Zalo links of this page count for this unit (analytics.tsx).
   useEffect(() => {
     document.documentElement.dataset.unit = slug;
@@ -27,12 +29,12 @@ export function ViewBeacon({ slug }: { slug: string }) {
       /* storage blocked: count the visit anyway */
     }
     fetch(
-      `/api/v1/properties/${encodeURIComponent(slug)}/view?source=${visitSource()}`,
+      `/api/v1/properties/${encodeURIComponent(slug)}/view?source=${visitSource()}&locale=${locale}`,
       {
         method: "POST",
         keepalive: true,
       },
     ).catch(() => {});
-  }, [slug]);
+  }, [slug, locale]);
   return null;
 }

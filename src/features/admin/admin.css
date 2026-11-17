@@ -7646,3 +7646,10 @@ span.ucard-avail {
     aspect-ratio: 16 / 10;
   }
 }
+/* Lượt xem gần đây: every detail of a view stays readable, on phones too. */
+.dash-recent-views .dash-feed-name strong,
+.dash-recent-views .dash-feed-name small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
