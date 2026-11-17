@@ -366,8 +366,12 @@ test("main pages have titles and descriptions long enough for Bing and Google", 
   // Project and article photos on the home page say what they show.
   await page.goto("/");
   await expect(
-    page.locator('.showcase-card img[alt=""], .journal-card img[alt=""]'),
+    page.locator(
+      '.showcase-card img[alt=""], .journal-card img[alt=""], .rent-mini img[alt=""]',
+    ),
   ).toHaveCount(0);
+  await page.goto("/blog");
+  await expect(page.locator('main img[alt=""]')).toHaveCount(0);
 });
 
 test("hero photos carry an alt text (Bing: “Alt attribute for images is missing”)", async ({

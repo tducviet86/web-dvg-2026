@@ -63,7 +63,7 @@ export function PostCard({
       >
         <Image
           src={post.image}
-          alt=""
+          alt={post.name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"
           loading={priority ? "eager" : "lazy"}
@@ -99,7 +99,7 @@ function PostRow({ post }: { post: Post }) {
         tabIndex={-1}
         aria-hidden="true"
       >
-        <Image src={post.image} alt="" fill sizes="140px" />
+        <Image src={post.image} alt={post.name} fill sizes="140px" />
       </Link>
       <div>
         <time dateTime={post.createdAt}>{day(post.createdAt)}</time>
@@ -133,7 +133,7 @@ export function BlogListing({
         <Image
           className="news-banner-photo"
           src={banner}
-          alt=""
+          alt="Tin tức và cẩm nang bất động sản Đà Nẵng"
           fill
           sizes="100vw"
           loading="eager"
@@ -179,7 +179,7 @@ export function BlogListing({
             >
               <Image
                 src={feature.image}
-                alt=""
+                alt={feature.name}
                 fill
                 sizes="(max-width: 1080px) 100vw, 40vw"
               />
@@ -279,7 +279,7 @@ export function BlogListing({
                     >
                       <Image
                         src={top.image}
-                        alt=""
+                        alt={top.name}
                         fill
                         sizes="(max-width: 900px) 100vw, 45vw"
                       />
@@ -428,7 +428,21 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
             datePublished: post.createdAt,
             dateModified: post.updatedAt || post.createdAt,
             image: post.image,
-            author: { "@type": "Person", name: author },
+            // "Admin" is a screen name, not a person: the company writes it.
+            author:
+              author === "Admin"
+                ? {
+                    "@type": "Organization",
+                    name: "Đất Vàng Group",
+                    url: siteUrl,
+                  }
+                : { "@type": "Person", name: author },
+            publisher: {
+              "@type": "Organization",
+              name: "Đất Vàng Group",
+              url: siteUrl,
+              logo: `${siteUrl}/images/dat-vang-group-logo-transparent.png`,
+            },
             mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
           }),
         }}
@@ -542,7 +556,7 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
             <span className="reader-author-logo">
               <Image
                 src="/images/dat-vang-group-logo-transparent.png"
-                alt=""
+                alt="Đất Vàng Group"
                 width={64}
                 height={62}
               />
@@ -605,7 +619,7 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
                       className={`reader-pager-${cls}`}
                     >
                       <span className="reader-pager-photo image-wrap">
-                        <Image src={p.image} alt="" fill sizes="120px" />
+                        <Image src={p.image} alt={p.name} fill sizes="120px" />
                       </span>
                       <span>
                         <small>
@@ -660,7 +674,7 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
                     <span className="reader-more-photo image-wrap">
                       <Image
                         src={p.image}
-                        alt=""
+                        alt={p.name}
                         fill
                         sizes="(max-width: 760px) 92vw, 30vw"
                       />

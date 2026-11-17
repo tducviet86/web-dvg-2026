@@ -105,3 +105,23 @@ test("company, building and unit pages describe themselves to search engines", a
     expectedUpdatedAt: fresh.data.updatedAt,
   });
 });
+
+test("articles name the company as author and publisher, not 'Admin'", async ({
+  page,
+}) => {
+  await page.goto("/blog");
+  await page
+    .locator('main a[href^="/blog/"]:not([href*="danh-muc"])')
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/blog\/[^/]+$/);
+  const article = ofType(await schemas(page), "Article")!;
+  expect(article.publisher).toMatchObject({
+    "@type": "Organization",
+    name: "Đất Vàng Group",
+  });
+  expect(article.author).not.toMatchObject({
+    "@type": "Person",
+    name: "Admin",
+  });
+});

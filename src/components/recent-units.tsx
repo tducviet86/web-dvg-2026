@@ -106,7 +106,9 @@ export function RecentUnits({ current }: { current: RecentUnit }) {
               aria-label={t("Xem căn {name}", { name: u.name })}
             >
               <span className="rent-mini-photo">
-                {u.image && <Image src={u.image} alt="" fill sizes="260px" />}
+                {u.image && (
+                  <Image src={u.image} alt={u.name} fill sizes="260px" />
+                )}
               </span>
               <span className="rent-mini-body">
                 <small>

@@ -136,7 +136,7 @@ export function RentalMini({
         <span className="rent-mini-photo">
           <Image
             src={unit.image}
-            alt=""
+            alt={unit.name}
             fill
             sizes="(max-width: 760px) 70vw, (max-width: 1080px) 45vw, 22vw"
           />
