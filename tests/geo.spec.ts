@@ -27,6 +27,11 @@ test("AI assistants may read the site; llms.txt and the Bing key are served", as
     expect(robots).toContain(`User-Agent: ${bot}`);
   // Private areas stay closed in every group.
   expect(robots.match(/Disallow: \/admin/g)?.length).toBe(2);
+  // Filtered search and map pages (noindex) are not crawled, in any language;
+  // the pages themselves stay open.
+  for (const rule of ["/cho-thue?", "/cho-thue/*?", "/*/cho-thue?", "/ban-do?"])
+    expect(robots).toContain(`Disallow: ${rule}`);
+  expect(robots).not.toMatch(/Disallow: \/cho-thue$/m);
   expect(robots).toContain("Sitemap:");
 
   const llms = await request.get("/llms.txt");
