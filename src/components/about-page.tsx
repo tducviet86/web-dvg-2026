@@ -135,7 +135,7 @@ export function AboutPage({
             <span className="about-collage-main">
               <Image
                 src={first.image}
-                alt=""
+                alt={`Dự án ${first.name} tại Đà Nẵng`}
                 fill
                 sizes="(max-width: 900px) 90vw, 38vw"
               />
@@ -143,7 +143,7 @@ export function AboutPage({
             <span className="about-collage-side">
               <Image
                 src={second.image}
-                alt=""
+                alt={`Dự án ${second.name} tại Đà Nẵng`}
                 fill
                 sizes="(max-width: 900px) 50vw, 20vw"
               />
@@ -298,7 +298,7 @@ export function AboutProjects({
               >
                 <Image
                   src={p.image}
-                  alt=""
+                  alt={`Dự án ${p.name} tại Đà Nẵng`}
                   fill
                   sizes="(max-width: 760px) 80vw, 33vw"
                 />
@@ -358,7 +358,7 @@ export function AboutCta({
         <Image
           className="home-cta-photo"
           src={photo}
-          alt=""
+          alt="Căn hộ Đất Vàng Group tại Đà Nẵng"
           fill
           sizes="100vw"
         />

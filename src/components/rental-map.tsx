@@ -1775,7 +1775,7 @@ export function RentalMap({
                   onClick={() => choose.current(b.slug)}
                 >
                   <span className="rmap-photo">
-                    <Image src={b.image} alt="" fill sizes="72px" />
+                    <Image src={b.image} alt={b.name} fill sizes="72px" />
                   </span>
                   <b>{b.name}</b>
                   <small>{b.location}</small>
@@ -1875,7 +1875,7 @@ export function RentalMap({
                   {peekPicture ? (
                     <Image
                       src={peekPicture}
-                      alt=""
+                      alt={t("Mặt bằng căn hộ")}
                       width={280}
                       height={196}
                       className="rmap-peek-3d"
@@ -2110,7 +2110,7 @@ export function RentalMap({
               <Image
                 className="rmap-head-photo"
                 src={current.image}
-                alt=""
+                alt={current.name}
                 fill
                 sizes="360px"
               />
@@ -2235,7 +2235,12 @@ export function RentalMap({
                           <Link href={u.href}>
                             <span className="rmap-photo">
                               {u.image && (
-                                <Image src={u.image} alt="" fill sizes="64px" />
+                                <Image
+                                  src={u.image}
+                                  alt={u.name}
+                                  fill
+                                  sizes="64px"
+                                />
                               )}
                             </span>
                             <span className="rmap-unit">

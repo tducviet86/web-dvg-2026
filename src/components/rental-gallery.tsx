@@ -205,7 +205,7 @@ export function RentalGallery({
               {item.type === "image" ? (
                 <Image
                   src={item.src}
-                  alt=""
+                  alt={item.alt}
                   fill
                   sizes="(max-width: 800px) 120px, 20vw"
                   // After the main photo, never competing with it.
@@ -327,7 +327,7 @@ export function RentalGallery({
                     onClick={() => setExpanded(index)}
                   >
                     {item.type === "image" ? (
-                      <Image src={item.src} alt="" fill sizes="96px" />
+                      <Image src={item.src} alt={item.alt} fill sizes="96px" />
                     ) : (
                       <Play size={20} />
                     )}

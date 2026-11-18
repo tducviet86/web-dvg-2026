@@ -203,7 +203,7 @@ export function Tour360({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`${BASE}/${tour.type}/plan.webp`}
-                  alt=""
+                  alt={t("Mặt bằng căn hộ")}
                   width={tour.plan.width}
                   height={tour.plan.height}
                 />
@@ -249,7 +249,7 @@ export function Tour360({
         <img
           className="tour-logo"
           src="/images/dat-vang-group-logo-transparent.png"
-          alt=""
+          alt="Đất Vàng Group"
         />
         <div className="tour-dock">
           {children}

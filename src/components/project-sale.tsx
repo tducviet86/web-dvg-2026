@@ -485,7 +485,7 @@ export function ProjectSalePage({
                       >
                         <Image
                           src={type.image}
-                          alt=""
+                          alt={`Mặt bằng ${type.name}`}
                           fill
                           sizes="(max-width: 640px) 100vw, 25vw"
                         />

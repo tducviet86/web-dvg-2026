@@ -182,7 +182,7 @@ export function ServiceDetail({
         <Image
           className="service-hero-photo"
           src={service.image}
-          alt=""
+          alt={service.name}
           fill
           sizes="100vw"
           loading="eager"
@@ -270,7 +270,7 @@ export function ServiceDetail({
                   <span className="service-other-photo image-wrap">
                     <Image
                       src={s.image}
-                      alt=""
+                      alt={s.name}
                       fill
                       sizes="(max-width: 760px) 100vw, 33vw"
                     />

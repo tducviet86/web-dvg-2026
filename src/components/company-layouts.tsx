@@ -207,7 +207,7 @@ export function CompanyListing({
                       <span className="service-row-photo image-wrap">
                         <Image
                           src={service.image}
-                          alt=""
+                          alt={service.name}
                           fill
                           sizes="(max-width: 760px) 96px, 220px"
                         />

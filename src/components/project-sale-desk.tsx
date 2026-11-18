@@ -586,7 +586,12 @@ export function UnitBrowser({
                   onClick={() => moveTo("site")}
                 >
                   <span className="site-map-thumb">
-                    <Image src={siteMap.image} alt="" fill sizes="64px" />
+                    <Image
+                      src={siteMap.image}
+                      alt={t("Mặt bằng tổng thể")}
+                      fill
+                      sizes="64px"
+                    />
                   </span>
                   <span className="site-map-back-text">
                     <small>{t("Quay lại")}</small>
