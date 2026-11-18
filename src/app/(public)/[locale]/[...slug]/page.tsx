@@ -627,7 +627,10 @@ export async function generateMetadata({
       description,
       url: localizeHref(path, locale),
       ...ogLocale(locale),
-      images: [item.image ?? defaultOgImage],
+      // A page's own openGraph replaces the layout's: repeat type and site.
+      type: "website",
+      siteName: "Đất Vàng Group",
+      images: [item.image ? { url: item.image, alt: title } : defaultOgImage],
     },
     twitter: {
       card: "summary_large_image",

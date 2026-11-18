@@ -55,6 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: href("/"),
       ...ogLocale(locale),
+      // A page's own openGraph replaces the layout's: repeat type and site.
+      type: "website",
+      siteName: "Đất Vàng Group",
       images: [defaultOgImage],
     },
     twitter: { title, description, images: [defaultOgImage] },

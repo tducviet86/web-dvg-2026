@@ -253,6 +253,19 @@ test("rental SEO distinguishes project pages, filters and unpublished sample uni
       "content",
       /images\/projects/,
     );
+    // What Facebook's Sharing Debugger asks for besides title and image.
+    await expect(page.locator('meta[property="og:type"]')).toHaveAttribute(
+      "content",
+      "website",
+    );
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute(
+      "content",
+      "Đất Vàng Group",
+    );
+    await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+      "content",
+      /Cho thuê căn hộ/,
+    );
     const breadcrumb = await page
       .locator('script[type="application/ld+json"]')
       .first()
@@ -265,9 +278,7 @@ test("rental SEO distinguishes project pages, filters and unpublished sample uni
     /noindex/,
   );
   // Grid/list and "Xem thêm" only re-show the same units: not for crawlers.
-  for (const link of await page
-    .locator(".view-toggle a, .load-more a")
-    .all())
+  for (const link of await page.locator(".view-toggle a, .load-more a").all())
     await expect(link).toHaveAttribute("rel", "nofollow");
   await expect(page.locator(".view-toggle a")).toHaveCount(2);
   await page.goto(room);
