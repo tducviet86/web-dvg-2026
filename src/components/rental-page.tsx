@@ -228,14 +228,6 @@ export function RentalPage({
               ))}
             {landing.facts.total > 0 && (
               <dl className="rental-landing-facts">
-                <div>
-                  <dt>Căn phù hợp</dt>
-                  <dd>{landing.facts.total}</dd>
-                </div>
-                <div>
-                  <dt>Còn trống</dt>
-                  <dd>{landing.facts.free}</dd>
-                </div>
                 {landing.facts.low > 0 && (
                   <div>
                     <dt>{sale ? "Giá bán" : "Giá thuê"}</dt>
@@ -272,9 +264,9 @@ export function RentalPage({
             </div>
           </div>
           <div className="rental-results-meta">
-            {/* How many units, and the order people ask about most: price. */}
+            {/* The order people ask about most: price. (No unit count: the
+                company does not show how many units it has.) */}
             <div className="rental-sort">
-              <strong className="rental-count">{result.length} căn</strong>
               {result.length > 1 && (
                 <nav aria-label="Sắp xếp">
                   {(
@@ -492,7 +484,7 @@ export function RentalPage({
                         [
                           // The heading is already translated: translate the
                           // question around it, not the two glued together.
-                          tf("{name}: hiện có bao nhiêu căn, giá thế nào?", {
+                          tf("{name}: giá bao nhiêu, ở những dự án nào?", {
                             name: landing.h1,
                           }),
                           landingSummary(landing.facts),

@@ -3714,17 +3714,13 @@
   overflow-wrap: anywhere;
 }
 
-/* Results: the count and the price order, beside the grid / list toggle. */
+/* Results: the price order, beside the grid / list toggle. */
 .rental-sort {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 16px;
   min-width: 0;
-}
-.rental-count {
-  font-size: 15px;
-  color: var(--c-green-900, #173e34);
 }
 .rental-sort nav {
   display: flex;

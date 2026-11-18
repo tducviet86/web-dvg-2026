@@ -54,7 +54,7 @@ export async function GET() {
     const prices = own.map((u) => u.rentVnd).filter((n): n is number => !!n);
     const facts = [
       p.location,
-      own.length ? `${own.length} căn còn trống` : "",
+      own.length ? "có căn còn trống" : "",
       prices.length ? `giá thuê từ ${million(Math.min(...prices))}/tháng` : "",
       towerNames(p.projectId),
     ].filter(Boolean);
@@ -102,7 +102,7 @@ export async function GET() {
     "Đất Vàng Luxury và Đất Vàng Smart City nay được gộp chung vào Đất Vàng Group.",
     "",
     `Website bằng tiếng Việt (có bản tiếng Anh /en, tiếng Hàn /ko, tiếng Trung /zh). Giá và tình trạng căn hộ lấy trực tiếp từ hệ thống quản lý và thay đổi theo thời điểm${
-      free.length ? `; hiện có ${free.length} căn hộ còn trống để cho thuê` : ""
+      free.length ? "; luôn có căn hộ còn trống để cho thuê" : ""
     }.`,
     "",
     "## Căn hộ cho thuê theo dự án",

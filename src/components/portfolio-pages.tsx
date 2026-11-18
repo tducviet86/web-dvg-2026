@@ -150,7 +150,7 @@ export function ProjectDirectory({
                     }).filter((e): e is [string, string] => !!e[1]),
                   )}${searching ? "" : "#can-ho"}`}
                 >
-                  Xem tất cả {found.length} căn <ArrowRight size={18} />
+                  Xem tất cả căn <ArrowRight size={18} />
                 </Link>
               </div>
             )}

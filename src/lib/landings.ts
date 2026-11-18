@@ -109,7 +109,8 @@ export const landingPrice = (f: Facts) =>
 /** One sentence of facts, for the page's FAQ and llms.txt. */
 export function landingSummary(f: Facts) {
   const price = landingPrice(f);
-  return `Đất Vàng Group đang giới thiệu ${f.total} căn phù hợp (${f.free} căn còn trống)${
+  // No unit counts: the company does not publish the size of its inventory.
+  return `Đất Vàng Group đang có căn phù hợp${
     price ? `, giá ${price}` : ""
   }${f.projects.length ? `, tại ${f.projects.join(", ")}` : ""}. Danh sách trên trang được cập nhật theo tình trạng căn.`;
 }

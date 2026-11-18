@@ -1166,13 +1166,14 @@ test("the whole-screen map filters towers by rooms and rent", async ({
   );
   const left = await rows.count();
   expect(left).toBeLessThanOrEqual(all);
-  // Each tower left says how many of its units fit, as the panel adds up.
+  // Each tower left says it has units that fit, never how many (the
+  // company does not publish the size of its inventory).
   for (let i = 0; i < left; i++)
     await expect(rows.nth(i).locator("small").last()).toHaveText(
-      /^[1-9]\d* căn phù hợp$/,
+      "Có căn phù hợp",
     );
   await expect(panel.locator(".rmap-filter-result")).toHaveText(
-    left ? new RegExp(`căn phù hợp ở ${left} tòa`) : /Chưa có căn phù hợp/,
+    left ? `Có căn phù hợp ở ${left} tòa` : /Chưa có căn phù hợp/,
   );
   // A second choice narrows further; the button shows what is chosen.
   await panel.getByRole("button", { name: "Dưới 10 triệu" }).click();
@@ -1930,12 +1931,12 @@ test("the preview JPEG reads only the site's own photos", async ({
     ).toBe(404);
 });
 
-test("rentals show how many units match and sort by price", async ({
+test("rentals sort by price, without telling how many units there are", async ({
   page,
 }) => {
   await page.goto("/cho-thue");
-  const count = page.locator(".rental-count");
-  await expect(count).toHaveText(/^\d+ căn$/);
+  // How many units the company has is not shown.
+  await expect(page.locator("#can-ho")).not.toContainText(/\d+ căn\b/);
   const sort = page.getByRole("navigation", { name: "Sắp xếp" });
   await expect(sort.getByRole("link", { name: "Đề xuất" })).toHaveAttribute(
     "aria-current",
@@ -1955,4 +1956,21 @@ test("rentals show how many units match and sort by price", async ({
   const known = prices.filter((n) => !Number.isNaN(n));
   expect(known.length).toBeGreaterThan(1);
   expect(known).toEqual([...known].sort((a, b) => a - b));
+});
+
+test("public pages never tell how many units the company has", async ({
+  page,
+}) => {
+  for (const path of ["/cho-thue", "/du-an/van-hanh", "/en/cho-thue"]) {
+    await page.goto(path);
+    const text = await page.locator("main").innerText();
+    expect(text, path).not.toMatch(/\b\d+[ \t]+căn\b/i);
+    // FAQ answers included (also sent to search engines as FAQPage data).
+    const faq = await page
+      .locator('script[type="application/ld+json"]')
+      .allTextContents();
+    expect(faq.join(" "), path).not.toMatch(/\b\d+[ \t]+căn\b/i);
+  }
+  const llms = await (await page.request.get("/llms.txt")).text();
+  expect(llms).not.toMatch(/\b\d+[ \t]+căn\b/i);
 });

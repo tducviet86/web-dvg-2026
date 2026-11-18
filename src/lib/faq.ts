@@ -71,14 +71,13 @@ export function listingFaqs(
     ]);
   }
 
+  // Whether units are free, never how many (the company does not publish
+  // the size of its inventory).
   if (scope.length) {
-    const inProjects = project
-      ? ""
-      : ` thuộc ${new Set(scope.map((u) => u.projectId)).size} dự án`;
     faqs.push([
-      `Hiện còn bao nhiêu căn hộ cho thuê tại ${where}?`,
+      `Hiện còn căn hộ trống để thuê tại ${where} không?`,
       free.length
-        ? `Hiện có ${free.length} căn còn trống trong ${scope.length} căn Đất Vàng Group đang giới thiệu tại ${where}${inProjects}. Danh sách trên trang được cập nhật khi căn được thuê.`
+        ? `Có. Đất Vàng Group đang có căn còn trống tại ${where}. Danh sách trên trang được cập nhật khi căn được thuê; gọi hoặc nhắn Zalo để được giữ lịch xem.`
         : `Các căn Đất Vàng Group giới thiệu tại ${where} hiện đã có khách. Hãy để lại số điện thoại để được báo khi có căn trống.`,
     ]);
   }
@@ -94,7 +93,7 @@ export function listingFaqs(
       faqs.push([
         "Đất Vàng Group cho thuê căn hộ ở những dự án nào?",
         `Đất Vàng Group đang có căn hộ còn trống tại ${list(
-          named.map((p) => `${p.name} (${p.count} căn)`),
+          named.map((p) => p.name),
         )}.`,
       ]);
   }
@@ -114,7 +113,7 @@ export function listingFaqs(
     if (furnished.length)
       faqs.push([
         `Có căn hộ ${where} đầy đủ nội thất, vào ở ngay không?`,
-        `Có. ${furnished.length} trong ${free.length} căn còn trống tại ${where} được trang bị đầy đủ nội thất. Mỗi căn ghi rõ danh sách tiện nghi trên trang chi tiết.`,
+        `Có. ${furnished.length === free.length ? "Các" : "Nhiều"} căn còn trống tại ${where} được trang bị đầy đủ nội thất. Mỗi căn ghi rõ danh sách tiện nghi trên trang chi tiết.`,
       ]);
   }
   return faqs;

@@ -76,7 +76,7 @@ test("the project directory shows the other units in place, with a ring in the b
   page,
 }) => {
   await page.goto("/du-an/van-hanh");
-  const more = page.getByRole("link", { name: /Xem tất cả \d+ căn/ });
+  const more = page.getByRole("link", { name: "Xem tất cả căn" });
   await expect(more.locator("..")).toHaveClass(/load-more/);
   // In the middle of the page.
   const box = (await more.boundingBox())!;

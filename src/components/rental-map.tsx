@@ -1231,15 +1231,10 @@ export function RentalMap({
     for (const b of buildings) {
       const pin = markers.current[b.slug]?.el;
       if (!pin) continue;
-      paintPin(
-        pin,
-        filtering
-          ? t("{name} · {n} căn", { name: b.name, n: fitting(b) })
-          : b.name,
-        b.slug === lit,
-      );
+      paintPin(pin, filtering ? b.name : b.name, b.slug === lit);
       // Names stay hidden until a building is pointed at or chosen; while
-      // filtering, every building with fitting units shows its count.
+      // filtering, every building with fitting units shows its name (never
+      // how many units: the company does not publish its inventory size).
       showPin(
         pin,
         found.includes(b) && (filtering || b.slug === lit) && b.slug !== chosen,
@@ -1695,7 +1690,7 @@ export function RentalMap({
           <p className="rmap-filter-result">
             {filtering
               ? fitTotal
-                ? t("{n} căn phù hợp ở {m} tòa", { n: fitTotal, m: fitTowers })
+                ? t("Có căn phù hợp ở {m} tòa", { m: fitTowers })
                 : t("Chưa có căn phù hợp. Thử mức giá khác.")
               : t("Chọn số phòng hoặc mức giá để xem tòa có căn phù hợp.")}
           </p>
@@ -1786,11 +1781,11 @@ export function RentalMap({
                   <small>{b.location}</small>
                   <small>
                     {filtering
-                      ? t("{n} căn phù hợp", { n: fitting(b) })
+                      ? t("Có căn phù hợp")
                       : b.floors
                         ? t("Có mặt bằng 3D")
                         : b.units.length
-                          ? t("{n} căn đang có", { n: b.units.length })
+                          ? t("Đang có căn")
                           : t("Liên hệ để biết căn trống")}
                   </small>
                 </button>
