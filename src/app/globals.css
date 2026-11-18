@@ -5302,6 +5302,11 @@ html[lang="ko"] :is(h1, h2, h3, em) {
   body:has(.room-mobile-call) .contact-dock {
     bottom: 92px;
   }
+  /* One floating button on phones: the AI assistant is not open yet and
+     its panel only repeats the contact channels. */
+  .contact-dock .dock-row {
+    display: none;
+  }
   /* Above the cookie notice while it shows (its height: analytics.tsx). */
   body:has(.consent-bar) .contact-dock {
     bottom: calc(12px + var(--consent-h, 150px) + 12px);

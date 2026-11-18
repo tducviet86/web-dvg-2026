@@ -96,5 +96,14 @@ test("the project directory shows the other units in place, with a ring in the b
   await expect(page).toHaveURL(/\/du-an\/van-hanh\?limit=\d+/);
   await expect.poll(() => cards.count()).toBeGreaterThan(shown);
   await expect(more).toHaveCount(0);
-  expect(await page.evaluate(() => scrollY)).toBeGreaterThan(before - 200);
+  // From a plain visit the list moves above the projects: the page opens at
+  // the units (#can-ho), not where the button was.
+  expect(before).toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.querySelector("#can-ho")!.getBoundingClientRect().top,
+      ),
+    )
+    .toBeLessThan(300);
 });

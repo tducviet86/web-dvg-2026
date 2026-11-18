@@ -14,7 +14,8 @@ const BUBBLE_KEY = "dvg:support-bubble-closed";
 
 /**
  * Floating contact buttons on every public page: the AI assistant (coming
- * soon), hotline, Zalo and WhatsApp. A greeting bubble shows once per visit.
+ * soon), hotline, Zalo and WhatsApp. A greeting bubble shows once per visit,
+ * once the visitor has looked around. Phones get the contact button only.
  */
 export function ContactDock() {
   const t = useT();
@@ -35,8 +36,18 @@ export function ContactDock() {
       /* storage blocked: still greet */
     }
     if (closed) return;
-    const timer = window.setTimeout(() => setBubble(true), 2500);
-    return () => window.clearTimeout(timer);
+    // Not on arrival (visitors are still finding their way): after they
+    // have looked around a little, or after 20 seconds on the page.
+    const show = () => setBubble(true);
+    const timer = window.setTimeout(show, 20_000);
+    const scrolled = () => {
+      if (window.scrollY > window.innerHeight * 0.6) show();
+    };
+    window.addEventListener("scroll", scrolled, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", scrolled);
+    };
   }, []);
   useEffect(() => {
     if (!botOpen && !contactOpen) return;

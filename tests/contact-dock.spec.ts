@@ -44,3 +44,19 @@ test("one contact button fans out hotline, Zalo and WhatsApp (hover, tap, keyboa
     page.getByRole("dialog", { name: "Trợ lý AI Đất Vàng" }),
   ).toContainText("Sắp ra mắt");
 });
+
+test("phones get one contact button, and no greeting on arrival", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/cho-thue");
+  await expect(page.locator(".dock-contact-toggle")).toBeVisible();
+  // The AI assistant (not open yet) stays off phones.
+  await expect(page.locator(".dock-bot")).toBeHidden();
+  // Desktop: the greeting waits until the visitor has looked around.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(3000);
+  await expect(page.locator(".dock-bubble")).toHaveCount(0);
+  await page.mouse.wheel(0, 1500);
+  await expect(page.locator(".dock-bubble")).toBeVisible();
+});

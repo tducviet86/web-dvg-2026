@@ -75,7 +75,12 @@ export function ProjectDirectory({
     const sale = isSaleSearch(filters);
     const found = searchUnits(units, filters);
     const kind = listingKind(filters.loai, found);
-    const visible = Math.max(12, Number(filters.limit) || 12);
+    // A search (or "see all") shows its results first; a plain visit shows
+    // the projects first, then a few units to rent.
+    const searching = Object.entries(filters).some(
+      ([k, v]) => v && k !== "view",
+    );
+    const visible = searching ? Math.max(12, Number(filters.limit) || 12) : 6;
     return (
       <main
         id="main"
@@ -97,6 +102,7 @@ export function ProjectDirectory({
           locations={[...new Set(units.map((r) => r.location))]}
           units={units}
         />
+        {!searching && <HomeProjects group="operation" projects={projects} />}
         <div className="container">
           <section id="can-ho" className="operation-content">
             <div className="operation-content-heading">
@@ -131,30 +137,34 @@ export function ProjectDirectory({
             )}
             {found.length > visible && (
               <div className="load-more">
-                {/* The rest appears below the cards already read: no jump. */}
+                {/* In a search the rest appears below the cards already read
+                    (no jump); from a plain visit the list moves above the
+                    projects, so it opens at the units. */}
                 <Link
                   className="button button-outline"
-                  scroll={false}
+                  scroll={!searching}
                   href={`/du-an/van-hanh?${new URLSearchParams(
                     Object.entries({
                       ...filters,
                       limit: String(found.length),
                     }).filter((e): e is [string, string] => !!e[1]),
-                  )}`}
+                  )}${searching ? "" : "#can-ho"}`}
                 >
                   Xem tất cả {found.length} căn <ArrowRight size={18} />
                 </Link>
               </div>
             )}
           </section>
-          <div className="operation-content-heading directory-projects-title">
-            <h2>Các dự án đang vận hành</h2>
-            <span className="rental-result-count">
-              {operation.length} dự án
-            </span>
-          </div>
+          {searching && (
+            <div className="operation-content-heading directory-projects-title">
+              <h2>Các dự án đang vận hành</h2>
+              <span className="rental-result-count">
+                {operation.length} dự án
+              </span>
+            </div>
+          )}
         </div>
-        <HomeProjects group="operation" projects={projects} />
+        {searching && <HomeProjects group="operation" projects={projects} />}
       </main>
     );
   }

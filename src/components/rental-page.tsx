@@ -272,6 +272,32 @@ export function RentalPage({
             </div>
           </div>
           <div className="rental-results-meta">
+            {/* How many units, and the order people ask about most: price. */}
+            <div className="rental-sort">
+              <strong className="rental-count">{result.length} căn</strong>
+              {result.length > 1 && (
+                <nav aria-label="Sắp xếp">
+                  {(
+                    [
+                      [undefined, "Đề xuất"],
+                      ["price-asc", "Giá thấp → cao"],
+                      ["price-desc", "Giá cao → thấp"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <Link
+                      key={label}
+                      rel="nofollow"
+                      aria-current={
+                        (filters.sort ?? undefined) === key ? "page" : undefined
+                      }
+                      href={nextUrl({ sort: key, limit: undefined })}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
+              )}
+            </div>
             <div className="view-toggle">
               <Link
                 aria-label="Xem dạng lưới"

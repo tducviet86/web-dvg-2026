@@ -1037,9 +1037,14 @@ textarea {
 }
 .home-operation-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: var(--space-2);
   margin-top: var(--space-2);
+}
+.home-operation-actions a.primary {
+  background: var(--c-green-700);
+  border-color: var(--c-green-700);
+  color: #fff;
 }
 .home-operation-actions a {
   display: flex;
@@ -3109,11 +3114,26 @@ textarea {
   color: #fff;
 }
 @media (max-width: 800px) {
+  /* A slim strip on phones: the text and both answers on one band. */
   .consent-bar {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
     width: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .consent-bar > div {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .consent-bar button {
+    min-height: 32px;
+    padding: 0 12px;
   }
   body:has(.room-mobile-call) .consent-bar {
     bottom: 88px;

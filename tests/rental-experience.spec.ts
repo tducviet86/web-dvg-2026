@@ -1929,3 +1929,30 @@ test("the preview JPEG reads only the site's own photos", async ({
       src,
     ).toBe(404);
 });
+
+test("rentals show how many units match and sort by price", async ({
+  page,
+}) => {
+  await page.goto("/cho-thue");
+  const count = page.locator(".rental-count");
+  await expect(count).toHaveText(/^\d+ căn$/);
+  const sort = page.getByRole("navigation", { name: "Sắp xếp" });
+  await expect(sort.getByRole("link", { name: "Đề xuất" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await sort.getByRole("link", { name: "Giá thấp → cao" }).click();
+  await expect(page).toHaveURL(/sort=price-asc/);
+  await expect(
+    sort.getByRole("link", { name: "Giá thấp → cao" }),
+  ).toHaveAttribute("aria-current", "page");
+  const prices = await page.locator(".property-card").evaluateAll((cards) =>
+    cards.slice(0, 4).map((c) => {
+      const m = (c.textContent ?? "").match(/([\d.]{6,}) ?vnđ/i);
+      return m ? Number(m[1].replace(/\./g, "")) : NaN;
+    }),
+  );
+  const known = prices.filter((n) => !Number.isNaN(n));
+  expect(known.length).toBeGreaterThan(1);
+  expect(known).toEqual([...known].sort((a, b) => a - b));
+});

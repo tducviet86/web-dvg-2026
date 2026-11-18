@@ -70,25 +70,28 @@ export function HomeProjects({
                       ) : (
                         <span>{p.imageType}</span>
                       )}
-                      <Link href={`/du-an/${p.slug}`}>
-                        {development ? "Xem chi tiết" : "Khám phá căn hộ"}{" "}
-                        <ArrowUpRight size={15} />
-                      </Link>
+                      {development && (
+                        <Link href={`/du-an/${p.slug}`}>
+                          Xem chi tiết <ArrowUpRight size={15} />
+                        </Link>
+                      )}
                     </div>
+                    {/* Two clear choices: the project, or its units to rent
+                        (buying and consigning are on the project page). */}
                     {!development && (
                       <nav
                         className="home-operation-actions"
-                        aria-label={`Dịch vụ tại ${p.name}`}
+                        aria-label={`Xem ${p.name}`}
                       >
-                        <Link href={`/du-an/${p.slug}?nhu-cau=mua-ban#nhu-cau`}>
-                          Mua bán
-                        </Link>
-                        <Link href={`/du-an/${p.slug}?nhu-cau=thue#nhu-cau`}>
-                          Cho thuê
-                        </Link>
-                        <Link href={`/du-an/${p.slug}?nhu-cau=ky-gui#nhu-cau`}>
-                          Ký gửi
-                        </Link>
+                        <Link href={`/du-an/${p.slug}`}>Xem dự án</Link>
+                        {p.categories.includes("rent") && (
+                          <Link
+                            className="primary"
+                            href={`/cho-thue/du-an/${p.slug}`}
+                          >
+                            Xem căn cho thuê
+                          </Link>
+                        )}
                       </nav>
                     )}
                   </div>

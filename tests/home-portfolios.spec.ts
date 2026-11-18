@@ -28,10 +28,14 @@ test("project entry points separate introductions from operations", async ({
   await expect(page.locator("#san-pham li")).toHaveCount(3);
   await page.goto("/du-an/van-hanh");
   await expect(page.locator(".home-project-cards article")).toHaveCount(5);
-  const monarchy = page.getByRole("navigation", {
-    name: /Dịch vụ tại .*Monarchy/,
-  });
-  await monarchy.getByRole("link", { name: "Cho thuê", exact: true }).click();
+  // Each project card: two clear choices, no longer five.
+  const monarchy = page.getByRole("navigation", { name: /Xem .*Monarchy/ });
+  await expect(monarchy.getByRole("link")).toHaveText([
+    "Xem dự án",
+    "Xem căn cho thuê",
+  ]);
+  await monarchy.getByRole("link", { name: "Xem căn cho thuê" }).click();
+  await expect(page).toHaveURL(/\/cho-thue\/du-an\//);
   await expect(page.locator(".property-card")).not.toHaveCount(0);
   await expect(page.locator(".property-card .card-meta").first()).toContainText(
     "Monarchy",
@@ -139,7 +143,21 @@ test("project directories open on full-screen photos with their own shortcuts", 
   await page.goto("/du-an/van-hanh");
   await expect(page.locator("main h1")).toHaveText("Dự án đang vận hành");
   await expect(page.locator("main form")).toHaveCount(1);
-  await expect(page.locator("#can-ho .property-card")).not.toHaveCount(0);
+  // A plain visit: the projects first, then a few units to rent.
+  const order = await page.evaluate(() => {
+    const projects = document.querySelector("#du-an-van-hanh");
+    const units = document.querySelector("#can-ho");
+    return projects && units
+      ? !!(
+          projects.compareDocumentPosition(units) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+        )
+      : null;
+  });
+  expect(order).toBe(true);
+  const units = page.locator("#can-ho .property-card");
+  await expect(units).not.toHaveCount(0);
+  expect(await units.count()).toBeLessThanOrEqual(6);
   const search = page.locator(".hero-search");
   await search.getByRole("tab", { name: "Mua" }).click();
   await search.getByRole("button", { name: "Tìm kiếm" }).click();

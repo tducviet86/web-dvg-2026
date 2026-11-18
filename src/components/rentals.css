@@ -3713,3 +3713,44 @@
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
+
+/* Results: the count and the price order, beside the grid / list toggle. */
+.rental-sort {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  min-width: 0;
+}
+.rental-count {
+  font-size: 15px;
+  color: var(--c-green-900, #173e34);
+}
+.rental-sort nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rental-sort nav a {
+  padding: 6px 12px;
+  border: 1px solid var(--line, #d9ddd5);
+  border-radius: 999px;
+  font-size: 13px;
+  color: #4f6158;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rental-sort nav a[aria-current="page"] {
+  border-color: var(--green, #1d4d3f);
+  background: var(--green, #1d4d3f);
+  color: #fff;
+}
+@media (max-width: 600px) {
+  .rental-results-meta {
+    align-items: flex-start;
+  }
+  .rental-sort nav a {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
