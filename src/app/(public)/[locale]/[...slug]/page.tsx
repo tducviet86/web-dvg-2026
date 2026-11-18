@@ -55,6 +55,7 @@ import { href, setRequestLocale, t } from "@/i18n/server";
 import type { PortfolioProject, Post, Property } from "@/types";
 import { ProjectProductPage } from "@/components/project-product-page";
 import { productPath } from "@/lib/project-products";
+import { shareImage } from "@/lib/og-image";
 import {
   MIN_LANDING_UNITS,
   landingFacts,
@@ -630,13 +631,13 @@ export async function generateMetadata({
       // A page's own openGraph replaces the layout's: repeat type and site.
       type: "website",
       siteName: "Đất Vàng Group",
-      images: [item.image ? { url: item.image, alt: title } : defaultOgImage],
+      images: [item.image ? shareImage(item.image, title) : defaultOgImage],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [item.image ?? defaultOgImage],
+      images: [item.image ? shareImage(item.image, title) : defaultOgImage],
     },
   };
 }

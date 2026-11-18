@@ -249,10 +249,24 @@ test("rental SEO distinguishes project pages, filters and unpublished sample uni
       "href",
       new RegExp(`/cho-thue/du-an/${slug}$`),
     );
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    // Link previews get the photo as a 1200×630 JPEG (WebP is not shown by
+    // every chat app), at /og-image.jpg.
+    const og = page.locator('meta[property="og:image"]');
+    await expect(og).toHaveAttribute(
       "content",
-      /images\/projects/,
+      /\/og-image\.jpg\?src=%2Fimages%2Fprojects/,
     );
+    await expect(
+      page.locator('meta[property="og:image:type"]'),
+    ).toHaveAttribute("content", "image/jpeg");
+    const jpeg = await page.request.get(
+      new URL((await og.getAttribute("content"))!).pathname +
+        new URL((await og.getAttribute("content"))!).search,
+    );
+    expect(jpeg.status()).toBe(200);
+    expect(jpeg.headers()["content-type"]).toBe("image/jpeg");
+    const bytes = await jpeg.body();
+    expect([bytes[0], bytes[1]]).toEqual([0xff, 0xd8]);
     // What Facebook's Sharing Debugger asks for besides title and image.
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute(
       "content",
@@ -1897,4 +1911,21 @@ test("a typed SEO title never ends with the brand twice", async () => {
     absolute: "Căn 2PN | Đất Vàng Group",
   });
   expect(pageTitle("Căn 2PN view sông")).toBe("Căn 2PN view sông");
+});
+
+test("the preview JPEG reads only the site's own photos", async ({
+  request,
+}) => {
+  for (const src of [
+    "https://example.com/a.webp",
+    "/images/../../etc/passwd",
+    "/images/khong-co.jpg",
+    "",
+  ])
+    expect(
+      (
+        await request.get(`/og-image.jpg?src=${encodeURIComponent(src)}`)
+      ).status(),
+      src,
+    ).toBe(404);
 });
