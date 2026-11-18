@@ -360,7 +360,12 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
         (page.title.includes(project.name)
           ? page.title
           : `${page.title} | ${project.name}`),
-      description: page.seo.description || page.intro,
+      description:
+        page.seo.description ||
+        withContext(
+          page.intro,
+          `Liên hệ Đất Vàng Group để được tư vấn về ${inDaNang(project.name)}.`,
+        ),
       image: page.coverImage?.url || project.image,
       parents: [{ name: project.name, path: `/du-an/${project.slug}` }],
       render: () => (
@@ -488,7 +493,7 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
     if (service.href !== `/dich-vu/${service.slug}`)
       permanentRedirect(href(service.href));
     return {
-      title: service.seoTitle || service.name,
+      title: service.seoTitle || `${service.name} tại Đà Nẵng`,
       description:
         service.seoDescription ||
         withContext(
