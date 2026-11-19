@@ -3750,3 +3750,41 @@
     font-size: 12px;
   }
 }
+
+/* /da-luu: units saved with the heart button. */
+.saved-head {
+  max-width: 680px;
+  margin: 6px 0 30px;
+}
+.saved-head h1 {
+  margin: 10px 0 12px;
+  font-size: clamp(30px, 4vw, 44px);
+}
+.saved-head p,
+.saved-note {
+  color: #536857;
+}
+.saved-note {
+  margin-top: 24px;
+  font-size: var(--fs-xs);
+}
+.saved-sale {
+  position: relative;
+}
+.saved-sale .favorite {
+  z-index: 3;
+}
+.saved-empty {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 56px 16px;
+  border: 1px dashed #d8d1bd;
+  border-radius: 6px;
+  text-align: center;
+  color: #806b44;
+}
+.saved-empty p {
+  margin: 0;
+  color: #173e34;
+}

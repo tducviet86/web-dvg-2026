@@ -6,11 +6,12 @@
  * libraries just for these.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { readStore, writeStore } from "@/lib/storage";
 import { postPublic } from "@/lib/api/client";
-import { useT } from "@/i18n/client";
+import { useLocalizeHref, useT } from "@/i18n/client";
 import { track } from "@/lib/analytics";
 
 function subscribeNarrow(callback: () => void) {
@@ -128,8 +129,43 @@ function subscribeFavorites(callback: () => void) {
     window.removeEventListener("storage", callback);
   };
 }
+/** Saved units, newest last; also in a cookie so /da-luu renders them. */
+const SAVED_COOKIE = "dvg_saved";
+const SAVED_MAX = 50;
+const savedIds = () => readStore<string[]>("favorites", []);
+function writeSavedCookie(ids: string[]) {
+  document.cookie = `${SAVED_COOKIE}=${ids.slice(-SAVED_MAX).join(".")}; path=/; max-age=31536000; samesite=lax`;
+}
+/** How many units this visitor saved (0 on the server). */
+export function useSavedCount() {
+  return useSyncExternalStore(
+    subscribeFavorites,
+    () => savedIds().length,
+    () => 0,
+  );
+}
+/**
+ * On /da-luu: keeps the cookie in step with the browser's list (units saved
+ * before the cookie existed, or removed on this page) and redraws the page.
+ */
+export function SavedSync({ shown }: { shown: string }) {
+  const router = useRouter();
+  const ids = useSyncExternalStore(
+    subscribeFavorites,
+    () => savedIds().slice(-SAVED_MAX).join("."),
+    () => shown,
+  );
+  useEffect(() => {
+    if (ids === shown) return;
+    writeSavedCookie(ids ? ids.split(".") : []);
+    router.refresh();
+  }, [ids, shown, router]);
+  return null;
+}
 export function Favorite({ id }: { id: string }) {
   const t = useT();
+  const router = useRouter();
+  const localize = useLocalizeHref();
   const saved = useSyncExternalStore(
     subscribeFavorites,
     () => readStore<string[]>("favorites", []).includes(id),
@@ -142,12 +178,18 @@ export function Favorite({ id }: { id: string }) {
       aria-label={t(saved ? "Bỏ yêu thích" : "Lưu căn hộ yêu thích")}
       aria-pressed={saved}
       onClick={() => {
-        const current = readStore<string[]>("favorites", []);
+        const current = savedIds();
         const next = saved ? current.filter((x) => x !== id) : [...current, id];
         if (writeStore("favorites", next)) {
-          toast.success(
-            t(saved ? "Đã bỏ khỏi yêu thích" : "Đã lưu căn hộ yêu thích"),
-          );
+          writeSavedCookie(next);
+          if (saved) toast.success(t("Đã bỏ khỏi yêu thích"));
+          else
+            toast.success(t("Đã lưu căn hộ yêu thích"), {
+              action: {
+                label: t("Xem căn đã lưu"),
+                onClick: () => router.push(localize("/da-luu")),
+              },
+            });
         }
       }}
     >

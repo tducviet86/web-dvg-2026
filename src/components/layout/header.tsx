@@ -9,10 +9,11 @@ import {
   X,
   ArrowUpRight,
   ChevronDown,
+  Heart,
   Phone,
   Search,
 } from "lucide-react";
-import { Progress } from "../client-basics";
+import { Progress, useSavedCount } from "../client-basics";
 import { LanguageSwitcher } from "../translator";
 import { BackTrail } from "./back-button";
 import { useT } from "@/i18n/client";
@@ -279,6 +280,7 @@ export function SiteHeader({ services = [] }: { services?: NavLink[] }) {
           <DesktopNavigation key={path} path={path} items={items} />
           <div className="header-actions">
             <LanguageSwitcher />
+            <SavedLink />
             {/* Phones show the icon and the short label instead. */}
             <Link className="header-cta" href="/cho-thue">
               <Search
@@ -401,5 +403,21 @@ export function SiteHeader({ services = [] }: { services?: NavLink[] }) {
         </div>
       </header>
     </>
+  );
+}
+/** Heart with the number of saved units; shown once the visitor saved one. */
+function SavedLink() {
+  const t = useT();
+  const count = useSavedCount();
+  if (!count) return null;
+  return (
+    <Link
+      className="header-saved"
+      href="/da-luu"
+      aria-label={t("Căn đã lưu ({n})", { n: count })}
+    >
+      <Heart size={18} aria-hidden="true" />
+      <span aria-hidden="true">{count}</span>
+    </Link>
   );
 }

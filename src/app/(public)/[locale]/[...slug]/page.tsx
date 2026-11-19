@@ -2,6 +2,7 @@
 import { cache } from "react";
 import NextLink from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import {
   ListingPage,
@@ -10,6 +11,7 @@ import {
   ArticlePage,
 } from "@/components/public-pages";
 import { JobDetail, JobsPage } from "@/components/jobs";
+import { SavedPage } from "@/components/saved-page";
 import { typeFromSlug } from "@/lib/jobs";
 import {
   ProjectDirectory,
@@ -198,6 +200,25 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       image: content.portfolio.find((p) => p.categories.includes("rent"))
         ?.image,
       render: (filters) => <RentalPage filters={filters} content={content} />,
+    };
+  }
+  if (path === "da-luu") {
+    // Unit ids saved with the heart button (client-basics.tsx), oldest first.
+    const ids = ((await cookies()).get("dvg_saved")?.value ?? "")
+      .split(".")
+      .filter((id) => /^[\w-]{1,64}$/.test(id))
+      .slice(-50);
+    const { properties } = await getSiteContent();
+    const units = ids
+      .map((id) => properties.find((p) => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => !!p && !p.delisted)
+      .reverse();
+    return {
+      title: "Căn hộ đã lưu",
+      description:
+        "Các căn hộ bạn đã lưu trên website Đất Vàng Group, để xem lại và so sánh trước khi hẹn xem căn.",
+      noindex: true,
+      render: () => <SavedPage ids={ids} units={units} />,
     };
   }
   if (path === "ban-do") {

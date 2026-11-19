@@ -5428,3 +5428,27 @@ body :is(input, select, textarea, button) {
     width: min(210px, calc(100vw - 32px));
   }
 }
+/* Header: units the visitor saved (header.tsx SavedLink). */
+.header-saved {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: inherit;
+}
+.header-saved span {
+  position: absolute;
+  top: 1px;
+  right: -2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #9b4b42;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
