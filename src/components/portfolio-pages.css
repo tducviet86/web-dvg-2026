@@ -3994,14 +3994,6 @@ a.rmap-reset {
   text-transform: uppercase;
   color: var(--c-green-900);
 }
-.rmap-split h4 b {
-  min-width: 24px;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: #f3ead2;
-  font-size: 12px;
-  text-align: center;
-}
 .rmap-split .rmap-units a {
   grid-template-columns: 56px minmax(0, 1fr);
   gap: 9px;

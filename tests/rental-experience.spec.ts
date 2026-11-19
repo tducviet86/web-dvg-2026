@@ -178,7 +178,7 @@ test("room gallery loads supplied MP4, opens photos, and keeps call CTAs without
   await page.goto(room);
   await expect(page.locator("main form")).toHaveCount(0);
   await expect(
-    page.locator('.room-contact-panel a[href="tel:0911296979"]'),
+    page.locator('.room-contact-panel a[href="tel:+84911296979"]'),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Xem video căn hộ", exact: true })
@@ -1109,6 +1109,12 @@ test("the rental map lists buildings without filters and opens a building's unit
   const name = await buildings.first().textContent();
   await buildings.first().click();
   await expect(section.locator(".rmap-head h3")).toHaveText(name ?? "");
+  // How many units a building has is never shown.
+  await expect(section.locator(".rmap-tabs")).not.toContainText(/\d/);
+  await section.getByRole("tab", { name: "Căn hộ" }).click();
+  await expect(section.locator(".rmap-split h4").first()).toBeVisible();
+  for (const heading of await section.locator(".rmap-split h4").all())
+    await expect(heading).not.toContainText(/\d/);
   await section.getByRole("button", { name: "Đóng" }).click();
   await expect(section.locator(".rmap-panel")).toHaveCount(0);
   // A building's own rental page has no city map.

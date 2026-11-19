@@ -24,7 +24,7 @@ test("one contact button fans out hotline, Zalo and WhatsApp (hover, tap, keyboa
   );
   await expect(
     channels.getByRole("link", { name: /Gọi hotline/ }),
-  ).toHaveAttribute("href", "tel:0911296979");
+  ).toHaveAttribute("href", "tel:+84911296979");
   const audit = await new AxeBuilder({ page })
     .include(".contact-dock")
     .withTags(["wcag2a", "wcag2aa"])

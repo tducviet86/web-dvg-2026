@@ -81,18 +81,20 @@ test("all portfolio details resolve and room calls use a configured number only"
     await expect(page.locator("main .contact-form")).toHaveCount(0);
   }
   expect(telephoneHref("+84 901 234 567")).toBe("tel:+84901234567");
+  // Callable from a foreign phone too.
+  expect(telephoneHref("0911 29 69 79")).toBe("tel:+84911296979");
   expect(telephoneHref("")).toBeNull();
   expect(telephoneHref("javascript:alert(1)")).toBeNull();
   await page.goto("/cho-thue/can-ho-sun-panoma-demo-02");
   const phone = page.locator('.room-contact-panel a[href^="tel:"]');
-  await expect(phone).toHaveAttribute("href", "tel:0911296979");
+  await expect(phone).toHaveAttribute("href", "tel:+84911296979");
   await expect(phone).toContainText("0911 29 69 79");
   await page.setViewportSize({ width: 390, height: 844 });
   const gallery = await page.locator(".rental-gallery").boundingBox();
   const note = await page.locator(".room-image-note").boundingBox();
   expect(note!.y).toBeGreaterThanOrEqual(gallery!.y + gallery!.height);
   await expect(
-    page.locator('.room-mobile-call a[href="tel:0911296979"]'),
+    page.locator('.room-mobile-call a[href="tel:+84911296979"]'),
   ).toBeVisible();
 });
 

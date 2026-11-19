@@ -147,7 +147,6 @@ export function RentalPage({
               ? {
                   mainEntity: {
                     "@type": "ItemList",
-                    numberOfItems: result.length,
                     itemListElement: result.slice(0, 20).map((p, index) => ({
                       "@type": "ListItem",
                       position: index + 1,

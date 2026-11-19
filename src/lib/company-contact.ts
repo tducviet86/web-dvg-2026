@@ -11,8 +11,9 @@ export const companyFacebook =
 
 const digits = (phone: string) => phone.replace(/[\s().-]/g, "");
 
+/** Dialable from any country: "0911 29 69 79" → "tel:+84911296979". */
 export function telephoneHref(phone = companyHotline) {
-  const normalized = digits(phone);
+  const normalized = digits(phone).replace(/^0(?=\d{9}$)/, "+84");
   return /^\+?\d{9,15}$/.test(normalized) ? `tel:${normalized}` : null;
 }
 /** Zalo chat with a Vietnamese number: https://zalo.me/0911296979. */

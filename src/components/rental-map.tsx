@@ -2183,7 +2183,7 @@ export function RentalMap({
                   ...(current.facts.length
                     ? ([["info", t("Tổng quan")]] as const)
                     : []),
-                  ["units", t("Căn ({n})", { n: units.length })],
+                  ["units", t("Căn hộ")],
                   ...(full ? ([["around", t("Quanh đây")]] as const) : []),
                 ] as const
               ).map(([key, label]) => (
@@ -2226,9 +2226,7 @@ export function RentalMap({
                   ] as const
                 ).map(([key, label, list]) => (
                   <section key={key} aria-label={label}>
-                    <h4>
-                      {label} <b>{list.length}</b>
-                    </h4>
+                    <h4>{label}</h4>
                     <ul className="rmap-units">
                       {[...list].sort(byHeat).map((u, i) => (
                         <li key={u.slug}>
