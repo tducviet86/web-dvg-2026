@@ -19,7 +19,7 @@ import { vndFull } from "@/lib/utils";
 import { LuxuryBadges } from "./cards";
 import { SideScroller } from "./side-scroller";
 import { TRENDING_SCORE } from "@/lib/highlights";
-import { availabilityRank, statusLabel } from "@/lib/availability";
+import { availabilityRank, statusLabel, vacantNow } from "@/lib/availability";
 import {
   floorLabel,
   hasRooms,
@@ -147,7 +147,11 @@ export function RentalMini({
               <span className="card-type-tag">{typeTag(unit)}</span>
             )}
             {availabilityRank(unit) < 2 && (
-              <span className="rent-mini-status">{statusLabel(unit)}</span>
+              <span
+                className={`rent-mini-status ${vacantNow(unit) ? "is-free" : ""}`}
+              >
+                {statusLabel(unit)}
+              </span>
             )}
             {fresh && <span className="rent-mini-status is-new">Mới đăng</span>}
           </span>

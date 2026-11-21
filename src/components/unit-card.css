@@ -54,13 +54,22 @@ article.property-card .image-badge::before {
   border-radius: 50%;
   background: #9aa59e;
 }
+/* Free units in bright green, never the dark green of the HOT badges. */
 article.property-card .image-badge.available {
-  background: #0f2a22d9;
-  color: #f3e6c4;
+  background: #17834f;
+  color: #fff;
 }
 article.property-card .image-badge.available::before {
-  background: #5fd08a;
-  box-shadow: 0 0 0 3px #5fd08a33;
+  background: #b8f2cf;
+  box-shadow: 0 0 0 3px #b8f2cf40;
+}
+/* Taken units: a grey badge and a black-and-white photo. */
+article.property-card .image-badge.rented {
+  background: #2b302ee0;
+  color: #d9dedb;
+}
+article.property-card:has(.image-badge.rented) .image-wrap img {
+  filter: grayscale(1) brightness(0.85);
 }
 article.property-card .lux-badges {
   top: 52px;
@@ -239,10 +248,11 @@ article.property-card .property-bottom small {
   text-transform: uppercase;
   color: #ffffffbf;
 }
+/* Prices in gold everywhere: bright on the photo, deeper on white. */
 article.property-card .property-bottom strong {
-  font-size: 21px;
-  font-weight: 600;
-  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  color: #f0cf7a;
   font-variant-numeric: tabular-nums;
 }
 article.property-card .property-bottom p > span {
@@ -292,7 +302,7 @@ article.property-card .property-detail-label {
     font-size: 18px;
   }
   article.property-card .property-bottom strong {
-    font-size: 20px;
+    font-size: 25px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -413,7 +423,7 @@ article.property-card .card-tags .image-badge {
   color: #5f6f66;
 }
 .list-view article.property-card .property-bottom strong {
-  color: var(--c-green-900);
+  color: #8a6a1f;
 }
 .list-view .sale-card-link {
   display: grid;
@@ -446,7 +456,7 @@ article.property-card .card-tags .image-badge {
   border-top-color: #e0e4d9;
 }
 .list-view .sale-card-price {
-  color: var(--c-gold-700);
+  color: #8a6a1f;
 }
 .list-view .sale-card-specs {
   color: #3c5148;
@@ -501,7 +511,7 @@ article.property-card .card-tags .image-badge {
     display: none;
   }
   .list-view article.property-card .property-bottom strong {
-    font-size: 15px;
+    font-size: 19px;
   }
   .list-view article.property-card .property-bottom p > span {
     font-size: 11.5px;

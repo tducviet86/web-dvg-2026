@@ -1736,8 +1736,9 @@ textarea {
 }
 .sale-card-price {
   font-family: var(--font-heading);
-  font-size: var(--fs-xl);
-  color: var(--c-gold-300);
+  font-size: calc(var(--fs-xl) * 1.15);
+  font-weight: 700;
+  color: #f0cf7a;
 }
 .sale-card-specs {
   font-size: var(--fs-xs);

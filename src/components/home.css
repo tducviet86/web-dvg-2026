@@ -375,6 +375,14 @@
   opacity: 0;
   pointer-events: none;
 }
+/* Free now: the same bright green as on the rental cards. */
+.rent-mini-status.is-free {
+  background: #17834f;
+  color: #fff;
+}
+.rent-mini-status.is-free::before {
+  background: #b8f2cf;
+}
 .rent-mini-status.is-new {
   background: var(--c-gold-400);
   color: var(--c-green-900);
@@ -572,8 +580,8 @@
   color: #ffffffd9;
 }
 .rent-mini-price b {
-  font: 500 18px/1 var(--font-heading);
-  color: #fff;
+  font: 700 21px/1 var(--font-heading);
+  color: #f0cf7a;
 }
 .rent-mini-open {
   display: grid;

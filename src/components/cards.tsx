@@ -150,7 +150,7 @@ export function PropertyCard({
         <CardPhotos photos={hoverPhotos(property)} />
         <span className="card-tags">
           <span
-            className={`image-badge ${vacantNow(property) ? "available" : ""}`}
+            className={`image-badge ${vacantNow(property) ? "available" : property.status === "Đã cho thuê" ? "rented" : ""}`}
           >
             {statusLabel(property)}
           </span>
