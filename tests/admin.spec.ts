@@ -292,7 +292,7 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await expect(kinds.first().getByLabel("Shophouse")).toHaveCount(1);
   await expect(kinds.nth(1).locator(".field-pill")).toHaveText(["Nhà phố"]);
   // New units start as 1PN; picking a type fills bedrooms / bathrooms.
-  await expect(form.getByLabel("1 phòng ngủ")).toBeChecked();
+  await expect(form.getByLabel("1 phòng ngủ", { exact: true })).toBeChecked();
   for (const [type, rooms] of [
     ["Studio", ["0", "1"]],
     ["3 phòng ngủ", ["3", "2"]],

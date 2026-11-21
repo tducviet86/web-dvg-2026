@@ -78,6 +78,7 @@ export const hoverPhotos = (property: Property, count = 4) =>
 /** Album of the project (Admin › Dự án › Bộ sưu tập ảnh) for each unit type. */
 const MODEL_ALBUM: Record<string, string> = {
   "1pn": "Căn 1 phòng ngủ",
+  "1pn-plus": "Căn 1 phòng ngủ",
   "2pn": "Căn 2 phòng ngủ",
   "2pn-plus": "Căn 2 phòng ngủ",
   "3pn": "Căn 3 phòng ngủ",

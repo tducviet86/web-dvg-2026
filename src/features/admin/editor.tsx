@@ -73,8 +73,11 @@ import { ALL_RENT_FEES, RENT_FEES } from "@/lib/included-fees";
 const ROOMS_BY_TYPE: Record<string, [number, number]> = {
   studio: [0, 1],
   "1pn": [1, 1],
+  "1pn-plus": [1, 1],
   "2pn": [2, 2],
   "2pn-plus": [2, 2],
+  // 2 PN + a studio: three rooms to sleep in, three bathrooms.
+  dualkey: [3, 3],
   "3pn": [3, 2],
   "nha-pho": [3, 3],
   // No rooms: the fields are hidden and saved as 0.

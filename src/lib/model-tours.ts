@@ -431,7 +431,7 @@ const SCENES: Record<string, TourScene[]> = {
   ],
 };
 
-/** 2 PN +1 uses the 2 PN apartment. */
+/** 1 PN +1 and 2 PN +1 use the 1 PN and 2 PN apartments. */
 const PLANS: Record<string, TourPlan> = {
   "1pn": {
     width: 569,
@@ -478,7 +478,7 @@ const PLANS: Record<string, TourPlan> = {
 };
 
 export function modelTour(typeCode?: string): Tour | undefined {
-  const type = typeCode === "2pn-plus" ? "2pn" : typeCode;
+  const type = typeCode?.replace(/-plus$/, "");
   return type && SCENES[type]
     ? { type, scenes: SCENES[type], plan: PLANS[type] }
     : undefined;

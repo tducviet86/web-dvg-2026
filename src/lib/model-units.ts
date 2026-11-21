@@ -205,6 +205,7 @@ const THREE_BEDROOM: ModelUnit = {
 
 const MODELS: Record<string, ModelUnit> = {
   "1pn": ONE_BEDROOM,
+  "1pn-plus": ONE_BEDROOM,
   "2pn": TWO_BEDROOM,
   "2pn-plus": TWO_BEDROOM,
   "3pn": THREE_BEDROOM,
