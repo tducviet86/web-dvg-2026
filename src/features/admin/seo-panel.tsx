@@ -107,6 +107,9 @@ type Proposal = {
     title: string;
     seoTitle: string | null;
     seoDescription: string | null;
+    /** Google shows `from` (e.g. the home page) for a search naming a
+        project; the proposal is for that project's page (`path`). */
+    instead?: { from: string; path: string };
   };
   seoTitle: string;
   seoDescription: string;
@@ -339,7 +342,7 @@ function Keywords() {
     try {
       // What the page says now: the AI starts from it (home, /mua-ban… have
       // no text of their own in Admin).
-      const current = await readPage(pathOf(row.page));
+      let current = await readPage(pathOf(row.page));
       const res = await api<{
         data: {
           target: Proposal["target"];
@@ -353,6 +356,8 @@ function Keywords() {
           description: current.description.slice(0, 500),
         }),
       });
+      const instead = res.data.target.instead;
+      if (instead) current = await readPage(instead.path);
       setProposal({
         row,
         target: res.data.target,
@@ -381,7 +386,11 @@ function Keywords() {
         (d) =>
           d && {
             ...d,
-            rewritten: { ...d.rewritten, [slugOf(proposal.row.page)]: at },
+            // The page actually changed: a project page, not the home page.
+            rewritten: {
+              ...d.rewritten,
+              [slugOf(target.instead?.path ?? proposal.row.page)]: at,
+            },
           },
       );
       toast.success(
@@ -641,6 +650,14 @@ function Keywords() {
               Đây là dòng chữ khách thấy trên Google; sửa được trước khi áp
               dụng, không có gì tự lưu.
             </Dialog.Description>
+            {proposal?.target.instead && (
+              <p className="seo-instead">
+                Google đang hiện trang {proposal.target.instead.from} cho cụm từ
+                này. Đây là tên dự án, nên AI viết lại trang dự án{" "}
+                {proposal.target.instead.path} để Google chọn đúng trang, không
+                đổi tiêu đề của {proposal.target.instead.from}.
+              </p>
+            )}
             <Dialog.Close className="admin-dialog-close" aria-label="Đóng">
               <X size={18} />
             </Dialog.Close>
