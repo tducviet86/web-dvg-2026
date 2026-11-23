@@ -45,11 +45,14 @@ const plain = (value: string) =>
  * names the brand (SEO titles typed in Admin often do) is used as it is, and
  * a short "| Đất Vàng" at its end gives way to the full one, so the brand
  * never shows twice. A title that would pass 60 characters with the brand
- * (what search results show) is used without it.
+ * (what search results show; a Korean or Chinese character counts as two,
+ * being about twice as wide) is used without it.
  */
 const BRAND_SUFFIX = " | Đất Vàng Group";
+const width = (s: string) =>
+  s.length + (s.match(/[\p{Script=Hangul}\p{Script=Han}]/gu)?.length ?? 0);
 export const pageTitle = (title: string) => {
   if (plain(title).includes("dat vang group")) return { absolute: title };
   const own = title.replace(/\s*[|\-–—·]\s*đất\s+vàng\s*$/iu, "");
-  return (own + BRAND_SUFFIX).length > 60 ? { absolute: own } : own;
+  return width(own + BRAND_SUFFIX) > 60 ? { absolute: own } : own;
 };

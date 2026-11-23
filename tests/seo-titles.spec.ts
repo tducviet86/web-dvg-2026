@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { saleFaqs } from "../src/lib/faq";
 import { towerHandover } from "../src/lib/handover";
+import { pageTitle } from "../src/i18n/metadata";
 import { apiAs, login } from "./helpers";
 
 test("old website URLs move permanently to the matching page", async ({
@@ -125,6 +126,15 @@ test("a long title leaves out the brand instead of passing 60 characters", async
   await page.goto("/mua-ban");
   await expect(page).toHaveTitle("Mua bán căn hộ Đà Nẵng | Đất Vàng Group");
   await api.send("delete", `/admin/properties/${created.data.id}`);
+});
+
+test("Korean and Chinese titles leave out the brand sooner (wider letters)", () => {
+  // 54 characters with the brand, but 7 of them Hangul: as wide as 61.
+  const ko = "Capital Square의 샘플 세대 2 침실 +1 77.84m²";
+  expect(pageTitle(ko)).toEqual({ absolute: ko });
+  const zh = "出租 The Monarchy 海景2卧室公寓";
+  expect(pageTitle(zh)).toBe(zh);
+  expect(pageTitle("Mua bán căn hộ Đà Nẵng")).toBe("Mua bán căn hộ Đà Nẵng");
 });
 
 test("/mua-ban is an indexable page that links to the units on sale", async ({
