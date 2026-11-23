@@ -374,10 +374,59 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await expect(form.locator(".media-manager-head small")).toHaveText(
     "2 ảnh · 1 video",
   );
+  // On a photo, only the cover star; the rest is in "Chỉnh sửa ảnh".
+  await expect(
+    tiles.getByRole("button", { name: /lên trước|ra sau/ }),
+  ).toHaveCount(0);
+  await expect(tiles.getByRole("button", { name: /^Xóa/ })).toHaveCount(0);
+  // "Chỉnh sửa ảnh": the photos large in a popup, ordered by dragging.
+  const src = (i: number) =>
+    tiles.nth(i).locator("img, video").getAttribute("src");
+  const [first, second] = [await src(0), await src(1)];
+  await form.getByRole("button", { name: "Chỉnh sửa ảnh" }).click();
+  const sorter = page.getByRole("dialog", { name: "Chỉnh sửa ảnh & video" });
+  const big = sorter.locator(".media-sort-grid li");
+  await expect(big).toHaveCount(3);
+  const drag = async (from: number, to: number) => {
+    const a = (await big.nth(from).boundingBox())!;
+    const b = (await big.nth(to).boundingBox())!;
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, {
+      steps: 10,
+    });
+    await page.mouse.up();
+  };
+  // Dragged to the front, the second photo becomes the main one.
+  await drag(1, 0);
+  await expect(big.nth(0).locator("img")).toHaveAttribute("src", second!);
+  await expect(big.nth(0)).toHaveAttribute("data-cover", "true");
+  await expect(big.nth(0)).toContainText("Ảnh chính");
+  // The arrow keys move a photo too.
+  await big.nth(0).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(big.nth(1).locator("img")).toHaveAttribute("src", second!);
+  await expect(big.nth(1)).toBeFocused();
+  // "Hủy" keeps the order as it was.
+  await drag(1, 0);
+  await sorter.getByRole("button", { name: "Hủy" }).click();
+  await expect(sorter).toHaveCount(0);
+  expect(await src(0)).toBe(first);
+  // "Đặt làm ảnh chính", then "Áp dụng": the form follows.
+  await form.getByRole("button", { name: "Chỉnh sửa ảnh" }).click();
+  await sorter.getByRole("button", { name: "Đặt ảnh 2 làm ảnh chính" }).click();
+  await sorter.getByRole("button", { name: "Áp dụng" }).click();
+  await expect(sorter).toHaveCount(0);
+  expect(await src(0)).toBe(second);
+  await expect(tiles.nth(0)).toHaveAttribute("data-cover", "true");
   // Make the second image the cover, then delete the first upload.
   await form.getByRole("button", { name: "Đặt ảnh 2 làm ảnh bìa" }).click();
   await expect(tiles.nth(0)).toHaveAttribute("data-cover", "true");
-  await form.getByRole("button", { name: "Xóa ảnh 2" }).click();
+  // Removing a photo happens in "Chỉnh sửa ảnh" too.
+  await form.getByRole("button", { name: "Chỉnh sửa ảnh" }).click();
+  await sorter.getByRole("button", { name: "Xóa ảnh 2" }).click();
+  await expect(big).toHaveCount(2);
+  await sorter.getByRole("button", { name: "Áp dụng" }).click();
   await expect(tiles).toHaveCount(2);
   await placeUnit(form);
   await form.getByRole("button", { name: "Tạo căn hộ" }).click();

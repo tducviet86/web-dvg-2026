@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Film,
   Images,
+  PencilLine,
   Star,
   Trash2,
   Upload,
@@ -20,6 +21,7 @@ import {
   type UploadPlace,
 } from "./api";
 import { isVideo, type MediaRef } from "./model";
+import { MediaSortDialog } from "./media-sort";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/avif";
 const ACCEPT_VIDEO = "video/mp4,video/webm,video/quicktime";
@@ -377,6 +379,7 @@ export function MediaManager({
   } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [library, setLibrary] = useState(false);
+  const [sorting, setSorting] = useState(false);
   const coverIndex = value.findIndex((m) => !isVideo(m));
   const images = value.filter((m) => !isVideo(m)).length;
   const videos = value.length - images + (legacyVideo ? 1 : 0);
@@ -408,12 +411,6 @@ export function MediaManager({
       toast.success(`Đã tải lên ${uploaded.length}/${files.length} tệp.`);
     }
   }
-  const move = (index: number, offset: number) => {
-    const next = [...value];
-    const [item] = next.splice(index, 1);
-    next.splice(index + offset, 0, item);
-    onChange(next);
-  };
   const makeCover = (index: number) => {
     const next = [...value];
     const [item] = next.splice(index, 1);
@@ -494,43 +491,18 @@ export function MediaManager({
                     <Film size={12} /> Video
                   </span>
                 )}
-                <div className="media-tile-actions">
+                {/* Order and removal live in "Chỉnh sửa ảnh"; here only the cover. */}
+                {!video && index !== coverIndex && (
                   <button
                     type="button"
-                    aria-label={`Đưa ${label} lên trước`}
-                    disabled={index === 0}
-                    onClick={() => move(index, -1)}
+                    className="media-tile-star"
+                    aria-label={`Đặt ${label} làm ảnh bìa`}
+                    title="Đặt làm ảnh bìa"
+                    onClick={() => makeCover(index)}
                   >
-                    <ArrowLeft size={14} />
+                    <Star size={15} />
                   </button>
-                  <button
-                    type="button"
-                    aria-label={`Đưa ${label} ra sau`}
-                    disabled={index === value.length - 1}
-                    onClick={() => move(index, 1)}
-                  >
-                    <ArrowRight size={14} />
-                  </button>
-                  {!video && index !== coverIndex && (
-                    <button
-                      type="button"
-                      aria-label={`Đặt ${label} làm ảnh bìa`}
-                      onClick={() => makeCover(index)}
-                    >
-                      <Star size={14} />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="danger"
-                    aria-label={`Xóa ${label}`}
-                    onClick={() =>
-                      onChange(value.filter((v) => v.id !== item.id))
-                    }
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                )}
               </li>
             );
           })}
@@ -558,6 +530,16 @@ export function MediaManager({
           Chưa có ảnh hoặc video. Căn hộ nên có ít nhất 3 ảnh.
         </p>
       )}
+      {value.length > 0 && (
+        // Under the photos it edits, the width of the panel.
+        <button
+          type="button"
+          className="media-sort-open"
+          onClick={() => setSorting(true)}
+        >
+          <PencilLine size={15} /> Chỉnh sửa ảnh
+        </button>
+      )}
       <div className="banner-image-actions">
         <button
           type="button"
@@ -567,6 +549,13 @@ export function MediaManager({
           <Images size={14} /> Chọn từ thư viện đã tải lên
         </button>
       </div>
+      {sorting && (
+        <MediaSortDialog
+          items={value}
+          onApply={onChange}
+          onClose={() => setSorting(false)}
+        />
+      )}
       {library && (
         <Library
           type="all"
@@ -575,8 +564,9 @@ export function MediaManager({
         />
       )}
       <small className="media-manager-help">
-        Ảnh đầu tiên là ảnh bìa (dùng bấm ★ để đổi). Dùng mũi tên để sắp xếp thứ
-        tự hiển thị; xóa khỏi căn hộ không xóa tệp khỏi thư viện.
+        Ảnh đầu tiên là ảnh bìa (bấm ★ trên ảnh để đổi). Bấm “Chỉnh sửa ảnh” để
+        kéo thả thứ tự hoặc xóa ảnh; xóa khỏi căn hộ không xóa tệp khỏi thư
+        viện.
       </small>
     </div>
   );
