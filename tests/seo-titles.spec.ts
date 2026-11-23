@@ -396,3 +396,55 @@ test("hero photos carry an alt text (Bing: “Alt attribute for images is missin
       ),
   ).toBe(0);
 });
+
+test("Từ khoá & SEO can retitle the home page and the list pages", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const set = (slug: string, seoTitle: string, seoDescription: string) =>
+    api.send("post", "/admin/seo/keywords/apply", {
+      kind: "fixed",
+      slug,
+      seoTitle,
+      seoDescription,
+    });
+  const home = [
+    "Đất Vàng Group – Cho thuê, mua bán căn hộ Đà Nẵng",
+    "Đất Vàng Group cho thuê, mua bán và ký gửi căn hộ tại Đà Nẵng: The Monarchy, Sun Panoma, Sun Ponte… Ảnh thật, giá rõ ràng, tư vấn trong ngày.",
+  ] as const;
+  const map = [
+    "Bản đồ dự án và căn hộ Đà Nẵng",
+    "Xem các dự án Đất Vàng Group đang giới thiệu trên bản đồ 3D, tìm theo tên hoặc khu vực, xem mặt bằng 3D từng tầng và chỉ đường từ vị trí của bạn.",
+  ] as const;
+  try {
+    await set(
+      "",
+      "Căn hộ Đà Nẵng cho thuê, mua bán",
+      "Mô tả trang chủ chọn trong mục Từ khoá và SEO của Admin.",
+    );
+    await set(
+      "ban-do",
+      "Bản đồ căn hộ Đà Nẵng 3D",
+      "Mô tả trang bản đồ chọn trong mục Từ khoá và SEO của Admin.",
+    );
+    await expect(async () => {
+      await page.goto("/");
+      await expect(page).toHaveTitle(
+        "Căn hộ Đà Nẵng cho thuê, mua bán | Đất Vàng Group",
+      );
+    }).toPass({ timeout: 15000 });
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Mô tả trang chủ chọn trong mục Từ khoá và SEO của Admin.",
+    );
+    await page.goto("/ban-do");
+    await expect(page).toHaveTitle("Bản đồ căn hộ Đà Nẵng 3D | Đất Vàng Group");
+  } finally {
+    await set("", ...home);
+    await set("ban-do", ...map);
+  }
+  await expect(async () => {
+    await page.goto("/");
+    await expect(page).toHaveTitle(home[0]);
+  }).toPass({ timeout: 15000 });
+});

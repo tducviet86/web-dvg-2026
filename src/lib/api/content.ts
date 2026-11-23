@@ -374,6 +374,25 @@ export const getPublicSettings = cache(
       ])
     ).data,
 );
+/**
+ * Title and description chosen in Admin › Từ khoá & SEO for a page whose
+ * title is in the code (home "", "cho-thue", "mua-ban"…), if any.
+ */
+export async function getFixedPageSeo(path: string) {
+  const settings = await getPublicSettings().catch(
+    () => ({}) as Record<string, string>,
+  );
+  try {
+    return (
+      JSON.parse(settings["seo.pages"] || "{}") as Record<
+        string,
+        { seoTitle?: string; seoDescription?: string } | undefined
+      >
+    )[path];
+  } catch {
+    return undefined;
+  }
+}
 export const getSitemap = cache(
   async () =>
     (

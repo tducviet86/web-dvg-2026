@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { ArrowRight, ArrowUpRight, KeyRound, Phone } from "lucide-react";
 import {
   getBanners,
+  getFixedPageSeo,
   getPosts,
   getPublicSettings,
   getSiteContent,
@@ -29,7 +30,12 @@ import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { photos } from "@/data";
 import { siteUrl } from "@/lib/utils";
 import { HTML_LANG, isLocale, type Locale } from "@/i18n/config";
-import { defaultOgImage, localeAlternates, ogLocale } from "@/i18n/metadata";
+import {
+  defaultOgImage,
+  localeAlternates,
+  ogLocale,
+  pageTitle,
+} from "@/i18n/metadata";
 import { href, setRequestLocale, t } from "@/i18n/server";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -42,12 +48,17 @@ async function pageLocale(params: Props["params"]): Promise<Locale> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = await pageLocale(params);
-  const title = t("Đất Vàng Group – Cho thuê, mua bán căn hộ Đà Nẵng");
+  // A title chosen in Admin › Từ khoá & SEO, else the usual one.
+  const own = await getFixedPageSeo("");
+  const title = t(
+    own?.seoTitle || "Đất Vàng Group – Cho thuê, mua bán căn hộ Đà Nẵng",
+  );
   const description = t(
-    "Đất Vàng Group cho thuê, mua bán và ký gửi căn hộ tại Đà Nẵng: The Monarchy, Sun Panoma, Sun Ponte… Ảnh thật, giá rõ ràng, tư vấn trong ngày.",
+    own?.seoDescription ||
+      "Đất Vàng Group cho thuê, mua bán và ký gửi căn hộ tại Đà Nẵng: The Monarchy, Sun Panoma, Sun Ponte… Ảnh thật, giá rõ ràng, tư vấn trong ngày.",
   );
   return {
-    title: { absolute: title },
+    title: own?.seoTitle ? pageTitle(title) : { absolute: title },
     description,
     alternates: localeAlternates(locale, "/"),
     openGraph: {

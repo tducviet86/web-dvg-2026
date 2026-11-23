@@ -100,7 +100,7 @@ type Keyword = {
 type Proposal = {
   row: Row;
   target: {
-    kind: "property" | "project" | "landing";
+    kind: "property" | "project" | "post" | "page" | "landing" | "fixed";
     id?: string;
     purpose?: "rent" | "sale";
     slug?: string;
@@ -337,6 +337,9 @@ function Keywords() {
     setAsking(row);
     setProposal(null);
     try {
+      // What the page says now: the AI starts from it (home, /mua-ban… have
+      // no text of their own in Admin).
+      const current = await readPage(pathOf(row.page));
       const res = await api<{
         data: {
           target: Proposal["target"];
@@ -345,8 +348,11 @@ function Keywords() {
       }>("POST", "/admin/seo/keywords/suggest", {
         query: row.query,
         page: row.page,
+        ...(current && {
+          title: current.title.slice(0, 300),
+          description: current.description.slice(0, 500),
+        }),
       });
-      const current = await readPage(pathOf(row.page));
       setProposal({
         row,
         target: res.data.target,

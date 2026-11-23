@@ -26,6 +26,7 @@ import { ContactPage } from "@/components/contact-page";
 import { ABOUT_SUBPAGES, AboutSubPage } from "@/components/about-subpage";
 import {
   getBlogCategories,
+  getFixedPageSeo,
   getJob,
   getJobs,
   getPage,
@@ -640,8 +641,10 @@ export async function generateMetadata({
   const filteredRental =
     (slug[0] === "cho-thue" || slug[0] === "ban-do") &&
     Object.keys(query).length > 0;
-  const title = t(item.title);
-  const description = t(item.description);
+  // Home, /cho-thue, /mua-ban…: a title chosen in Admin › Từ khoá & SEO.
+  const own = await getFixedPageSeo(slug.join("/"));
+  const title = t(own?.seoTitle || item.title);
+  const description = t(own?.seoDescription || item.description);
   return {
     title: pageTitle(title),
     description,
