@@ -44,9 +44,12 @@ const plain = (value: string) =>
  * Title for the root "%s | Đất Vàng Group" template. A title that already
  * names the brand (SEO titles typed in Admin often do) is used as it is, and
  * a short "| Đất Vàng" at its end gives way to the full one, so the brand
- * never shows twice.
+ * never shows twice. A title that would pass 60 characters with the brand
+ * (what search results show) is used without it.
  */
-export const pageTitle = (title: string) =>
-  plain(title).includes("dat vang group")
-    ? { absolute: title }
-    : title.replace(/\s*[|\-–—·]\s*đất\s+vàng\s*$/iu, "");
+const BRAND_SUFFIX = " | Đất Vàng Group";
+export const pageTitle = (title: string) => {
+  if (plain(title).includes("dat vang group")) return { absolute: title };
+  const own = title.replace(/\s*[|\-–—·]\s*đất\s+vàng\s*$/iu, "");
+  return (own + BRAND_SUFFIX).length > 60 ? { absolute: own } : own;
+};

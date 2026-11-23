@@ -94,6 +94,39 @@ test("a title that already names the brand does not get it twice", async ({
   );
 });
 
+test("a long title leaves out the brand instead of passing 60 characters", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const units = (await api.get(
+    "/admin/properties?pageSize=100",
+  )) as unknown as { data: { projectId?: string; project?: { id: string } }[] };
+  const projectId = units.data[0].projectId ?? units.data[0].project!.id;
+  // 52 characters: with " | Đất Vàng Group" it would be 69.
+  const seoTitle = "Cho thuê căn 2PN kiểm tra tiêu đề dài view sông 18tr";
+  const res = await api.send("post", "/admin/properties", {
+    name: "Căn kiểm tra tiêu đề dài",
+    projectId,
+    propertyType: "2pn",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    description: "Căn hộ kiểm tra tiêu đề trang dài không quá 60 ký tự.",
+    rentPriceVnd: "18000000",
+    seoTitle,
+    status: "PUBLISHED",
+  });
+  expect(res.status()).toBe(201);
+  const created = (await res.json()) as { data: { id: string; slug: string } };
+  await page.goto(`/cho-thue/${created.data.slug}`);
+  await expect(page).toHaveTitle(seoTitle);
+  // A short title keeps the brand.
+  await page.goto("/mua-ban");
+  await expect(page).toHaveTitle("Mua bán căn hộ Đà Nẵng | Đất Vàng Group");
+  await api.send("delete", `/admin/properties/${created.data.id}`);
+});
+
 test("/mua-ban is an indexable page that links to the units on sale", async ({
   page,
   request,

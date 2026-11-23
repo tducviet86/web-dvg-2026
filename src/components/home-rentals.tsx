@@ -138,7 +138,7 @@ export function RentalMini({
             src={unit.image}
             alt={unit.name}
             fill
-            sizes="(max-width: 760px) 70vw, (max-width: 1080px) 45vw, 22vw"
+            sizes="(max-width: 760px) 72vw, (max-width: 1080px) 42vw, 350px"
           />
           <CardPhotos photos={hoverPhotos(unit)} />
           <LuxuryBadges property={unit} />

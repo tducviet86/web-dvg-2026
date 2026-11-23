@@ -37,6 +37,9 @@ const config: NextConfig = {
     // computers and every other photo (the default 75 is served as 70).
     // Lighter files, no visible difference.
     qualities: [60, 65, 70],
+    // Default widths plus 480: cards drawn ~250px on a phone (436 pixels)
+    // otherwise get the 640 copy.
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 480],
     // Optimised copies are kept 30 days (default 4 h) so returning visitors
     // and the CDN reuse them instead of asking the server again.
     minimumCacheTTL: 2_592_000,

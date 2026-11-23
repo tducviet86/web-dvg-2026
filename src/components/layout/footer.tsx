@@ -5,6 +5,9 @@ import { Logo } from "./header";
 import {
   companyFacebook,
   companyHotline,
+  companyLegalName,
+  companyRegisteredAddress,
+  companyTaxCode,
   telephoneHref,
 } from "@/lib/company-contact";
 import { Newsletter } from "../client-basics";
@@ -14,7 +17,7 @@ export function SiteFooter() {
       <div className="container">
         <div className="footer-top">
           <div>
-            <Logo />
+            <Logo footer />
             <p>
               Tận tâm trong từng kết nối.
               <br />
@@ -78,7 +81,11 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© 2026 Đất Vàng Group</span>
+          <span>
+            © 2026 {companyLegalName} · MST:&nbsp;{companyTaxCode}
+            <br />
+            Trụ sở: {companyRegisteredAddress}
+          </span>
           <div>
             <Link href="/chinh-sach-bao-mat">Chính sách bảo mật</Link>
             <Link href="/dieu-khoan-su-dung">Điều khoản sử dụng</Link>

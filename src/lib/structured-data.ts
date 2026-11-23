@@ -10,6 +10,8 @@ import { amenityOf } from "@/lib/amenities";
 import {
   companyFacebook,
   companyHotline,
+  companyLegalName,
+  companyTaxCode,
   zaloHref,
 } from "@/lib/company-contact";
 import { siteUrl } from "@/lib/utils";
@@ -102,13 +104,13 @@ export function agentSchema(settings: Record<string, string>) {
     name: settings["company.brand"] || "Đất Vàng Group",
     // Earlier brands, now merged: the same company wherever they are named.
     alternateName: ["Đất Vàng Luxury", "Đất Vàng Smart City"],
-    legalName: settings["company.legalName"],
+    legalName: settings["company.legalName"] || companyLegalName,
     url: siteUrl,
     logo: `${siteUrl}/images/dat-vang-group-logo-transparent.png`,
     image: `${siteUrl}/images/dat-vang-group-logo-transparent.png`,
     telephone: settings["company.hotline"] || companyHotline,
     email: settings["company.email"],
-    taxID: settings["company.taxCode"],
+    taxID: settings["company.taxCode"] || companyTaxCode,
     address: address
       ? {
           "@type": "PostalAddress",

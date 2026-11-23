@@ -9,6 +9,12 @@ export const companyFacebook =
   process.env.NEXT_PUBLIC_FACEBOOK_URL ||
   "https://www.facebook.com/datvangmientrung0904643643";
 
+// Legal entity, as registered with the tax office (masothue.com/0401876570).
+export const companyLegalName = "Công ty Cổ phần Đất Vàng Group";
+export const companyTaxCode = "0401876570";
+export const companyRegisteredAddress =
+  "Shophouse B0103 Monarchy, Trần Hưng Đạo, P. An Hải, TP Đà Nẵng";
+
 const digits = (phone: string) => phone.replace(/[\s().-]/g, "");
 
 /** Dialable from any country: "0911 29 69 79" → "tel:+84911296979". */

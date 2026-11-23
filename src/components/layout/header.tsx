@@ -106,7 +106,8 @@ function withServices(services: NavLink[]): NavItem[] {
       : item,
   );
 }
-export function Logo() {
+/** In the header 52–64px wide; the footer's is 84px and loads when near. */
+export function Logo({ footer = false }: { footer?: boolean }) {
   const t = useT();
   return (
     <Link
@@ -120,8 +121,8 @@ export function Logo() {
         alt="Đất Vàng Group"
         width={2048}
         height={1933}
-        sizes="100px"
-        loading="eager"
+        sizes={footer ? "84px" : "64px"}
+        loading={footer ? "lazy" : "eager"}
       />
     </Link>
   );

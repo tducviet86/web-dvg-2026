@@ -206,7 +206,7 @@ export default async function Home({ params }: Props) {
                       src={post.image}
                       alt={post.name}
                       fill
-                      sizes="(max-width: 900px) 34vw, 33vw"
+                      sizes="(max-width: 900px) 32vw, (max-width: 1250px) 330px, 460px"
                     />
                   </Link>
                   <div>

@@ -125,3 +125,16 @@ test("articles name the company as author and publisher, not 'Admin'", async ({
     name: "Admin",
   });
 });
+
+test("every page names the legal entity and its tax code", async ({ page }) => {
+  await page.goto("/lien-he");
+  const footer = page.locator(".footer-bottom");
+  await expect(footer).toContainText(
+    "Công ty Cổ phần Đất Vàng Group · MST: 0401876570",
+  );
+  await expect(footer).toContainText("Shophouse B0103 Monarchy");
+  await page.goto("/");
+  const agent = ofType(await schemas(page), "RealEstateAgent");
+  expect(agent?.taxID).toBe("0401876570");
+  expect(agent?.legalName).toBeTruthy();
+});

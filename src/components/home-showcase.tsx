@@ -70,12 +70,12 @@ export function HomeShowcase({
                     loading="lazy"
                     // After the banner: it is the page's main picture.
                     fetchPriority="low"
-                    // As wide as drawn: 66% / 76% of a phone, a third of a
-                    // tablet, a quarter (compact: a third) of a computer.
+                    // As wide as drawn: 61% / 70% of a phone, never more
+                    // than 345px from 761px up (measured 216–486 / 240–344).
                     sizes={
                       compact
-                        ? "(max-width: 760px) 66vw, 34vw"
-                        : "(max-width: 760px) 76vw, (max-width: 1200px) 34vw, 26vw"
+                        ? "(max-width: 760px) 61vw, 345px"
+                        : "(max-width: 760px) 70vw, 345px"
                     }
                   />
                 </span>
