@@ -27,7 +27,8 @@ export function leftovers(html) {
     if (VI.test(text)) found.add(`@${text}`);
   }
   // Kept in every language: the brand name, the bilingual language switcher,
-  // the sample name in forms and the đồng sign ("đ", "vnđ") after prices.
+  // the sample name in forms, the đồng sign ("đ", "vnđ") after prices and
+  // numbers of legal documents ("95/2024/NĐ-CP").
   return [...found].filter((t) =>
     VI.test(
       t
@@ -35,7 +36,8 @@ export function leftovers(html) {
           /Đất Vàng|ĐẤT VÀNG|Ngôn ngữ \/ Language|Tiếng Việt|Nguyễn Văn A/g,
           "",
         )
-        .replace(/(?<!\p{L})(?:vn)?đ(?!\p{L})/giu, ""),
+        .replace(/(?<!\p{L})(?:vn)?đ(?!\p{L})/giu, "")
+        .replace(/\d+\/\d{4}\/[A-ZĐ]+(?:-[A-ZĐ]+)*/g, ""),
     ),
   );
 }
