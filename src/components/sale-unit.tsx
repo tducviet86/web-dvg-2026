@@ -118,7 +118,8 @@ export function SaleUnitBody({
   api?: ApiProject;
   projectName: string;
   projectDescription: string;
-  projectPage: string;
+  /** None for a townhouse or premises outside any project. */
+  projectPage?: string;
   place?: ProjectLocation;
   /** The site map's buildings, for the project's place. */
   buildings: MapBuilding[];
@@ -236,7 +237,9 @@ export function SaleUnitBody({
           {amenities}
           <section id="du-an">
             <h2>{projectName}</h2>
-            <p className="sale-unit-text">{projectDescription}</p>
+            {projectDescription && (
+              <p className="sale-unit-text">{projectDescription}</p>
+            )}
             <ProjectMap
               place={place}
               slug={r.projectSlug ?? ""}
@@ -244,10 +247,12 @@ export function SaleUnitBody({
               address={r.location}
               buildings={buildings}
             />
-            <Link href={projectPage} className="sale-unit-link">
-              Xem toàn bộ dự án và mặt bằng
-              <ArrowUpRight size={16} aria-hidden="true" />
-            </Link>
+            {projectPage && (
+              <Link href={projectPage} className="sale-unit-link">
+                Xem toàn bộ dự án và mặt bằng
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </Link>
+            )}
           </section>
         </article>
         <aside className="sale-unit-panel">

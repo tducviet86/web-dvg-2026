@@ -743,9 +743,12 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           publishChoice,
           f("projectId", "Dự án", {
             type: "select",
-            required: true,
-            options: lookups.projects,
+            options: [
+              ...lookups.projects,
+              ["", "Không thuộc dự án (nhà phố, mặt bằng lẻ)"],
+            ],
             default: lookups.projects[0]?.[0],
+            hint: "Nhà phố, mặt bằng lẻ không thuộc dự án nào: chọn “Không thuộc dự án” và nhập vị trí trên bản đồ bên dưới.",
           }),
           f("unitCode", "Mã căn / số phòng", {
             maxLength: 40,
@@ -761,6 +764,21 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           f("address", "Địa chỉ chi tiết", {
             maxLength: 300,
             hint: "Tự điền theo dự án khi chọn dự án; sửa nếu căn ở tòa/block khác. Bản đồ trên website dùng vị trí của dự án.",
+          }),
+          f("latitude", "Vĩ độ", {
+            type: "number",
+            step: "any",
+            min: -90,
+            max: 90,
+            placeholder: "vd: 16.0548413",
+            hint: "Chỉ cần khi căn không thuộc dự án. Trên Google Maps, nhấn giữ vào vị trí rồi chép 2 số hiện ra (số đầu là vĩ độ).",
+          }),
+          f("longitude", "Kinh độ", {
+            type: "number",
+            step: "any",
+            min: -180,
+            max: 180,
+            placeholder: "vd: 108.2329786",
           }),
         ],
       },
@@ -1604,6 +1622,20 @@ function crossChecks(kind: Kind, v: FormValues): FormIssue[] {
       add("overview", "Giới thiệu chi tiết", "tối đa 20 đoạn");
     if (paragraphs.some((p) => p.trim().length > 4000))
       add("overview", "Giới thiệu chi tiết", "mỗi đoạn tối đa 4000 ký tự");
+  }
+  if (kind === "properties") {
+    if (!!str(v.latitude) !== !!str(v.longitude))
+      add(
+        str(v.latitude) ? "longitude" : "latitude",
+        "Vị trí trên bản đồ",
+        "cần nhập đủ cả vĩ độ và kinh độ",
+      );
+    else if (!str(v.projectId) && !str(v.latitude))
+      add(
+        "latitude",
+        "Vị trí trên bản đồ",
+        "cần nhập vĩ độ và kinh độ khi căn không thuộc dự án",
+      );
   }
   if (kind === "properties" && !v.forRent && !v.forSale)
     add("forRent", "Hình thức", "cần chọn ít nhất Cho thuê hoặc Mua bán");

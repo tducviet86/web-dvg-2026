@@ -339,31 +339,37 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
       permanentRedirect(href(`/mua-ban/${room.slug}`));
     const content = await getSiteContent();
     const project = apiRoom.project;
-    const projectPath = `/du-an/${content.portfolio.find((p) => p.projectId === project.id)?.slug || project.slug}`;
+    const projectPath =
+      project &&
+      `/du-an/${content.portfolio.find((p) => p.projectId === project.id)?.slug || project.slug}`;
+    // A townhouse or premises outside any project is named by its place.
+    const place = project?.name ?? room.location;
     return {
       title:
         room.seoTitle ||
-        (room.floorNote
-          ? `${room.name} ${room.area}m² tại ${project.name}`
-          : "") ||
-        `${room.type} ${room.area}m² tại ${project.name}${room.isDemo ? " · Căn mẫu" : sale ? " đang bán" : " cho thuê"}`,
+        (room.floorNote ? `${room.name} ${room.area}m² tại ${place}` : "") ||
+        `${room.type} ${room.area}m² tại ${place}${room.isDemo ? " · Căn mẫu" : sale ? " đang bán" : " cho thuê"}`,
       description:
         room.seoDescription ||
-        `${room.name} tại ${project.name}, ${room.area}m², ${room.furniture.toLowerCase()}${room.floorNote ? `, ${room.floorNote.toLowerCase()}` : ""}. Xem ảnh, thông số, vị trí và liên hệ ${sale ? "Đất Vàng Group để tư vấn mua bán" : "hẹn xem căn"}.${room.isDemo ? " Nội dung minh họa." : ""}`,
+        `${room.name} tại ${place}, ${room.area}m², ${room.furniture.toLowerCase()}${room.floorNote ? `, ${room.floorNote.toLowerCase()}` : ""}. Xem ảnh, thông số, vị trí và liên hệ ${sale ? "Đất Vàng Group để tư vấn mua bán" : "hẹn xem căn"}.${room.isDemo ? " Nội dung minh họa." : ""}`,
       image: room.image,
       // Units rented / sold a while ago only stay reachable from old links.
       noindex: room.isDemo || !!room.delisted,
       parents: sale
         ? [
             { name: "Mua bán căn hộ Đà Nẵng", path: "/mua-ban" },
-            { name: project.name, path: projectPath },
+            ...(project ? [{ name: project.name, path: projectPath! }] : []),
           ]
         : [
             { name: "Cho thuê căn hộ Đà Nẵng", path: "/cho-thue" },
-            {
-              name: `Cho thuê ${project.name}`,
-              path: `/cho-thue/du-an/${project.slug}`,
-            },
+            ...(project
+              ? [
+                  {
+                    name: `Cho thuê ${project.name}`,
+                    path: `/cho-thue/du-an/${project.slug}`,
+                  },
+                ]
+              : []),
           ],
       render: () => <RoomDetail room={room} content={content} sale={sale} />,
     };

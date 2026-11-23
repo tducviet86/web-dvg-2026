@@ -71,7 +71,9 @@ export function ProjectDirectory({
 
   if (group === "operation") {
     const ids = new Set(operation.map((p) => p.projectId));
-    const units = content.properties.filter((r) => ids.has(r.projectId));
+    const units = content.properties.filter(
+      (r) => !!r.projectId && ids.has(r.projectId),
+    );
     const sale = isSaleSearch(filters);
     const found = searchUnits(units, filters);
     const kind = listingKind(filters.loai, found);

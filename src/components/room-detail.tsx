@@ -66,11 +66,25 @@ export function RoomDetail({
   // few minutes old (a project just published): the page must still open.
   // The site's own map, for the project's place and the way there.
   const buildings = mapBuildings(content, { rentalsOnly: false });
+  // A townhouse or premises outside any project: named by its place, with
+  // its own pin on the map, no project page.
+  const standalone = !r.projectId;
   const project = content.projects.find((p) => p.id === r.projectId) ?? {
     slug: r.projectSlug ?? "",
-    name: r.projectName ?? "",
+    name: r.projectName ?? (standalone ? r.location : ""),
     description: "",
   };
+  const place =
+    r.projectId !== undefined
+      ? content.locations[r.projectId]
+      : r.latitude !== undefined && r.longitude !== undefined
+        ? {
+            url: `https://www.google.com/maps?q=${r.latitude},${r.longitude}`,
+            lat: r.latitude,
+            lng: r.longitude,
+            label: r.location,
+          }
+        : undefined;
   const portfolio = content.portfolio.find((p) => p.projectId === r.projectId);
   const ownMedia = propertyMedia(r).filter(
     (m) =>
@@ -122,7 +136,9 @@ export function RoomDetail({
       // Sample units only next to other samples.
       (r.isDemo || !x.isDemo),
   );
-  const related = others.filter((x) => x.projectId === r.projectId);
+  const related = standalone
+    ? []
+    : others.filter((x) => x.projectId === r.projectId);
   // "Khám phá thêm": hot / much-viewed units first, taking turns between
   // projects so Monarchy, Panoma, Ponte… all show up early.
   const ranked = others
@@ -131,7 +147,10 @@ export function RoomDetail({
     .map(({ p }) => p);
   const byProject = new Map<string, Property[]>();
   for (const p of ranked)
-    byProject.set(p.projectId, [...(byProject.get(p.projectId) ?? []), p]);
+    byProject.set(p.projectId ?? p.id, [
+      ...(byProject.get(p.projectId ?? p.id) ?? []),
+      p,
+    ]);
   const explore: Property[] = [];
   for (let i = 0; explore.length < Math.min(5, ranked.length); i++)
     for (const list of byProject.values()) if (list[i]) explore.push(list[i]);
@@ -221,16 +240,24 @@ export function RoomDetail({
           {sale ? (
             <>
               <Link href="/mua-ban">Mua bán</Link>
-              <span>/</span>
-              <Link href={projectPage}>{project.name}</Link>
+              {!standalone && (
+                <>
+                  <span>/</span>
+                  <Link href={projectPage}>{project.name}</Link>
+                </>
+              )}
             </>
           ) : (
             <>
               <Link href="/cho-thue">Cho thuê căn hộ</Link>
-              <span>/</span>
-              <Link href={`/cho-thue/du-an/${project.slug}`}>
-                {project.name}
-              </Link>
+              {!standalone && (
+                <>
+                  <span>/</span>
+                  <Link href={`/cho-thue/du-an/${project.slug}`}>
+                    {project.name}
+                  </Link>
+                </>
+              )}
             </>
           )}
           <span>/</span>
@@ -271,8 +298,8 @@ export function RoomDetail({
                 api={projectApi}
                 projectName={project.name}
                 projectDescription={project.description}
-                projectPage={projectPage}
-                place={content.locations[r.projectId]}
+                projectPage={standalone ? undefined : projectPage}
+                place={place}
                 buildings={buildings}
                 status={status}
                 available={available}
@@ -389,7 +416,7 @@ export function RoomDetail({
                       <dl className="room-spec-table">
                         {[
                           ["Mã căn", code],
-                          ["Dự án", project.name],
+                          [standalone ? "Vị trí" : "Dự án", project.name],
                           [
                             "Loại hình",
                             `${groupLabel(r.typeGroup)} · ${r.type}`,
@@ -423,24 +450,28 @@ export function RoomDetail({
                   {amenityBlock}
                   <section id="khu-vuc" className="room-project-block">
                     <span className="signature-kicker">
-                      04 / KHÔNG GIAN THUỘC VỀ DỰ ÁN
+                      {standalone
+                        ? "04 / VỊ TRÍ"
+                        : "04 / KHÔNG GIAN THUỘC VỀ DỰ ÁN"}
                     </span>
                     <h2>{project.name}</h2>
-                    <p>{project.description}</p>
+                    {project.description && <p>{project.description}</p>}
                     <ProjectMap
-                      place={content.locations[r.projectId]}
+                      place={place}
                       slug={r.projectSlug ?? ""}
                       name={project.name}
                       address={r.location}
                       buildings={buildings}
                     />
-                    <Link href={projectPage} className="room-project-link">
-                      <span>
-                        <small>Dự án</small>
-                        <strong>Khám phá {project.name}</strong>
-                      </span>
-                      <ArrowUpRight size={18} aria-hidden="true" />
-                    </Link>
+                    {!standalone && (
+                      <Link href={projectPage} className="room-project-link">
+                        <span>
+                          <small>Dự án</small>
+                          <strong>Khám phá {project.name}</strong>
+                        </span>
+                        <ArrowUpRight size={18} aria-hidden="true" />
+                      </Link>
+                    )}
                   </section>
                 </article>
                 <aside className="room-contact-panel">

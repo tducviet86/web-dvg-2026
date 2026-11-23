@@ -107,9 +107,12 @@ export type ApiProperty = {
   id: string;
   slug: string;
   name: string;
-  project: { id: string; slug: string; name: string };
+  /** Null for a townhouse or premises outside any project. */
+  project: { id: string; slug: string; name: string } | null;
   propertyType: { code: string; name: string; group?: string };
   unitCode: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   forRent: boolean;
   forSale: boolean;
   isConsignment: boolean;

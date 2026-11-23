@@ -72,7 +72,11 @@ export type Property = AdminDetails & {
   id: string;
   slug: string;
   name: string;
-  projectId: string;
+  /** Empty for a townhouse or premises outside any project. */
+  projectId?: string;
+  /** Its own place on the map, when it has no project. */
+  latitude?: number;
+  longitude?: number;
   location: string;
   type: string;
   /** Costs the rent covers: keys of lib/included-fees.ts. */

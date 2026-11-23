@@ -177,7 +177,8 @@ export function PropertyCard({
       </div>
       <div className="property-body">
         <div className="card-meta">
-          <span>{property.projectName}</span>
+          {/* Outside any project: the first part of its address. */}
+          <span>{property.projectName || property.location.split(",")[0]}</span>
           <span>{property.isDemo ? "CĂN MẪU" : unitRef(property)}</span>
         </div>
         <h3>
@@ -276,7 +277,9 @@ export function SaleCard({
           <ArrowUpRight size={20} />
         </span>
         <span className="sale-card-body">
-          <span className="sale-card-project">{p.projectName}</span>
+          <span className="sale-card-project">
+            {p.projectName || p.location.split(",")[0]}
+          </span>
           <h3 className="sale-card-name">{p.name}</h3>
           <span className="sale-card-meta">
             <span className="sale-card-price">
