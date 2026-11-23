@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { BE_DIR, E2E_DATABASE_URL, SITE_URL } from "../playwright.config";
 
 /** Resets the e2e database, seeds content and creates one user per role. */
@@ -17,6 +18,9 @@ export default async function globalSetup() {
         stdio: "pipe",
       },
     );
+  // Photos and videos uploaded by the last run (LOCAL_MEDIA_DIR of the API
+  // in playwright.config.ts): the database forgets them, so the disk must too.
+  rmSync(resolve(BE_DIR, ".local/e2e-media"), { recursive: true, force: true });
   run("db:reset:disposable");
   run("import:legacy", ["--publish"]);
   run("seed:demo");
