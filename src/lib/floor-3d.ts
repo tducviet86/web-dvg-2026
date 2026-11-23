@@ -21,6 +21,8 @@ export type FloorData = {
   pictures?: Record<string, string>;
   /** What a unit is when no listing says: by "drawing file/number". */
   kinds?: Record<string, UnitKind>;
+  /** `kinds` as sent to the browser (packKinds): each kind once. */
+  packedKinds?: PackedKinds;
   /** A word about a floor with no units to show ("tower/floor"): parking. */
   notes?: Record<string, string>;
   /** How the developer names a unit, when not "T1-1012": "{tower}{floor}-{unit}". */
@@ -53,6 +55,43 @@ export type UnitKind = {
   /** Its name when not "tower-floor+number", as for a shophouse. */
   code?: string;
 };
+
+/**
+ * `kinds` for the page's data: most units of a drawing share a few kinds,
+ * so each kind is listed once and every "file/number" points to it
+ * (Monarchy B: 40 units, 4 kinds). The map unpacks it in the browser.
+ */
+export type PackedKinds = {
+  list: UnitKind[];
+  /** Drawing file → unit number → index in `list`. */
+  at: Record<string, Record<string, number>>;
+};
+export function packKinds(kinds: Record<string, UnitKind>): PackedKinds {
+  const list: UnitKind[] = [];
+  const seen = new Map<string, number>();
+  const at: PackedKinds["at"] = {};
+  for (const [key, kind] of Object.entries(kinds)) {
+    const cut = key.lastIndexOf("/");
+    const id = JSON.stringify(kind);
+    if (!seen.has(id)) seen.set(id, list.push(kind) - 1);
+    (at[key.slice(0, cut)] ??= {})[key.slice(cut + 1)] = seen.get(id)!;
+  }
+  return { list, at };
+}
+export function unpackKinds({ list, at }: PackedKinds) {
+  return Object.fromEntries(
+    Object.entries(at).flatMap(([file, units]) =>
+      Object.entries(units).map(([n, i]) => [`${file}/${n}`, list[i]]),
+    ),
+  ) as Record<string, UnitKind>;
+}
+/** A building with its unit kinds unpacked, as the map reads them. */
+export function unitKinds<B extends { floors?: FloorData }>(b: B): B {
+  const packed = b.floors?.packedKinds;
+  return packed
+    ? { ...b, floors: { ...b.floors!, kinds: unpackKinds(packed) } }
+    : b;
+}
 
 /** "Tòa C4 · Tầng 11-12, 14-27" → 11, 12, 14, 15 … 27; "Tầng 12A" → 12A. */
 export function planFloors(name: string) {

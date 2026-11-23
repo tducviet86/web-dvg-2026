@@ -1,0 +1,2018 @@
+/* Map, 3D floor plan and 360° tour (rental-map, project-map, map-route,
+   floor-plan-3d, tour-360, plan-cutout). Loaded by the routes that show a
+   map: home, cho-thue, mua-ban, du-an, ban-do. Split from portfolio-pages.css;
+   rules whose order against design-system matters stayed there. */
+.tour-view {
+  position: absolute;
+  inset: 0;
+}
+.tour-start b {
+  font-family: var(--font-heading);
+  font-size: clamp(48px, 7vw, 84px);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--c-gold-300);
+}
+.tour-start span {
+  font-size: clamp(16px, 1.8vw, 20px);
+  font-weight: 600;
+}
+.tour-start small {
+  font-size: 13.5px;
+  color: #ffffffcc;
+}
+.tour-tools button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #d4b97a66;
+  border-radius: 50%;
+  background: #061b16cc;
+  color: var(--c-gold-300);
+  cursor: pointer;
+}
+.tour .pnlm-load-button,
+.tour .pnlm-about-msg {
+  display: none;
+}
+.tour .pnlm-controls-container {
+  top: 60px;
+}
+.tour .tour-spot {
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--c-gold-300);
+  border-radius: 50%;
+  background: #061b16b3;
+  cursor: pointer;
+}
+.tour .tour-spot::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-top: 3px solid var(--c-gold-300);
+  border-left: 3px solid var(--c-gold-300);
+  transform: translateY(3px) rotate(45deg);
+}
+.tour .tour-spot span {
+  visibility: hidden;
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--c-green-900);
+  font-size: 13px;
+  white-space: nowrap;
+  color: #fff;
+  transform: translateX(-50%);
+}
+.tour .tour-spot:hover span {
+  visibility: visible;
+}
+.tour-stage {
+  position: relative;
+  container-type: size;
+  /* Keeps the viewer's buttons under the page's sticky bars. */
+  isolation: isolate;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 16 / 8;
+}
+.tour-start {
+  position: relative;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: var(--c-green-950);
+}
+.tour-strip {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  animation: tour-pan 180s linear infinite;
+}
+.tour-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, #061b16b3 0%, #061b1673 100%);
+}
+.tour-start-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  color: #fff;
+}
+.tour-start-text b {
+  display: grid;
+  place-items: center;
+  width: clamp(92px, 11vw, 132px);
+  height: clamp(92px, 11vw, 132px);
+  border: 1px solid var(--c-gold-300);
+  border-radius: 50%;
+  background: #061b1680;
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 3.4vw, 40px);
+  font-weight: 400;
+  color: var(--c-gold-300);
+  backdrop-filter: blur(4px);
+  transition: transform var(--dur-3) var(--ease-out);
+}
+.tour-start:hover .tour-start-text b {
+  transform: scale(1.06);
+}
+.tour-start-text strong {
+  font-size: clamp(17px, 1.9vw, 22px);
+  font-weight: 600;
+}
+.tour-start-text small {
+  font-size: 13.5px;
+  color: #ffffffcc;
+}
+.tour-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border: 3px solid #ffffff40;
+  border-top-color: var(--c-gold-300);
+  border-radius: 50%;
+  background: #061b1659;
+  animation: tour-spin 0.9s linear infinite;
+  pointer-events: none;
+}
+.tour .pnlm-load-box {
+  display: none !important;
+}
+/* Room types and the floor plan, on the picture. */
+.tour-dock {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+.tour-dock > * {
+  pointer-events: auto;
+}
+.tour-types {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #ffffff2e;
+  border-radius: 999px;
+  background: #061b16b8;
+  backdrop-filter: blur(8px);
+}
+.tour-types button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 13.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tour-types button[aria-pressed="true"] {
+  background: var(--c-gold-400);
+  color: var(--c-green-950);
+}
+/* The floor plan as a small see-through map; the room you stand in glows. */
+.tour-plan-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #ffffff59;
+  border-radius: 10px;
+  background: #061b1666;
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+}
+.tour-plan-toggle[aria-expanded="true"] {
+  border-color: var(--c-gold-300);
+  background: #061b16b3;
+}
+.tour-plan-toggle svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+}
+.tour-plan {
+  position: absolute;
+  top: 60px;
+  right: 12px;
+  z-index: 3;
+  animation: tour-plan-in 0.2s ease-out;
+  width: clamp(104px, 14cqw, 190px);
+  border-radius: 10px;
+  background: #ffffff40;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 6px 18px #00000026;
+  transition: background 0.2s ease;
+}
+.tour-plan:hover {
+  background: #ffffffb3;
+}
+.tour-plan img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+  /* The plan's white paper disappears, only its lines stay. */
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+}
+.tour-plan-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--c-gold-400);
+  opacity: 0.75;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+/* A larger target for fingers. */
+.tour-plan-dot::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
+.tour-plan-dot:hover,
+.tour-plan-dot:focus-visible {
+  z-index: 1;
+  opacity: 1;
+  transform: scale(1.25);
+}
+.tour-plan-dot[aria-current] {
+  z-index: 1;
+  background: #ffc933;
+  opacity: 1;
+  transform: scale(1.45);
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 10px 4px #ffc933;
+  animation: tour-here 1.6s ease-in-out infinite;
+}
+.tour-plan-dot::after {
+  content: attr(data-room);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--c-green-950);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+.tour-plan-dot:hover::after,
+.tour-plan-dot:focus-visible::after {
+  opacity: 1;
+}
+.tour-logo {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 3;
+  width: clamp(44px, 5cqw, 64px);
+  height: auto;
+  opacity: 0.65;
+  filter: drop-shadow(0 1px 2px #00000066);
+  pointer-events: none;
+}
+/* Two fingers zoom the photo, not the page. */
+.tour-view {
+  touch-action: none;
+}
+.tour-exit svg {
+  color: var(--c-gold-300);
+}
+/* Above the header and the floating buttons. */
+.tour-stage.is-full {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  width: 100%;
+  height: 100dvh;
+  max-height: none;
+  aspect-ratio: auto;
+}
+.tour-stage.is-full .tour-dock {
+  bottom: max(14px, env(safe-area-inset-bottom));
+}
+/* Tablets stand taller; a phone on its side still sees the whole viewer. */
+@media (max-width: 900px) {
+  .tour-stage {
+    aspect-ratio: 4 / 3;
+    max-height: max(280px, calc(100svh - 150px));
+  }
+}
+@media (max-width: 640px) {
+  .tour {
+    aspect-ratio: auto;
+  }
+  .tour-stage {
+    aspect-ratio: 4 / 5;
+  }
+  .tour-dock {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+  }
+  .tour-types {
+    flex: 1 1 100%;
+  }
+  .tour-types button {
+    flex: 1;
+    padding: 0 6px;
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-strip {
+    animation: none;
+  }
+  .tour-plan-dot[aria-current] {
+    animation: none;
+  }
+}
+.plan-cut-shape {
+  display: block;
+  width: 100%;
+  height: calc(var(--plan-h, 520px) - 150px);
+  filter: drop-shadow(0 10px 18px #10271938);
+}
+.plan-cut-edge {
+  fill: none;
+  stroke: var(--c-green-900);
+  stroke-width: 1.5;
+}
+@media (max-width: 900px) {
+  .plan-cut-shape {
+    height: auto;
+    max-height: 58vh;
+  }
+}
+.rmap-body {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e0e4d9;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 44px #1027191a;
+}
+.rmap-stage {
+  position: relative;
+  height: clamp(560px, 78vh, 840px);
+  background: #f5f0e6;
+}
+/* The building's name, with a small tail pointing down at it. */
+.rmap-pin {
+  position: relative;
+  z-index: 1;
+  padding: 7px 13px;
+  border: 1px solid #d4b97a;
+  border-radius: 999px;
+  background: #0b2a22;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 6px 16px #06140f47;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.rmap-pin::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid #d4b97a;
+  border-bottom: 1px solid #d4b97a;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+.rmap-pin[data-side="left"]::after {
+  right: 22px;
+  left: auto;
+  margin-right: -4.5px;
+  transform: rotate(45deg);
+}
+.rmap-pin[data-side="right"]::after {
+  left: 22px;
+  margin-left: -4.5px;
+  transform: rotate(45deg);
+}
+/* Buildings by name, on the map where there is room for them. */
+.rmap-towers {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  max-width: min(720px, calc(100% - 32px));
+  padding: 3px;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: #0b2a22b8;
+  backdrop-filter: blur(6px);
+  scrollbar-width: none;
+  translate: -50% 0;
+}
+.rmap-towers button {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 12.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.rmap-towers button:hover {
+  background: #ffffff24;
+}
+.rmap-towers button[aria-pressed="true"] {
+  background: #f2c14e;
+  color: #0b2a22;
+}
+.rmap-body[data-open="true"] .rmap-towers {
+  left: calc((100% - 372px) / 2);
+  max-width: calc(100% - 404px);
+}
+.rmap-body[data-open="true"] .maplibregl-ctrl-top-right {
+  right: 372px;
+}
+.rmap-tools {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 72px);
+}
+.rmap-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #061b16eb;
+  color: #fff;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+a.rmap-reset {
+  color: #fff;
+}
+/* "Lọc căn": a button; its panel offers the choices as plain buttons. */
+.rmap-filter {
+  position: relative;
+}
+.rmap-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #061b16eb;
+  color: #fff;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.rmap-filter-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 8;
+  display: grid;
+  gap: 14px;
+  width: min(340px, calc(100vw - 24px));
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 40px #06140f4d;
+  color: var(--c-green-900);
+}
+.rmap-filter-panel fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.rmap-filter-panel legend {
+  width: 100%;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #5f6f66;
+}
+.rmap-filter-panel fieldset button,
+.rmap-filter-actions button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #d9dccf;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-green-900);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.rmap-filter-panel fieldset button[aria-pressed="true"] {
+  border-color: var(--c-green-900);
+  background: var(--c-green-900);
+  color: #fff;
+}
+.rmap-filter-result {
+  margin: 0;
+  font-size: 13.5px;
+  color: #3c5148;
+}
+.rmap-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.rmap-filter-actions .is-main {
+  border-color: var(--c-green-900);
+  background: var(--c-green-900);
+  color: #fff;
+}
+.rmap-failed {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  color: #3c5148;
+}
+/* A building's units, sliding in over the map once it is chosen. */
+.rmap-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: 348px;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 40px #06140f4d;
+  animation: rmap-panel 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.rmap-head {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  min-height: 190px;
+  align-content: end;
+  padding: 16px 18px 14px;
+  overflow: hidden;
+  background: var(--c-green-950);
+  color: #fff;
+}
+.rmap-head > * {
+  position: relative;
+}
+.rmap-head::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #06140f1f 20%, #06140fe0 100%);
+}
+.rmap-head > :not(.rmap-head-photo) {
+  z-index: 2;
+}
+.rmap-head p {
+  margin: 0;
+  font-size: 13px;
+  color: #ffffffd0;
+}
+.rmap-head h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+  color: #fff;
+}
+.rmap-head nav {
+  display: flex;
+  gap: 6px;
+}
+.rmap-head nav {
+  flex-wrap: wrap;
+}
+.rmap-head nav a {
+  backdrop-filter: blur(6px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d4b97a80;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12.5px;
+}
+.rmap-units {
+  flex: 1;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.rmap-units a {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ece7da;
+  color: var(--c-green-900);
+}
+.rmap-units a:hover {
+  background: #fbf6e9;
+}
+.rmap-photo {
+  position: relative;
+  display: block;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e9eadf;
+}
+.rmap-photo img {
+  object-fit: cover;
+}
+.rmap-unit {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.rmap-unit b {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rmap-unit small {
+  font-size: 12.5px;
+  color: #5f6f66;
+}
+.rmap-unit strong {
+  font-size: 14px;
+}
+/* A tower's units: to rent on one side, to buy on the other, hottest first. */
+@media (min-width: 901px) {
+  .rmap-panel[data-tab="units"] {
+    width: 520px;
+  }
+}
+.rmap-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex: 1;
+  min-height: 0;
+}
+.rmap-split > section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.rmap-split > section + section {
+  border-left: 1px solid #ece7da;
+}
+.rmap-split h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #ece7da;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--c-green-900);
+}
+.rmap-split .rmap-units a {
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 9px;
+  padding: 9px 10px;
+}
+.rmap-split .rmap-photo {
+  height: 56px;
+}
+.rmap-split .rmap-none {
+  padding: 16px 12px;
+  font-size: 13px;
+}
+.rmap-hot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  justify-self: start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fde3d3;
+  color: #b4441a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+.rmap-none {
+  padding: 24px 18px;
+  color: #5f6f66;
+}
+.rmap-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid #ece7da;
+}
+.rmap-tabs button {
+  flex: 1;
+  min-height: 38px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #5f6f66;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.rmap-tabs button[aria-selected="true"] {
+  border-color: var(--c-gold-700);
+  color: var(--c-green-900);
+  font-weight: 600;
+}
+.rmap-facts {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+.rmap-facts dt {
+  font-size: 12px;
+  color: #5f6f66;
+}
+.rmap-facts dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--c-green-900);
+}
+/* A unit pointed at on an opened floor: its 3D picture, roof off. */
+.rmap-peek {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  display: grid;
+  gap: 4px;
+  width: 280px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #fffdf8f7;
+  box-shadow: 0 16px 40px #06140f4d;
+  color: var(--c-green-900);
+  pointer-events: none;
+}
+.rmap-peek-3d {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #fff;
+}
+.rmap-peek-plan {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  background-color: #fff;
+  background-repeat: no-repeat;
+}
+.rmap-peek b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.rmap-peek-kind {
+  font-size: 13px;
+  color: var(--c-green-800);
+}
+.rmap-peek small {
+  font-size: 12px;
+  color: #5f6f66;
+}
+/* The floor shown on the map itself; the eye opens its details. */
+.rmap-focus {
+  position: absolute;
+  bottom: 40px;
+  left: calc(50% + 170px);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: #fffdf8f7;
+  box-shadow: 0 14px 36px #06140f40;
+  color: var(--c-green-900);
+  translate: -50% 0;
+}
+.rmap-focus b {
+  padding: 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rmap-focus button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 38px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: #f1eee3;
+  color: var(--c-green-900);
+  cursor: pointer;
+}
+.rmap-focus small {
+  padding: 0 6px;
+  font-size: 12.5px;
+  color: #5f6f66;
+  white-space: nowrap;
+}
+.rmap-focus button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* A house that was clicked, beside its lifted roof. */
+.rmap-lot {
+  position: absolute;
+  top: 12px;
+  right: 80px;
+  z-index: 7;
+  display: grid;
+  gap: 10px;
+  width: 300px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 40px #06140f4d;
+  color: var(--c-green-900);
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+}
+.rmap-lot h3 {
+  margin: 0;
+  padding-right: 34px;
+  font-size: 22px;
+  font-weight: 400;
+}
+.rmap-lot p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #5f6f66;
+}
+.rmap-lot dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.rmap-lot dl div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.rmap-lot dt {
+  color: #5f6f66;
+}
+.rmap-lot dd {
+  margin: 0;
+  font-weight: 600;
+}
+.rmap-lot small {
+  font-size: 12px;
+  color: #5f6f66;
+}
+.rmap-lot-plan {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 8px;
+  border: 1px solid #e6e8df;
+  border-radius: 12px;
+  background: #fff;
+}
+.rmap-lot-plan img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+}
+.rmap-lot a.rmap-plan-open {
+  color: #fff;
+}
+.rmap-lot-floors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.rmap-lot-floors button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #d9dccf;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-green-900);
+  font-size: 13px;
+  cursor: pointer;
+}
+.rmap-lot-floors button[aria-pressed="true"] {
+  border-color: var(--c-green-900);
+  background: var(--c-green-900);
+  color: #fff;
+}
+/* The floor under the pointer. */
+.rmap-floor-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #fffdf8f5;
+  box-shadow: 0 10px 28px #06140f40;
+  color: var(--c-green-900);
+  pointer-events: none;
+}
+.rmap-floor-tip b {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rmap-floor-tip small:empty {
+  display: none;
+}
+/* Tools down the map's right side. */
+.rmap-rail {
+  position: absolute;
+  top: 130px;
+  right: 10px;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 16px;
+  background: #fffdf8f2;
+  box-shadow: 0 10px 28px #06140f33;
+}
+.rmap-body[data-open="true"] .rmap-rail {
+  right: 370px;
+}
+.rmap-rail button {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 56px;
+  padding: 7px 2px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--c-green-900);
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.rmap-rail button:hover {
+  background: #f1eee3;
+}
+.rmap-rail button[aria-pressed="true"] {
+  background: var(--c-green-900);
+  color: #fff;
+}
+.rmap-sun {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  z-index: 3;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: #fffdf8f5;
+  box-shadow: 0 10px 28px #06140f33;
+  color: var(--c-green-900);
+  font-size: 13.5px;
+  translate: -50% 0;
+}
+.rmap-sun {
+  display: grid;
+  gap: 6px;
+  width: min(340px, calc(100% - 32px));
+}
+.rmap-sun input,
+.fp3d-slider {
+  width: 100%;
+  accent-color: var(--c-green-800);
+}
+.rmap-view {
+  position: absolute;
+  right: 12px;
+  bottom: 40px;
+  left: 12px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  margin-inline: auto;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #061b16f2;
+  color: #fff;
+}
+/* Looking out from a floor: what lies in each direction, on the horizon. */
+.rmap-horizon {
+  position: absolute;
+  top: 64px;
+  right: 56px;
+  left: 12px;
+  z-index: 6;
+  height: 80px;
+  border-radius: 14px;
+  background: linear-gradient(#0b2a22d9, #0b2a2299);
+  overflow: hidden;
+  pointer-events: none;
+}
+.rmap-horizon span {
+  position: absolute;
+  bottom: 8px;
+  max-width: 30%;
+  overflow: hidden;
+  transform: translateX(-50%);
+  color: #ffffffd0;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.rmap-horizon span::before {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 8px;
+  margin: 0 auto 3px;
+  background: currentColor;
+}
+.rmap-horizon span.is-main {
+  bottom: 28px;
+  color: #f2c14e;
+  font-size: 14px;
+  font-weight: 700;
+}
+.rmap-horizon em {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  max-width: 28%;
+  overflow: hidden;
+  color: #ffffffb0;
+  font-size: 11.5px;
+  font-style: normal;
+  white-space: pre;
+  text-overflow: ellipsis;
+}
+.rmap-horizon em:not(.is-right) {
+  right: auto;
+  left: 12px;
+}
+.rmap-horizon b {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.rmap-view p {
+  display: grid;
+  margin: 0;
+  font-size: 14px;
+  color: #fff;
+}
+.rmap-view small {
+  font-size: 11.5px;
+  color: #ffffffb0;
+}
+.rmap-view div {
+  display: flex;
+  gap: 4px;
+}
+.rmap-view button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #ffffff40;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.rmap-view button[aria-pressed="true"] {
+  border-color: #f2c14e;
+  background: #f2c14e;
+  color: #0b2a22;
+}
+.fp3d-look {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid var(--c-green-900);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--c-green-900);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Tower names and landmarks on the map. */
+.rmap-tower-pin {
+  min-width: 34px;
+  padding: 4px 8px;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  background: #0b2a22;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rmap-tower-pin[data-soon]::before {
+  content: "🏗";
+}
+.rmap-tower-pin[data-soon]::after {
+  content: attr(data-soon);
+  font-size: 10.5px;
+  font-weight: 400;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rmap-tower-pin[data-soon] {
+    animation: none;
+  }
+}
+.rmap-place {
+  z-index: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #ffffffe6;
+  color: #24524a;
+  font-size: 11.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px #06140f26;
+  pointer-events: none;
+}
+.rmap-plan-entry {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #ece7da;
+}
+.rmap-plan-towers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.rmap-plan-towers button,
+.fp3d-towers button {
+  min-width: 42px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d9dccf;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-green-900);
+  font-size: 13px;
+  cursor: pointer;
+}
+.rmap-plan-towers button[aria-pressed="true"],
+.fp3d-towers button[aria-pressed="true"] {
+  border-color: var(--c-green-900);
+  background: var(--c-green-900);
+  color: #fff;
+}
+.rmap-plan-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--c-green-900);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rmap-around {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ece7da;
+  font-size: 12.5px;
+  color: #5f6f66;
+  list-style: none;
+}
+.rmap-around b {
+  display: block;
+  color: var(--c-green-900);
+}
+.rmap[data-full] .rmap-body {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.rmap[data-full] .rmap-stage {
+  height: 100dvh;
+}
+.rmap[data-full] .rmap-towers {
+  display: none;
+}
+.rmap[data-full] .rmap-note {
+  position: absolute;
+  bottom: 6px;
+  left: 352px;
+  z-index: 2;
+  max-width: calc(100% - 700px);
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #ffffffd9;
+  font-size: 11px;
+}
+.rmap-side {
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  height: 100dvh;
+  padding: 18px 14px 0;
+  background: #fff;
+  box-shadow: 4px 0 18px #06140f1f;
+}
+.rmap-side-handle {
+  display: none;
+}
+/* The list starts hidden so the city fills the screen; a button brings it back. */
+.rmap-side[data-open="false"] {
+  display: none;
+}
+.rmap[data-full]:has(> .rmap-side[data-open="false"]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.rmap[data-full]:has(> .rmap-side[data-open="false"]) .rmap-note {
+  left: 12px;
+  max-width: calc(100% - 360px);
+}
+.rmap-list-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d9dccf;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--c-green-900);
+  cursor: pointer;
+}
+.rmap-side-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rmap-side h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--c-green-900);
+}
+.rmap-exit {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d9dccf;
+  border-radius: 999px;
+  color: var(--c-green-900);
+  font-size: 12.5px;
+}
+.rmap-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d9dccf;
+  border-radius: 12px;
+  color: #5f6f66;
+}
+.rmap-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--c-green-900);
+  font-size: 16px;
+}
+.rmap-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.rmap-areas button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #eef0ea;
+  color: var(--c-green-900);
+  font-size: 13px;
+  cursor: pointer;
+}
+.rmap-areas button[aria-pressed="true"] {
+  background: var(--c-green-900);
+  color: #fff;
+}
+.rmap-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0 -14px;
+  padding: 0 0 12px;
+  overflow-y: auto;
+  list-style: none;
+}
+.rmap-list button {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 12px;
+  align-content: center;
+  gap: 2px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-bottom: 1px solid #ece7da;
+  background: transparent;
+  color: var(--c-green-900);
+  text-align: left;
+  cursor: pointer;
+}
+.rmap-list button:hover {
+  background: #fbf6e9;
+}
+.rmap-list button[aria-pressed="true"] {
+  background: #f8edd0;
+}
+.rmap-list .rmap-photo {
+  grid-row: 1 / span 3;
+  height: 64px;
+}
+.rmap-list b,
+.rmap-list small {
+  grid-column: 2;
+}
+.rmap-list b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.rmap-list small {
+  font-size: 12.5px;
+  color: #5f6f66;
+}
+
+/* The 3D floor plan, over the map. */
+.fp3d {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: #f2f1ea;
+}
+.fp3d-stage {
+  position: absolute;
+  inset: 0 360px 0 0;
+}
+.fp3d-stage canvas {
+  display: block;
+  touch-action: none;
+}
+.fp3d-close {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: #061b16eb;
+  color: #fff;
+  cursor: pointer;
+}
+.fp3d-card {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 360px;
+  padding: 18px 16px;
+  overflow-y: auto;
+  background: #fff;
+  box-shadow: -4px 0 18px #06140f1f;
+}
+.fp3d-towers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.fp3d-floor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+.fp3d-floor > button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 42px;
+  border: 1px solid #d9dccf;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--c-green-900);
+  cursor: pointer;
+}
+.fp3d-floor > button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.fp3d-floor label {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  color: #5f6f66;
+}
+.fp3d-floor select {
+  min-width: 72px;
+  height: 42px;
+  padding: 0 8px;
+  border: 1px solid #d9dccf;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--c-green-900);
+  font-size: 15px;
+}
+.fp3d-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  font-size: 12.5px;
+  color: #5f6f66;
+  list-style: none;
+}
+.fp3d-legend li::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 3px;
+  background: var(--c);
+}
+.fp3d-info h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--c-green-900);
+}
+.fp3d-state {
+  margin: 4px 0 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-gold-700);
+}
+.fp3d-state[data-state="available"] {
+  color: #2f7d52;
+}
+.fp3d-state[data-state="sold"] {
+  color: #5f6f66;
+}
+/* The unit's plan. */
+.fp3d-media {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.fp3d-media figcaption {
+  font-size: 12px;
+  color: #5f6f66;
+  text-align: center;
+}
+/* The developer's plan of the unit, with its sizes. */
+.fp3d-picture {
+  display: block;
+  overflow: hidden;
+  border: 1px solid #e6e8df;
+  border-radius: 12px;
+  background: #fff;
+}
+.fp3d-picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.fp3d-info dl {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.fp3d-info dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ece7da;
+  font-size: 14px;
+}
+.fp3d-info dt {
+  color: #5f6f66;
+}
+.fp3d-info dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--c-green-900);
+  text-align: right;
+}
+.fp3d-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fp3d-actions a,
+.fp3d-actions button {
+  display: inline-flex;
+  flex: 1 1 140px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--c-green-900);
+  border-radius: 10px;
+  color: var(--c-green-900);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.fp3d-actions button {
+  flex-basis: 100%;
+  border-color: #c8962f;
+  background: #f2c14e;
+  color: #0b2a22;
+  cursor: pointer;
+}
+.fp3d-actions a:first-child {
+  background: var(--c-green-900);
+  color: #fff;
+}
+.fp3d-hint,
+.fp3d-note {
+  margin: 0;
+  font-size: 13px;
+  color: #5f6f66;
+}
+.fp3d-note {
+  margin-top: auto;
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .rmap[data-full] {
+    display: block;
+  }
+  .rmap[data-full] .rmap-note {
+    display: none;
+  }
+  /* A row under the top buttons: a finger slides along it. */
+  .rmap-rail {
+    top: 60px;
+    right: 56px;
+    left: 8px;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .rmap-rail button {
+    flex: none;
+    width: 52px;
+    font-size: 10px;
+  }
+  .rmap-body[data-open="true"] .rmap-rail {
+    right: 56px;
+  }
+  .rmap-head {
+    min-height: 118px;
+  }
+  .rmap-focus {
+    bottom: 12px;
+    left: 50%;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: calc(100% - 24px);
+  }
+  .rmap-lot {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: 72%;
+    border-radius: 18px 18px 0 0;
+  }
+  .rmap-lot-plan img {
+    max-height: 300px;
+  }
+  .rmap-view {
+    bottom: 12px;
+  }
+  .rmap-horizon {
+    right: 52px;
+  }
+  .rmap-horizon em {
+    display: none;
+  }
+  .rmap-sun {
+    bottom: 76px;
+  }
+  .rmap-side {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    max-height: 72dvh;
+    padding: 0 14px 12px;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -8px 24px #06140f33;
+  }
+  .rmap-side-handle {
+    display: block;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--c-green-900);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .rmap-filter-sheet .rmap-filter-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+  /* In the sheet the choices open in place, not over the map. */
+  .rmap-filter-sheet .rmap-filter-panel {
+    position: static;
+    width: auto;
+    margin-top: 8px;
+    padding: 4px 0 0;
+    box-shadow: none;
+  }
+  /* On a phone the list is the sheet below, folded rather than hidden. */
+  .rmap-side[data-open="false"] {
+    display: flex;
+  }
+  .rmap-list-open {
+    display: none;
+  }
+  .rmap-side-title,
+  .rmap-side[data-open="false"] .rmap-areas,
+  .rmap-side[data-open="false"] .rmap-list {
+    display: none;
+  }
+  .rmap-side:has(+ .rmap-body[data-open="true"]) {
+    display: none;
+  }
+  .rmap[data-full] .rmap-panel {
+    position: absolute;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-width: none;
+    max-height: 56dvh;
+    border-radius: 18px 18px 0 0;
+  }
+  .rmap[data-full] .rmap-body[data-open="true"] .maplibregl-ctrl-top-right {
+    right: 0;
+  }
+  .fp3d-stage {
+    inset: 0 0 50dvh 0;
+  }
+  .fp3d-card {
+    top: auto;
+    left: 0;
+    width: auto;
+    height: 50dvh;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -8px 24px #06140f33;
+  }
+}
+
+.rmap-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: #5f6f66;
+}
+@media (max-width: 900px) {
+  .rmap-stage {
+    height: min(66vh, 520px);
+  }
+  .rmap-towers {
+    position: static;
+    max-width: none;
+    border-radius: 0;
+    translate: none;
+  }
+  .rmap-body[data-open="true"] .rmap-towers {
+    max-width: none;
+  }
+  .rmap-body[data-open="true"] .maplibregl-ctrl-top-right {
+    right: 0;
+  }
+  .rmap-panel {
+    position: static;
+    width: auto;
+    max-width: none;
+    max-height: 480px;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+  .rmap-pin {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rmap-panel {
+    animation: none;
+  }
+}
+.mroute {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 10px;
+  padding: 14px 18px;
+  border: 1px solid #e0e4d9;
+  border-radius: 16px;
+  background: #fff;
+}
+.mroute-place {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  color: var(--c-green-800);
+}
+.mroute-place > svg {
+  flex: none;
+  margin-top: 2px;
+  color: #b8862f;
+}
+.mroute-place strong {
+  display: block;
+  font-size: 15.5px;
+}
+.mroute-place small {
+  display: block;
+  font-size: 13px;
+  color: #5f6f66;
+}
+.mroute-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mroute-actions > * {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.mroute-go {
+  border: 0;
+  background: #1f6feb;
+  color: #fff;
+  cursor: pointer;
+}
+.mroute-go:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.mroute-actions > a {
+  border: 1px solid #cfd6ca;
+  color: var(--c-green-800);
+}
+.mroute-result {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+  color: var(--c-green-800);
+}
+.mroute-result:empty {
+  display: none;
+}
+/* The project's pin and the visitor's own spot on the map. */
+.mroute-goal {
+  width: 26px;
+  height: 26px;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #c8962f;
+  box-shadow: 0 4px 10px #06140f59;
+  transform: rotate(-45deg);
+}
+.mroute-me {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #1f6feb;
+  box-shadow: 0 0 0 8px #1f6feb33;
+}
+@media (max-width: 640px) {
+  .mroute {
+    padding: 14px;
+  }
+  .mroute-actions,
+  .mroute-actions > * {
+    flex: 1 1 100%;
+  }
+}
+
+/* Capital Square: the model apartment in 360°, over the floor plan. */
+.fp3d-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: grid;
+  align-content: center;
+  padding: 56px clamp(12px, 3vw, 40px) 20px;
+  background: #061b16f2;
+}
+.fp3d-tour .tour {
+  width: min(100%, 1100px);
+  margin-inline: auto;
+}
+.fp3d-tour-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #0b2a22;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* A floor's plan beside the pointer (projects being built). */
+.rmap-floor-plan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: min(360px, 70%);
+  padding: 6px;
+  border-radius: 12px;
+  background: #fffdf8;
+  box-shadow: 0 16px 40px #06140f47;
+  pointer-events: none;
+}
+.rmap-floor-plan[hidden] {
+  display: none;
+}
+.rmap-floor-plan b {
+  display: block;
+  padding: 2px 4px 6px;
+  color: var(--c-green-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+.rmap-floor-plan img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.414;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f4f1ea;
+}

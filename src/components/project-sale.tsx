@@ -20,7 +20,7 @@ import { paymentAmounts } from "@/lib/payment";
 import { videoSource, type RentalMedia } from "@/lib/property-media";
 import { modelUnit } from "@/lib/model-units";
 import { projectSiteMap } from "@/lib/project-site-maps";
-import type { FloorData } from "@/lib/floor-3d";
+import { unpackKinds, type FloorData } from "@/lib/floor-3d";
 import { roomsLabel, hasRooms } from "@/lib/property-groups";
 import { unitRef, vndFull } from "@/lib/utils";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
@@ -127,6 +127,8 @@ export const toDeskUnit = (r: Property): DeskUnit => ({
  */
 function keptPlans(floors?: FloorData) {
   if (!floors?.plans.some((x) => x.image)) return null;
+  const kinds =
+    floors.kinds ?? (floors.packedKinds ? unpackKinds(floors.packedKinds) : {});
   const plans: DeskPlan[] = [];
   for (const tower of floors.towers) {
     const drawings = new Map<string, string[]>();
@@ -138,7 +140,7 @@ function keptPlans(floors?: FloorData) {
       const range =
         list.length > 1 ? `${list[0]}-${list.at(-1)}` : (list[0] ?? "");
       const units = Object.fromEntries(
-        Object.entries(floors.kinds ?? {})
+        Object.entries(kinds)
           .filter(([key]) => key.startsWith(`${file}/`))
           .map(([key, kind]) => [
             key.slice(file.length + 1),

@@ -1,16 +1,17 @@
 /** @jsxImportSource @/i18n/jsx */
+// Stylesheets every public page loads. Section-only ones (jobs, about,
+// contact, reader, portfolio-map, portfolio-sale) are imported by the routes
+// that use them, so they load after these; their rules do not depend on
+// coming earlier. company-pages and refined-public stay here: design-system
+// must come after them.
 import "@/components/company-pages.css";
 import "@/components/refined-public.css";
 import "@/components/signature-home.css";
 import "@/components/portfolio-pages.css";
 import "@/components/rentals.css";
-import "@/components/jobs.css";
 import "@/components/home.css";
-import "@/components/about.css";
-import "@/components/contact.css";
 // Design system last: it settles the page stylesheets on shared tokens.
 import "@/components/design-system.css";
-import "@/components/reader.css";
 // Unit cards: one block that settles the layers above.
 import "@/components/unit-card.css";
 import { notFound } from "next/navigation";

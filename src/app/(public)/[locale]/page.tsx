@@ -1,4 +1,6 @@
 /** @jsxImportSource @/i18n/jsx */
+// The home map (RentalMap); the other stylesheets come from ./layout.tsx.
+import "@/components/portfolio-map.css";
 import Image from "next/image";
 import Link from "@/components/page-navigation";
 import type { Metadata } from "next";

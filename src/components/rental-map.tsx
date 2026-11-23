@@ -45,7 +45,12 @@ import type { Towers, TowerHit } from "./map-towers";
 import { planArea } from "./plan-cutout";
 import { MapRoute, type RouteTarget } from "./map-route";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
-import { towerFloors, unitName, type FloorData } from "@/lib/floor-3d";
+import {
+  towerFloors,
+  unitKinds,
+  unitName,
+  type FloorData,
+} from "@/lib/floor-3d";
 import {
   BUILDING_BLOCKS,
   PLACE_VIEWS,
@@ -471,7 +476,7 @@ const metres = (m: number) =>
  * the whole-screen page: search, tools, landmarks and the 3D floor plans.
  */
 export function RentalMap({
-  buildings,
+  buildings: sent,
   full = false,
   places = [],
   initial = {},
@@ -486,6 +491,8 @@ export function RentalMap({
   route?: RouteTarget;
 }) {
   const t = useT();
+  // Unit kinds come packed (each kind once): back to "file/number" → kind.
+  const buildings = useMemo(() => sent.map(unitKinds), [sent]);
   const stage = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibre | null>(null);

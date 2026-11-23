@@ -17,6 +17,12 @@ import {
 } from "../src/lib/rental-map";
 import { PLAN_ANCHORS, PLAN_OUTLINES } from "../src/lib/floor-plan-outlines";
 import { unitFits } from "../src/lib/map-filter";
+import {
+  packKinds,
+  unitKinds,
+  unpackKinds,
+  type FloorData,
+} from "../src/lib/floor-3d";
 import { apiAs, humanPause } from "./helpers";
 
 const room = "/cho-thue/can-ho-sun-ponte-residence-demo-01";
@@ -1139,6 +1145,37 @@ test("the rental map lists buildings without filters and opens a building's unit
   // A building's own rental page has no city map.
   await page.goto("/cho-thue/du-an/monarchy-apartments");
   await expect(page.locator("#ban-do-can-thue")).toHaveCount(0);
+});
+
+test("unit kinds go to the page once each and come back the same", () => {
+  const two = { rooms: "2PN", bedrooms: 2, area: 80, view: "View sông Hàn" };
+  const three = {
+    rooms: "3PN",
+    bedrooms: 3,
+    area: "105–110",
+    view: "View biển",
+  };
+  const kinds = {
+    "mat-bang-b-tang-3.webp/01": two,
+    "mat-bang-b-tang-3.webp/02": three,
+    "mat-bang-b-tang-3.webp/03": two,
+    "p1-tang-4-17.webp/12A": two,
+  };
+  const packed = packKinds(kinds);
+  // Each kind once, every unit pointing to it.
+  expect(packed.list).toHaveLength(2);
+  expect(unpackKinds(packed)).toEqual(kinds);
+  expect(JSON.stringify(packed).length).toBeLessThan(
+    JSON.stringify(kinds).length,
+  );
+  // The map unpacks a building's kinds; one without them stays as it is.
+  const building: { slug: string; floors?: FloorData } = {
+    slug: "x",
+    floors: { towers: [], plans: [], units: [], packedKinds: packed },
+  };
+  expect(unitKinds(building).floors?.kinds).toEqual(kinds);
+  const plain: { slug: string; floors?: FloorData } = { slug: "y" };
+  expect(unitKinds(plain)).toBe(plain);
 });
 
 test("the map's filter: rooms and monthly rent", () => {

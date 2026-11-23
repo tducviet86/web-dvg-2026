@@ -211,7 +211,7 @@ test("Lượt xem theo căn: every viewed unit, adding up to the chart, and the 
   // The unit list counts views over the same 7 days.
   await page.goto("/admin/properties");
   await expect(
-    page.getByRole("columnheader", { name: "Quan tâm (7 ngày)" }),
+    page.getByRole("columnheader", { name: "Quan tâm · 7 ngày" }),
   ).toBeVisible();
   await api.send("delete", `/admin/properties/${id}`);
 });

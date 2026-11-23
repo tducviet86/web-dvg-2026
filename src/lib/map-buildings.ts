@@ -3,6 +3,7 @@ import type { SiteContent } from "@/lib/api/content";
 import { vacantNow } from "@/lib/availability";
 import { filterProperties } from "@/lib/filter";
 import {
+  packKinds,
   planFloors,
   unitNumber,
   type FloorData,
@@ -823,7 +824,12 @@ export function mapBuildings(
             hot: p.interestScore ?? 0,
             trending: !!p.trending,
           })),
-        floors,
+        // Each unit kind once (packKinds); the map unpacks it.
+        floors: floors && {
+          ...floors,
+          kinds: undefined,
+          packedKinds: floors.kinds && packKinds(floors.kinds),
+        },
         // Being built and without the 3D floors: its plans, floor by floor.
         ...(!floors &&
           b.categories.includes("development") && {
