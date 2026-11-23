@@ -24,7 +24,7 @@ export function filterProperties(items: Property[], f: Filters) {
             p.projectSlug === f.project ||
             p.projectId === f.project) &&
           (!f.type || p.type === f.type) &&
-          // "loai": Căn hộ / Shophouse / Nhà phố / Mặt bằng.
+          // "loai": Căn hộ / Shophouse / Nhà phố / Mặt bằng / Văn phòng.
           (!f.loai || unitKind(p) === f.loai) &&
           (!f.price || p.price <= Number(f.price)) &&
           (!f["gia-tu"] || p.price >= Number(f["gia-tu"])) &&

@@ -5,8 +5,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 export const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://datvang.example";
+/**
+ * An amount in tỷ or triệu, never rounded up or down: 4.35 → "4,35",
+ * 19.25 → "19,25" (to the million in tỷ, to the thousand in triệu).
+ */
 export function money(value: number) {
-  return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 }).format(
+  return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 3 }).format(
     value,
   );
 }
@@ -15,7 +19,7 @@ export function money(value: number) {
 export const vndFull = (vnd: number) =>
   new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(vnd);
 
-/** Sale price for visitors: "5 tỷ", "850 triệu". */
+/** Sale price for visitors: "5 tỷ", "4,35 tỷ", "850 triệu". */
 export function salePrice(vnd: number) {
   return vnd >= 1e9 ? `${money(vnd / 1e9)} tỷ` : `${money(vnd / 1e6)} triệu`;
 }

@@ -502,7 +502,7 @@ test("shophouse units show the area, no bedrooms or bathrooms", async ({
   await api.send("delete", `/admin/properties/${id}`);
 });
 
-test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings follow", async ({
+test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng, Văn phòng; headings follow", async ({
   page,
 }) => {
   await page.goto("/cho-thue");
@@ -516,7 +516,11 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
   await expect(hero.getByLabel("Nhà phố", { exact: true })).toBeDisabled();
   await expect(hero.getByLabel("Mặt bằng", { exact: true })).toBeDisabled();
   await expect(hero.getByLabel("Shophouse", { exact: true })).toBeDisabled();
+  await expect(hero.getByLabel("Văn phòng", { exact: true })).toBeDisabled();
   await expect(hero.locator(".hero-kinds label").nth(3)).toHaveText("Nhà phố");
+  await expect(hero.locator(".hero-kinds label").last()).toHaveText(
+    "Văn phòng",
+  );
   await expect(hero.locator(".hero-kinds label").nth(1)).toHaveText("Căn hộ");
 
   const api = await apiAs();
@@ -538,6 +542,7 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
     ["NP-4", "nha-pho", 4],
     ["MB-1", "mat-bang", 0],
     ["SH-1", "shophouse", 0],
+    ["VP-1", "van-phong", 0],
   ] as const) {
     const created = await api.send("post", "/admin/properties", {
       name: `Kiểm tra loại hình ${code}`,
@@ -567,7 +572,21 @@ test("“Loại hình” pills: Căn hộ, Nhà phố, Mặt bằng; headings fo
     await expect(hero.getByLabel("Nhà phố", { exact: true })).toBeEnabled({
       timeout: 1000,
     });
+    await expect(hero.getByLabel("Văn phòng", { exact: true })).toBeEnabled({
+      timeout: 1000,
+    });
   }).toPass({ timeout: 60_000 });
+  // Offices: their own kind, no bedrooms, the area and the type on the card.
+  await hero.getByLabel("Văn phòng", { exact: true }).check();
+  await expect(page).toHaveURL(/\?loai=office$/);
+  await expect(page.locator(".rental-results-heading h2")).toHaveText(
+    "Khám phá văn phòng cho thuê",
+  );
+  await expect(hero.getByLabel("Phòng ngủ")).toHaveCount(0);
+  const office = page.locator(".rental-card-grid .property-card");
+  await expect(office).toHaveCount(1);
+  await expect(office.locator(".property-specs")).toContainText("Văn phòng");
+  await expect(office.locator(".property-specs")).not.toContainText("WC");
   // Shophouse and mặt bằng have no bedrooms: the field goes away.
   await hero.getByLabel("Shophouse", { exact: true }).check();
   await expect(hero.getByLabel("Phòng ngủ")).toHaveCount(0);

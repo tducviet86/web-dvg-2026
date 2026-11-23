@@ -407,7 +407,8 @@ export function payload(
       // Empty: a townhouse or premises outside any project.
       projectId: v.projectId || null,
       propertyType: v.type,
-      unitCode: orNull(v.unitCode),
+      // One spelling for codes: "12a11" is saved as "12A11".
+      unitCode: orNull(str(v.unitCode).toUpperCase()),
       location: str(v.location).trim(),
       address: orNull(v.address),
       latitude: numOrNull(v.latitude),

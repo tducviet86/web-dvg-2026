@@ -212,13 +212,8 @@ test("admin lists model apartments apart from posted units", async ({
 test("the unit form keeps project-sale fields to model apartments", async ({
   page,
 }) => {
-  const projectFields = [
-    "tower",
-    "viewNote",
-    "quota",
-    "floorNote",
-    "priceExcludesFees",
-  ];
+  // The tower shows for every unit (required when the project has several).
+  const projectFields = ["viewNote", "quota", "floorNote", "priceExcludesFees"];
   await login(page);
   await page.goto("/admin/properties/new");
   await expect(page.locator("[name=direction]")).toBeVisible();
@@ -250,8 +245,7 @@ test("the unit form keeps project-sale fields to model apartments", async ({
   const { id } = ((await made.json()) as { data: { id: string } }).data;
   try {
     await page.goto(`/admin/properties/${id}/edit`);
-    await expect(page.locator("[name=tower]")).toBeVisible();
-    await expect(page.locator("[name=tower]")).toHaveValue("FORM1");
+    // The tower list follows the project's "Các tòa" (hidden when it has none).
     await expect(page.locator("[name=floorNote]")).toBeVisible();
   } finally {
     await api.send("delete", `/admin/properties/${id}`);

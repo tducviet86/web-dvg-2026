@@ -1,12 +1,13 @@
 /**
- * Unit types fall in three groups (BE property_types.group): Căn hộ
- * (studio, 1–3PN, shophouse…), Nhà phố (Euro Village 1, 2, Phúc Lộc Viên…)
- * and Mặt bằng.
+ * Unit types fall in four groups (BE property_types.group): Căn hộ
+ * (studio, 1–3PN, shophouse…), Nhà phố (Euro Village 1, 2, Phúc Lộc Viên…),
+ * Mặt bằng and Văn phòng.
  */
 export const PROPERTY_GROUPS = {
   apartment: "Căn hộ",
   townhouse: "Nhà phố",
   premises: "Mặt bằng",
+  office: "Văn phòng",
 } as const;
 export type PropertyGroup = keyof typeof PROPERTY_GROUPS;
 /**
@@ -18,6 +19,7 @@ export const SEARCH_KINDS = {
   shophouse: "Shophouse",
   townhouse: "Nhà phố",
   premises: "Mặt bằng",
+  office: "Văn phòng",
 } as const;
 export type SearchKind = keyof typeof SEARCH_KINDS;
 export const unitKind = (p: { typeCode?: string; typeGroup?: string }) =>
@@ -28,9 +30,11 @@ export const groupLabel = (group?: string) =>
   PROPERTY_GROUPS[group as PropertyGroup] ?? PROPERTY_GROUPS.apartment;
 
 /** Types without bedrooms or bathrooms: only the area is shown. */
-export const NO_ROOM_TYPES = ["shophouse", "mat-bang"];
+export const NO_ROOM_TYPES = ["shophouse", "mat-bang", "van-phong"];
 export const hasRooms = (p: { typeCode?: string; typeGroup?: string }) =>
-  !NO_ROOM_TYPES.includes(p.typeCode ?? "") && p.typeGroup !== "premises";
+  !NO_ROOM_TYPES.includes(p.typeCode ?? "") &&
+  p.typeGroup !== "premises" &&
+  p.typeGroup !== "office";
 
 /**
  * Tag on a card photo for what is not a plain apartment ("Shophouse",
@@ -81,6 +85,6 @@ export function listingKind(
   if (kinds.size > 1) return undefined;
   return ([...kinds][0] as SearchKind | undefined) ?? "apartment";
 }
-/** "Căn hộ", "Shophouse", "Nhà phố", "Mặt bằng"; "Bất động sản" when mixed. */
+/** "Căn hộ", "Shophouse", "Nhà phố", "Mặt bằng", "Văn phòng"; "Bất động sản" when mixed. */
 export const kindNoun = (kind?: SearchKind) =>
   kind ? SEARCH_KINDS[kind] : "Bất động sản";

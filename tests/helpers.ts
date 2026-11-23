@@ -1,4 +1,4 @@
-import { expect, request, type Page } from "@playwright/test";
+import { expect, request, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { API_URL } from "../playwright.config";
 
@@ -56,6 +56,20 @@ export async function apiAs(role: Role = "admin") {
 
 /** Waits past the forms' anti-bot minimum fill time. */
 export const humanPause = (page: Page) => page.waitForTimeout(2700);
+
+/**
+ * Where a new apartment is: its floor (required) and, when its project
+ * lists towers, the first of them.
+ */
+export async function placeUnit(form: Locator, floor = "8") {
+  await form.locator("[name=floor]").fill(floor);
+  const towers = await form
+    .locator("[name=tower] option")
+    .evaluateAll((all) =>
+      all.map((o) => (o as HTMLOptionElement).value).filter(Boolean),
+    );
+  if (towers.length) await form.locator("[name=tower]").selectOption(towers[0]);
+}
 
 /** Asserts the "Chưa thể lưu" popup lists `text`, then dismisses it. */
 export async function expectErrorPopup(page: Page, text: string | RegExp) {

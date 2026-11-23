@@ -1795,6 +1795,7 @@
   font-weight: 600;
 }
 .admin-editor .field {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -1889,6 +1890,22 @@
 .admin-editor .has-error textarea {
   border-color: #c2412b;
   box-shadow: 0 0 0 3px #c2412b1f;
+}
+/* A field's error sits beside its name, over the free end of the label
+   row: the form never grows or shifts when it appears. The popup and
+   aria-describedby keep the whole message. */
+.admin-editor .field > .field-error-text {
+  position: absolute;
+  top: -1px;
+  right: 0;
+  max-width: 62%;
+  overflow: hidden;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: #fbe9e5;
+  line-height: 1.5;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .field-cards {
   border: 0;

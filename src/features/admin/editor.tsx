@@ -65,7 +65,7 @@ import {
   type Kind,
 } from "./model";
 import { ProjectBannerSection, type ProjectBannerDraft } from "./banners";
-import { NO_ROOM_TYPES } from "@/lib/property-groups";
+import { NO_ROOM_TYPES, PROPERTY_GROUPS } from "@/lib/property-groups";
 import { RowsField, type RowsConfig } from "./rows-field";
 import { ALL_RENT_FEES, RENT_FEES } from "@/lib/included-fees";
 
@@ -83,6 +83,7 @@ const ROOMS_BY_TYPE: Record<string, [number, number]> = {
   // No rooms: the fields are hidden and saved as 0.
   shophouse: [0, 0],
   "mat-bang": [0, 0],
+  "van-phong": [0, 0],
 };
 
 // ───────────────────────────── field model ─────────────────────────────
@@ -149,6 +150,11 @@ type Field = {
   hideForTypes?: string[];
   /** A select with these choices while the unit type is the key (nhà phố: 2–4 PN). */
   choicesForTypes?: Record<string, [string, string][]>;
+  /** A select of the chosen project's towers (its "Các tòa"), shown only
+      when the project lists some. */
+  towersOfProject?: boolean;
+  /** Only for a unit outside any project ("Không thuộc dự án"). */
+  onlyWithoutProject?: boolean;
   /** Starts a new block inside the section, with this small heading. */
   subhead?: string;
 };
@@ -173,7 +179,14 @@ export type Lookups = {
   /** Project address and map, used to pre-fill a unit's location. */
   projectPlaces: Record<
     string,
-    { name: string; location: string; address: string; hasMap: boolean }
+    {
+      name: string;
+      location: string;
+      address: string;
+      hasMap: boolean;
+      /** Names in the project's "Các tòa". */
+      towers?: string[];
+    }
   >;
 };
 
@@ -728,8 +741,8 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             minLength: 2,
             maxLength: 160,
             wide: true,
-            placeholder: "vd: Căn 2 phòng ngủ view sông Hàn",
-            hint: 'Có thể để AI đặt tiêu đề: bấm "Viết tiêu đề & mô tả bằng AI" ở mục Mô tả.',
+            placeholder: "vd: View sông Hàn, ban công rộng",
+            hint: 'Chỉ ghi điểm nổi bật của căn. Không cần ghi dự án, tòa, tầng, số phòng ngủ: thẻ căn tự hiện các thông tin đó. Có thể để AI đặt tiêu đề: bấm "Viết tiêu đề & mô tả bằng AI" ở mục Mô tả.',
           }),
           f("slug", "Đường dẫn (slug)", {
             maxLength: 160,
@@ -771,7 +784,8 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             min: -90,
             max: 90,
             placeholder: "vd: 16.0548413",
-            hint: "Chỉ cần khi căn không thuộc dự án. Trên Google Maps, nhấn giữ vào vị trí rồi chép 2 số hiện ra (số đầu là vĩ độ).",
+            hint: "Trên Google Maps, nhấn giữ vào vị trí rồi chép 2 số hiện ra (số đầu là vĩ độ).",
+            onlyWithoutProject: true,
           }),
           f("longitude", "Kinh độ", {
             type: "number",
@@ -779,6 +793,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             min: -180,
             max: 180,
             placeholder: "vd: 108.2329786",
+            onlyWithoutProject: true,
           }),
         ],
       },
@@ -837,6 +852,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             max: 200,
             integer: true,
             hideForTypes: ["shophouse"],
+            hint: "Bắt buộc với căn hộ.",
           }),
           f("direction", "Hướng căn hộ", {
             type: "select",
@@ -854,14 +870,15 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
               ]),
             ],
           }),
+          // Every unit: the tower, chosen from the project's "Các tòa"
+          // (needed when the project has several).
+          f("tower", "Tòa", {
+            type: "select",
+            towersOfProject: true,
+            hint: "Theo mục Các tòa của dự án; bắt buộc khi dự án có từ 2 tòa.",
+          }),
           // Project-sale fields: only model apartments use them, not units
           // posted for rent or sale.
-          f("tower", "Tòa", {
-            maxLength: 40,
-            placeholder: "vd: C4",
-            hint: "Viết đúng tên tòa trong mục Các tòa của dự án.",
-            showWhen: "floorNote",
-          }),
           f("viewNote", "View", {
             maxLength: 120,
             placeholder: "vd: Sông Hàn",
@@ -1574,6 +1591,34 @@ function checkField(field: Field, value: FormValue): string | null {
 }
 
 /** Rules spanning several fields (mirrors the API's service checks). */
+/** The project's towers as select choices ("" first). */
+function towerChoices(lookups: Lookups, projectId: string): [string, string][] {
+  const towers = lookups.projectPlaces?.[projectId]?.towers ?? [];
+  return [["", "Chọn tòa"], ...towers.map((t): [string, string] => [t, t])];
+}
+/**
+ * Where a unit is, so its card can say it: the tower when the project has
+ * several, the floor of an apartment. Model units give floors in "Tầng áp
+ * dụng" instead.
+ */
+function unitPlaceChecks(v: FormValues, lookups: Lookups): FormIssue[] {
+  if (str(v.floorNote)) return [];
+  const issues: FormIssue[] = [];
+  const towers = lookups.projectPlaces?.[str(v.projectId)]?.towers ?? [];
+  if (towers.length > 1 && !str(v.tower))
+    issues.push({
+      field: "tower",
+      label: "Tòa",
+      message: "là bắt buộc vì dự án có nhiều tòa",
+    });
+  if (lookups.propertyTypeGroups?.[str(v.type)] === "Căn hộ" && !str(v.floor))
+    issues.push({
+      field: "floor",
+      label: "Tầng",
+      message: "là bắt buộc với căn hộ",
+    });
+  return issues;
+}
 function crossChecks(kind: Kind, v: FormValues): FormIssue[] {
   const issues: FormIssue[] = [];
   const add = (field: string, label: string, message: string) =>
@@ -1946,6 +1991,7 @@ export function Editor({
         issues.push({ field: field.key, label: field.label, message: problem });
     }
     issues.push(...crossChecks(kind, raw));
+    if (kind === "properties") issues.push(...unitPlaceChecks(raw, lookups));
     if (kind === "projects" && bannerDraft?.enabled) {
       if (!bannerDraft.useProjectImage && !bannerDraft.image)
         issues.push({
@@ -2039,14 +2085,24 @@ export function Editor({
     const project = lookups.projects.find(
       ([id]) => id === str(v.projectId),
     )?.[1];
+    const group = lookups.propertyTypeGroups?.[str(v.type)];
     return {
       title: str(v.name),
       summary: str(v.description),
+      project,
+      unitKind:
+        str(v.type) === "shophouse"
+          ? "shophouse"
+          : (Object.entries(PROPERTY_GROUPS).find(
+              ([, l]) => l === group,
+            )?.[0] ?? "apartment"),
       content: [str(v.amenities), v.forRent ? str(v.rentalPolicy) : ""]
         .filter(Boolean)
         .join("\n\n"),
       context: [
         project && `Dự án: ${project}`,
+        str(v.tower) && `Tòa ${str(v.tower)}`,
+        str(v.floor) && `Tầng ${str(v.floor)}`,
         str(v.location),
         str(v.area) && `${str(v.area)} m²`,
         // Shophouse / mặt bằng: the type, never "0 phòng ngủ".
@@ -2120,6 +2176,7 @@ export function Editor({
       ["Diện tích", `${area} m²`],
       ["Phòng ngủ", !rooms ? "" : bedrooms === "0" ? "Studio" : bedrooms],
       ["Phòng tắm", rooms ? str(v.bathrooms) : ""],
+      ["Tòa", str(v.tower)],
       ["Tầng", str(v.type) === "shophouse" ? "" : str(v.floor)],
       ["Hướng", str(v.direction)],
       ["Nội thất", label(furnishingOptions, v.furniture)],
@@ -2335,6 +2392,9 @@ export function Editor({
       );
     // Fields that change shape with the unit type start from the live value.
     const byType = item.choicesForTypes?.[str(live.type)];
+    const options = item.towersOfProject
+      ? towerChoices(lookups, str(live.projectId))
+      : item.options;
     const shared = {
       id,
       name: item.key,
@@ -2355,6 +2415,9 @@ export function Editor({
         hidden={
           (item.showWhen ? !live[item.showWhen] : false) ||
           !!item.hideForTypes?.includes(str(live.type)) ||
+          (item.onlyWithoutProject && !!str(live.projectId)) ||
+          (item.towersOfProject &&
+            !lookups.projectPlaces?.[str(live.projectId)]?.towers?.length) ||
           undefined
         }
       >
@@ -2396,33 +2459,33 @@ export function Editor({
           </select>
         ) : item.type === "select" ? (
           <select {...shared} disabled={locked || undefined}>
-            {!item.options?.length && (
+            {!options?.length && (
               <option value="">Chưa có dữ liệu — hãy tạo trước</option>
             )}
             {/* A saved value outside the list (e.g. 24 months) is kept. */}
             {value != null &&
               String(value) !== "" &&
-              !item.options?.some(([k]) => k === String(value)) && (
+              !options?.some(([k]) => k === String(value)) && (
                 <option value={String(value)}>
                   {String(value)}
                   {item.unit ? ` ${item.unit}` : ""}
                 </option>
               )}
             {item.optionGroups
-              ? [
-                  ...new Set(item.options?.map(([k]) => item.optionGroups![k])),
-                ].map((group) => (
-                  <optgroup key={group ?? ""} label={group ?? "Khác"}>
-                    {item.options
-                      ?.filter(([k]) => item.optionGroups![k] === group)
-                      .map(([key, label]) => (
-                        <option value={key} key={key}>
-                          {label}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))
-              : item.options?.map(([key, label]) => (
+              ? [...new Set(options?.map(([k]) => item.optionGroups![k]))].map(
+                  (group) => (
+                    <optgroup key={group ?? ""} label={group ?? "Khác"}>
+                      {options
+                        ?.filter(([k]) => item.optionGroups![k] === group)
+                        .map(([key, label]) => (
+                          <option value={key} key={key}>
+                            {label}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ),
+                )
+              : options?.map(([key, label]) => (
                   <option value={key} key={key}>
                     {label}
                   </option>

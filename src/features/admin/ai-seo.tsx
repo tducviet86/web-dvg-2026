@@ -10,6 +10,8 @@ export type SeoSuggestion = {
   seoDescription: string;
   keywords: string[];
   imageAlt: string;
+  /** Units: the real Google searches the suggestion was aimed at. */
+  searches?: string[];
 };
 export type SeoSource = {
   title: string;
@@ -18,6 +20,9 @@ export type SeoSource = {
   context?: string;
   /** Units: whether the page speaks to tenants, buyers or both. */
   listing?: "rent" | "sale" | "both";
+  /** Units: project name and kind, to pick the real searches that fit. */
+  project?: string;
+  unitKind?: string;
 };
 
 let status: Promise<boolean> | null = null;
@@ -71,10 +76,21 @@ export function AiSeoAssistant({
     setBusy(true);
     setError("");
     try {
+      // A unit: aimed at the real Google searches that fit it.
+      const { project, unitKind, ...text } = source;
       const res = await api<{ data: SeoSuggestion }>(
         "POST",
-        "/admin/ai/seo-suggest",
-        { kind, ...source },
+        kind === "property"
+          ? "/admin/seo/unit-suggest"
+          : "/admin/ai/seo-suggest",
+        kind === "property"
+          ? {
+              ...text,
+              listing: text.listing ?? "rent",
+              project,
+              kind: unitKind,
+            }
+          : { kind, ...text },
       );
       setSuggestion(res.data);
     } catch (err) {
@@ -131,6 +147,18 @@ export function AiSeoAssistant({
               Tiêu đề {suggestion.seoTitle.length}/60 · Mô tả{" "}
               {suggestion.seoDescription.length}/160 ký tự
             </dd>
+            {!!suggestion.searches?.length && (
+              <>
+                <dt>Khách thật sự tìm</dt>
+                <dd>
+                  {suggestion.searches.map((q) => (
+                    <span key={q} className="ai-chip">
+                      {q}
+                    </span>
+                  ))}
+                </dd>
+              </>
+            )}
             {suggestion.keywords.length > 0 && (
               <>
                 <dt>Từ khóa gợi ý</dt>

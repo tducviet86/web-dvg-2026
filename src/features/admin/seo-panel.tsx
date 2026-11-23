@@ -801,6 +801,7 @@ const KINDS: [string, string][] = [
   ["shophouse", "Shophouse"],
   ["townhouse", "Nhà phố"],
   ["premises", "Mặt bằng"],
+  ["office", "Văn phòng"],
 ];
 const ROOMS: [string, string][] = [
   ["", "Mọi số phòng"],

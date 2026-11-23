@@ -1,8 +1,14 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
-import { apiAs, credentials, expectErrorPopup, login } from "./helpers";
-import { moneyWords } from "../src/lib/utils";
+import {
+  apiAs,
+  credentials,
+  expectErrorPopup,
+  login,
+  placeUnit,
+} from "./helpers";
+import { moneyWords, salePrice } from "../src/lib/utils";
 import { sourceOf } from "../src/lib/visit-source";
 import {
   MIN_LANDING_UNITS,
@@ -288,6 +294,7 @@ test("properties upload images and videos, choose the cover, delete and keep ord
     "Căn hộ",
     "Nhà phố",
     "Mặt bằng",
+    "Văn phòng",
   ]);
   await expect(kinds.first().getByLabel("Shophouse")).toHaveCount(1);
   await expect(kinds.nth(1).locator(".field-pill")).toHaveText(["Nhà phố"]);
@@ -372,6 +379,7 @@ test("properties upload images and videos, choose the cover, delete and keep ord
   await expect(tiles.nth(0)).toHaveAttribute("data-cover", "true");
   await form.getByRole("button", { name: "Xóa ảnh 2" }).click();
   await expect(tiles).toHaveCount(2);
+  await placeUnit(form);
   await form.getByRole("button", { name: "Tạo căn hộ" }).click();
   await expect(page).toHaveURL(/\/admin\/properties$/);
   await page
@@ -429,6 +437,7 @@ test("a unit slug is its name plus unit code, made when missing; the page shows 
     .locator("[name=description]")
     .fill("Căn hộ kiểm tra đường dẫn và mã căn tự tạo.");
   await form.locator("[name=price]").pressSequentially("25000000");
+  await placeUnit(form);
   await form.getByRole("button", { name: "Tạo căn hộ" }).click();
   await expect(page).toHaveURL(/\/admin\/properties$/);
   const api = await apiAs();
@@ -1189,6 +1198,15 @@ test("prices go to the AI writer in words it cannot misread", () => {
   expect(moneyWords("")).toBe("");
 });
 
+test("sale prices are shown exactly, never rounded", () => {
+  // 4.350.000.000 đ once read "4,4 tỷ" on the unit page.
+  expect(salePrice(4_350_000_000)).toBe("4,35 tỷ");
+  expect(salePrice(4_355_000_000)).toBe("4,355 tỷ");
+  expect(salePrice(5_000_000_000)).toBe("5 tỷ");
+  expect(salePrice(850_500_000)).toBe("850,5 triệu");
+  expect(moneyWords("4.350.000.000")).toBe("4,35 tỷ đồng (4.350.000.000 đ)");
+});
+
 test("a visit's source, from its link or the page that sent it", () => {
   const own = "datvanggroup.vn";
   expect(sourceOf("", "https://www.google.com/", own)).toBe("google");
@@ -1326,4 +1344,100 @@ test("Từ khoá & SEO: a landing page counts real units only and sums them up",
   expect(facts).toMatchObject({ total: 3, low: 15, high: 22 });
   expect(landingSummary(facts)).toContain("giá 15 – 22 triệu/tháng");
   expect(landingSummary(facts)).toContain("tại Monarchy, Sun Ponte");
+});
+
+test("a unit's card says its project, tower and floor; the form asks for them", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")) as {
+    data: {
+      id: string;
+      status: string;
+      categories: string[];
+      towers: { name: string }[];
+    }[];
+  };
+  const project = projects.data.find(
+    (p) => p.status === "PUBLISHED" && p.categories.includes("rent"),
+  )!;
+  const before = project.towers;
+  await api.send("patch", `/admin/projects/${project.id}`, {
+    towers: [{ name: "QA-A" }, { name: "QA-B" }],
+  });
+  try {
+    await login(page);
+    await page.goto("/admin/properties/new");
+    const form = page.locator(".admin-editor-page");
+    await form.locator("[name=name]").fill("View sông QA tòa tầng");
+    await form
+      .locator("[name=description]")
+      .fill("Căn hộ kiểm tra tòa và tầng trên thẻ căn.");
+    await form.locator("[name=price]").pressSequentially("21000000");
+    await form.locator("[name=unitCode]").fill("qa12b11");
+    // A map place only for a unit outside any project; a tower only when
+    // the project lists towers.
+    await expect(form.locator("[name=latitude]")).toBeHidden();
+    await form
+      .locator("[name=projectId]")
+      .selectOption({ label: "Không thuộc dự án (nhà phố, mặt bằng lẻ)" });
+    await expect(form.locator("[name=latitude]")).toBeVisible();
+    await expect(form.locator("[name=longitude]")).toBeVisible();
+    await expect(form.locator("[name=tower]")).toBeHidden();
+    await form.locator("[name=projectId]").selectOption(project.id);
+    await expect(form.locator("[name=latitude]")).toBeHidden();
+    // The tower is picked from the project's own list.
+    await expect(form.locator("[name=tower] option")).toHaveText([
+      "Chọn tòa",
+      "QA-A",
+      "QA-B",
+    ]);
+    await form.locator('input[name=status][value="PUBLISHED"]').check();
+    // Several towers: the tower is needed; an apartment needs its floor.
+    const floorField = form.locator(".field", {
+      has: page.locator("[name=floor]"),
+    });
+    const before = (await floorField.boundingBox())!.height;
+    await form.getByRole("button", { name: "Tạo căn hộ" }).click();
+    await expectErrorPopup(page, "là bắt buộc vì dự án có nhiều tòa");
+    // The error sits beside the field's name: the form does not grow.
+    await expect(floorField.locator(".field-error-text")).toBeVisible();
+    expect((await floorField.boundingBox())!.height).toBe(before);
+    await form.getByRole("button", { name: "Tạo căn hộ" }).click();
+    await expectErrorPopup(page, "là bắt buộc với căn hộ");
+    await form.locator("[name=tower]").selectOption("QA-B");
+    await form.locator("[name=floor]").fill("12");
+    await form.getByRole("button", { name: "Tạo căn hộ" }).click();
+    await expect(page).toHaveURL(/\/admin\/properties$/);
+    const units = (await api.get(
+      "/admin/properties?q=View%20s%C3%B4ng%20QA%20t%C3%B2a",
+    )) as unknown as {
+      data: { id: string; unitCode: string; tower: string }[];
+    };
+    // One spelling for codes.
+    expect(units.data[0]).toMatchObject({ unitCode: "QA12B11", tower: "QA-B" });
+    try {
+      const card = page.locator("article.property-card", {
+        hasText: "View sông QA tòa tầng",
+      });
+      await expect(async () => {
+        await page.goto("/cho-thue?q=QA12B11");
+        await expect(card.locator(".card-meta")).toContainText(
+          /Tòa QA-B · Tầng 12/i,
+          {
+            timeout: 1000,
+          },
+        );
+      }).toPass({ timeout: 60_000 });
+      await expect(card.locator(".card-meta")).toContainText("QA12B11");
+      // The floor is said once, above, not again among the facts.
+      await expect(card.locator(".property-specs")).not.toContainText("Tầng");
+    } finally {
+      await api.send("delete", `/admin/properties/${units.data[0].id}`);
+    }
+  } finally {
+    await api.send("patch", `/admin/projects/${project.id}`, {
+      towers: before,
+    });
+  }
 });

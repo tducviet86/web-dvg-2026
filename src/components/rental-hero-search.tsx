@@ -29,6 +29,7 @@ const KINDS: Options = [
   ["shophouse", "Shophouse"],
   ["townhouse", "Nhà phố"],
   ["premises", "Mặt bằng"],
+  ["office", "Văn phòng"],
 ];
 const BEDROOM_LABELS: Record<number, string> = {
   0: "Studio",

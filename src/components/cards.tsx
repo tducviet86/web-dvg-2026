@@ -8,7 +8,6 @@ import {
   Expand,
   Bath,
   Sofa,
-  Layers,
   Camera,
   PlayCircle,
   Store,
@@ -128,6 +127,17 @@ export function PropertyCard({
   const detail = `/cho-thue/${property.slug}`;
   const photos = media.filter((m) => m.type === "image").length;
   const videos = media.length - photos;
+  // Where the unit is: project · tower · floor; outside any project, the
+  // first part of its address.
+  const place = property.projectName
+    ? [
+        property.projectName,
+        property.tower && `Tòa ${property.tower}`,
+        floorLabel(property),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : property.location.split(",")[0];
   return (
     <article
       className="property-card"
@@ -177,9 +187,10 @@ export function PropertyCard({
       </div>
       <div className="property-body">
         <div className="card-meta">
-          {/* Outside any project: the first part of its address. */}
-          <span>{property.projectName || property.location.split(",")[0]}</span>
-          <span>{property.isDemo ? "CĂN MẪU" : unitRef(property)}</span>
+          <span>{place}</span>
+          <span>
+            {property.isDemo ? "CĂN MẪU" : unitRef(property).toUpperCase()}
+          </span>
         </div>
         <h3>
           <Link href={detail}>{property.name}</Link>
@@ -187,10 +198,13 @@ export function PropertyCard({
         {/* Shown on hover / focus (always on touch screens). */}
         <div className="property-reveal">
           <div>
-            <p className="location">
-              <MapPin size={14} aria-hidden="true" />
-              {property.location}
-            </p>
+            {/* Not twice: a unit outside any project shows it above. */}
+            {property.location !== place && (
+              <p className="location">
+                <MapPin size={14} aria-hidden="true" />
+                {property.location}
+              </p>
+            )}
             <div className="property-specs">
               <span>
                 <Expand size={16} aria-hidden="true" />
@@ -211,12 +225,6 @@ export function PropertyCard({
                 <span>
                   <Store size={16} aria-hidden="true" />
                   <b>{property.type}</b>
-                </span>
-              )}
-              {floorLabel(property) && (
-                <span>
-                  <Layers size={16} aria-hidden="true" />
-                  <b>{floorLabel(property)}</b>
                 </span>
               )}
             </div>

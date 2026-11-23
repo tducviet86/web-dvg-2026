@@ -304,6 +304,7 @@ function Workspace() {
               address: string | null;
               mapUrl: string | null;
               latitude: number | null;
+              towers?: { name: string }[];
             }[];
           }>("GET", "/admin/projects?pageSize=100"),
           api<{ data: { code: string; name: string; group?: string }[] }>(
@@ -320,6 +321,7 @@ function Workspace() {
               location: p.location,
               address: p.address ?? "",
               hasMap: !!(p.mapUrl || p.latitude != null),
+              towers: (p.towers ?? []).map((t) => t.name).filter(Boolean),
             },
           ]),
         );

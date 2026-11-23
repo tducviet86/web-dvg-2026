@@ -123,7 +123,7 @@ test("AI drafts a unit title and description from the form, with undo", async ({
   };
   expect(asked.listing).toBe("sale");
   expect(asked.facts).not.toMatch(/Giá thuê|Đặt cọc|Thuê tối thiểu/);
-  const seo = page.waitForRequest(/\/admin\/ai\/seo-suggest/);
+  const seo = page.waitForRequest(/\/admin\/seo\/unit-suggest/);
   await page.getByRole("button", { name: /Tạo gợi ý|Gợi ý lại/ }).click();
   const seoAsked = (await seo).postDataJSON() as {
     listing: string;
@@ -141,7 +141,7 @@ test("AI drafts a unit title and description from the form, with undo", async ({
   const shopFacts = ((await shop).postDataJSON() as { facts: string }).facts;
   expect(shopFacts).toContain("Loại hình: Shophouse");
   expect(shopFacts).not.toMatch(/Studio|Phòng ngủ|Phòng tắm|Tiện nghi|Tầng/);
-  const shopSeo = page.waitForRequest(/\/admin\/ai\/seo-suggest/);
+  const shopSeo = page.waitForRequest(/\/admin\/seo\/unit-suggest/);
   await page.getByRole("button", { name: /Tạo gợi ý|Gợi ý lại/ }).click();
   const shopContext = ((await shopSeo).postDataJSON() as { context: string })
     .context;
