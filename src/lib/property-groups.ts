@@ -57,6 +57,7 @@ const SUN_PROJECTS = [
   "sun-saphia-residence",
   "s-light-tower",
   "fours-tower",
+  "cora-tower",
   "da-nang-downtown",
 ];
 const SUN_FLOORS: Record<string, string> = { "4": "3A", "13": "12A" };

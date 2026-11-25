@@ -507,7 +507,7 @@ const SITE_PLANS: Record<
           image: `${own}${tower === "A2" ? "3-chsv" : "3"}.webp`,
           floors: ["3"],
         },
-        { tower, image: `${own}3a-24.webp`, floors: ["3A", ...range(5, 24)] },
+        { tower, image: `${own}3a-24.webp`, floors: sunRange(4, 24) },
         { tower, image: `${own}25-ph.webp`, floors: ["25"] },
       ];
     }),
@@ -737,8 +737,20 @@ function floorData(
       plans: kept.plans,
       units: [],
       pictures: kept.pictures,
-      kinds: kept.kinds,
-      notes: kept.notes,
+      // SITE_PLANS is read once, outside any request: translated here.
+      kinds:
+        kept.kinds &&
+        Object.fromEntries(
+          Object.entries(kept.kinds).map(([key, kind]) => [
+            key,
+            { ...kind, rooms: t(kind.rooms), view: t(kind.view) },
+          ]),
+        ),
+      notes:
+        kept.notes &&
+        Object.fromEntries(
+          Object.entries(kept.notes).map(([key, note]) => [key, t(note)]),
+        ),
       naming: kept.naming,
       tour360: TOUR_360.has(slug),
     };

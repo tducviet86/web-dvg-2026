@@ -230,6 +230,8 @@ for (const [slug, tower] of [
   ["sun-saphia-residence", "Saphia"],
   ["s-light-tower", "SL1"],
   ["fours-tower", "F1"],
+  ["cora-tower", "A1"],
+  ["cora-tower", "A2"],
 ])
   test(`${slug} ${tower}: the map's floors go 3, 3A, 5 and 12, 12A, 14`, async ({
     page,
@@ -265,4 +267,29 @@ test("a floor without a drawing says so, or what it is", async ({ page }) => {
     await expect(note).toHaveText("Chưa có mặt bằng 3D của tầng này.");
     await noSideScroll(page, `floor without a drawing at ${width}`);
   }
+});
+
+test("what the site's own plans say of floors and units is translated", async ({
+  page,
+}) => {
+  const plan = page.locator(".fp3d");
+  const translated = (url: string, text: () => Promise<string>) =>
+    expect
+      .poll(
+        async () => {
+          await page.goto(url);
+          await plan.waitFor();
+          return text();
+        },
+        { timeout: 40_000, intervals: [1500] },
+      )
+      .toContain("EN: ");
+  await translated("/en/ban-do?du-an=sun-ponte-residence&toa=T1&tang=3", () =>
+    plan.locator(".rmap-failed").innerText(),
+  );
+  // Where a unit looks out: "Hướng Tây · sông Hàn".
+  await translated(
+    "/en/ban-do?du-an=sun-ponte-residence&toa=T1&tang=8&can=01",
+    () => plan.locator(".fp3d-info dd").nth(2).innerText(),
+  );
 });
