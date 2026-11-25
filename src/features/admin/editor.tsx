@@ -506,6 +506,18 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
                     "Tiện ích",
                   ],
                 },
+                {
+                  key: "title",
+                  label: "Tên (ảnh Tiện ích)",
+                  placeholder: "vd: Hồ bơi ngoài trời",
+                  maxLength: 80,
+                },
+                {
+                  key: "note",
+                  label: "Mô tả ngắn",
+                  placeholder: "vd: Trong khuôn viên dự án",
+                  maxLength: 200,
+                },
               ],
               image: "Ảnh",
               add: "Thêm ảnh",

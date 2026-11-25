@@ -94,7 +94,13 @@ export type Tower = {
   handover?: string;
   note?: string;
 };
-export type ProjectPhoto = { group: string; image: string };
+export type ProjectPhoto = {
+  group: string;
+  image: string;
+  /** An amenity's name and a line about it (its card on the page). */
+  title?: string;
+  note?: string;
+};
 export type SalesPolicy = { title: string; body?: string; condition?: string };
 export type Connection = { place: string; time?: string };
 export type ProgressPhoto = { title: string; date?: string; image: string };

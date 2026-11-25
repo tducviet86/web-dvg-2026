@@ -701,3 +701,143 @@ test("tower C3 has its floor plan and a picture for each unit", async ({
     expect(res.status(), unit).toBe(200);
   }
 });
+
+test("an operating project's page presents it, then leads to rent, buy and consign", async ({
+  page,
+}) => {
+  await page.goto("/du-an/monarchy-apartments?utm_source=qa");
+  await expect(page.locator("main.portfolio-operating")).toBeVisible();
+  await expect(page.locator(".hero-search")).toHaveCount(0);
+  const order = await page
+    .locator("main section[id]")
+    .evaluateAll((all) => all.map((x) => x.id));
+  expect(order).toEqual([
+    "hinh-anh",
+    "tong-quan",
+    "mat-bang",
+    "can-ho",
+    "nhu-cau",
+    "vi-tri",
+    "lien-he",
+  ]);
+  // Every entry of the menu leads somewhere.
+  for (const target of await page
+    .locator(".project-nav a")
+    .evaluateAll((all) => all.map((x) => x.getAttribute("href"))))
+    await expect(page.locator(`main ${target}`)).toHaveCount(1);
+  // A few units, not the whole list.
+  expect(await page.locator("#can-ho .property-card").count()).toBeLessThan(4);
+  await expect(page.locator(".operation-choices a")).toHaveText([
+    /^Thuê căn hộ/,
+    /^Mua căn hộ/,
+    /^Ký gửi căn hộ/,
+  ]);
+  // Floors of a tower whose name has a space: "Tầng 1", not the whole name.
+  await expect(page.locator(".unit-plan-switch button").first()).toHaveText(
+    /^Tầng /,
+  );
+  await page
+    .locator("#lien-he")
+    .getByRole("button", { name: "Để lại thông tin" })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.locator(".operation-choices a").nth(0).click();
+  await expect(page).toHaveURL(/\/cho-thue\/du-an\/monarchy-apartments$/);
+  for (const [name, query] of [
+    ["Mua căn hộ", "mua"],
+    ["Ký gửi căn hộ", "ky-gui"],
+  ]) {
+    await page.goto("/du-an/monarchy-apartments");
+    await page.locator(".operation-choices a", { hasText: name }).click();
+    await expect(page).toHaveURL(new RegExp(`nhu-cau=${query}$`));
+    await expect(page.locator(".hero-search")).toBeVisible();
+  }
+  // A project with little stored shows only what it has, on a phone too.
+  for (const width of [375, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const slug of ["sam-tower", "hiyori-garden-tower"]) {
+      await page.goto(`/du-an/${slug}`);
+      await expect(page.locator("#mat-bang")).toHaveCount(0);
+      await expect(page.locator("#nhu-cau")).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+  }
+});
+
+test("/du-an/van-hanh keeps the projects clear of the hero", async ({
+  page,
+}) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/du-an/van-hanh");
+    const hero = (await page.locator(".rental-hero").boundingBox())!;
+    const cards = (await page.locator(".home-project-cards").boundingBox())!;
+    expect(cards.y - hero.y - hero.height).toBeGreaterThan(20);
+  }
+});
+
+test("an operating project shows its amenities, each with its photo", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const { data } = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; slug: string }[];
+  };
+  const project = data.find((p) => p.slug === "monarchy-apartments")!;
+  const photo = (name: string, text: object) => ({
+    group: "Tiện ích",
+    image: `/images/projects/monarchy-apartments/tien-ich/${name}.webp`,
+    ...text,
+  });
+  const photos = [
+    photo("ho-boi", { title: "Hồ bơi ngoài trời", note: "Ghi chú QA." }),
+    photo("k-market", { title: "K-Market" }),
+    photo("quan-ca-phe", {}),
+  ];
+  const { Client } = createRequire(`${BE_DIR}/package.json`)("pg");
+  const db = new Client({ connectionString: E2E_DATABASE_URL });
+  await db.connect();
+  await db.query(
+    `INSERT INTO media_assets (id, storage, key, url, mime_type, size_bytes, updated_at)
+     SELECT gen_random_uuid(), 'EXTERNAL', u, u, 'image/webp', 1, now() FROM unnest($1::text[]) u
+     ON CONFLICT DO NOTHING`,
+    [photos.map((x) => x.image)],
+  );
+  await db.end();
+  const saved = await api.send("patch", `/admin/projects/${project.id}`, {
+    photos,
+    amenities: ["Hồ bơi ngoài trời", "Starbucks"],
+  });
+  expect(saved.ok()).toBe(true);
+  try {
+    const cards = page.locator("#tien-ich .amenity-cards li");
+    await expect
+      .poll(async () => {
+        await page.goto("/du-an/monarchy-apartments");
+        return cards.locator("h3").allInnerTexts();
+      })
+      .toEqual(["Hồ bơi ngoài trời", "K-Market"]);
+    await expect(cards.first()).toContainText("Ghi chú QA.");
+    // One that has a card is not listed again.
+    await expect(page.locator(".amenity-list li")).toHaveText(["Starbucks"]);
+    await expect(
+      page.locator(".project-nav a", { hasText: "Tiện ích" }),
+    ).toHaveAttribute("href", "#tien-ich");
+    await page.setViewportSize({ width: 375, height: 800 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  } finally {
+    await api.send("patch", `/admin/projects/${project.id}`, {
+      photos: [],
+      amenities: [],
+    });
+  }
+});

@@ -486,7 +486,7 @@ export function UnitBrowser({
                     aria-pressed={p === activePlan}
                     onClick={() => setPlan(i)}
                   >
-                    {p.name.replace(/^Tòa \S+ · /, "")}
+                    {p.name.replace(/^Tòa .+? · /, "")}
                   </button>
                 ))}
               </div>

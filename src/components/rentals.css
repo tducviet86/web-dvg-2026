@@ -2587,7 +2587,8 @@
   padding-top: var(--page-gap);
   border-top: 1px solid var(--c-line, #dedfd7);
 }
-.directory-operation .home-projects {
+/* Below search results, their title already leaves the space. */
+.directory-operation > .container + .home-projects {
   padding-top: 0;
 }
 

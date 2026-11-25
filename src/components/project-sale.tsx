@@ -166,6 +166,36 @@ function keptPlans(floors?: FloorData) {
 }
 
 /**
+ * Towers and floor plans from Admin; without plans tied to a tower there,
+ * the ones kept with the site (its units traced) stand in.
+ */
+export function projectPlans(
+  api: ApiProject | undefined,
+  buildings: MapBuilding[],
+  slug: string,
+) {
+  const kept = (api?.floorPlans ?? []).some((x) => x.tower)
+    ? null
+    : keptPlans(buildings.find((b) => b.slug === slug)?.floors);
+  return {
+    towers:
+      kept?.towers ??
+      (api?.towers ?? []).map((x) => ({
+        name: x.name,
+        status: x.status ? t(x.status) : "",
+        note: x.note ? t(x.note) : "",
+      })),
+    plans:
+      kept?.plans ??
+      (api?.floorPlans ?? []).map((x): DeskPlan => ({
+        name: t(x.name),
+        tower: x.tower ?? "",
+        image: x.image,
+      })),
+  };
+}
+
+/**
  * A project under development, as a sales page: hero, overview, photos, tower
  * → floor → unit, price list, policies, payment and loan, location, sign-up.
  * Everything is entered in Admin › Dự án; a block with no data stays away.
@@ -197,25 +227,7 @@ export function ProjectSalePage({
 }) {
   const units = rawUnits.map(toDeskUnit);
   const call = telephoneHref(companyHotline);
-  // Towers and floor plans from Admin; without plans tied to a tower there,
-  // the ones kept with the site (its units traced) stand in.
-  const kept = (api?.floorPlans ?? []).some((x) => x.tower)
-    ? null
-    : keptPlans(buildings.find((b) => b.slug === p.slug)?.floors);
-  const towers =
-    kept?.towers ??
-    (api?.towers ?? []).map((x) => ({
-      name: x.name,
-      status: x.status ? t(x.status) : "",
-      note: x.note ? t(x.note) : "",
-    }));
-  const plans =
-    kept?.plans ??
-    (api?.floorPlans ?? []).map((x) => ({
-      name: t(x.name),
-      tower: x.tower ?? "",
-      image: x.image,
-    }));
+  const { towers, plans } = projectPlans(api, buildings, p.slug);
   const types = api?.unitTypes ?? [];
   const policies = api?.salesPolicies ?? [];
   const connections = api?.connections ?? [];

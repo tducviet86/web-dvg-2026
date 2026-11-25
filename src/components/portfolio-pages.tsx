@@ -14,18 +14,23 @@ import type { PortfolioProject } from "@/types";
 import type { SiteContent } from "@/lib/api/content";
 import { HomeProjects } from "./home-projects";
 import { PhotoHero, SearchHero } from "./search-hero";
+import { ProjectOperationPage } from "./project-operation";
 import { ProjectSalePage } from "./project-sale";
 import type { HeroMode } from "./rental-hero-search";
-import { isSaleSearch, searchUnits, type Filters } from "@/lib/filter";
+import {
+  SEARCH_KEYS,
+  isSaleSearch,
+  searchUnits,
+  type Filters,
+} from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { FaqSection } from "./faq-section";
-import { RichText } from "./rich-text";
 import { listingFaqs } from "@/lib/faq";
 import { ProjectMap } from "./project-map";
 import { mapBuildings } from "@/lib/map-buildings";
 import { complexSchema, jsonLd } from "@/lib/structured-data";
-import { href, t, tf } from "@/i18n/server";
+import { href, t } from "@/i18n/server";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { kindNoun, listingKind } from "@/lib/property-groups";
 import { vacantNow } from "@/lib/availability";
@@ -258,20 +263,6 @@ export function ProjectDirectory({
     </main>
   );
 }
-/** What follows a project's first paragraph; a short line alone is a heading. */
-function storyGroups(paragraphs: string[]) {
-  const groups: { title: string; text: string }[] = [];
-  for (const text of paragraphs) {
-    if (/^[\p{L}\p{N}][^\n]{0,58}[^\n.:;!?]$/u.test(text))
-      groups.push({ title: text, text: "" });
-    else if (groups.length)
-      groups.at(-1)!.text = [groups.at(-1)!.text, text]
-        .filter(Boolean)
-        .join("\n\n");
-    else groups.push({ title: "", text });
-  }
-  return groups.filter((g) => g.text);
-}
 export function PortfolioDetail({
   project: p,
   content,
@@ -373,7 +364,22 @@ export function PortfolioDetail({
         {schema}
       </ProjectSalePage>
     );
-  const about = storyGroups(story.paragraphs.slice(1));
+  // No search asked for: the project itself.
+  if (!SEARCH_KEYS.some((key) => filters[key]))
+    return (
+      <ProjectOperationPage
+        project={p}
+        api={api}
+        story={story}
+        place={content.locations[p.projectId]}
+        buildings={mapBuildings(content, { rentalsOnly: false })}
+        units={rooms}
+        crumbs={crumbs}
+        related={related}
+      >
+        {schema}
+      </ProjectOperationPage>
+    );
   return (
     <main
       id="main"
@@ -524,19 +530,6 @@ export function PortfolioDetail({
               </>
             )}
           </section>
-          {about.length > 0 && (
-            <section className="operation-about">
-              <h2>{tf("Tìm hiểu {name}", { name: p.name })}</h2>
-              <div>
-                {about.map((g) => (
-                  <div key={g.title + g.text}>
-                    {g.title && <h3>{g.title}</h3>}
-                    <RichText text={g.text} />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
           <ProjectMap
             place={content.locations[p.projectId]}
             slug={p.slug}

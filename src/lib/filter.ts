@@ -2,6 +2,23 @@ import type { Property } from "../types/index";
 import { unitKind } from "./property-groups";
 import { availabilityRank, liveStatus } from "./availability";
 export type Filters = Record<string, string | undefined>;
+/** What a search box asks for; anything else in an address (utm_…) is not a search. */
+export const SEARCH_KEYS = [
+  "nhu-cau",
+  "q",
+  "loai",
+  "type",
+  "location",
+  "bedrooms",
+  "price",
+  "gia-tu",
+  "gia-ban",
+  "gia-ban-tu",
+  "area",
+  "furniture",
+  "status",
+  "sort",
+];
 export const searchable = (value: string) =>
   value
     .normalize("NFD")
