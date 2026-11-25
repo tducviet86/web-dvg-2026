@@ -107,9 +107,9 @@ export function planFloors(name: string) {
 }
 
 /** "C1-2103" on floor 21 → unit "03"; a model unit's "C1-03" → "03". */
-export function unitNumber(code: string, floor: number) {
+export function unitNumber(code: string, floor: string) {
   const rest = code.split("-")[1] ?? "";
-  const prefix = String(floor).padStart(2, "0");
+  const prefix = floor.padStart(2, "0");
   return floor && rest.startsWith(prefix) ? rest.slice(2) : rest;
 }
 

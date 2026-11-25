@@ -221,3 +221,28 @@ test("a unit of Cora opens from its link, with its drawing's name and areas", as
   await expect(page.getByText("78,90 m²")).toBeVisible();
   await expect(page.getByText("85,69 m²")).toBeVisible();
 });
+
+for (const [slug, tower] of [
+  ["sun-panoma", "Panoma 1"],
+  ["sun-panoma", "Panoma 2"],
+  ["sun-ponte-residence", "T1"],
+  ["sun-ponte-residence", "T2"],
+  ["sun-saphia-residence", "Saphia"],
+  ["s-light-tower", "SL1"],
+  ["fours-tower", "F1"],
+])
+  test(`${slug} ${tower}: the map's floors go 3, 3A, 5 and 12, 12A, 14`, async ({
+    page,
+  }) => {
+    await page.goto(
+      `/ban-do?du-an=${slug}&toa=${encodeURIComponent(tower)}&tang=12A`,
+    );
+    const floor = page
+      .getByRole("region", { name: "Mặt bằng 3D" })
+      .getByRole("combobox", { name: "Tầng" });
+    await expect(floor).toHaveValue("12A");
+    const names = await floor.locator("option").allInnerTexts();
+    const at = (name: string) => names.findIndex((x) => x.trim() === name);
+    expect(names.slice(at("3"), at("5") + 1)).toEqual(["3", "3A", "5"]);
+    expect(names.slice(at("12"), at("14") + 1)).toEqual(["12", "12A", "14"]);
+  });

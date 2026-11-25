@@ -24,12 +24,22 @@ const csrf = () =>
     ?.slice("dvg_csrf=".length) ?? "";
 
 let refreshing: Promise<boolean> | null = null;
-/** Single-flight refresh shared by concurrent requests. */
-function refresh() {
-  refreshing ??= fetch("/api/v1/auth/refresh", {
+const postRefresh = () =>
+  fetch("/api/v1/auth/refresh", {
     method: "POST",
     headers: { "x-csrf-token": decodeURIComponent(csrf()) },
-  })
+  });
+/**
+ * Single-flight refresh shared by concurrent requests, and one tab at a time:
+ * a second refresh with the same token is refused and clears the cookies.
+ */
+function refresh() {
+  // Web Locks need HTTPS or localhost.
+  refreshing ??= Promise.resolve(
+    navigator.locks
+      ? navigator.locks.request("dvg-refresh", postRefresh)
+      : postRefresh(),
+  )
     .then((res) => res.ok)
     .catch(() => false)
     .finally(() => {
@@ -60,7 +70,7 @@ async function send(
     body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     cache: "no-store",
   });
-  if (res.status === 401 && retry && !path.startsWith("/auth/")) {
+  if (res.status === 401 && retry && path !== "/auth/login") {
     if (await refresh()) return send(method, path, body, false);
     window.dispatchEvent(new Event(SESSION_EXPIRED));
   }

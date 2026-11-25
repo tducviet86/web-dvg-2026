@@ -1,6 +1,7 @@
 import type { FormValues, Kind, MediaRef } from "./model";
 import { isVideo } from "./model";
 import { ALL_RENT_FEES } from "@/lib/included-fees";
+import { floorName, floorNumber } from "@/lib/property-groups";
 import type { Section } from "./sections-field";
 
 /** Admin DTOs as returned by BE-DVG (only the fields the screens use). */
@@ -185,7 +186,10 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       area: str(d.areaM2),
       bedrooms: str(d.bedrooms),
       bathrooms: str(d.bathrooms),
-      floor: str(d.floor),
+      floor: floorName({
+        floor: d.floor as number | null,
+        projectSlug: (d.project as { slug: string } | null)?.slug,
+      }),
       direction: str(d.direction),
       tower: str(d.tower),
       viewNote: str(d.viewNote),
@@ -416,7 +420,7 @@ export function payload(
       areaM2: Number(v.area),
       bedrooms: Number(v.bedrooms),
       bathrooms: Number(v.bathrooms),
-      floor: numOrNull(v.floor),
+      floor: numOrNull(floorNumber(str(v.floor))),
       direction: orNull(v.direction),
       tower: orNull(v.tower),
       viewNote: orNull(v.viewNote),

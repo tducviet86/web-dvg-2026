@@ -7,6 +7,7 @@
 import type { ApiProject } from "@/lib/api/types";
 import type { Property } from "@/types";
 import { amenityOf } from "@/lib/amenities";
+import { floorName } from "@/lib/property-groups";
 import {
   companyFacebook,
   companyHotline,
@@ -245,7 +246,7 @@ export function apartmentSchema(
       value: room.area,
       unitCode: "MTK",
     },
-    floorLevel: room.floor ? String(room.floor) : undefined,
+    floorLevel: floorName(room) || undefined,
     amenityFeature: (room.amenityKeys ?? [])
       .map((key) => amenityOf(key)?.label ?? key)
       .map((name) => ({

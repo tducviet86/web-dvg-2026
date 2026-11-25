@@ -10,7 +10,12 @@ import {
   type UnitKind,
 } from "@/lib/floor-3d";
 import { PLAN_OUTLINES } from "@/lib/floor-plan-outlines";
-import { hasRooms, roomsLabel } from "@/lib/property-groups";
+import {
+  floorName,
+  hasRooms,
+  roomsLabel,
+  sunFloorName,
+} from "@/lib/property-groups";
 import {
   BUILDING_AREAS,
   BUILDING_BLOCKS,
@@ -34,6 +39,9 @@ const roomsOf = (p: Property) => t(hasRooms(p) ? roomsLabel(p) : p.type);
 const MONARCHY_3D = "/images/projects/monarchy-apartments/3d/";
 const range = (from: number, to: number) =>
   Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
+/** The same in a Sun project: 3A for 4, 12A for 13. */
+const sunRange = (from: number, to: number) =>
+  range(from, to).map(sunFloorName);
 
 /**
  * Block A of The Monarchy, typical floor (beto.vn): 01 and 08 corner 2PN of
@@ -421,7 +429,11 @@ const SITE_PLANS: Record<
     plans: [
       { tower: "Panoma 1", image: "p1-tang-1.webp", floors: ["1"] },
       { tower: "Panoma 1", image: "", floors: ["2", "3"] },
-      { tower: "Panoma 1", image: "p1-tang-4-17.webp", floors: range(4, 17) },
+      {
+        tower: "Panoma 1",
+        image: "p1-tang-4-17.webp",
+        floors: sunRange(4, 17),
+      },
       { tower: "Panoma 1", image: "", floors: ["18"] },
       {
         tower: "Panoma 1",
@@ -444,13 +456,12 @@ const SITE_PLANS: Record<
         image: "p1-tang-29-33.webp",
         floors: ["29", "31", "33"],
       },
-      // P2 counts 3A for 4 and 12A for 13, as its drawing does.
       { tower: "Panoma 2", image: "p2-tang-1.webp", floors: ["1"] },
       { tower: "Panoma 2", image: "", floors: ["2", "3"] },
       {
         tower: "Panoma 2",
         image: "p2-tang-dien-hinh.webp",
-        floors: ["3A", ...range(5, 12), "12A", ...range(14, 17)],
+        floors: sunRange(4, 17),
       },
       { tower: "Panoma 2", image: "", floors: ["18"] },
       {
@@ -463,8 +474,8 @@ const SITE_PLANS: Record<
     kinds: { ...panomaKinds(), ...panomaShops() },
   },
   // Sun Ponte: the podium's two floors of shophouses under both towers; T1 and
-  // T2 on the developer's typical floors from 4, joined by their middle units
-  // on 19–24. 3 and 3A, between 3 and 4 (amenities, events, play): no drawing.
+  // T2 on the developer's typical floors from 3A, joined by their middle units
+  // on 19–24. 3 (amenities, events, play): no drawing.
   // Sun Saphia: one drawing for floors 3A–28; the shops below and the top two
   // floors have none yet.
   "sun-saphia-residence": {
@@ -474,7 +485,7 @@ const SITE_PLANS: Record<
       {
         tower: "Saphia",
         image: `${SAPHIA}saphia-tang-3a-28.webp`,
-        floors: ["3A", ...range(5, 28)],
+        floors: sunRange(4, 28),
       },
       { tower: "Saphia", image: "", floors: ["29", "30"] },
     ],
@@ -526,7 +537,7 @@ const SITE_PLANS: Record<
         { tower, image: `${own}2.webp`, floors: ["2"] },
         { tower, image: `${own}3.webp`, floors: ["3"] },
         { tower, image: `${own}3a-6.webp`, floors: ["3A", "5", "6"] },
-        { tower, image: `${own}7-21.webp`, floors: range(7, 21) },
+        { tower, image: `${own}7-21.webp`, floors: sunRange(7, 21) },
         { tower, image: `${own}22.webp`, floors: ["22"] },
       ];
     }),
@@ -555,22 +566,22 @@ const SITE_PLANS: Record<
       {
         tower: "F1",
         image: `${FOURS}fours-f1-tang-4-7.webp`,
-        floors: range(4, 7),
+        floors: sunRange(4, 7),
       },
       {
         tower: "F1",
         image: `${FOURS}fours-f1-tang-8-19.webp`,
-        floors: range(8, 19),
+        floors: sunRange(8, 19),
       },
       { tower: "F1", image: "", floors: ["20"] },
       { tower: "F5", image: "", floors: ["1"] },
       { tower: "F5", image: `${FOURS}fours-f5-tang-2.webp`, floors: ["2"] },
       { tower: "F5", image: `${FOURS}fours-f5-tang-3.webp`, floors: ["3"] },
-      { tower: "F5", image: "", floors: range(4, 7) },
+      { tower: "F5", image: "", floors: sunRange(4, 7) },
       {
         tower: "F5",
         image: `${FOURS}fours-f5-tang-8-15.webp`,
-        floors: range(8, 15),
+        floors: sunRange(8, 15),
       },
       { tower: "F5", image: `${FOURS}fours-f5-tang-16.webp`, floors: ["16"] },
       {
@@ -594,8 +605,8 @@ const SITE_PLANS: Record<
       return [
         { tower, image: "ponte-khoi-de-tang-1.webp", floors: ["1"] },
         { tower, image: "ponte-khoi-de-tang-2.webp", floors: ["2"] },
-        { tower, image: "", floors: ["3", "3A"] },
-        { tower, image: `${own}3a-18.webp`, floors: range(4, 18) },
+        { tower, image: "", floors: ["3"] },
+        { tower, image: `${own}3a-18.webp`, floors: sunRange(4, 18) },
         { tower, image: `${own}19-21-23.webp`, floors: ["19", "21", "23"] },
         { tower, image: `${own}20-22-24.webp`, floors: ["20", "22", "24"] },
       ].map((p) => ({ ...p, image: p.image && PONTE + p.image }));
@@ -603,7 +614,7 @@ const SITE_PLANS: Record<
     kinds: { ...ponteKinds(), ...ponteShops() },
     notes: Object.fromEntries(
       ["T1", "T2"].map((tower) => [
-        `${tower}/3A`,
+        `${tower}/3`,
         t("Tầng tiện ích: giải trí, hội nghị và khu vui chơi."),
       ]),
     ),
@@ -746,8 +757,8 @@ function floorData(
       .filter((p) => p.tower && p.unitCode)
       .map((p) => ({
         tower: p.tower ?? "",
-        floor: p.floorNote ? "" : String(p.floor),
-        number: unitNumber(p.unitCode ?? "", p.floorNote ? 0 : p.floor),
+        floor: p.floorNote ? "" : floorName(p),
+        number: unitNumber(p.unitCode ?? "", p.floorNote ? "" : floorName(p)),
         rooms: roomsOf(p),
         bedrooms: p.bedrooms,
         priceText: priceText(p),

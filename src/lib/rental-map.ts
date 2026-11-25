@@ -398,7 +398,7 @@ export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
       width: 38,
       depth: 26,
       base: 2 * FLOOR_METRES,
-      height: 25 * FLOOR_METRES,
+      height: 24 * FLOOR_METRES,
     },
     {
       tower: "T2",
@@ -406,15 +406,15 @@ export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
       width: 38,
       depth: 26,
       base: 2 * FLOOR_METRES,
-      height: 25 * FLOOR_METRES,
+      height: 24 * FLOOR_METRES,
     },
     {
       bare: true,
       ...placed(26, 2.5, 86),
       width: 14,
       depth: 22,
-      base: 19 * FLOOR_METRES,
-      height: 25 * FLOOR_METRES,
+      base: 18 * FLOOR_METRES,
+      height: 24 * FLOOR_METRES,
     },
     rectangle(
       [

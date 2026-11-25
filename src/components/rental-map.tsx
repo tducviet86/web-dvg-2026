@@ -45,6 +45,7 @@ import type { Towers, TowerHit } from "./map-towers";
 import { planArea } from "./plan-cutout";
 import { MapRoute, type RouteTarget } from "./map-route";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
+import { floorName } from "@/lib/property-groups";
 import {
   towerFloors,
   unitKinds,
@@ -289,10 +290,13 @@ function towerLevels(building: MapBuilding | undefined, tower: string) {
     (b) => b.tower === tower && !b.soon && !b.low,
   );
   const count = block ? Math.round(block.height / FLOOR_METRES) : 0;
+  const floors = Array.from({ length: count }, (_, i) =>
+    floorName({ floor: i + 1, projectSlug: building?.slug }),
+  );
   return {
-    floors: Array.from({ length: count }, (_, i) => String(i + 1)),
+    floors,
     first: 1,
-    level: (floor: string) => Number(floor),
+    level: (floor: string) => floors.indexOf(floor) + 1,
     planned: false,
   };
 }

@@ -65,7 +65,12 @@ import {
   type Kind,
 } from "./model";
 import { ProjectBannerSection, type ProjectBannerDraft } from "./banners";
-import { NO_ROOM_TYPES, PROPERTY_GROUPS } from "@/lib/property-groups";
+import {
+  NO_ROOM_TYPES,
+  PROPERTY_GROUPS,
+  floorNumber,
+  namesSunFloors,
+} from "@/lib/property-groups";
 import { RowsField, type RowsConfig } from "./rows-field";
 import { ALL_RENT_FEES, RENT_FEES } from "@/lib/included-fees";
 
@@ -186,6 +191,7 @@ export type Lookups = {
       hasMap: boolean;
       /** Names in the project's "Các tòa". */
       towers?: string[];
+      slug?: string;
     }
   >;
 };
@@ -847,12 +853,8 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             hideForTypes: NO_ROOM_TYPES,
           }),
           f("floor", "Tầng", {
-            type: "number",
-            min: -10,
-            max: 200,
-            integer: true,
             hideForTypes: ["shophouse"],
-            hint: "Bắt buộc với căn hộ.",
+            hint: "Bắt buộc với căn hộ. Dự án Sun: tầng 4 là 3A, tầng 13 là 12A.",
           }),
           f("direction", "Hướng căn hộ", {
             type: "select",
@@ -1596,14 +1598,30 @@ function towerChoices(lookups: Lookups, projectId: string): [string, string][] {
   const towers = lookups.projectPlaces?.[projectId]?.towers ?? [];
   return [["", "Chọn tòa"], ...towers.map((t): [string, string] => [t, t])];
 }
+/** What is wrong with a typed floor: a number, or 3A / 12A in a Sun project. */
+function floorProblem(typed: string, sun: boolean) {
+  const text = typed.trim().toUpperCase();
+  if (sun && text === "4") return "4 phải ghi là 3A";
+  if (sun && text === "13") return "13 phải ghi là 12A";
+  const floor = Number(sun ? floorNumber(text) : text);
+  if (!Number.isInteger(floor) || floor < -10 || floor > 200)
+    return sun ? "phải là số, hoặc 3A, 12A" : "phải là số nguyên";
+  return null;
+}
 /**
  * Where a unit is, so its card can say it: the tower when the project has
  * several, the floor of an apartment. Model units give floors in "Tầng áp
  * dụng" instead.
  */
 function unitPlaceChecks(v: FormValues, lookups: Lookups): FormIssue[] {
-  if (str(v.floorNote)) return [];
   const issues: FormIssue[] = [];
+  const badFloor = floorProblem(
+    str(v.floor),
+    namesSunFloors(lookups.projectPlaces?.[str(v.projectId)]?.slug),
+  );
+  if (badFloor)
+    issues.push({ field: "floor", label: "Tầng", message: badFloor });
+  if (str(v.floorNote)) return issues;
   const towers = lookups.projectPlaces?.[str(v.projectId)]?.towers ?? [];
   if (towers.length > 1 && !str(v.tower))
     issues.push({

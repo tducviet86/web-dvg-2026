@@ -136,7 +136,8 @@ export function PropertyCard({
         floorLabel(property),
       ]
         .filter(Boolean)
-        .join(" · ")
+        // On two lines, the dot stays at the end of the first.
+        .join("\u00a0· ")
     : property.location.split(",")[0];
   return (
     <article

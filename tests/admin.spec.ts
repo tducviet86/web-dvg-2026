@@ -71,6 +71,39 @@ test("login is required and failures are reported", async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/login/);
 });
 
+test("an expired access token is renewed without signing the admin out", async ({
+  page,
+}) => {
+  await login(page);
+  const context = page.context();
+  let renewals = 0;
+  // Slow renewals: every request of the page meets one in progress.
+  await context.route("**/api/v1/auth/refresh", async (route) => {
+    renewals++;
+    await new Promise((done) => setTimeout(done, 400));
+    await route.continue();
+  });
+  // 15 minutes later: the access token is gone, the session is not.
+  await context.clearCookies({ name: "dvg_at" });
+  await page.goto("/admin/properties");
+  await expect(page.locator("table tbody tr").first()).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(page).toHaveURL(/\/admin\/properties$/);
+  expect(renewals).toBe(1);
+  // Two tabs opened at once keep the session too.
+  await context.clearCookies({ name: "dvg_at" });
+  const other = await context.newPage();
+  await Promise.all([
+    page.goto("/admin/properties"),
+    other.goto("/admin/projects"),
+  ]);
+  for (const tab of [page, other]) {
+    await expect(tab.locator("table tbody tr").first()).toBeVisible();
+    await tab.waitForTimeout(1500);
+    await expect(tab).not.toHaveURL(/login/);
+  }
+});
+
 test("projects persist detailed fields and duplicate slugs are refused by the server", async ({
   page,
 }) => {
@@ -1472,7 +1505,7 @@ test("a unit's card says its project, tower and floor; the form asks for them", 
       await expect(async () => {
         await page.goto("/cho-thue?q=QA12B11");
         await expect(card.locator(".card-meta")).toContainText(
-          /Tòa QA-B · Tầng 12/i,
+          /Tòa QA-B\s· Tầng 12/i,
           {
             timeout: 1000,
           },

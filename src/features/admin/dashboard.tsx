@@ -277,13 +277,7 @@ function Workspace() {
       return () => window.removeEventListener(SESSION_EXPIRED, toLogin);
     api<{ data: Session }>("GET", "/auth/me")
       .then((res) => setSession(res.data))
-      .catch(() =>
-        // One refresh attempt before giving up on the session.
-        api("POST", "/auth/refresh")
-          .then(() => api<{ data: Session }>("GET", "/auth/me"))
-          .then((res) => setSession(res.data))
-          .catch(toLogin),
-      );
+      .catch(toLogin);
     return () => window.removeEventListener(SESSION_EXPIRED, toLogin);
   }, [router]);
 
@@ -299,6 +293,7 @@ function Workspace() {
           api<{
             data: {
               id: string;
+              slug: string;
               name: string;
               location: string;
               address: string | null;
@@ -322,6 +317,7 @@ function Workspace() {
               address: p.address ?? "",
               hasMap: !!(p.mapUrl || p.latitude != null),
               towers: (p.towers ?? []).map((t) => t.name).filter(Boolean),
+              slug: p.slug,
             },
           ]),
         );

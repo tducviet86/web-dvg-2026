@@ -98,6 +98,7 @@ article.property-card .property-body {
   align-self: end;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   padding: 18px 18px 16px;
   color: #fff;
   pointer-events: none;
@@ -125,10 +126,10 @@ article.property-card .card-meta {
   color: #e9d39f;
 }
 article.property-card .card-meta span:first-child {
+  /* A long place takes two lines: its floor is never cut off. */
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
+  text-wrap: balance;
   font-weight: 600;
 }
 article.property-card .card-meta > span:last-child {

@@ -40,7 +40,12 @@ import { Reveal } from "./client-basics";
 import { RentalMini, rentalScore } from "./home-rentals";
 import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";
-import { floorLabel, groupLabel, hasRooms } from "@/lib/property-groups";
+import {
+  floorLabel,
+  floorName,
+  groupLabel,
+  hasRooms,
+} from "@/lib/property-groups";
 import { moveInLabel, statusLabel } from "@/lib/availability";
 import { RENT_FEES } from "@/lib/included-fees";
 
@@ -170,7 +175,7 @@ export function RoomDetail({
         ]
       : []),
     ...(floorLabel(r)
-      ? [{ icon: Layers, value: String(r.floor), label: "Tầng" }]
+      ? [{ icon: Layers, value: floorName(r), label: "Tầng" }]
       : []),
     // Short: the label already says "Nội thất", and it all fits one row.
     {
@@ -431,7 +436,7 @@ export function RoomDetail({
                                 ["Phòng tắm", String(r.bathrooms)],
                               ]
                             : []),
-                          ...(floorLabel(r) ? [["Tầng", String(r.floor)]] : []),
+                          ...(floorLabel(r) ? [["Tầng", floorName(r)]] : []),
                           ["Nội thất", r.furniture],
                           [r.isDemo ? "Tình trạng mẫu" : "Tình trạng", status],
                           [
