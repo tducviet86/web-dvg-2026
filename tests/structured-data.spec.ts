@@ -42,11 +42,15 @@ test("company, building and unit pages describe themselves to search engines", a
       "company.email": "lienhe@dvg.test",
     },
   });
-  await page.goto("/");
+  // Loaded again each time: the first load may still be the older page.
   await expect
-    .poll(async () => ofType(await schemas(page), "RealEstateAgent")?.address, {
-      timeout: 15_000,
-    })
+    .poll(
+      async () => {
+        await page.goto("/");
+        return ofType(await schemas(page), "RealEstateAgent")?.address;
+      },
+      { timeout: 15_000 },
+    )
     .toBeTruthy();
   const agent = ofType(await schemas(page), "RealEstateAgent")!;
   expect(agent).toMatchObject({

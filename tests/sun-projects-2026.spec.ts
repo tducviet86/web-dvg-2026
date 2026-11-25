@@ -246,3 +246,23 @@ for (const [slug, tower] of [
     expect(names.slice(at("3"), at("5") + 1)).toEqual(["3", "3A", "5"]);
     expect(names.slice(at("12"), at("14") + 1)).toEqual(["12", "12A", "14"]);
   });
+
+test("a floor without a drawing says so, or what it is", async ({ page }) => {
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/ban-do?du-an=sun-ponte-residence&toa=T1&tang=3");
+    const plan = page.getByRole("region", { name: "Mặt bằng 3D" });
+    const note = plan.locator(".rmap-failed");
+    await expect(note).toHaveText(
+      "Tầng tiện ích: giải trí, hội nghị và khu vui chơi.",
+    );
+    await expect(plan.locator(".fp3d-hint")).toHaveCount(0);
+    const floor = plan.getByRole("combobox", { name: "Tầng" });
+    await floor.selectOption("3A");
+    await expect(note).toHaveCount(0);
+    await expect(plan.locator("canvas")).toBeVisible();
+    await page.goto("/ban-do?du-an=sun-panoma&toa=Panoma%201&tang=18");
+    await expect(note).toHaveText("Chưa có mặt bằng 3D của tầng này.");
+    await noSideScroll(page, `floor without a drawing at ${width}`);
+  }
+});

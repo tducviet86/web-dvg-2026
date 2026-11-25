@@ -353,7 +353,10 @@ export default function FloorPlan3D({
       <div ref={stage} className="fp3d-stage">
         {(failed || !outlines) && (
           <p className="rmap-failed">
-            {t("Chưa hiển thị được mặt bằng 3D trên thiết bị này.")}
+            {outlines
+              ? t("Chưa hiển thị được mặt bằng 3D trên thiết bị này.")
+              : (data.notes?.[`${tower}/${shownFloor}`] ??
+                t("Chưa có mặt bằng 3D của tầng này."))}
           </p>
         )}
       </div>
@@ -547,9 +550,11 @@ export default function FloorPlan3D({
             </div>
           </div>
         ) : (
-          <p className="fp3d-hint">
-            {t("Bấm vào một căn để xem diện tích và tình trạng.")}
-          </p>
+          outlines && (
+            <p className="fp3d-hint">
+              {t("Bấm vào một căn để xem diện tích và tình trạng.")}
+            </p>
+          )
         )}
         <p className="fp3d-note">
           {t("Mặt bằng theo bản vẽ của chủ đầu tư, chỉ để tham khảo.")}
