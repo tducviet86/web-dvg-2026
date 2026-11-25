@@ -492,7 +492,16 @@ export function RentalPage({
                     : []),
                   ...(sale ? [] : listingFaqs(landing.units)),
                 ]
-              : listingFaqs(content.properties, project, locations)),
+              : listingFaqs(
+                  content.properties,
+                  project && {
+                    ...project,
+                    towers: content.apiProjects.find(
+                      (x) => x.id === project.projectId,
+                    )?.towers,
+                  },
+                  locations,
+                )),
             ...rentalFaqs,
           ]}
         />

@@ -2156,3 +2156,8 @@
 .plan-cut-facts {
   order: -1;
 }
+
+/* Other projects, between the questions and the sign-up block. */
+.project-related .portfolio-related {
+  padding: 0 0 65px;
+}

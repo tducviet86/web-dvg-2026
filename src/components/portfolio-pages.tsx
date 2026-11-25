@@ -20,11 +20,12 @@ import { isSaleSearch, searchUnits, type Filters } from "@/lib/filter";
 import { PropertyCard, SaleCard } from "./cards";
 import { CallContact } from "./call-contact";
 import { FaqSection } from "./faq-section";
+import { RichText } from "./rich-text";
 import { listingFaqs } from "@/lib/faq";
 import { ProjectMap } from "./project-map";
 import { mapBuildings } from "@/lib/map-buildings";
 import { complexSchema, jsonLd } from "@/lib/structured-data";
-import { href, t } from "@/i18n/server";
+import { href, t, tf } from "@/i18n/server";
 import { companyHotline, telephoneHref } from "@/lib/company-contact";
 import { kindNoun, listingKind } from "@/lib/property-groups";
 import { vacantNow } from "@/lib/availability";
@@ -257,6 +258,20 @@ export function ProjectDirectory({
     </main>
   );
 }
+/** What follows a project's first paragraph; a short line alone is a heading. */
+function storyGroups(paragraphs: string[]) {
+  const groups: { title: string; text: string }[] = [];
+  for (const text of paragraphs) {
+    if (/^[\p{L}\p{N}][^\n]{0,58}[^\n.:;!?]$/u.test(text))
+      groups.push({ title: text, text: "" });
+    else if (groups.length)
+      groups.at(-1)!.text = [groups.at(-1)!.text, text]
+        .filter(Boolean)
+        .join("\n\n");
+    else groups.push({ title: "", text });
+  }
+  return groups.filter((g) => g.text);
+}
 export function PortfolioDetail({
   project: p,
   content,
@@ -317,6 +332,31 @@ export function PortfolioDetail({
       }}
     />
   ) : null;
+  const related = (
+    <section className="portfolio-related">
+      <div className="operation-content-heading">
+        <h2>Tiếp tục khám phá</h2>
+        <Link
+          href={`/du-an/${development ? "trien-khai" : "van-hanh"}`}
+          className="text-link"
+        >
+          Xem danh mục <ArrowRight size={17} />
+        </Link>
+      </div>
+      <div>
+        {content.portfolio
+          .filter((x) => x.group === p.group && x.id !== p.id)
+          .slice(0, 3)
+          .map((x) => (
+            <Link key={x.id} href={`/du-an/${x.slug}`}>
+              <Image src={x.image} alt={x.name} width={160} height={110} />
+              <span>{x.name}</span>
+              <ArrowUpRight size={18} />
+            </Link>
+          ))}
+      </div>
+    </section>
+  );
   if (development)
     return (
       <ProjectSalePage
@@ -328,10 +368,12 @@ export function PortfolioDetail({
         units={forSale}
         crumbs={crumbs}
         productLinks={productLinks}
+        related={related}
       >
         {schema}
       </ProjectSalePage>
     );
+  const about = storyGroups(story.paragraphs.slice(1));
   return (
     <main
       id="main"
@@ -482,6 +524,19 @@ export function PortfolioDetail({
               </>
             )}
           </section>
+          {about.length > 0 && (
+            <section className="operation-about">
+              <h2>{tf("Tìm hiểu {name}", { name: p.name })}</h2>
+              <div>
+                {about.map((g) => (
+                  <div key={g.title + g.text}>
+                    {g.title && <h3>{g.title}</h3>}
+                    <RichText text={g.text} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           <ProjectMap
             place={content.locations[p.projectId]}
             slug={p.slug}
@@ -492,32 +547,13 @@ export function PortfolioDetail({
         </>
         {!development &&
           (() => {
-            const faqs = listingFaqs(content.properties, p);
+            const faqs = listingFaqs(content.properties, {
+              ...p,
+              towers: api?.towers,
+            });
             return faqs.length > 1 ? <FaqSection faqs={faqs} /> : null;
           })()}
-        <section className="portfolio-related">
-          <div className="operation-content-heading">
-            <h2>Tiếp tục khám phá</h2>
-            <Link
-              href={`/du-an/${development ? "trien-khai" : "van-hanh"}`}
-              className="text-link"
-            >
-              Xem danh mục <ArrowRight size={17} />
-            </Link>
-          </div>
-          <div>
-            {content.portfolio
-              .filter((x) => x.group === p.group && x.id !== p.id)
-              .slice(0, 3)
-              .map((x) => (
-                <Link key={x.id} href={`/du-an/${x.slug}`}>
-                  <Image src={x.image} alt={x.name} width={160} height={110} />
-                  <span>{x.name}</span>
-                  <ArrowUpRight size={18} />
-                </Link>
-              ))}
-          </div>
-        </section>
+        {related}
       </div>
     </main>
   );

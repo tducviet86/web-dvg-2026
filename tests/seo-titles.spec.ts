@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { saleFaqs } from "../src/lib/faq";
+import { listingFaqs, saleFaqs } from "../src/lib/faq";
 import { towerHandover } from "../src/lib/handover";
 import { pageTitle } from "../src/i18n/metadata";
 import { apiAs, login } from "./helpers";
@@ -191,6 +191,37 @@ test("/mua-ban is an indexable page that links to the units on sale", async ({
   try {
     await page.goto(`/mua-ban/${slugs[0]}`);
     await expect(page).toHaveTitle(/^Căn mẫu SEO1-10 2 PN 70m² tại /);
+    // Model apartments of a project read alike: shown to visitors, left to
+    // their project's page in search. A unit really for sale is listed.
+    const robots = page.locator('meta[name="robots"]');
+    await expect(robots).toHaveAttribute("content", /noindex, ?follow/);
+    const made = await api.send("post", "/admin/properties", {
+      name: "Căn bán kiểm tra sitemap",
+      projectId,
+      propertyType: "2pn",
+      unitCode: "SEO1-SALE",
+      floor: 8,
+      location: "Đà Nẵng",
+      areaM2: 70,
+      bedrooms: 2,
+      bathrooms: 2,
+      description: "Căn đang bán, không phải căn mẫu của dự án.",
+      forSale: true,
+      forRent: false,
+      salePriceVnd: "4000000000",
+      status: "PUBLISHED",
+    });
+    expect(made.ok(), await made.text()).toBeTruthy();
+    const sale = ((await made.json()) as { data: { id: string; slug: string } })
+      .data;
+    ids.push(sale.id);
+    await page.goto(`/mua-ban/${sale.slug}`);
+    await expect(robots).toHaveCount(0);
+    await expect
+      .poll(async () => (await request.get("/sitemap.xml")).text())
+      .toContain(`/mua-ban/${sale.slug}</loc>`);
+    const listed = await (await request.get("/sitemap.xml")).text();
+    for (const slug of slugs) expect(listed).not.toContain(slug);
   } finally {
     for (const id of ids) await api.send("delete", `/admin/properties/${id}`);
   }
@@ -367,6 +398,49 @@ test("what AI assistants read: company, sales and no empty headings", async ({
   expect(text).toContain("C3 (Royal Place)");
   expect(text).toContain("45 m² đến 47,5 m²");
   expect(text).not.toContain("Chủ đầu tư");
+  // No units entered: the kinds stored with the project.
+  const kinds = saleFaqs(
+    "Dự án QA",
+    {
+      address: null,
+      location: "",
+      developer: null,
+      legalStatus: null,
+      scale: null,
+      handoverNote: null,
+      unitTypes: [
+        { name: "Studio" },
+        { name: "Căn 2PN", area: "Khoảng 70 m²" },
+      ],
+    },
+    [],
+  );
+  expect(kinds.flat().join(" ")).toContain(
+    "Dự án QA có Studio và Căn 2PN (khoảng 70 m²).",
+  );
+  // A rental building answers for its address and its towers.
+  const place = {
+    name: "Tòa QA",
+    projectId: "qa",
+    location: "535 Trần Hưng Đạo · Đà Nẵng",
+  };
+  const rent = listingFaqs([], {
+    ...place,
+    towers: [
+      { name: "A", status: "" },
+      { name: "B", status: "" },
+    ],
+  });
+  expect(rent).toContainEqual([
+    "535 Trần Hưng Đạo, Đà Nẵng là tòa nhà nào?",
+    "535 Trần Hưng Đạo, Đà Nẵng là địa chỉ của Tòa QA.",
+  ]);
+  expect(rent).toContainEqual([
+    "Tòa QA có những tòa nào?",
+    "Tòa QA gồm các tòa A và B.",
+  ]);
+  const vague = listingFaqs([], { ...place, location: "Như Nguyệt · Đà Nẵng" });
+  expect(vague.flat().join(" ")).not.toMatch(/tòa nhà nào|những tòa nào/);
   // A tower's own handover date is stated beside the project's.
   expect(text).toContain("Quý IV/2027 (tòa C3: Quý IV/2028)");
   const api = {
@@ -484,4 +558,47 @@ test("Từ khoá & SEO can retitle the home page and the list pages", async ({
     await page.goto("/");
     await expect(page).toHaveTitle(home[0]);
   }).toPass({ timeout: 15000 });
+});
+
+test("an operating project shows all of its introduction, in groups", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const { data } = (await api.get("/admin/projects?pageSize=100")) as {
+    data: { id: string; slug: string; overview: string[] }[];
+  };
+  const project = data.find((p) => p.slug === "monarchy-apartments")!;
+  const overview = [
+    "Đoạn mở đầu kiểm tra.",
+    "Tổng quan QA",
+    "• Quy mô: block B 33 tầng.\n• Chi phí: tùy diện tích.",
+    "Tiện ích QA",
+    "• Hồ bơi ngoài trời.",
+  ];
+  await api.send("patch", `/admin/projects/${project.id}`, { overview });
+  try {
+    const about = page.locator(".operation-about");
+    await expect
+      .poll(async () => {
+        await page.goto("/du-an/monarchy-apartments");
+        return about.locator("h3").allInnerTexts();
+      })
+      .toEqual(["Tổng quan QA", "Tiện ích QA"]);
+    await expect(about.locator("li")).toHaveCount(3);
+    await expect(about).toContainText("block B 33 tầng");
+    await expect(about).not.toContainText("Đoạn mở đầu");
+    await page.setViewportSize({ width: 375, height: 800 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    // One paragraph only: nothing more to show.
+    await page.goto("/du-an/sun-ponte-residence");
+    await expect(about).toHaveCount(0);
+  } finally {
+    await api.send("patch", `/admin/projects/${project.id}`, {
+      overview: project.overview,
+    });
+  }
 });

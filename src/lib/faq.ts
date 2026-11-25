@@ -36,7 +36,8 @@ export const rentalUnits = (units: Property[]) =>
  */
 export function listingFaqs(
   units: Property[],
-  project?: Pick<PortfolioProject, "name" | "location" | "projectId">,
+  project?: Pick<PortfolioProject, "name" | "location" | "projectId"> &
+    Pick<ApiProject, "towers">,
   projects: Pick<PortfolioProject, "name" | "projectId">[] = [],
 ): Faq[] {
   const scope = rentalUnits(units).filter(
@@ -50,6 +51,19 @@ export function listingFaqs(
     faqs.push([
       `${project.name} nằm ở đâu?`,
       `${project.name} nằm tại ${project.location}. Đất Vàng Group giới thiệu căn hộ cho thuê tại dự án này.`,
+    ]);
+  // People also search for the building by its address.
+  if (project && /^\d/.test(project.location)) {
+    const address = project.location.replace(/\s*·\s*/g, ", ");
+    faqs.push([
+      `${address} là tòa nhà nào?`,
+      `${address} là địa chỉ của ${project.name}.`,
+    ]);
+  }
+  if (project?.towers && project.towers.length > 1)
+    faqs.push([
+      `${project.name} có những tòa nào?`,
+      `${project.name} gồm các tòa ${list(project.towers.map((x) => x.name))}.`,
     ]);
 
   const priced = free.filter((u) => u.rentVnd);
@@ -132,6 +146,7 @@ export function saleFaqs(
     | "legalStatus"
     | "scale"
     | "towers"
+    | "unitTypes"
     | "handoverNote"
   >,
   units: Pick<Property, "bedrooms" | "area">[],
@@ -173,6 +188,17 @@ export function saleFaqs(
             )}`,
         ),
       )}. Diện tích ghi theo thông thủy của căn mẫu.`,
+    ]);
+  else if (api.unitTypes?.length)
+    faqs.push([
+      `${name} có những loại căn nào?`,
+      `${name} có ${list(
+        api.unitTypes.map((x) =>
+          x.area
+            ? `${x.name} (${x.area.charAt(0).toLowerCase()}${x.area.slice(1)})`
+            : x.name,
+        ),
+      )}.`,
     ]);
   if (api.legalStatus) faqs.push([`Pháp lý ${name} ra sao?`, api.legalStatus]);
   if (api.handoverNote)

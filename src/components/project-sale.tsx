@@ -179,6 +179,7 @@ export function ProjectSalePage({
   units: rawUnits,
   crumbs,
   productLinks,
+  related,
   children,
 }: {
   project: PortfolioProject;
@@ -190,6 +191,8 @@ export function ProjectSalePage({
   units: Property[];
   crumbs: React.ReactNode;
   productLinks: Record<string, string>;
+  /** Links to the other projects. */
+  related?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   const units = rawUnits.map(toDeskUnit);
@@ -612,6 +615,7 @@ export function ProjectSalePage({
             <FaqSection faqs={saleFaqs(p.name, api, rawUnits)} />
           </div>
         )}
+        {related && <div className="container project-related">{related}</div>}
 
         <section id="dang-ky" className="project-block project-block-tint">
           <div className="container">

@@ -26,6 +26,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getPublicSettings().catch(() => ({}) as Record<string, string>),
   ]);
   const units = new Map(properties.map((p) => [p.slug, p]));
+  // Model apartments are not indexed.
+  const listed = data.properties.filter((p) => !units.get(p.slug)?.floorNote);
   const latest = (dates: string[]) => dates.sort().at(-1);
   const entries: Entry[] = [
     { path: "", lastModified: latest(data.projects.map((p) => p.updatedAt)) },
@@ -50,10 +52,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: p.updatedAt,
       })),
     // Units under the listing they are offered in (rent, sale or both).
-    ...data.properties
+    ...listed
       .filter((p) => units.get(p.slug)?.forRent !== false)
       .map((p) => ({ path: `cho-thue/${p.slug}`, lastModified: p.updatedAt })),
-    ...data.properties
+    ...listed
       .filter((p) => units.get(p.slug)?.forSale)
       .map((p) => ({ path: `mua-ban/${p.slug}`, lastModified: p.updatedAt })),
     // Search landing pages (Admin › Từ khoá & SEO).

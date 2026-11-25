@@ -127,6 +127,29 @@
   margin-left: auto;
   flex-shrink: 0;
 }
+/* What Admin says of an operating project, below its units. */
+.operation-about {
+  padding: 35px 0 55px;
+}
+.operation-about > h2 {
+  margin: 0 0 24px;
+  font-size: 30px;
+}
+.operation-about > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 24px;
+}
+.operation-about > div > div {
+  padding: 26px 28px;
+  background: #fff;
+  border: 1px solid #e0e4d9;
+  border-radius: 6px;
+}
+.operation-about h3 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
 .operation-overview {
   display: grid;
   grid-template-columns: 1fr 1fr;

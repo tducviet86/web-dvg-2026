@@ -353,8 +353,9 @@ const resolve = cache(async (path: string): Promise<Resolved | null> => {
         room.seoDescription ||
         `${room.name} tại ${place}, ${room.area}m², ${room.furniture.toLowerCase()}${room.floorNote ? `, ${room.floorNote.toLowerCase()}` : ""}. Xem ảnh, thông số, vị trí và liên hệ ${sale ? "Đất Vàng Group để tư vấn mua bán" : "hẹn xem căn"}.${room.isDemo ? " Nội dung minh họa." : ""}`,
       image: room.image,
-      // Units rented / sold a while ago only stay reachable from old links.
-      noindex: room.isDemo || !!room.delisted,
+      // Units rented / sold a while ago only stay reachable from old links;
+      // model apartments read alike, so search gets their project's page.
+      noindex: room.isDemo || !!room.delisted || !!room.floorNote,
       parents: sale
         ? [
             { name: "Mua bán căn hộ Đà Nẵng", path: "/mua-ban" },
