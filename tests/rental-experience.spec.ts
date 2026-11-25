@@ -1330,9 +1330,9 @@ test("The Monarchy stands inside its four roads, with its real floors", () => {
       .filter((b) => b.tower)
       .map((b) => [b.tower, Math.round(b.height / FLOOR_METRES)]),
   ).toEqual([
-    // A: a one-floor podium of shops under the 17-floor octagon.
+    // A: a one-floor podium of shops under the 18-floor octagon.
     ["Monarchy A", 1],
-    ["Monarchy A", 17],
+    ["Monarchy A", 18],
     // One tower B, in two parts: 33 floors (B1,2) and 27 (B3).
     ["Monarchy B", 33],
     ["Monarchy B", 27],

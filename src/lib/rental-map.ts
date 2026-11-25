@@ -270,12 +270,12 @@ export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
   ],
   // Inside Trần Hưng Đạo (front, west), An Trung 2 (back, east), An Trung 3 and
   // Trần Quang Diệu. B from OpenStreetMap; A from the developer's plan, fitted to B.
-  // A: a base of four floors, then its typical floor up to 17.
+  // A: a base of four floors, then its typical floor up to 18.
   // B is one L: along An Trung 2 up to 33 floors (B1,2), along Trần Quang Diệu
   // up to 27 (B3), as on the floor plan of block B.
   "monarchy-apartments": [
     // A: one floor of shops on a wide podium with a garden roof; the octagon
-    // tower (floors 2–17) rises from it, turned as the ground floor plan shows.
+    // tower (floors 2–18) rises from it, turned as the ground floor plan shows.
     {
       ...outlined("Monarchy A", 0, FLOOR_METRES, [
         [15.63, 70.09],
@@ -291,7 +291,7 @@ export const BUILDING_BLOCKS: Record<string, MapBlock[]> = {
       lowFloors: ["shop"],
     },
     {
-      ...outlined("Monarchy A", 0, 17 * FLOOR_METRES, [
+      ...outlined("Monarchy A", 0, 18 * FLOOR_METRES, [
         [11.46, 67.23],
         [11.76, 61.78],
         [7.38, 46.67],

@@ -408,7 +408,7 @@ const FOURS_UNITS = {
 
 /**
  * Floor plans kept with the site for projects that have none in Admin. The
- * Monarchy: floors 5–17 of A are typical; B's plan of floor 3 stands in for
+ * Monarchy: floors 5–18 of A are typical; B's plan of floor 3 stands in for
  * its higher floors.
  */
 const SITE_PLANS: Record<
@@ -635,7 +635,7 @@ const SITE_PLANS: Record<
       {
         tower: "Monarchy A",
         image: "mat-bang-a-tang-dien-hinh.webp",
-        floors: range(5, 17),
+        floors: range(5, 18),
       },
       { tower: "Monarchy B", image: "mat-bang-tang-1.webp", floors: ["1"] },
       // Floor 2 of B is parking: no drawing.
