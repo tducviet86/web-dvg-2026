@@ -233,19 +233,19 @@ test("a new unit is translated, prices kept apart from the words", async ({
   // "1 tháng tiền nhà · 27.300.000 đ": the words are translated on their
   // own (once for every price), the amount stays as it is.
   const deposit = page.locator("dd", { hasText: "27.300.000" }).filter({
-    hasText: "1 thang tien nha",
+    hasText: "1-thang-tien-nha",
   });
   await reloadUntil(page, async () => (await deposit.count()) > 0);
-  await expect(deposit.first()).toContainText("KO: 1 thang tien nha");
+  await expect(deposit.first()).toContainText("KO: 1-thang-tien-nha");
   await expect(
-    page.locator("main").getByText("KO: Can ho kiem tra dich gia thue."),
+    page.locator("main").getByText("KO: Can-ho-kiem-tra-dich-gia-thue."),
   ).toBeVisible();
   // The costs the rent leaves out, listed side by side, are translated too.
   const out = page.locator(".room-fees-out");
   await reloadUntil(page, async () =>
     (await out.innerText()).includes("KO: Nuoc"),
   );
-  await expect(out).toContainText("KO: Phi quan ly");
+  await expect(out).toContainText("KO: Phi-quan-ly");
   await api.send("delete", `/admin/properties/${id}`);
 });
 

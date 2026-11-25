@@ -82,7 +82,11 @@ export default async function globalSetup() {
             .replace(/Đ/g, "D");
         const items = (
           JSON.parse(body.input ?? "[]") as { i: number; vi: string }[]
-        ).map(({ i, vi }) => ({ i, t: `${tag}: ${plain(vi)}` }));
+        ).map(({ i, vi }) => ({
+          i,
+          // The API drops Korean and Chinese written as Latin sentences.
+          t: `${tag}: ${tag === "EN" ? plain(vi) : plain(vi).replace(/ /g, "-")}`,
+        }));
         reply.writeHead(200, { "content-type": "application/json" });
         reply.end(
           JSON.stringify({
