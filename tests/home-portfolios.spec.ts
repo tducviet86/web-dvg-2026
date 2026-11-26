@@ -736,6 +736,20 @@ test("an operating project's page presents it, then leads to rent, buy and consi
   await expect(page.locator(".unit-plan-switch button").first()).toHaveText(
     /^Tầng /,
   );
+  // In every language the buttons name the floors only, not the tower again.
+  // (The stand-in translator writes "EN: Tang 1"; wait until it has.)
+  for (const tag of ["EN", "KO"]) {
+    await expect
+      .poll(
+        async () => {
+          await page.goto(`/${tag.toLowerCase()}/du-an/monarchy-apartments`);
+          return page.locator(".unit-plan-switch button").first().innerText();
+        },
+        { timeout: 30000 },
+      )
+      .toMatch(new RegExp(`^${tag}: Tang`));
+  }
+  await page.goto("/du-an/monarchy-apartments");
   await page
     .locator("#lien-he")
     .getByRole("button", { name: "Để lại thông tin" })

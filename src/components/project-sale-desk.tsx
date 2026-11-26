@@ -52,6 +52,10 @@ export type DeskUnit = {
 export type DeskTower = { name: string; status: string; note: string };
 export type DeskPlan = {
   name: string;
+  /** Its button: the floors only ("Tầng 5-18"), in the page's language. */
+  label: string;
+  /** Floors as Admin writes them on units ("5-18"), never translated. */
+  floors: string;
   tower: string;
   image: string;
   /**
@@ -142,7 +146,7 @@ function FloorPlanMap({ plan, units }: { plan: DeskPlan; units: DeskUnit[] }) {
     setOpen(false);
   }
   const map = planSpots(plan.image);
-  const floors = plan.name.split("· ")[1] ?? "";
+  const floors = plan.floors;
   const unitAt = (spot: string) => {
     const here = units.filter((u) => planNumber(u.code) === spot);
     const area = map?.spots.find((x) => x.unit === spot)?.outline?.inner;
@@ -486,7 +490,7 @@ export function UnitBrowser({
                     aria-pressed={p === activePlan}
                     onClick={() => setPlan(i)}
                   >
-                    {p.name.replace(/^Tòa .+? · /, "")}
+                    {p.label}
                   </button>
                 ))}
               </div>

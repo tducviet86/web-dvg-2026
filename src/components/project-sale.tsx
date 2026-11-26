@@ -149,6 +149,8 @@ function keptPlans(floors?: FloorData) {
       );
       plans.push({
         name: t(`Tòa ${tower.name} · Tầng ${range}`),
+        label: t(`Tầng ${range}`),
+        floors: range,
         tower: tower.name,
         image,
         ...(Object.keys(units).length && { units }),
@@ -187,11 +189,17 @@ export function projectPlans(
       })),
     plans:
       kept?.plans ??
-      (api?.floorPlans ?? []).map((x): DeskPlan => ({
-        name: t(x.name),
-        tower: x.tower ?? "",
-        image: x.image,
-      })),
+      (api?.floorPlans ?? []).map((x): DeskPlan => {
+        // "Tòa C1 · Tầng 9-12": the button shows what follows the tower.
+        const short = x.name.split(" · ").slice(1).join(" · ") || x.name;
+        return {
+          name: t(x.name),
+          label: t(short),
+          floors: short.replace(/^Tầng /, ""),
+          tower: x.tower ?? "",
+          image: x.image,
+        };
+      }),
   };
 }
 
