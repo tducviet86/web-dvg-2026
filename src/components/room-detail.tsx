@@ -42,6 +42,7 @@ import { ShowMore } from "./show-more";
 import { RecentUnits } from "./recent-units";
 import {
   floorLabel,
+  ownsFloors,
   floorName,
   groupLabel,
   hasRooms,
@@ -175,7 +176,13 @@ export function RoomDetail({
         ]
       : []),
     ...(floorLabel(r)
-      ? [{ icon: Layers, value: floorName(r), label: "Tầng" }]
+      ? [
+          {
+            icon: Layers,
+            value: floorName(r),
+            label: ownsFloors(r) ? "Số tầng" : "Tầng",
+          },
+        ]
       : []),
     // Short: the label already says "Nội thất", and it all fits one row.
     {
@@ -436,7 +443,14 @@ export function RoomDetail({
                                 ["Phòng tắm", String(r.bathrooms)],
                               ]
                             : []),
-                          ...(floorLabel(r) ? [["Tầng", floorName(r)]] : []),
+                          ...(floorLabel(r)
+                            ? [
+                                [
+                                  ownsFloors(r) ? "Số tầng" : "Tầng",
+                                  floorName(r),
+                                ],
+                              ]
+                            : []),
                           ["Nội thất", r.furniture],
                           [r.isDemo ? "Tình trạng mẫu" : "Tình trạng", status],
                           [

@@ -89,16 +89,25 @@ export function floorNumber(name: string) {
   const text = name.trim().toUpperCase();
   return Object.keys(SUN_FLOORS).find((n) => SUN_FLOORS[n] === text) ?? text;
 }
-/** "Tầng 12", "Tầng cao"; nothing without a floor, or for a shophouse. */
+/** A townhouse, premises or office: its "floor" is how many floors it has. */
+export const WHOLE_FLOOR_TYPES = ["nha-pho", "mat-bang", "van-phong"];
+export const ownsFloors = (p: { typeCode?: string }) =>
+  WHOLE_FLOOR_TYPES.includes(p.typeCode ?? "");
+/**
+ * "Tầng 12", "Tầng cao"; "3 tầng" for a townhouse or premises; nothing
+ * without a floor, or for a shophouse.
+ */
 export const floorLabel = (p: {
   floor?: number | null;
   typeCode?: string;
   projectSlug?: string;
   floorBand?: FloorBand | null;
 }) =>
-  (p.floor || p.floorBand) && p.typeCode !== "shophouse"
-    ? `Tầng ${p.floor ? floorName(p) : floorName(p).toLowerCase()}`
-    : undefined;
+  !(p.floor || p.floorBand) || p.typeCode === "shophouse"
+    ? undefined
+    : ownsFloors(p)
+      ? `${p.floor} tầng`
+      : `Tầng ${p.floor ? floorName(p) : floorName(p).toLowerCase()}`;
 
 /**
  * "2 PN", "1 PN +1", "Dualkey", or the type ("Studio", "Shophouse",

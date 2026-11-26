@@ -7,7 +7,12 @@ import Link from "@/components/page-navigation";
 import type { ApiProject } from "@/lib/api/types";
 import { zaloHref } from "@/lib/company-contact";
 import { planSpots } from "@/lib/floor-plan-spots";
-import { floorName, roomsLabel, hasRooms } from "@/lib/property-groups";
+import {
+  floorName,
+  ownsFloors,
+  roomsLabel,
+  hasRooms,
+} from "@/lib/property-groups";
 import { salePrice, unitRef, vndFull } from "@/lib/utils";
 import { CallContact, WhatsAppContact } from "./call-contact";
 import { Favorite } from "./client-basics";
@@ -140,7 +145,9 @@ export function SaleUnitBody({
   const facts: [string, string][] = [
     ["Mã căn", unitRef(r)],
     ...(r.tower ? [["Tòa", r.tower] as [string, string]] : []),
-    ...(floorName(r) ? [["Tầng", floorName(r)] as [string, string]] : []),
+    ...(floorName(r)
+      ? [[ownsFloors(r) ? "Số tầng" : "Tầng", floorName(r)] as [string, string]]
+      : []),
     [
       hasRooms(r) ? "Phòng ngủ" : "Loại hình",
       hasRooms(r) ? roomsLabel(r) : r.type,

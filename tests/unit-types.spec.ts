@@ -197,14 +197,11 @@ test("Admin sees a unit's real code and floor; visitors see neither, even in the
   ).data;
   try {
     expect(unit.slug).not.toMatch(/qa1905|tang-19/);
-    // Admin: the real code, and what visitors will read, with a warning.
+    // Admin: the real code, and a warning for what still gives it away.
     await login(page);
     await page.goto(`/admin/properties/${unit.id}/edit`);
     await expect(page.locator("[name=unitCode]")).toHaveValue("QA1905");
-    const view = page.getByLabel("Khách sẽ thấy");
-    await expect(view).toContainText(unit.publicCode);
-    await expect(view).toContainText(/tầng (thấp|trung|cao)/);
-    await expect(view.locator(".public-view-leaks")).toContainText(
+    await expect(page.locator(".public-view-leaks")).toContainText(
       "lầu hai mươi",
     );
     // Visitors: the public code and a band, on the page and in its source.
@@ -228,6 +225,43 @@ test("Admin sees a unit's real code and floor; visitors see neither, even in the
     await expect(
       page.locator(`article.property-card h3 a[href$="/${unit.slug}"]`),
     ).toHaveCount(0);
+  } finally {
+    await api.send("delete", `/admin/properties/${unit.id}`);
+  }
+});
+
+test("a townhouse shows how many floors it has, in Admin and on the site", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const res = await api.send("post", "/admin/properties", {
+    name: "Nhà phố QA ba tầng",
+    propertyType: "nha-pho",
+    unitCode: "QA-NP3",
+    location: "Sơn Trà, Đà Nẵng",
+    latitude: 16.06,
+    longitude: 108.24,
+    areaM2: 100,
+    bedrooms: 3,
+    bathrooms: 3,
+    floor: 3,
+    description: "Nhà phố ba tầng, phòng khách ở tầng 1.",
+    rentPriceVnd: "30000000",
+    status: "PUBLISHED",
+  });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  const unit = ((await res.json()) as { data: { id: string; slug: string } })
+    .data;
+  try {
+    await login(page);
+    await page.goto(`/admin/properties/${unit.id}/edit`);
+    await expect(page.locator("label[for$=floor]")).toContainText("Số tầng");
+    // No warning: a townhouse's floors are not a secret.
+    await expect(page.locator(".public-view-leaks")).toHaveCount(0);
+    await page.goto(`/cho-thue/${unit.slug}`);
+    const fact = page.locator(".room-facts, .room-page").getByText("Số tầng");
+    await expect(fact.first()).toBeVisible();
+    await expect(page.locator("main")).toContainText("phòng khách ở tầng 1");
   } finally {
     await api.send("delete", `/admin/properties/${unit.id}`);
   }

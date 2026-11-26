@@ -155,6 +155,8 @@ type Field = {
   hideForTypes?: string[];
   /** A select with these choices while the unit type is the key (nhà phố: 2–4 PN). */
   choicesForTypes?: Record<string, [string, string][]>;
+  /** Another label while the unit type is the key (nhà phố: "Số tầng"). */
+  labelForTypes?: Record<string, string>;
   /** A select of the chosen project's towers (its "Các tòa"), shown only
       when the project lists some. */
   towersOfProject?: boolean;
@@ -879,7 +881,12 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           }),
           f("floor", "Tầng", {
             hideForTypes: ["shophouse"],
-            hint: "Bắt buộc với căn hộ; chỉ hiện trong quản trị, khách thấy tầng thấp / trung / cao. Dự án Sun: tầng 4 là 3A, tầng 13 là 12A.",
+            labelForTypes: {
+              "nha-pho": "Số tầng",
+              "mat-bang": "Số tầng",
+              "van-phong": "Số tầng",
+            },
+            hint: "Căn hộ: tầng của căn, chỉ hiện trong quản trị (khách thấy tầng thấp / trung / cao); dự án Sun: tầng 4 là 3A, tầng 13 là 12A. Nhà phố, mặt bằng, văn phòng: số tầng của cả căn, khách thấy “3 tầng”.",
           }),
           f("direction", "Hướng căn hộ", {
             type: "select",
@@ -1790,9 +1797,8 @@ const slugify = (value: string) =>
 // ─────────────────────────────── editor ───────────────────────────────
 
 /**
- * Under "Mã căn": what visitors see of this unit (as last saved): the
- * public code and floor band instead of the real ones, the texts rewritten,
- * and anything still giving the unit away.
+ * Under "Mã căn", only when needed: what still gives the unit away on the
+ * site (as last saved): a floor in words, "T26"…
  */
 /** The code visitors see, from the unit as last saved ("" before that). */
 const publicCodeOf = (data: FormValues) => {
@@ -1800,40 +1806,15 @@ const publicCodeOf = (data: FormValues) => {
   return raw ? ((JSON.parse(raw) as { code?: string | null }).code ?? "") : "";
 };
 function PublicView({ raw }: { raw: string }) {
-  if (!raw) return null;
-  const v = JSON.parse(raw) as {
-    code: string | null;
-    floor: string | null;
-    name: string;
-    description: string;
-    leaks: string[];
-  };
-  if (!v.code) return null;
+  const leaks = raw
+    ? ((JSON.parse(raw) as { leaks?: string[] }).leaks ?? [])
+    : [];
+  if (!leaks.length) return null;
   return (
-    <div className="public-view" aria-label="Khách sẽ thấy">
-      <p>
-        <b>Khách sẽ thấy:</b> mã <strong>{v.code}</strong>
-        {v.floor && (
-          <>
-            {" "}
-            · <strong>{v.floor}</strong>
-          </>
-        )}
-        . Mã căn và tầng thật chỉ hiện trong quản trị.
-      </p>
-      <p className="public-view-name">{v.name}</p>
-      <details>
-        <summary>Mô tả khách đọc</summary>
-        <p>{v.description}</p>
-      </details>
-      {v.leaks.length > 0 && (
-        <p className="public-view-leaks" role="alert">
-          Bản khách xem có thể còn lộ: <b>{v.leaks.join(", ")}</b>. Sửa tên hoặc
-          mô tả rồi lưu lại.
-        </p>
-      )}
-      <small>Theo bản đã lưu; lưu xong mới cập nhật.</small>
-    </div>
+    <p className="public-view-leaks" role="alert">
+      Trang khách xem có thể còn lộ: <b>{leaks.join(", ")}</b>. Sửa tên hoặc mô
+      tả rồi lưu lại.
+    </p>
   );
 }
 
@@ -2407,7 +2388,7 @@ export function Editor({
           hidden={item.showWhen ? !live[item.showWhen] : undefined}
         >
           <legend>
-            {item.label} {tag}
+            {item.labelForTypes?.[str(live.type)] ?? item.label} {tag}
           </legend>
           {item.optionGroups ? (
             <div className="field-pill-groups">
@@ -2519,7 +2500,7 @@ export function Editor({
         }
       >
         <label htmlFor={id}>
-          {item.label} {tag}
+          {item.labelForTypes?.[str(live.type)] ?? item.label} {tag}
         </label>
         {item.type === "textarea" ? (
           <>
