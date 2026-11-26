@@ -766,7 +766,9 @@ function floorData(
       floors: planFloors(p.name),
     })),
     units: units
-      .filter((p) => p.tower && p.unitCode)
+      // On the floor plan: model units, and units whose floor is given
+      // (an owner's unit only says "tầng cao": it is not placed).
+      .filter((p) => p.tower && p.unitCode && (p.floorNote || p.floor))
       .map((p) => ({
         tower: p.tower ?? "",
         floor: p.floorNote ? "" : floorName(p),

@@ -140,6 +140,7 @@ export function toProperty(p: ApiProperty): Property {
     bedrooms: p.bedrooms,
     bathrooms: p.bathrooms,
     floor: p.floor ?? 0,
+    floorBand: p.floorBand ?? undefined,
     furniture: furnishingLabels[p.furnishing],
     status: availabilityLabels[p.availability],
     image: p.coverImage?.url || FALLBACK_IMAGE,

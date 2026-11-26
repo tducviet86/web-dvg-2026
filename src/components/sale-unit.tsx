@@ -140,7 +140,7 @@ export function SaleUnitBody({
   const facts: [string, string][] = [
     ["Mã căn", unitRef(r)],
     ...(r.tower ? [["Tòa", r.tower] as [string, string]] : []),
-    ...(r.floor ? [["Tầng", floorName(r)] as [string, string]] : []),
+    ...(floorName(r) ? [["Tầng", floorName(r)] as [string, string]] : []),
     [
       hasRooms(r) ? "Phòng ngủ" : "Loại hình",
       hasRooms(r) ? roomsLabel(r) : r.type,

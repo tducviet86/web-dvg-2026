@@ -525,12 +525,16 @@ test("a unit slug is its name plus unit code, made when missing; the page shows 
   const api = await apiAs();
   const units = (await api.get(
     "/admin/properties?q=tu tao duong dan qa",
-  )) as unknown as { data: { id: string; slug: string; unitCode: string }[] };
+  )) as unknown as {
+    data: { id: string; slug: string; unitCode: string; publicCode: string }[];
+  };
   const unit = units.data[0];
-  // No code typed: the server makes one and adds it to the slug.
+  // No code typed: the server makes one (kept in Admin); the slug ends with
+  // the public code visitors see, never the real one.
   expect(unit.unitCode).toMatch(/^DVG-[0-9A-F]{4}$/);
+  expect(unit.publicCode).toMatch(/^[A-Z]{2,3}-\d{5}$/);
   expect(unit.slug).toBe(
-    `can-tu-tao-duong-dan-qa-${unit.unitCode.toLowerCase()}`,
+    `can-tu-tao-duong-dan-qa-${unit.publicCode.toLowerCase()}`,
   );
   await api.send("patch", `/admin/properties/${unit.id}`, {
     status: "PUBLISHED",
@@ -1494,7 +1498,12 @@ test("a unit's card says its project, tower and floor; the form asks for them", 
     const units = (await api.get(
       "/admin/properties?q=View%20s%C3%B4ng%20QA%20t%C3%B2a",
     )) as unknown as {
-      data: { id: string; unitCode: string; tower: string }[];
+      data: {
+        id: string;
+        unitCode: string;
+        tower: string;
+        publicCode: string;
+      }[];
     };
     // One spelling for codes.
     expect(units.data[0]).toMatchObject({ unitCode: "QA12B11", tower: "QA-B" });
@@ -1502,18 +1511,25 @@ test("a unit's card says its project, tower and floor; the form asks for them", 
       const card = page.locator("article.property-card", {
         hasText: "View sông QA tòa tầng",
       });
+      // Visitors read the tower and a band of floors, never floor 12 or the
+      // real code; searching the real code finds nothing.
       await expect(async () => {
-        await page.goto("/cho-thue?q=QA12B11");
+        await page.goto(`/cho-thue?q=${units.data[0].publicCode}`);
         await expect(card.locator(".card-meta")).toContainText(
-          /Tòa QA-B\s· Tầng 12/i,
+          /Tòa QA-B\s· Tầng (thấp|trung|cao)/i,
           {
             timeout: 1000,
           },
         );
       }).toPass({ timeout: 60_000 });
-      await expect(card.locator(".card-meta")).toContainText("QA12B11");
+      await expect(card.locator(".card-meta")).toContainText(
+        units.data[0].publicCode,
+      );
+      await expect(card).not.toContainText(/QA12B11|Tầng 12/i);
       // The floor is said once, above, not again among the facts.
       await expect(card.locator(".property-specs")).not.toContainText("Tầng");
+      await page.goto("/cho-thue?q=QA12B11");
+      await expect(card).toHaveCount(0);
     } finally {
       await api.send("delete", `/admin/properties/${units.data[0].id}`);
     }

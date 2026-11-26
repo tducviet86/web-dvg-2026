@@ -90,6 +90,8 @@ export type Property = AdminDetails & {
   bedrooms: number;
   bathrooms: number;
   floor: number;
+  /** An owner's unit: its third of the tower instead of the floor. */
+  floorBand?: "low" | "mid" | "high";
   furniture: string;
   status: string;
   image: string;

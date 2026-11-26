@@ -129,9 +129,11 @@ test("Admin takes floor 12A in a Sun project; the site shows it", async ({
     await expectErrorPopup(page, "phải là số nguyên");
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 900 });
+      // Visitors see the band of the tower, never "12A".
       await page.goto(`/cho-thue/${unit.slug}`);
+      await expect(page.locator("main")).not.toContainText(/12A|E2E-12A/);
       await expect(
-        page.getByText("12A", { exact: true }).first(),
+        page.getByText("Trung", { exact: true }).first(),
       ).toBeVisible();
       await page.goto("/cho-thue?du-an=sun-ponte-residence");
       await expect(
@@ -141,7 +143,7 @@ test("Admin takes floor 12A in a Sun project; the site shows it", async ({
           })
           .locator(".card-meta span")
           .first(),
-      ).toContainText("Tầng 12A");
+      ).toContainText("Tầng trung");
       // A long place never widens the card's text past the card.
       expect(
         await page
@@ -158,6 +160,74 @@ test("Admin takes floor 12A in a Sun project; the site shows it", async ({
         ),
       ).toBe(0);
     }
+  } finally {
+    await api.send("delete", `/admin/properties/${unit.id}`);
+  }
+});
+
+test("Admin sees a unit's real code and floor; visitors see neither, even in the page source", async ({
+  page,
+}) => {
+  const api = await apiAs();
+  const projects = (await api.get("/admin/projects?pageSize=100")).data as {
+    id: string;
+    slug: string;
+  }[];
+  const res = await api.send("post", "/admin/properties", {
+    name: "Căn QA1905 tầng 19 view sông",
+    projectId: projects.find((p) => p.slug === "sun-ponte-residence")!.id,
+    propertyType: "2pn",
+    unitCode: "QA1905",
+    location: "Đà Nẵng",
+    areaM2: 70,
+    bedrooms: 2,
+    bathrooms: 2,
+    floor: 19,
+    tower: "T2",
+    description:
+      "Căn QA1905 nằm ở tầng 19, nhìn ra sông.\n\nChủ nhà ở lầu hai mươi.",
+    rentPriceVnd: "20000000",
+    status: "PUBLISHED",
+  });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  const unit = (
+    (await res.json()) as {
+      data: { id: string; slug: string; publicCode: string };
+    }
+  ).data;
+  try {
+    expect(unit.slug).not.toMatch(/qa1905|tang-19/);
+    // Admin: the real code, and what visitors will read, with a warning.
+    await login(page);
+    await page.goto(`/admin/properties/${unit.id}/edit`);
+    await expect(page.locator("[name=unitCode]")).toHaveValue("QA1905");
+    const view = page.getByLabel("Khách sẽ thấy");
+    await expect(view).toContainText(unit.publicCode);
+    await expect(view).toContainText(/tầng (thấp|trung|cao)/);
+    await expect(view.locator(".public-view-leaks")).toContainText(
+      "lầu hai mươi",
+    );
+    // Visitors: the public code and a band, on the page and in its source.
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/cho-thue/${unit.slug}`);
+      await expect(page.locator("main")).toContainText(unit.publicCode);
+      await expect(page.locator("h1")).toContainText(/tầng (thấp|trung|cao)/i);
+      const html = await page.content();
+      expect(html).not.toMatch(/QA1905|tầng 19|T[ầâ]ng 19/i);
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        ),
+      ).toBe(0);
+    }
+    // The site's search does not find it by the real code.
+    await page.goto("/cho-thue?q=QA1905");
+    await expect(
+      page.locator(`article.property-card h3 a[href$="/${unit.slug}"]`),
+    ).toHaveCount(0);
   } finally {
     await api.send("delete", `/admin/properties/${unit.id}`);
   }

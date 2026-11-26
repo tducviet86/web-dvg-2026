@@ -12,7 +12,13 @@ test("rental cards tell free and taken units apart, prices in gold, on every car
   await expect(price.first()).toHaveCSS("color", "rgb(240, 207, 122)");
 
   // The unit page shows its rent in gold too, on a computer and on a phone.
-  await page.locator("article.property-card h3 a").first().click();
+  // A sample unit: its page suggests the other samples (a real unit's page
+  // suggests real units only, and tests may leave just one).
+  await page
+    .locator("article.property-card", { hasText: "CĂN MẪU" })
+    .locator("h3 a")
+    .first()
+    .click();
   await expect(page.locator(".room-page .room-price")).toHaveCSS(
     "color",
     "rgb(138, 106, 31)",

@@ -246,7 +246,8 @@ export function apartmentSchema(
       value: room.area,
       unitCode: "MTK",
     },
-    floorLevel: floorName(room) || undefined,
+    // Only a model unit's or a stated floor; an owner's band says nothing exact.
+    floorLevel: (room.floor && floorName(room)) || undefined,
     amenityFeature: (room.amenityKeys ?? [])
       .map((key) => amenityOf(key)?.label ?? key)
       .map((name) => ({

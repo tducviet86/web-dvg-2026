@@ -132,6 +132,8 @@ export type ApiProperty = {
   bedrooms: number;
   bathrooms: number;
   floor: number | null;
+  /** An owner's unit: its third of the tower instead of the floor. */
+  floorBand?: "low" | "mid" | "high" | null;
   direction: string | null;
   tower?: string | null;
   viewNote?: string | null;

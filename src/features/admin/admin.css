@@ -7960,3 +7960,34 @@ span.ucard-avail {
     font-size: 16px;
   }
 }
+
+/* Under "Mã căn": what visitors see instead of the real code and floor. */
+.public-view {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid #cfe2d6;
+  border-radius: 10px;
+  background: #f1f8f3;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.public-view p {
+  margin: 0 0 6px;
+}
+.public-view-name {
+  color: #163a2f;
+  font-weight: 600;
+}
+.public-view details p {
+  margin-top: 6px;
+  white-space: pre-line;
+}
+.public-view-leaks {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #8a1c14;
+}
+.public-view small {
+  color: #6b7a72;
+}

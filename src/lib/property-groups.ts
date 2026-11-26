@@ -64,9 +64,24 @@ const SUN_FLOORS: Record<string, string> = { "4": "3A", "13": "12A" };
 export const namesSunFloors = (projectSlug?: string) =>
   SUN_PROJECTS.includes(projectSlug ?? "");
 export const sunFloorName = (floor: string) => SUN_FLOORS[floor] ?? floor;
-/** A floor as it is named on the spot: 13 is "12A" in a Sun project. */
-export function floorName(p: { floor?: number | null; projectSlug?: string }) {
-  const floor = p.floor ? String(p.floor) : "";
+/** What the site says of an owner's floor: its third of the tower (the API keeps the floor). */
+export type FloorBand = "low" | "mid" | "high";
+const BAND_WORDS: Record<FloorBand, string> = {
+  low: "Thấp",
+  mid: "Trung",
+  high: "Cao",
+};
+/**
+ * A floor as it is named on the spot: 13 is "12A" in a Sun project. An
+ * owner's unit comes without its floor, only "Thấp" / "Trung" / "Cao".
+ */
+export function floorName(p: {
+  floor?: number | null;
+  projectSlug?: string;
+  floorBand?: FloorBand | null;
+}) {
+  if (!p.floor) return p.floorBand ? BAND_WORDS[p.floorBand] : "";
+  const floor = String(p.floor);
   return namesSunFloors(p.projectSlug) ? sunFloorName(floor) : floor;
 }
 /** The number a floor is saved as: "12A" → "13". */
@@ -74,13 +89,16 @@ export function floorNumber(name: string) {
   const text = name.trim().toUpperCase();
   return Object.keys(SUN_FLOORS).find((n) => SUN_FLOORS[n] === text) ?? text;
 }
-/** "Tầng 12"; nothing when the floor is not filled in, or for a shophouse. */
+/** "Tầng 12", "Tầng cao"; nothing without a floor, or for a shophouse. */
 export const floorLabel = (p: {
   floor?: number | null;
   typeCode?: string;
   projectSlug?: string;
+  floorBand?: FloorBand | null;
 }) =>
-  p.floor && p.typeCode !== "shophouse" ? `Tầng ${floorName(p)}` : undefined;
+  (p.floor || p.floorBand) && p.typeCode !== "shophouse"
+    ? `Tầng ${p.floor ? floorName(p) : floorName(p).toLowerCase()}`
+    : undefined;
 
 /**
  * "2 PN", "1 PN +1", "Dualkey", or the type ("Studio", "Shophouse",

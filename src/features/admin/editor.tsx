@@ -392,6 +392,13 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
             wide: true,
           }),
           f("mapLabel", "Tên địa điểm trên bản đồ", { maxLength: 200 }),
+          f("codePrefix", "Chữ viết tắt mã căn", {
+            maxLength: 3,
+            pattern: /^[A-Za-z]{2,3}$/,
+            patternMessage: "gồm 2–3 chữ cái, vd MN",
+            placeholder: "vd: MN",
+            hint: "Đứng trước mã căn khách thấy: MN-95207. Để trống thì dùng DV.",
+          }),
           f("latitude", "Vĩ độ", {
             type: "number",
             step: "any",
@@ -484,6 +491,12 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
                   maxLength: 80,
                 },
                 { key: "note", label: "Ghi chú", maxLength: 200 },
+                {
+                  key: "floors",
+                  label: "Số tầng",
+                  placeholder: "vd: 33",
+                  maxLength: 3,
+                },
               ],
               add: "Thêm tòa",
               max: 40,
@@ -784,7 +797,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           f("unitCode", "Mã căn / số phòng", {
             maxLength: 40,
             placeholder: "vd: A-12.05",
-            hint: "Để trống, hệ thống tự tạo mã (vd: DVG-3F2A).",
+            hint: "Mã thật, chỉ hiện trong quản trị; khách thấy mã công khai (vd: MN-95207). Để trống, hệ thống tự tạo mã.",
           }),
           f("location", "Khu vực", {
             required: true,
@@ -866,7 +879,7 @@ function groups(kind: Kind, lookups: Lookups, isNew: boolean): Group[] {
           }),
           f("floor", "Tầng", {
             hideForTypes: ["shophouse"],
-            hint: "Bắt buộc với căn hộ. Dự án Sun: tầng 4 là 3A, tầng 13 là 12A.",
+            hint: "Bắt buộc với căn hộ; chỉ hiện trong quản trị, khách thấy tầng thấp / trung / cao. Dự án Sun: tầng 4 là 3A, tầng 13 là 12A.",
           }),
           f("direction", "Hướng căn hộ", {
             type: "select",
@@ -1776,6 +1789,54 @@ const slugify = (value: string) =>
 
 // ─────────────────────────────── editor ───────────────────────────────
 
+/**
+ * Under "Mã căn": what visitors see of this unit (as last saved): the
+ * public code and floor band instead of the real ones, the texts rewritten,
+ * and anything still giving the unit away.
+ */
+/** The code visitors see, from the unit as last saved ("" before that). */
+const publicCodeOf = (data: FormValues) => {
+  const raw = str(data.publicView);
+  return raw ? ((JSON.parse(raw) as { code?: string | null }).code ?? "") : "";
+};
+function PublicView({ raw }: { raw: string }) {
+  if (!raw) return null;
+  const v = JSON.parse(raw) as {
+    code: string | null;
+    floor: string | null;
+    name: string;
+    description: string;
+    leaks: string[];
+  };
+  if (!v.code) return null;
+  return (
+    <div className="public-view" aria-label="Khách sẽ thấy">
+      <p>
+        <b>Khách sẽ thấy:</b> mã <strong>{v.code}</strong>
+        {v.floor && (
+          <>
+            {" "}
+            · <strong>{v.floor}</strong>
+          </>
+        )}
+        . Mã căn và tầng thật chỉ hiện trong quản trị.
+      </p>
+      <p className="public-view-name">{v.name}</p>
+      <details>
+        <summary>Mô tả khách đọc</summary>
+        <p>{v.description}</p>
+      </details>
+      {v.leaks.length > 0 && (
+        <p className="public-view-leaks" role="alert">
+          Bản khách xem có thể còn lộ: <b>{v.leaks.join(", ")}</b>. Sửa tên hoặc
+          mô tả rồi lưu lại.
+        </p>
+      )}
+      <small>Theo bản đã lưu; lưu xong mới cập nhật.</small>
+    </div>
+  );
+}
+
 export function Editor({
   kind,
   values: data,
@@ -1951,7 +2012,11 @@ export function Editor({
     ].some(Boolean);
     if (changed) toast.success(`Đã điền khu vực và địa chỉ theo ${next.name}.`);
   }
-  /** Folder for uploads: the unit code (or slug, or name) typed right now. */
+  /**
+   * Folder for uploads. An owner's unit: its public code ("can-ho/sp-31284/"),
+   * so a photo's address gives away neither the real code nor the floor;
+   * "can-moi" until the unit is first saved. A model unit: its code.
+   */
   function uploadPlace(): UploadPlace | null {
     const form = formRef.current;
     const value = (name: string) =>
@@ -1961,7 +2026,9 @@ export function Editor({
     if (kind === "properties")
       return {
         owner: "property",
-        code: value("unitCode") || value("slug") || slugify(value("name")),
+        code: value("floorNote")
+          ? value("unitCode") || value("slug") || slugify(value("name"))
+          : publicCodeOf(data) || "can-moi",
       };
     if (kind === "projects") return { owner: "project", code: value("slug") };
     if (kind === "posts") return { owner: "post", code: value("slug") };
@@ -2597,6 +2664,9 @@ export function Editor({
           </div>
         )}
         {errorText}
+        {item.key === "unitCode" && !isNew && (
+          <PublicView raw={str(data.publicView)} />
+        )}
         {item.key === "slug" && (
           <button
             className="admin-inline-button"
@@ -2804,13 +2874,24 @@ export function Editor({
                 )}
                 {kind === "properties" && (
                   <p className="upload-place-note">
-                    {str(live.unitCode) ? (
+                    {str(live.floorNote) ? (
+                      str(live.unitCode) ? (
+                        <>
+                          Tệp lưu trong thư mục{" "}
+                          <code>can-ho/{str(live.unitCode)}/</code>
+                        </>
+                      ) : (
+                        "Nhập Mã căn trước khi tải ảnh để tệp được lưu theo mã căn (dễ tìm khi sao lưu)."
+                      )
+                    ) : (
                       <>
                         Tệp lưu trong thư mục{" "}
-                        <code>can-ho/{str(live.unitCode)}/</code>
+                        <code>
+                          can-ho/
+                          {(publicCodeOf(data) || "can-moi").toLowerCase()}/
+                        </code>{" "}
+                        (theo mã khách thấy, không lộ mã thật hay tầng)
                       </>
-                    ) : (
-                      "Nhập Mã căn trước khi tải ảnh để tệp được lưu theo mã căn (dễ tìm khi sao lưu)."
                     )}
                   </p>
                 )}

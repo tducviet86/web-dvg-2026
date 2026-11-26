@@ -702,7 +702,11 @@ test("free units come first, soon-free next; on the date they count as free", as
       status: "PUBLISHED",
     });
     expect(res.ok()).toBeTruthy();
-    return (await res.json()).data as { id: string; slug: string };
+    return (await res.json()).data as {
+      id: string;
+      slug: string;
+      publicCode: string;
+    };
   };
   const soon = await make("SOON-1", later);
   const now = await make("NOW-1", "2020-01-01");
@@ -731,7 +735,8 @@ test("free units come first, soon-free next; on the date they count as free", as
     "Giá thuê chưa bao gồmNước, Điện, Internet, Phí quản lý, Phí gửi xe máy, Phí gửi ô tô",
   );
   await expect(page.locator(".room-included-fees li")).toHaveCount(0);
-  await page.goto("/cho-thue?q=SOON-1");
+  // Found by the code visitors see (the real one is not searchable).
+  await page.goto(`/cho-thue?q=${soon.publicCode}`);
   await expect(page.locator(".property-card .image-badge")).toHaveText(
     "Trống từ 15/01/2999",
   );

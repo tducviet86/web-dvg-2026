@@ -25,7 +25,8 @@ const rowsOf = (v: unknown, required: string) =>
     .map((row) =>
       Object.fromEntries(
         Object.entries(row)
-          .map(([key, value]) => [key, value.trim()])
+          // Stored numbers too (a tower's "floors").
+          .map(([key, value]) => [key, String(value).trim()])
           .filter(([, value]) => value),
       ),
     );
@@ -135,6 +136,7 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       mapUrl: str(d.mapUrl),
       facebookUrl: str(d.facebookUrl),
       mapLabel: str(d.mapLabel),
+      codePrefix: str(d.codePrefix),
       latitude: str(d.latitude),
       longitude: str(d.longitude),
       amenities: lines(d.amenities),
@@ -178,6 +180,13 @@ export function formValues(kind: Kind, d: AdminDto | null): FormValues {
       slug: str(d.slug),
       projectId: str(d.projectId),
       unitCode: str(d.unitCode),
+      // Shown under "Mã căn" (not a field: never sent back).
+      publicView: d.publicView
+        ? JSON.stringify({
+            ...(d.publicView as object),
+            code: d.publicCode ?? null,
+          })
+        : "",
       location: str(d.location),
       address: str(d.address),
       latitude: str(d.latitude),
@@ -362,6 +371,7 @@ export function payload(
       mapUrl: orNull(v.mapUrl),
       facebookUrl: orNull(v.facebookUrl),
       mapLabel: orNull(v.mapLabel),
+      codePrefix: orNull(str(v.codePrefix).toUpperCase()),
       latitude: numOrNull(v.latitude),
       longitude: numOrNull(v.longitude),
       amenities: splitLines(v.amenities),
