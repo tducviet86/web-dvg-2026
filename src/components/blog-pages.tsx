@@ -13,6 +13,9 @@ import { BackButton } from "@/components/layout/back-button";
 import { parseArticle, type ArticleBlock as Block } from "@/lib/article";
 import { canOptimizeImage } from "@/lib/banners";
 import { siteUrl } from "@/lib/utils";
+import { jsonLd } from "@/lib/structured-data";
+import { getRequestLocale, href, t } from "@/i18n/server";
+import { HTML_LANG } from "@/i18n/config";
 import type { Filters } from "@/lib/filter";
 import type { Post } from "@/types";
 import { photos } from "@/data";
@@ -420,11 +423,14 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          // In the page's language, at its own address (/en/blog/…).
+          __html: jsonLd({
             "@context": "https://schema.org",
             "@type": "Article",
-            headline: post.name,
-            description: post.description,
+            headline: t(post.name),
+            description: t(post.description),
+            inLanguage: HTML_LANG[getRequestLocale()],
+            url: `${siteUrl}${href(`/blog/${post.slug}`)}`,
             datePublished: post.createdAt,
             dateModified: post.updatedAt || post.createdAt,
             image: post.image,
@@ -443,7 +449,7 @@ export function ArticlePage({ post, posts }: { post: Post; posts: Post[] }) {
               url: siteUrl,
               logo: `${siteUrl}/images/dat-vang-group-logo-transparent.png`,
             },
-            mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
+            mainEntityOfPage: `${siteUrl}${href(`/blog/${post.slug}`)}`,
           }),
         }}
       />

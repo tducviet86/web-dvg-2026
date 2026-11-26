@@ -130,6 +130,38 @@ test("articles name the company as author and publisher, not 'Admin'", async ({
   });
 });
 
+test("an article's data is in the page's language, at its own address", async ({
+  page,
+}) => {
+  await page.goto("/blog");
+  const link = page
+    .locator('main a[href^="/blog/"]:not([href*="danh-muc"])')
+    .first();
+  const path = (await link.getAttribute("href"))!;
+  await page.goto(path);
+  const vi = ofType(await schemas(page), "Article")!;
+  expect(vi).toMatchObject({
+    inLanguage: "vi",
+    url: expect.stringMatching(new RegExp(`${path}$`)),
+  });
+  // The stand-in translator writes "EN: …"; wait until it has.
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/en${path}`);
+        return ofType(await schemas(page), "Article")?.headline;
+      },
+      { timeout: 30000 },
+    )
+    .toMatch(/^EN: /);
+  const en = ofType(await schemas(page), "Article")!;
+  expect(en).toMatchObject({
+    inLanguage: "en",
+    url: expect.stringMatching(new RegExp(`/en${path}$`)),
+    mainEntityOfPage: expect.stringMatching(new RegExp(`/en${path}$`)),
+  });
+});
+
 test("every page names the legal entity and its tax code", async ({ page }) => {
   await page.goto("/lien-he");
   const footer = page.locator(".footer-bottom");
